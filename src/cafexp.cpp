@@ -54,7 +54,8 @@ int main(int argc, char *const argv[]) {
   // }
 
   newick_parser parser;
-  parser.parse_newick();
+  parser.newick_string = "((Sp_A:1.0,Sp_B:1.0):1.0,Sp_C:2.0);";
+  clade *p_tree = parser.parse_newick();
   
   /* START: Testing implementation of Clade class */
 
@@ -77,6 +78,7 @@ int main(int argc, char *const argv[]) {
   cout << "Testing print_immediate_descendants():" << endl;
   parent.print_immediate_descendants();
   p_child1->print_immediate_descendants();
+  p_tree->print_immediate_descendants();
 
   /* testing print_clade() method */
   cout << "Testing print_clade():" << endl;
