@@ -39,6 +39,7 @@ clade *newick_parser::parse_newick() {
     if (regex_it->str() == "(") {
       p_current_clade = new_clade(p_current_clade); // move down the tree (towards the present)
       // note that calling new_clade(some_clade) returns a new clade with some_clade as its parent
+      p_current_clade->get_parent()->add_descendant(p_current_clade); // linking clades must be done both ways (parent -> child here; child <- parent above)
       lp_count++;
     }
 
