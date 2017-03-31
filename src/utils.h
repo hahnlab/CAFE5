@@ -81,7 +81,12 @@ clade *newick_parser::parse_newick() {
     else {
       cout << "Found species name: " << regex_it->str() << endl;
       p_current_clade->taxon_name = regex_it->str();
-      p_current_clade->get_parent()->print_immediate_descendants();
+	  clade *p_parent = p_current_clade->get_parent();
+	  if (p_parent)
+	  { 
+		  p_parent->name_interior_clade();
+		  p_parent->print_immediate_descendants();
+	  }
     }
   }
 

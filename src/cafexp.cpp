@@ -76,19 +76,19 @@ int main(int argc, char *const argv[]) {
   
   /* testing print_immediate_descendants */
   cout << "Testing print_immediate_descendants():" << endl;
-  parent.print_immediate_descendants();
-  p_child1->print_immediate_descendants();
+//  parent.print_immediate_descendants();
+//  p_child1->print_immediate_descendants();
   // p_tree->print_immediate_descendants();
 
   /* testing print_clade() method */
   cout << "Testing print_clade():" << endl;
-  parent.print_clade();
+//  parent.print_clade();
   p_tree->print_clade();
 
   /* testing am_leaf() method */
   cout << "Testing am_leaf():" << endl;
-  if (!parent.am_leaf()) { cout << "I am not leaf\n"; }
-  if (p_child11->am_leaf()) { cout << "I am leaf\n"; }
+//  if (!parent.am_leaf()) { cout << "I am not leaf\n"; }
+//  if (p_child11->am_leaf()) { cout << "I am leaf\n"; }
   
   /* END: Testing implementation of Clade class - */
   

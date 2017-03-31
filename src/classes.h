@@ -6,6 +6,8 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <algorithm>
+#include <iterator>
 
 using namespace std;
 
@@ -44,6 +46,8 @@ class clade {
 
   bool am_leaf();
 
+  void add_leaf_names(vector<string>& v);
+
   // fill_internal_node_name method HERE
   
 };
@@ -64,14 +68,36 @@ clade *clade::get_parent() {
 
 /* Adds descendant to vector of descendants */
 void clade::add_descendant(clade *p_descendant) {
-
+	
   descendants.push_back(p_descendant);
   name_interior_clade();
+  if (p_parent)
+	  p_parent->name_interior_clade();
+}
+
+void clade::add_leaf_names(vector<string>& v)
+{
+	if (descendants.empty())
+		v.push_back(taxon_name);
+	else
+	{
+		for (int i = 0; i < descendants.size(); ++i)
+		{
+			descendants[i]->add_leaf_names(v);
+		}
+	}
 }
 
 void clade::name_interior_clade() {
+	vector<string> desc_names;
+	add_leaf_names(desc_names);
+	std::sort(desc_names.begin(), desc_names.end());
 
-  
+	taxon_name.clear();
+	for (int i = 0; i < desc_names.size(); ++i)
+		taxon_name += desc_names[i];
+
+	cout << "Interior node renamed: " << taxon_name << endl;
 }
 
 /* Prints names of immediate descendants */
