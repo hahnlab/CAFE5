@@ -40,6 +40,8 @@ class clade {
 
   void print_clade();
 
+  void name_interior_clade();
+
   bool am_leaf();
 
   // fill_internal_node_name method HERE
@@ -64,6 +66,12 @@ clade *clade::get_parent() {
 void clade::add_descendant(clade *p_descendant) {
 
   descendants.push_back(p_descendant);
+  name_interior_clade();
+}
+
+void clade::name_interior_clade() {
+
+  
 }
 
 /* Prints names of immediate descendants */

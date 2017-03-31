@@ -78,11 +78,12 @@ int main(int argc, char *const argv[]) {
   cout << "Testing print_immediate_descendants():" << endl;
   parent.print_immediate_descendants();
   p_child1->print_immediate_descendants();
-  p_tree->print_immediate_descendants();
+  // p_tree->print_immediate_descendants();
 
   /* testing print_clade() method */
   cout << "Testing print_clade():" << endl;
   parent.print_clade();
+  p_tree->print_clade();
 
   /* testing am_leaf() method */
   cout << "Testing am_leaf():" << endl;
