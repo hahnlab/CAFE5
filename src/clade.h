@@ -46,6 +46,14 @@ class clade {
 
   void add_leaf_names(vector<string>& v);
 
+  template <typename func>
+  void apply_to_descendants(func f)
+  {
+	  std::for_each(descendants.begin(), descendants.end(), f);
+  }
+
+  
+
   // fill_internal_node_name method HERE
   
 };
