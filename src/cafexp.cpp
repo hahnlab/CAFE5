@@ -8,8 +8,6 @@
 
 using namespace std;
 
-extern map<clade *, int> family_sizes;
-
 struct option longopts[] = {
   { "infile", required_argument, NULL, 'i' },
   { "prefix", optional_argument, NULL, 'p' },
@@ -133,13 +131,17 @@ int main(int argc, char *const argv[]) {
   int max_family_size = 10;
   double lambda = 0.01;
 
-  simulate_families_from_root_size(p_tree, num_trials, root_family_size, max_family_size, lambda);
+  trial simulation = simulate_families_from_root_size(p_tree, num_trials, root_family_size, max_family_size, lambda);
 
-  map <clade *, int>::iterator it = family_sizes.begin();
-  for (; it != family_sizes.end(); ++it)
-  {
-	  cout << it->first->get_taxon_name() << " family size: " << it->second << endl;
-  }
+  print_simulation(simulation, cout);
+
+  vector<int> root_size;
+  root_size.push_back(5);
+  root_size.push_back(15);
+  root_size.push_back(25);
+  vector<trial> simulations = simulate_families_from_distribution(p_tree, num_trials, root_size, max_family_size, lambda);
+
+  print_simulation(simulations, cout);
+
   return 0;
 }
-
