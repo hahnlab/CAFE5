@@ -1,5 +1,7 @@
 #include <vector>
 #include <map>
+#include <random>
+
 #include "clade.h"
 #include "probability.h"
 
@@ -16,17 +18,18 @@ void set_node_familysize_random(clade *node)
 {
   if (node->get_parent() == NULL) { return; } // if node is root, get_parent() = NULL, and we do nothing
 
-  double rnd = unifrnd(); // draw random number from uniform distribution
-  double cumul = 0; // 
-  int parent_family_size = family_sizes[node->get_parent()];
-  int c = 0;
+	std::default_random_engine gen;
+	std::uniform_real_distribution<> dis(0, 1); // draw random number from uniform distribution
+	double rnd = dis(gen);
+	double cumul = 0;
+	int parent_family_size = family_sizes[node->get_parent()];
+	int c = 0;
+	for (; c < _max_family_size - 1; c++)
+	{
+		cumul += the_probability_of_going_from_parent_fam_size_to_c(_lambda, node->get_branch_length(), parent_family_size, c);
+		if (cumul >= rnd) break;
+	}
 
-  for (; c < _max_family_size - 1; c++)
-    {
-      cumul += the_probability_of_going_from_parent_fam_size_to_c(_lambda, node->get_branch_length(), parent_family_size, c);
-
-      if (cumul >= rnd) break;
-    }
 	family_sizes[node] = c;
 	node->apply_to_descendants(set_node_familysize_random);
 }
@@ -39,7 +42,7 @@ void simulate_families(clade *tree, int num_trials, std::vector<int> root_dist, 
 	{
 		for (int i = 1; i <= root_dist.size(); i++)
 		{
-			family_sizes[tree] = i;
+			family_sizes[tree] = root_dist[i];
 			tree->apply_to_descendants(set_node_familysize_random);
 		}
 	}

@@ -1,8 +1,14 @@
 #include "utils.h"
 #include "clade.h"
 #include <getopt.h>
+#include <cmath>
+#include <map>
+#include "probability.h"
 
 using namespace std;
+
+void simulate_families(clade *tree, int num_trials, std::vector<int> root_dist, int max_family_size, double lambda);
+extern map<clade *, int> family_sizes;
 
 struct option longopts[] = {
   { "infile", required_argument, NULL, 'i' },
@@ -16,6 +22,19 @@ string input_file_path;
 string prefix;
 string suffix;
 string outfmt;
+
+unsigned long long choose(unsigned long long n, unsigned long long k) {
+	if (k > n) {
+		return 0;
+	}
+	unsigned long long r = 1;
+	for (unsigned long long d = 1; d <= k; ++d) {
+		r *= n--;
+		r /= d;
+	}
+	return r;
+}
+
 
 int main(int argc, char *const argv[]) {
   
@@ -90,5 +109,34 @@ int main(int argc, char *const argv[]) {
   
   /* END: Testing implementation of Clade class - */
   
+  //simulate_families();
+
+  cout << "lgamma(.5) = " << lgamma(.5) << endl;
+  cout << "lgamma(1.5) = " << lgamma(1.5) << endl;
+  cout << "lgamma(10.5) = " << lgamma(10.5) << endl;
+  cout << "lgamma(100.5) = " << lgamma(100.5) << endl;
+  cout << "lgamma(1000.5) = " << lgamma(1000.5) << endl;
+
+  cout << "chooseln(10,5) = " << chooseln(10, 5) << endl;
+  cout << "chooseln(10,8) = " << chooseln(10, 8) << endl;
+  cout << "chooseln(15,5) = " << chooseln(15, 5) << endl;
+
+  cout << "ln(choose(10, 5)) = " << log(choose(10, 5)) << endl;
+//  cout << "choose(10, 5) = " << log(choose(10, 5)) << endl;
+
+  cout << "the probability of going from parent 10 to child 5 = " << the_probability_of_going_from_parent_fam_size_to_c(0.01, 1, 10, 5) << endl;
+  cout << "the probability of going from parent 10 to child 8 = " << the_probability_of_going_from_parent_fam_size_to_c(0.01, 1, 10, 8) << endl;
+  cout << "the probability of going from parent 10 to child 10 = " << the_probability_of_going_from_parent_fam_size_to_c(0.01, 1, 10, 10) << endl;
+
+  std::vector<int> root_dist;
+  root_dist.push_back(5);
+  simulate_families(p_tree, 10, root_dist, 10, 0.01);
+
+  map <clade *, int>::iterator it = family_sizes.begin();
+  for (; it != family_sizes.end(); ++it)
+  {
+	  cout << it->first->get_taxon_name() << " family size: " << it->second << endl;
+  }
   return 0;
 }
+

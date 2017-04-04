@@ -48,6 +48,8 @@ class clade {
 
   int get_branch_length() const { return branch_length;  }
 
+  std::string get_taxon_name() const { return taxon_name; }
+
   template <typename func> 
   void apply_to_descendants(func f)
   {
