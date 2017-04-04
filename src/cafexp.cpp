@@ -4,10 +4,10 @@
 #include <cmath>
 #include <map>
 #include "probability.h"
+#include "family_generator.h"
 
 using namespace std;
 
-void simulate_families(clade *tree, int num_trials, std::vector<int> root_dist, int max_family_size, double lambda);
 extern map<clade *, int> family_sizes;
 
 struct option longopts[] = {
@@ -128,9 +128,12 @@ int main(int argc, char *const argv[]) {
   cout << "the probability of going from parent 10 to child 8 = " << the_probability_of_going_from_parent_fam_size_to_c(0.01, 1, 10, 8) << endl;
   cout << "the probability of going from parent 10 to child 10 = " << the_probability_of_going_from_parent_fam_size_to_c(0.01, 1, 10, 10) << endl;
 
-  std::vector<int> root_dist;
-  root_dist.push_back(5);
-  simulate_families(p_tree, 10, root_dist, 10, 0.01);
+  int num_trials = 10;
+  int root_family_size = 5;
+  int max_family_size = 10;
+  double lambda = 0.01;
+
+  simulate_families_from_root_size(p_tree, num_trials, root_family_size, max_family_size, lambda);
 
   map <clade *, int>::iterator it = family_sizes.begin();
   for (; it != family_sizes.end(); ++it)

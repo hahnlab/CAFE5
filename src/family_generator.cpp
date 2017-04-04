@@ -34,16 +34,21 @@ void set_node_familysize_random(clade *node)
 	node->apply_to_descendants(set_node_familysize_random);
 }
 
-void simulate_families(clade *tree, int num_trials, std::vector<int> root_dist, int max_family_size, double lambda)
+void simulate_families_from_root_size(clade *tree, int num_trials, int root_family_size, int max_family_size, double lambda)
 {
 	_max_family_size = max_family_size;
 	_lambda = lambda;
 	for (int t = 0; t < num_trials; ++t)
 	{
-		for (int i = 1; i <= root_dist.size(); i++)
-		{
-			family_sizes[tree] = root_dist[i];
+			family_sizes[tree] = root_family_size;
 			tree->apply_to_descendants(set_node_familysize_random);
-		}
+	}
+}
+
+void simulate_families_from_distribution(clade *tree, int num_trials, std::vector<int> root_dist, int max_family_size, double lambda)
+{
+	for (int i = 1; i <= root_dist.size(); i++)
+	{
+		simulate_families_from_root_size(tree, num_trials, root_dist[i], max_family_size, lambda);
 	}
 }
