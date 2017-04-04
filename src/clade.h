@@ -46,7 +46,9 @@ class clade {
 
   void add_leaf_names(vector<string>& v);
 
-  template <typename func>
+  int get_branch_length() const { return branch_length;  }
+
+  template <typename func> 
   void apply_to_descendants(func f)
   {
 	  std::for_each(descendants.begin(), descendants.end(), f);
