@@ -22,17 +22,18 @@ string suffix;
 string outfmt;
 
 unsigned long long choose(unsigned long long n, unsigned long long k) {
-	if (k > n) {
-		return 0;
-	}
-	unsigned long long r = 1;
-	for (unsigned long long d = 1; d <= k; ++d) {
-		r *= n--;
-		r /= d;
-	}
-	return r;
-}
 
+  if (k > n) { return 0; }
+
+  unsigned long long r = 1;
+
+  for (unsigned long long d = 1; d <= k; ++d) {
+    r *= n--;
+    r /= d;
+  }
+
+  return r;
+}
 
 int main(int argc, char *const argv[]) {
   
@@ -69,43 +70,37 @@ int main(int argc, char *const argv[]) {
   // }
 
   newick_parser parser;
-  parser.newick_string = "((A:1.0,B:1.0):1.0,C:2.0);";
+  parser.newick_string = "((A:1,B:1):2,C:3);";
   clade *p_tree = parser.parse_newick();
   
-  /* START: Testing implementation of Clade class */
-
-  /* creating (((A,B)AB,C)ABC) */
-  // clade *p_child11 = new clade("A", 1); // (leaf) child11 = A
-  // clade *p_child12 = new clade("B", 1); // (leaf) child12 = B
-  // clade *p_child1 = new clade("AB", 1); // (internal) child1 = AB
-  // p_child1->add_descendant(p_child11);
-  // p_child1->add_descendant(p_child12);
-  // clade *p_child2 = new clade("C", 2); // (leaf) child2 = C
-  // clade parent;
-  // parent.taxon_name = "ABC"; // (root) parent = ABC
-  // parent.add_descendant(p_child1);
-  // parent.add_descendant(p_child2);
-  
-  /* testing print_immediate_descendants */
+  /* START: Testing implementation of clade class */  
+  /* Testing print_immediate_descendants */
   cout << "Testing print_immediate_descendants():" << endl;
-  // parent.print_immediate_descendants();
-  // p_child1->print_immediate_descendants();
-  // p_tree->print_immediate_descendants();
   p_tree->print_immediate_descendants();
 
-  /* testing print_clade() method */
+  /* Testing print_clade() method */
   cout << "Testing print_clade():" << endl;
-  // parent.print_clade();
   p_tree->print_clade();
 
-  /* testing am_leaf() method */
+  /* Testing im_leaf() method */
   cout << "Testing am_leaf():" << endl;
-  // if (!parent.am_leaf()) { cout << "I am not leaf\n"; }
-  // if (p_child11->am_leaf()) { cout << "I am leaf\n"; }
   if (!p_tree->is_leaf()) { cout << "I am not leaf\n"; }
   if (!p_tree->is_leaf()) { cout << "I am leaf\n"; }
+
+  /* Testing find_branch_length() method */
+  cout << "Testing find_branch_length():" << endl;
+  long branch_length_A = p_tree->find_branch_length("A");
+  long branch_length_AB = p_tree->find_branch_length("AB");
+  long branch_length_C = p_tree->find_branch_length("C");
+  long branch_length_ABC = p_tree->find_branch_length("ABC"); // this is INCORRECT (ask Ben: need to guard against the root)
+  long branch_length_Z = p_tree->find_branch_length("Z");
+  cout << "The length of A is " << branch_length_A << endl;
+  cout << "The length of AB is " << branch_length_AB << endl;
+  cout << "The length of C is " << branch_length_C << endl;
+  cout << "The length of root ABC is " << branch_length_AB << endl;
+  cout << "The length of inexistent Z is " << branch_length_Z << endl;
   
-  /* END: Testing implementation of Clade class - */
+  /* END: Testing implementation of clade class - */
   
   //simulate_families();
 
