@@ -46,9 +46,10 @@ vector<clade*> clade::find_internal_nodes() {
   if (is_leaf()) { return internal_nodes; }
 
   else {
+	  internal_nodes.push_back(this);
     for (desc_it = descendants.begin(), desc_end = descendants.end(); desc_it != desc_end; desc_it++) {
       vector<clade*> descendant = (*desc_it)->find_internal_nodes(); // recursion
-      if (!descendant.empty()) { internal_nodes.insert(internal_nodes.end(), descendant.begin(), descendant.end()); }
+	  if (!descendant.empty()) { internal_nodes.insert(internal_nodes.end(), descendant.begin(), descendant.end()); }
     }
 
     return internal_nodes;
@@ -67,17 +68,17 @@ clade *clade::find_descendant(string some_taxon_name) {
 
   else {
     for (desc_it = descendants.begin(), desc_end = descendants.end(); desc_it != desc_end; desc_it++) {
-      clade *descendant_to_find = (*desc_it)->find_descendant(some_taxon_name); // recursion
+    clade *descendant_to_find = (*desc_it)->find_descendant(some_taxon_name); // recursion
 
-      if (descendant_to_find != NULL) { return descendant_to_find; } // recursion is only manifested if finds provided taxon name
+    if (descendant_to_find != NULL) { return descendant_to_find; } // recursion is only manifested if finds provided taxon name
 
-      return NULL; // otherwise returns NULL
+    return NULL; // otherwise returns NULL
     }
   }
 }
   
 /* Finds branch length of clade with provided taxon name. Does so by calling find_descendant(), which recursively searches the tree */
-long clade::find_branch_length(string some_taxon_name) {
+double clade::find_branch_length(string some_taxon_name) {
 
   clade *clade = find_descendant(some_taxon_name);
   if (clade == NULL || clade->is_root()) { return 0; } // guarding against root query

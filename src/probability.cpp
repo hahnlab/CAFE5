@@ -71,6 +71,5 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
   double alpha = lambda*branch_length / (1 + lambda*branch_length);
   double coeff = 1 - 2 * alpha;
   
-  std::cout << "alpha: " << alpha << " coeff: " << coeff << std::endl;
   return birthdeath_rate_with_log_alpha(parent_size, size, log(alpha), coeff);
 }

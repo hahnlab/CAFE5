@@ -73,7 +73,8 @@ int main(int argc, char *const argv[]) {
   //parser.newick_string = "((A:1,B:1):2,C:3);";
   parser.newick_string = "(((chimp:6,human:6):81,(mouse:17,rat:17):70):6,dog:93)";
   clade *p_tree = parser.parse_newick();
-  
+  cout << "Chimp branch length: " << p_tree->find_branch_length("chimp") << endl;
+
   /* START: Testing implementation of clade class */  
   /* Testing print_immediate_descendants */
   cout << "Testing print_immediate_descendants():" << endl;
@@ -106,8 +107,13 @@ int main(int argc, char *const argv[]) {
   cout << "The length of inexistent Z is " << branch_length_Z << endl;
 
   /* Testing find_internal_node() method */
-  
-  
+  vector<clade *> internal_nodes = p_tree->find_internal_nodes();
+  cout << "Internal nodes are: ";
+  for (vector<clade *>::iterator it = internal_nodes.begin(); it != internal_nodes.end(); ++it)
+	cout << (*it)->get_taxon_name() << ", ";
+
+  cout << endl;
+
   /* END: Testing implementation of clade class - */
   
   //simulate_families();
@@ -137,7 +143,6 @@ int main(int argc, char *const argv[]) {
   cout << "Cafe says this value should be 0.083" << endl;
   cout << the_probability_of_going_from_parent_fam_size_to_c(0.5, .42, 40, 42) << endl;
 
-  return 0;
   trial simulation = simulate_families_from_root_size(p_tree, num_trials, root_family_size, max_family_size, lambda);
 
   print_simulation(simulation, cout);
