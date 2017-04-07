@@ -54,6 +54,8 @@ class clade {
 
    bool is_leaf();
 
+   bool is_root();
+   
    int get_branch_length() const { return branch_length; }
 
    long find_branch_length(string some_taxon_name);

@@ -19,7 +19,7 @@ void clade::add_descendant(clade *p_descendant) {
 	
   descendants.push_back(p_descendant);
   name_interior_clade();
-  if (p_parent != NULL) {
+  if (!is_root()) {
     p_parent->name_interior_clade();
   }
 }
@@ -44,7 +44,7 @@ long clade::find_branch_length(string some_taxon_name) {
   long some_branch_length;
 
   /* Base case: found some_taxon name and is not root */
-  if ((taxon_name == some_taxon_name) && (p_parent != NULL)) {
+  if ((taxon_name == some_taxon_name) && (!is_root())) {
     return branch_length;
   }
   
@@ -103,6 +103,12 @@ void clade::print_clade() {
 bool clade::is_leaf() {
 
   if (descendants.empty()) { return true; }
+  else { return false; }
+}
+
+bool clade::is_root() {
+
+  if (get_parent() == NULL) { return true; }
   else { return false; }
 }
 
