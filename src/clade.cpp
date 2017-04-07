@@ -38,38 +38,51 @@ void clade::add_leaf_names(vector<string> &vector_names) {
   }
 }
 
-clade *clade::find_descendant(string some_taxon_name)
-{
-	/* Base case: found some_taxon name and is not root */
-	if (taxon_name == some_taxon_name)
-	{
-		return this;
-	}
+vector<clade*> clade::find_internal_nodes() {
 
-	/* If reached wrong leaf */
-	else if (is_leaf()) { return NULL; }
+  vector<clade*> internal_nodes;
 
-	else {
-		for (desc_it = descendants.begin(), desc_end = descendants.end(); desc_it != desc_end; desc_it++) {
-			clade *descendant_to_find = (*desc_it)->find_descendant(some_taxon_name);
-			if (descendant_to_find != NULL)
-				return descendant_to_find;
-		}
+  /* Base case: returns empty vector */
+  if (is_leaf()) { return internal_nodes; }
 
-		return NULL;
-	}
+  else {
+    for (desc_it = descendants.begin(), desc_end = descendants.end(); desc_it != desc_end; desc_it++) {
+      vector<clade*> descendant = (*desc_it)->find_internal_nodes(); // recursion
+      if (!descendant.empty()) { internal_nodes.insert(internal_nodes.end(), descendant.begin(), descendant.end()); }
+    }
 
+    return internal_nodes;
+  }
 }
 
-/* Recursively finds branch length of some_taxon_name */
+
+/* Recursively find pointer to clade with provided taxon name */
+clade *clade::find_descendant(string some_taxon_name) {
+
+  /* Base case: found some_taxon name and is not root */
+  if (taxon_name == some_taxon_name) { return this; }
+
+  /* If reached (wrong) leaf */
+  else if (is_leaf()) { return NULL; }
+
+  else {
+    for (desc_it = descendants.begin(), desc_end = descendants.end(); desc_it != desc_end; desc_it++) {
+      clade *descendant_to_find = (*desc_it)->find_descendant(some_taxon_name); // recursion
+
+      if (descendant_to_find != NULL) { return descendant_to_find; } // recursion is only manifested if finds provided taxon name
+
+      return NULL; // otherwise returns NULL
+    }
+  }
+}
+  
+/* Finds branch length of clade with provided taxon name. Does so by calling find_descendant(), which recursively searches the tree */
 long clade::find_branch_length(string some_taxon_name) {
 
-	clade *clade = find_descendant(some_taxon_name);
-	if (clade == NULL || clade->is_root())
-		return 0;
+  clade *clade = find_descendant(some_taxon_name);
+  if (clade == NULL || clade->is_root()) { return 0; } // guarding against root query
 
-	return clade->branch_length;
-
+  return clade->branch_length;
 }
 
 void clade::name_interior_clade() {
@@ -87,7 +100,6 @@ void clade::name_interior_clade() {
 void clade::print_immediate_descendants() {
 
   cout << "Me: " << taxon_name << " | Descendants: ";
-  
   for (desc_it = descendants.begin(), desc_end = descendants.end(); desc_it != desc_end; desc_it++) {
     cout << (*desc_it)->taxon_name << " ";
   }
@@ -101,9 +113,7 @@ void clade::print_clade() {
   cout << "My name is: " << taxon_name << endl;
 
   /* Base case: it is a leaf */
-  if (descendants.empty()) {
-    return;
-  }
+  if (descendants.empty()) { return; }
   
   for (desc_it = descendants.begin(), desc_end = descendants.end(); desc_it != desc_end ; desc_it++) {
     (*desc_it)->print_clade();
@@ -112,12 +122,12 @@ void clade::print_clade() {
 
 bool clade::is_leaf() {
 
-	return descendants.empty();
+  return descendants.empty();
 }
 
 bool clade::is_root() {
 
-	return get_parent() == NULL;
+  return get_parent() == NULL;
 }
 
 /* Testing implementation of clade class */

@@ -104,6 +104,9 @@ int main(int argc, char *const argv[]) {
 
   long branch_length_Z = p_tree->find_branch_length("Z");
   cout << "The length of inexistent Z is " << branch_length_Z << endl;
+
+  /* Testing find_internal_node() method */
+  
   
   /* END: Testing implementation of clade class - */
   

@@ -58,6 +58,8 @@ class clade {
    
    int get_branch_length() const { return branch_length; }
 
+   vector<clade*> find_internal_nodes();
+   
    clade *find_descendant(string some_taxon_name);
 
    long find_branch_length(string some_taxon_name);
