@@ -7,6 +7,9 @@
 
 static map<clade *, int> family_sizes; // key: clades, value: family size
 
+std::default_random_engine gen(12);
+std::uniform_real_distribution<> dis(0, 1); // draw random number from uniform distribution
+
 /* Parameters to family size randomizer. TODO: Be more clever about passing these into set_node_familysize_random. Global variables are to be avoided */
 int _max_family_size;
 double _lambda;
@@ -17,16 +20,19 @@ void set_node_familysize_random(clade *node) {
   if (node->is_root()) { return; } // if node is root, we do nothing
 
   /* Drawing random number from uniform */
-  std::default_random_engine gen(static_cast<long unsigned int>(time(0)));
-  std::uniform_real_distribution<> dis(0, 1); // draw random number from uniform distribution
+//  std::default_random_engine gen(static_cast<long unsigned int>(time(0)));
   double rnd = dis(gen);
 
+  //cout << "Max family size: " << _max_family_size << " and rnd = " << rnd << endl;
   double cumul = 0;
   int parent_family_size = family_sizes[node->get_parent()];
   int c = 0; // c is the family size we will go to
   for (; c < _max_family_size - 1; c++) {
       cumul += the_probability_of_going_from_parent_fam_size_to_c(_lambda, node->get_branch_length(), parent_family_size, c);
-      if (cumul >= rnd) break;
+	  if (cumul >= rnd)
+	  {
+		  break;
+	  }
   }
 
   family_sizes[node] = c;
@@ -46,11 +52,19 @@ map<clade *, int> simulate_families_from_root_size(clade *tree, int num_trials, 
   return family_sizes;
 }
 
-vector<trial> simulate_families_from_distribution(clade *tree, int num_trials, std::vector<int> root_dist, int max_family_size, double lambda) {
+vector<trial> simulate_families_from_distribution(clade *tree, int num_trials, const std::map<int, int>& root_dist, int max_family_size, double lambda) {
 
   vector<trial> result;
-  for (int i = 1; i <= root_dist.size(); i++) {
-    result.push_back(simulate_families_from_root_size(tree, num_trials, root_dist[i], max_family_size, lambda));
+
+  std::map<int, int>::const_iterator it = root_dist.begin();
+  while (it != root_dist.end())
+  {
+	  int root_dist = it->first;
+	  cout << "Root dist: " << root_dist << endl;
+	  int n_gene_families = it->second;
+	  for (int i = 0; i<n_gene_families; ++i)
+	    result.push_back(simulate_families_from_root_size(tree, num_trials, root_dist, max_family_size, lambda));
+	  it++;
   }
 
   return result;

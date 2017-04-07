@@ -70,7 +70,8 @@ int main(int argc, char *const argv[]) {
   // }
 
   newick_parser parser;
-  parser.newick_string = "((A:1,B:1):2,C:3);";
+  //parser.newick_string = "((A:1,B:1):2,C:3);";
+  parser.newick_string = "(((chimp:6,human:6):81,(mouse:17,rat:17):70):6,dog:93)";
   clade *p_tree = parser.parse_newick();
   
   /* START: Testing implementation of clade class */  
@@ -90,14 +91,18 @@ int main(int argc, char *const argv[]) {
   /* Testing find_branch_length() method */
   cout << "Testing find_branch_length():" << endl;
   long branch_length_A = p_tree->find_branch_length("A");
-  long branch_length_AB = p_tree->find_branch_length("AB");
-  long branch_length_C = p_tree->find_branch_length("C");
-  long branch_length_ABC = p_tree->find_branch_length("ABC"); // this is INCORRECT (ask Ben: need to guard against the root)
-  long branch_length_Z = p_tree->find_branch_length("Z");
   cout << "The length of A is " << branch_length_A << endl;
+
+  long branch_length_AB = p_tree->find_branch_length("AB");
   cout << "The length of AB is " << branch_length_AB << endl;
+
+  long branch_length_C = p_tree->find_branch_length("C");
   cout << "The length of C is " << branch_length_C << endl;
-  cout << "The length of root ABC is " << branch_length_AB << endl;
+
+  long branch_length_ABC = p_tree->find_branch_length("ABC"); // this is INCORRECT (ask Ben: need to guard against the root)
+  cout << "The length of root ABC is " << branch_length_ABC << endl;
+
+  long branch_length_Z = p_tree->find_branch_length("Z");
   cout << "The length of inexistent Z is " << branch_length_Z << endl;
   
   /* END: Testing implementation of clade class - */
@@ -124,16 +129,59 @@ int main(int argc, char *const argv[]) {
   int num_trials = 10;
   int root_family_size = 5;
   int max_family_size = 10;
-  double lambda = 0.01;
+  double lambda = 0.0017;
 
+  cout << "Cafe says this value should be 0.083" << endl;
+  cout << the_probability_of_going_from_parent_fam_size_to_c(0.5, .42, 40, 42) << endl;
+
+  return 0;
   trial simulation = simulate_families_from_root_size(p_tree, num_trials, root_family_size, max_family_size, lambda);
 
   print_simulation(simulation, cout);
 
-  vector<int> root_size;
-  root_size.push_back(5);
-  root_size.push_back(15);
-  root_size.push_back(25);
+  map<int, int> root_size;
+  root_size[1] = 6640;
+  root_size[2] = 1641;
+  root_size[3] = 738;
+  root_size[4] = 333;
+  root_size[5] = 172;
+  root_size[6] = 136;
+  root_size[7] = 84;
+  root_size[8] = 54;
+  root_size[9] = 29;
+  root_size[10] = 26;
+  root_size[11] = 19;
+  root_size[12] = 15;
+  root_size[13] = 17;
+  root_size[14] = 9;
+  root_size[15] = 6;
+  root_size[16] = 7;
+  root_size[17] = 5;
+  root_size[18] = 6;
+  root_size[19] = 7;
+  root_size[20] = 4;
+  root_size[21] = 5;
+  root_size[22] = 5;
+  root_size[23] = 3;
+  root_size[24] = 6;
+  root_size[25] = 1;
+  root_size[26] = 4;
+  root_size[27] = 2;
+  root_size[29] = 1;
+  root_size[31] = 1;
+  root_size[32] = 1;
+  root_size[33] = 1;
+  root_size[34] = 1;
+  root_size[35] = 1;
+  root_size[36] = 1;
+  root_size[37] = 1;
+  root_size[39] = 1;
+  root_size[41] = 1;
+  root_size[48] = 1;
+  root_size[49] = 1;
+  root_size[118] = 1;
+  root_size[309] = 1;
+
   vector<trial> simulations = simulate_families_from_distribution(p_tree, num_trials, root_size, max_family_size, lambda);
 
   print_simulation(simulations, cout);

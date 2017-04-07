@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <cmath>
-
+#include <iostream>
 #include "probability.h"
 
 /* Useful links
@@ -65,11 +65,12 @@ double birthdeath_rate_with_log_alpha(int s, int c, double log_alpha, double coe
   return std::max(std::min(p, 1.0), 0.0);
 }
 
-double the_probability_of_going_from_parent_fam_size_to_c(double lambda, int branch_length, int parent_size, int size)
+double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int size)
 {
 
   double alpha = lambda*branch_length / (1 + lambda*branch_length);
   double coeff = 1 - 2 * alpha;
   
+  std::cout << "alpha: " << alpha << " coeff: " << coeff << std::endl;
   return birthdeath_rate_with_log_alpha(parent_size, size, log(alpha), coeff);
 }

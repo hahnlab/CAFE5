@@ -38,28 +38,38 @@ void clade::add_leaf_names(vector<string> &vector_names) {
   }
 }
 
+clade *clade::find_descendant(string some_taxon_name)
+{
+	/* Base case: found some_taxon name and is not root */
+	if (taxon_name == some_taxon_name)
+	{
+		return this;
+	}
+
+	/* If reached wrong leaf */
+	else if (is_leaf()) { return NULL; }
+
+	else {
+		for (desc_it = descendants.begin(), desc_end = descendants.end(); desc_it != desc_end; desc_it++) {
+			clade *descendant_to_find = (*desc_it)->find_descendant(some_taxon_name);
+			if (descendant_to_find != NULL)
+				return descendant_to_find;
+		}
+
+		return NULL;
+	}
+
+}
+
 /* Recursively finds branch length of some_taxon_name */
 long clade::find_branch_length(string some_taxon_name) {
 
-  long some_branch_length;
+	clade *clade = find_descendant(some_taxon_name);
+	if (clade == NULL || clade->is_root())
+		return 0;
 
-  /* Base case: found some_taxon name and is not root */
-  if ((taxon_name == some_taxon_name) && (!is_root())) {
-    return branch_length;
-  }
-  
-  /* If reached wrong leaf */
-  else if (descendants.empty()) { return 0; }
+	return clade->branch_length;
 
-  else {
-    for (desc_it = descendants.begin(), desc_end = descendants.end(); desc_it != desc_end ; desc_it++) {
-      some_branch_length = (*desc_it)->find_branch_length(some_taxon_name);
-      if (some_branch_length == 0) { continue; }
-      else { return some_branch_length; }
-    }
-    
-    return 0;
-  }
 }
 
 void clade::name_interior_clade() {
@@ -102,14 +112,12 @@ void clade::print_clade() {
 
 bool clade::is_leaf() {
 
-  if (descendants.empty()) { return true; }
-  else { return false; }
+	return descendants.empty();
 }
 
 bool clade::is_root() {
 
-  if (get_parent() == NULL) { return true; }
-  else { return false; }
+	return get_parent() == NULL;
 }
 
 /* Testing implementation of clade class */
