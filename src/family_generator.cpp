@@ -21,20 +21,29 @@ void set_node_familysize_random(clade *node) {
 
   /* Drawing random number from uniform */
 //  std::default_random_engine gen(static_cast<long unsigned int>(time(0)));
-  double rnd = dis(gen);
+  double rnd = unifrnd(); // dis(gen);
 
   //cout << "Max family size: " << _max_family_size << " and rnd = " << rnd << endl;
   double cumul = 0;
   int parent_family_size = family_sizes[node->get_parent()];
   int c = 0; // c is the family size we will go to
-  for (; c < _max_family_size - 1; c++) {
-      cumul += the_probability_of_going_from_parent_fam_size_to_c(_lambda, node->get_branch_length(), parent_family_size, c);
-	  if (cumul >= rnd)
-	  {
-		  break;
-	  }
-  }
+  if (parent_family_size > 0)
+  {
+    for (; c < _max_family_size - 1; c++) {
+        cumul += the_probability_of_going_from_parent_fam_size_to_c(_lambda, node->get_branch_length(), parent_family_size, c);
+	    if (cumul >= rnd)
+	    {
+		    break;
+	    }
+    }
 
+    if (c == 349)
+    {
+      double to5 = the_probability_of_going_from_parent_fam_size_to_c(_lambda, node->get_branch_length(), parent_family_size, 5);
+      cout << "Setting " << node->get_taxon_name() << " to: " << c << endl;
+      cout << "Probability of going from " << parent_family_size << " to 5 is " << to5 << endl;
+    }
+  }
   family_sizes[node] = c;
   node->apply_to_descendants(set_node_familysize_random); // recursion
 }

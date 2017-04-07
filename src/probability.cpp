@@ -31,11 +31,13 @@ double gammaln(double a)
 */
 
 /* Old C implementation necessary for set_node_familysize_random. Now using uniform_real_distribution()
+*/
 double unifrnd()
 {
-  return rand() / (RAND_MAX + 1.0); // rand() returns an int from 0 to RAND_MAX (which is defined in std); the +1.0 is there probably so that we do not draw exactly 1.
+  double result = rand() / (RAND_MAX + 1.0); // rand() returns an int from 0 to RAND_MAX (which is defined in std); the +1.0 is there probably so that we do not draw exactly 1.
+  std::cout << "Random number was: " << result << std::endl;
+  return result;
 }
-*/
 
 double chooseln(double n, double r)
 {
@@ -71,5 +73,11 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
   double alpha = lambda*branch_length / (1 + lambda*branch_length);
   double coeff = 1 - 2 * alpha;
   
-  return birthdeath_rate_with_log_alpha(parent_size, size, log(alpha), coeff);
+  double result = birthdeath_rate_with_log_alpha(parent_size, size, log(alpha), coeff);
+
+//  if (result < .000000000000000001)
+//  {
+//    std::cout << "result= " << result << " lambda=" << lambda << " branch_length:" << branch_length << " From " << parent_size << " to " << size << std::endl;
+//  }
+  return result;
 }

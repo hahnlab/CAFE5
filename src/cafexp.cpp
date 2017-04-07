@@ -106,6 +106,8 @@ int main(int argc, char *const argv[]) {
   long branch_length_Z = p_tree->find_branch_length("Z");
   cout << "The length of inexistent Z is " << branch_length_Z << endl;
 
+  srand(12);
+
   /* Testing find_internal_node() method */
   vector<clade *> internal_nodes = p_tree->find_internal_nodes();
   cout << "Internal nodes are: ";
@@ -135,9 +137,9 @@ int main(int argc, char *const argv[]) {
   cout << "the probability of going from parent 10 to child 8 = " << the_probability_of_going_from_parent_fam_size_to_c(0.01, 1, 10, 8) << endl;
   cout << "the probability of going from parent 10 to child 10 = " << the_probability_of_going_from_parent_fam_size_to_c(0.01, 1, 10, 10) << endl;
 
-  int num_trials = 10;
+  int num_trials = 1;
   int root_family_size = 5;
-  int max_family_size = 10;
+  int max_family_size = 618;
   double lambda = 0.0017;
 
   cout << "Cafe says this value should be 0.083" << endl;
