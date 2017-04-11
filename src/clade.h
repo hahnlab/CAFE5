@@ -8,6 +8,7 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <stack>
 
 /* Ask Ben:
 1) branch_length is long, but in get_branch_length()'s declaration we use int
@@ -71,7 +72,28 @@ class clade {
    void print_clade(); // for testing purposes as of now
 
    template <typename func> void apply_to_descendants(func f) {
+     // apply f to direct descendants
+     // could replace with apply_prefix_order for functions f that recur through descendants
      for_each(descendants.begin(), descendants.end(), f); // for_each from std
+   }
+
+   template <typename func> void apply_prefix_order(func& f) { // f must be passed by reference to avoid copies being made of f 
+     // having a copy made would mean any state variables of f would be lost
+     std::stack<clade *> stack;
+     stack.push(this);
+     while (!stack.empty())
+     {
+       clade *c = stack.top();
+       stack.pop();
+
+       // Moving from right to left in the tree because that's what CAFE does
+       std::vector<clade*>::reverse_iterator it = c->descendants.rbegin();
+       for (; it != c->descendants.rend(); ++it)
+       {
+         stack.push(*it);
+       }
+       f(c);
+     }
    }
 };
 

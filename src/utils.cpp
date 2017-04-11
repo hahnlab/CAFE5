@@ -62,7 +62,7 @@ clade *newick_parser::parse_newick() {
       // cout << "Found :: " << regex_it->str() << endl;
       
       p_current_clade->branch_length = atof(regex_it->str().substr(1).c_str()); // atof() converts string into float
-    }
+   }
     
     /* Reading taxon name */
     else {
@@ -73,7 +73,8 @@ clade *newick_parser::parse_newick() {
       clade *p_parent = p_current_clade->get_parent();
       /* If this species has a parent, we need to update the parent's name */
       if (p_parent != NULL) {
-	p_parent->name_interior_clade(); // update parent's name, name_interior_clade() is a void method
+	      p_parent->name_interior_clade(); // update parent's name, name_interior_clade() is a void method
+        cout << "Renamed parent to: " << p_parent->get_taxon_name() << std::endl;
       }
     }
   }

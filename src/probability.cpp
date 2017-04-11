@@ -35,7 +35,6 @@ double gammaln(double a)
 double unifrnd()
 {
   double result = rand() / (RAND_MAX + 1.0); // rand() returns an int from 0 to RAND_MAX (which is defined in std); the +1.0 is there probably so that we do not draw exactly 1.
-  std::cout << "Random number was: " << result << std::endl;
   return result;
 }
 

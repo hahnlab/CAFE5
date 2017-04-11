@@ -56,9 +56,32 @@ vector<clade*> clade::find_internal_nodes() {
   }
 }
 
+class descendant_finder
+{
+  string _target;
+  clade *result;
+public:
+  descendant_finder(string target) : _target(target), result(NULL)
+  {
+
+  }
+  void operator()(clade *clade)
+  {
+    if (clade->get_taxon_name() == _target)
+    {
+      result = clade;
+    }
+  }
+  clade *get_result() { return result;  }
+};
 
 /* Recursively find pointer to clade with provided taxon name */
 clade *clade::find_descendant(string some_taxon_name) {
+  descendant_finder finder(some_taxon_name);
+  apply_prefix_order(finder);
+  return finder.get_result();
+#if 0
+  cout << "Searching for descendant " << some_taxon_name << " in " << get_taxon_name() << endl;
 
   /* Base case: found some_taxon name and is not root */
   if (taxon_name == some_taxon_name) { return this; }
@@ -75,6 +98,7 @@ clade *clade::find_descendant(string some_taxon_name) {
     return NULL; // otherwise returns NULL
     }
   }
+#endif
 }
   
 /* Finds branch length of clade with provided taxon name. Does so by calling find_descendant(), which recursively searches the tree */
@@ -83,6 +107,7 @@ double clade::find_branch_length(string some_taxon_name) {
   clade *clade = find_descendant(some_taxon_name);
   if (clade == NULL || clade->is_root()) { return 0; } // guarding against root query
 
+  cout << "Found matching clade" << endl;
   return clade->branch_length;
 }
 
@@ -95,6 +120,8 @@ void clade::name_interior_clade() {
   for (int i = 0; i < descendant_names.size(); ++i) {
     taxon_name += descendant_names[i];
   }
+  if (p_parent)
+    p_parent->name_interior_clade();
 }
 
 /* Prints names of immediate descendants */
@@ -111,7 +138,16 @@ void clade::print_immediate_descendants() {
 /* Recursively prints clade */
 void clade::print_clade() {
 
-  cout << "My name is: " << taxon_name << endl;
+  int level = 0;
+  clade *p_ancestor = get_parent();
+  while (p_ancestor)
+  {
+    level++;
+    p_ancestor = p_ancestor->get_parent();
+  }
+  string blanks(level, ' ');
+
+  cout << blanks << "My name is: " << taxon_name << endl;
 
   /* Base case: it is a leaf */
   if (descendants.empty()) { return; }

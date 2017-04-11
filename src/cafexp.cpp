@@ -70,8 +70,8 @@ int main(int argc, char *const argv[]) {
   // }
 
   newick_parser parser;
-  //parser.newick_string = "((A:1,B:1):2,C:3);";
-  parser.newick_string = "(((chimp:6,human:6):81,(mouse:17,rat:17):70):6,dog:93)";
+  parser.newick_string = "((A:6,B:6):81,C:87);";
+  //parser.newick_string = "(((chimp:6,human:6):81,(mouse:17,rat:17):70):6,dog:93)";
   clade *p_tree = parser.parse_newick();
   cout << "Chimp branch length: " << p_tree->find_branch_length("chimp") << endl;
 
@@ -138,18 +138,25 @@ int main(int argc, char *const argv[]) {
   cout << "the probability of going from parent 10 to child 10 = " << the_probability_of_going_from_parent_fam_size_to_c(0.01, 1, 10, 10) << endl;
 
   int num_trials = 1;
-  int root_family_size = 5;
-  int max_family_size = 618;
+  int root_family_size = 300;
+  int max_family_size = 600;
   double lambda = 0.0017;
 
   cout << "Cafe says this value should be 0.083" << endl;
   cout << the_probability_of_going_from_parent_fam_size_to_c(0.5, .42, 40, 42) << endl;
 
-  trial simulation = simulate_families_from_root_size(p_tree, num_trials, root_family_size, max_family_size, lambda);
+  cout << "Cafe says this value should be something" << endl;
+  cout << the_probability_of_going_from_parent_fam_size_to_c(lambda, .42, 300, 295) << endl;
 
-  print_simulation(simulation, cout);
+
+  //trial simulation = simulate_families_from_root_size(p_tree, num_trials, root_family_size, max_family_size, lambda);
+
+  //print_simulation(simulation, cout);
 
   map<int, int> root_size;
+#if 1
+  root_size[300] = 1;
+#else
   root_size[1] = 6640;
   root_size[2] = 1641;
   root_size[3] = 738;
@@ -178,7 +185,7 @@ int main(int argc, char *const argv[]) {
   root_size[26] = 4;
   root_size[27] = 2;
   root_size[29] = 1;
-  root_size[31] = 1;
+  root_size[31] = 2;
   root_size[32] = 1;
   root_size[33] = 1;
   root_size[34] = 1;
@@ -191,7 +198,7 @@ int main(int argc, char *const argv[]) {
   root_size[49] = 1;
   root_size[118] = 1;
   root_size[309] = 1;
-
+#endif
   vector<trial> simulations = simulate_families_from_distribution(p_tree, num_trials, root_size, max_family_size, lambda);
 
   print_simulation(simulations, cout);

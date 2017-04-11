@@ -22,17 +22,20 @@ void set_node_familysize_random(clade *node) {
   /* Drawing random number from uniform */
 //  std::default_random_engine gen(static_cast<long unsigned int>(time(0)));
   double rnd = unifrnd(); // dis(gen);
-
-  //cout << "Max family size: " << _max_family_size << " and rnd = " << rnd << endl;
+  cout << "Max family size: " << _max_family_size << " and rnd = " << rnd << endl;
+  cout << "Branch length: " << node->get_branch_length() << endl;
   double cumul = 0;
   int parent_family_size = family_sizes[node->get_parent()];
   int c = 0; // c is the family size we will go to
   if (parent_family_size > 0)
   {
     for (; c < _max_family_size - 1; c++) {
-        cumul += the_probability_of_going_from_parent_fam_size_to_c(_lambda, node->get_branch_length(), parent_family_size, c);
+        double prob = the_probability_of_going_from_parent_fam_size_to_c(_lambda, node->get_branch_length(), parent_family_size, c);
+        cumul += prob;
+        cout << "Probability value for " << c << ": " << prob << " (cumulative " << cumul << ")" << endl;
 	    if (cumul >= rnd)
 	    {
+        cout << "Stopping" << endl;
 		    break;
 	    }
     }
@@ -45,7 +48,6 @@ void set_node_familysize_random(clade *node) {
     }
   }
   family_sizes[node] = c;
-  node->apply_to_descendants(set_node_familysize_random); // recursion
 }
 
 map<clade *, int> simulate_families_from_root_size(clade *tree, int num_trials, int root_family_size, int max_family_size, double lambda) {
@@ -55,7 +57,8 @@ map<clade *, int> simulate_families_from_root_size(clade *tree, int num_trials, 
   _lambda = lambda;
   for (int t = 0; t < num_trials; ++t) {
     family_sizes[tree] = root_family_size; // set root family size
-    tree->apply_to_descendants(set_node_familysize_random); // setting the family size (random) of the descendants
+    tree->apply_prefix_order(set_node_familysize_random);
+    //tree->apply_to_descendants(set_node_familysize_random); // setting the family size (random) of the descendants
   }
 
   return family_sizes;
