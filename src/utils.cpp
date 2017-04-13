@@ -1,5 +1,6 @@
 #include "clade.h"
 #include "utils.h"
+#include "fminsearch.h"
 
 clade *newick_parser::parse_newick() {
 
@@ -91,3 +92,13 @@ clade *newick_parser::new_clade(clade *p_parent) {
 
   return p_new_clade;
 }
+
+void likelihood_computer::operator()(clade *node)
+{
+  if (node->is_leaf())
+  {
+    int species_size = _family->get_species_size(node->get_taxon_name());
+    probabilities[node][species_size] = 1;
+  }
+}
+
