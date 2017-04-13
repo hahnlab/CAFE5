@@ -19,31 +19,33 @@
 
 using namespace std;
 
-class newick_parser; // forward declaration (so it can see friend)
+/* Forward declaration of newick_parser class, so class clade can see friend */
+class newick_parser; // actual declaration in utils.h
 
+/* Main clade class that will hold tree structures */
 class clade {
 
  friend newick_parser; // allows newick_parser to set parameter values
   
  private:
-   string taxon_name;
+   string _taxon_name;
 
-   double branch_length; // or lambda value
+   double _branch_length; // or lambda value
 
-   clade *p_parent; // needs to be pointer; instance creates infinite loop
+   clade *_p_parent; // needs to be pointer; instance creates infinite loop
 
-   vector<clade*> descendants; // same as above
+   vector<clade*> _descendants; // same as above
 
-   vector<clade*>::iterator desc_it, desc_end; // iterator (and its end check) for descendants
+   vector<clade*>::iterator _desc_it, _desc_end; // iterator (and its end check) for descendants
 
    /* methods */
-   void name_interior_clade();
+   void _name_interior_clade();
 
  public:
    /* methods */
-   clade(): p_parent(NULL), branch_length(0) {} // basic constructor
+   clade(): _p_parent(NULL), _branch_length(0) {} // basic constructor
 
-   clade(string some_taxon_name, double length): taxon_name(some_taxon_name), branch_length(length) {} // constructor giving taxon name and branch length
+   clade(string some_taxon_name, double length): _taxon_name(some_taxon_name), _branch_length(length) {} // constructor giving taxon name and branch length
 
    ~clade(); // destructor
   
@@ -57,7 +59,7 @@ class clade {
 
    bool is_root();
    
-   double get_branch_length() const { return branch_length; }
+   double get_branch_length() const { return _branch_length; }
 
    vector<clade*> find_internal_nodes();
    
@@ -65,7 +67,7 @@ class clade {
 
    double find_branch_length(string some_taxon_name);
 
-   string get_taxon_name() const { return taxon_name; }
+   string get_taxon_name() const { return _taxon_name; }
 
    void print_immediate_descendants(); // for testing purposes as of now
 
@@ -74,7 +76,7 @@ class clade {
    template <typename func> void apply_to_descendants(func f) {
      // apply f to direct descendants
      // could replace with apply_prefix_order for functions f that recur through descendants
-     for_each(descendants.begin(), descendants.end(), f); // for_each from std
+     for_each(_descendants.begin(), _descendants.end(), f); // for_each from std
    }
 
    template <typename func> void apply_prefix_order(func& f) { // f must be passed by reference to avoid copies being made of f 
@@ -87,8 +89,8 @@ class clade {
        stack.pop();
 
        // Moving from right to left in the tree because that's what CAFE does
-       std::vector<clade*>::reverse_iterator it = c->descendants.rbegin();
-       for (; it != c->descendants.rend(); ++it)
+       std::vector<clade*>::reverse_iterator it = c->_descendants.rbegin();
+       for (; it != c->_descendants.rend(); ++it)
        {
          stack.push(*it);
        }
@@ -97,4 +99,22 @@ class clade {
    }
 };
 
+/* This class will store a descendant clade if it finds the provided taxon_name */
+class descendant_finder {
+
+ private:
+  string _some_taxon_name;
+  clade *_p_descendant_found;
+
+ public:
+  descendant_finder(string some_taxon_name) : _some_taxon_name(some_taxon_name), _p_descendant_found(NULL) { }
+  
+  void operator()(clade *clade) {
+    if (clade->get_taxon_name() == _some_taxon_name) {
+      _p_descendant_found = clade;
+    }
+  }
+  
+  clade *get_result() { return _p_descendant_found;  }
+};
 #endif

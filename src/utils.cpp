@@ -31,7 +31,7 @@ clade *newick_parser::parse_newick() {
       if (p_current_clade == p_root_clade) {
       	cout << "Found root!" << endl;
       	p_root_clade = new_clade(NULL);
-      	p_current_clade->p_parent = p_root_clade; // note that get_parent() cannot be used here because get_parent() copies the pointer and it would be the copy that would be assigned p_root_clade... and then the copy would just be thrown away
+      	p_current_clade->_p_parent = p_root_clade; // note that get_parent() cannot be used here because get_parent() copies the pointer and it would be the copy that would be assigned p_root_clade... and then the copy would just be thrown away
 	p_current_clade->get_parent()->add_descendant(p_current_clade);
       }
 
@@ -61,7 +61,7 @@ clade *newick_parser::parse_newick() {
       /* Checking ':' regex */
       // cout << "Found :: " << regex_it->str() << endl;
       
-      p_current_clade->branch_length = atof(regex_it->str().substr(1).c_str()); // atof() converts string into float
+      p_current_clade->_branch_length = atof(regex_it->str().substr(1).c_str()); // atof() converts string into float
    }
     
     /* Reading taxon name */
@@ -69,11 +69,11 @@ clade *newick_parser::parse_newick() {
       /* Checking species name string regex */
       // cout << "Found species name: " << regex_it->str() << endl;
 
-      p_current_clade->taxon_name = regex_it->str();
+      p_current_clade->_taxon_name = regex_it->str();
       clade *p_parent = p_current_clade->get_parent();
       /* If this species has a parent, we need to update the parent's name */
       if (p_parent != NULL) {
-	      p_parent->name_interior_clade(); // update parent's name, name_interior_clade() is a void method
+	p_parent->_name_interior_clade(); // update parent's name, name_interior_clade() is a void method
         cout << "Renamed parent to: " << p_parent->get_taxon_name() << std::endl;
       }
     }
@@ -86,7 +86,7 @@ clade *newick_parser::new_clade(clade *p_parent) {
 
   clade *p_new_clade = new clade();
   if (p_parent != NULL) {
-    p_new_clade->p_parent = p_parent;
+    p_new_clade->_p_parent = p_parent;
   }
 
   return p_new_clade;

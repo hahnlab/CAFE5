@@ -3,41 +3,42 @@
 /* Recursive destructor */
 clade::~clade() {
 
-  for (desc_it = descendants.begin(), desc_end = descendants.end(); desc_it != desc_end; desc_it++) {
-    delete *desc_it; // desc_it is a pointer, *desc_it is a clade; this statement calls the destructor and makes it recursive
+  for (_desc_it = _descendants.begin(), _desc_end = _descendants.end(); _desc_it != _desc_end; _desc_it++) {
+    delete *_desc_it; // desc_it is a pointer, *desc_it is a clade; this statement calls the destructor and makes it recursive
   }
 }
 
 /* Returns pointer to parent */
 clade *clade::get_parent() {
 
-  return p_parent; // memory address
+  return _p_parent; // memory address
 }
 
 /* Adds descendant to vector of descendants */
 void clade::add_descendant(clade *p_descendant) {
 	
-  descendants.push_back(p_descendant);
-  name_interior_clade();
+  _descendants.push_back(p_descendant);
+  _name_interior_clade();
   if (!is_root()) {
-    p_parent->name_interior_clade();
+    _p_parent->_name_interior_clade();
   }
 }
 
 /* Recursively fills vector of names provided as argument */
 void clade::add_leaf_names(vector<string> &vector_names) {
 
-  if (descendants.empty()) {
-    vector_names.push_back(taxon_name); // base case (leaf), and it starts returning
+  if (_descendants.empty()) {
+    vector_names.push_back(_taxon_name); // base case (leaf), and it starts returning
   }
 
   else {
-    for (int i = 0; i < descendants.size(); ++i) {
-	descendants[i]->add_leaf_names(vector_names);
+    for (int i = 0; i < _descendants.size(); ++i) {
+	_descendants[i]->add_leaf_names(vector_names);
     }
   }
 }
 
+/* Recursively finds internal nodes, and returns vector of clades */
 vector<clade*> clade::find_internal_nodes() {
 
   vector<clade*> internal_nodes;
@@ -46,34 +47,16 @@ vector<clade*> clade::find_internal_nodes() {
   if (is_leaf()) { return internal_nodes; }
 
   else {
-	  internal_nodes.push_back(this);
-    for (desc_it = descendants.begin(), desc_end = descendants.end(); desc_it != desc_end; desc_it++) {
-      vector<clade*> descendant = (*desc_it)->find_internal_nodes(); // recursion
-	  if (!descendant.empty()) { internal_nodes.insert(internal_nodes.end(), descendant.begin(), descendant.end()); }
+    internal_nodes.push_back(this);
+
+    for (_desc_it = _descendants.begin(), _desc_end = _descendants.end(); _desc_it != _desc_end; _desc_it++) {
+      vector<clade*> descendant = (*_desc_it)->find_internal_nodes(); // recursion
+      if (!descendant.empty()) { internal_nodes.insert(internal_nodes.end(), descendant.begin(), descendant.end()); }
     }
 
     return internal_nodes;
   }
 }
-
-class descendant_finder
-{
-  string _target;
-  clade *result;
-public:
-  descendant_finder(string target) : _target(target), result(NULL)
-  {
-
-  }
-  void operator()(clade *clade)
-  {
-    if (clade->get_taxon_name() == _target)
-    {
-      result = clade;
-    }
-  }
-  clade *get_result() { return result;  }
-};
 
 /* Recursively find pointer to clade with provided taxon name */
 clade *clade::find_descendant(string some_taxon_name) {
@@ -84,16 +67,16 @@ clade *clade::find_descendant(string some_taxon_name) {
   cout << "Searching for descendant " << some_taxon_name << " in " << get_taxon_name() << endl;
 
   /* Base case: found some_taxon name and is not root */
-  if (taxon_name == some_taxon_name) { return this; }
+  if (_taxon_name == some_taxon_name) { return this; }
 
   /* If reached (wrong) leaf */
   else if (is_leaf()) { return NULL; }
 
   else {
-    for (desc_it = descendants.begin(), desc_end = descendants.end(); desc_it != desc_end; desc_it++) {
-    clade *descendant_to_find = (*desc_it)->find_descendant(some_taxon_name); // recursion
+    for (_desc_it = _descendants.begin(), _desc_end = _descendants.end(); _desc_it != _desc_end; _desc_it++) {
+    clade *p_descendant_to_find = (*_desc_it)->find_descendant(some_taxon_name); // recursion
 
-    if (descendant_to_find != NULL) { return descendant_to_find; } // recursion is only manifested if finds provided taxon name
+    if (p_descendant_to_find != NULL) { return p_descendant_to_find; } // recursion is only manifested if finds provided taxon name
 
     return NULL; // otherwise returns NULL
     }
@@ -108,28 +91,29 @@ double clade::find_branch_length(string some_taxon_name) {
   if (clade == NULL || clade->is_root()) { return 0; } // guarding against root query
 
   cout << "Found matching clade" << endl;
-  return clade->branch_length;
+  return clade->_branch_length;
 }
 
-void clade::name_interior_clade() {
+void clade::_name_interior_clade() {
 
   vector<string> descendant_names; // vector of names
   add_leaf_names(descendant_names); // fills vector of names
   sort(descendant_names.begin(), descendant_names.end()); // sorts alphabetically (from std)
-  taxon_name.clear(); // resets whatever taxon_name was
+  _taxon_name.clear(); // resets whatever taxon_name was
   for (int i = 0; i < descendant_names.size(); ++i) {
-    taxon_name += descendant_names[i];
+    _taxon_name += descendant_names[i];
   }
-  if (p_parent)
-    p_parent->name_interior_clade();
+  
+  if (_p_parent)
+    _p_parent->_name_interior_clade();
 }
 
 /* Prints names of immediate descendants */
 void clade::print_immediate_descendants() {
 
-  cout << "Me: " << taxon_name << " | Descendants: ";
-  for (desc_it = descendants.begin(), desc_end = descendants.end(); desc_it != desc_end; desc_it++) {
-    cout << (*desc_it)->taxon_name << " ";
+  cout << "Me: " << _taxon_name << " | Descendants: ";
+  for (_desc_it = _descendants.begin(), _desc_end = _descendants.end(); _desc_it != _desc_end; _desc_it++) {
+    cout << (*_desc_it)->_taxon_name << " ";
   }
   
   cout << endl;
@@ -138,28 +122,28 @@ void clade::print_immediate_descendants() {
 /* Recursively prints clade */
 void clade::print_clade() {
 
-  int level = 0;
+  int depth = 0;
   clade *p_ancestor = get_parent();
-  while (p_ancestor)
-  {
-    level++;
+  while (p_ancestor) {
+    depth++;
     p_ancestor = p_ancestor->get_parent();
   }
-  string blanks(level, ' ');
+  
+  string blanks(depth, ' '); // initializing string with the fill constructor (repeat ' ' depth many times, depth will be some integer), this blanks string will help us indent the printing
 
-  cout << blanks << "My name is: " << taxon_name << endl;
+  cout << blanks << "My name is: " << _taxon_name << endl;
 
   /* Base case: it is a leaf */
-  if (descendants.empty()) { return; }
+  if (_descendants.empty()) { return; }
   
-  for (desc_it = descendants.begin(), desc_end = descendants.end(); desc_it != desc_end ; desc_it++) {
-    (*desc_it)->print_clade();
+  for (_desc_it = _descendants.begin(), _desc_end = _descendants.end(); _desc_it != _desc_end ; _desc_it++) {
+    (*_desc_it)->print_clade();
   }
 }
 
 bool clade::is_leaf() {
 
-  return descendants.empty();
+  return _descendants.empty();
 }
 
 bool clade::is_root() {
