@@ -30,8 +30,9 @@ double lambda_searcher(double* plambda, void* v)
     GeneFamily& fam = args->gene_families[i];
     map<clade *, int> node_family_sizes;  // TODO: this holds the family count at each node
     int root_family_size = 0;   // TODO
+    int max_possible_family_size = 0;  // TODO
 
-    likelihood_computer pruner(&fam);
+    likelihood_computer pruner(max_possible_family_size, &fam);
     tree->apply_prefix_order(pruner);
     double* likelihood = pruner.get_likelihoods();		// likelihood of the whole tree = multiplication of likelihood of all nodes
 

@@ -1,6 +1,7 @@
 #include "clade.h"
 #include "utils.h"
 #include "fminsearch.h"
+#include "probability.h"
 
 clade *newick_parser::parse_newick() {
 
@@ -93,12 +94,59 @@ clade *newick_parser::new_clade(clade *p_parent) {
   return p_new_clade;
 }
 
+class child_calculator {
+  map<clade *, vector<double> > _factors;
+  map<clade *, vector<double> >& _probabilities;
+  int _max_root_family_size;
+public:
+  child_calculator(int max_root_family_size, map<clade *, vector<double> >& probabilities) : _max_root_family_size(max_root_family_size), _probabilities(probabilities)
+  {
+      
+  }
+  void operator()(clade * child)
+  {
+    vector<double>& likelihoods = _probabilities[child];
+    vector<double>& factors = _factors[child];
+    factors.resize(_max_root_family_size);
+    for (int s = 0; s <= factors.size(); s++)
+    {
+      for (int c = 0; c <= factors.size(); c++)
+      {
+        double lambda = 0.05; // TODO where does this come from?
+        factors[s] += the_probability_of_going_from_parent_fam_size_to_c(lambda, child->get_branch_length(), s, c) * likelihoods[c];
+        // p(node=c,child|s) = p(node=c|s)p(child|node=c) integrated over all c
+        // remember child likelihood[c]'s never sum up to become 1 because they are likelihoods conditioned on c's.
+        // incoming nodes to don't sum to 1. outgoing nodes sum to 1
+      }
+    }
+  }
+  void update_probabilities(clade *node)
+  {
+    vector<double>& probabilities = _probabilities[node];
+    probabilities.resize(_max_root_family_size);
+    for (int i = 0; i < probabilities.size(); i++)
+    {
+      probabilities[i] = 1;
+      map<clade *, std::vector<double> >::iterator it = _factors.begin();
+      for (; it != _factors.end(); it++)
+        probabilities[i] *= it->second[i];
+    }
+  }
+};
+
 void likelihood_computer::operator()(clade *node)
 {
   if (node->is_leaf())
   {
+    _probabilities[node].resize(_max_possible_family_size);
     int species_size = _family->get_species_size(node->get_taxon_name());
-    probabilities[node][species_size] = 1;
+    _probabilities[node][species_size] = 1.0;
+  }
+  else
+  {
+    child_calculator calc(_max_possible_family_size, _probabilities);
+    node->apply_to_descendants(calc);
+    calc.update_probabilities(node);
   }
 }
 

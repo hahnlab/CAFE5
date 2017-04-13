@@ -145,6 +145,12 @@ int main(int argc, char *const argv[]) {
 
 //   print_simulation(simulations, cout);
 
+  cout << "Testing pruning algorithm" << endl;
+  GeneFamily family;
+  likelihood_computer pruner(600, &family);
+  p_tree->apply_prefix_order(pruner);
+  //double* likelihood = pruner.get_likelihoods();		// likelihood of the whole tree = multiplication of likelihood of all nodes
+
   return 0;
 }
 

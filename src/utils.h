@@ -37,11 +37,12 @@ class newick_parser {
 
 class likelihood_computer
 {
-  // represents probability of the node having the given family size
-  std::map<clade *, std::map<int, double> > probabilities;
+  // represents probability of the node having various family sizes
+  std::map<clade *, std::vector<double> > _probabilities;
   GeneFamily *_family;
+  int _max_possible_family_size;
 public:
-  likelihood_computer(GeneFamily *family)
+  likelihood_computer(int max_possible_family_size, GeneFamily *family) : _max_possible_family_size(max_possible_family_size)
   {
     _family = family;
   }
