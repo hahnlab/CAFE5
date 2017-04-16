@@ -6,20 +6,21 @@
 #include "probability.h"
 #include "family_generator.h"
 
+// Ask Ben
+// 1) http://en.cppreference.com/w/cpp/utility/program/EXIT_status, what is meant by "implementation defined"?
+// 2) What is stack unwinding? http://stackoverflow.com/questions/30250934/how-to-end-c-code
+// 2.1) Do we want to throw exceptions and catch them at main?
+
+
 using namespace std;
 
 struct option longopts[] = {
   { "infile", required_argument, NULL, 'i' },
   { "prefix", optional_argument, NULL, 'p' },
-  { "suffix", optional_argument, NULL, 's' },
-  { "outfmt", optional_argument, NULL, 'o' },
-  { 0, 0, 0, 0 }
+  { "simulate", optional_argument, NULL, 's' },
+  { "nsims", optional_argument, NULL, 'n' },
+  { 0, 0, 0, 0}
 };
-
-string input_file_path;
-string prefix;
-string suffix;
-string outfmt;
 
 unsigned long long choose(unsigned long long n, unsigned long long k) {
 
@@ -36,38 +37,44 @@ unsigned long long choose(unsigned long long n, unsigned long long k) {
 }
 
 int main(int argc, char *const argv[]) {
-  
-  int args; // getopt_long returns int or char
 
-  while ((args = getopt_long(argc, argv, "i:opq::", longopts, NULL)) != -1) {
+  /* START: Option variables for main() */
+  int args; // getopt_long returns int or char
+  string input_file_path;
+  string famdist;
+  bool simulate = false;
+  int nsims = 0; 
+  /* END: Option variables for main() */
+
+  /* START: Option variables for simulations */
+  int root_family_size = 300;
+  int max_family_size = 600;
+  double lambda = 0.0017;
+  /* END: Option variables for simulations */
+
+  while ((args = getopt_long(argc, argv, "i:n:f:s::", longopts, NULL)) != -1) {
     switch (args) {
     case 'i':
       input_file_path = optarg;
       break;
-    case 'p':
-      prefix = optarg;
-      break;
     case 's':
-      suffix = optarg;
+      simulate = true;
       break;
-    case 'o':
-      prefix = optarg;
+    case 'n':
+      nsims = atoi(optarg);
+      break;
+    case 'f':
+      famdist = optarg;
       break;
     case ':':   // missing argument
-      fprintf(stderr, "%s: option `-%c' requires an argument\n",
+      fprintf(stderr, "%s: option `-%c' requires an argument",
 	      argv[0], optopt);
       break;
-    default:
-      abort ();
+    default: // '?' is parsed (
+      cout << "Exiting..." << endl;
+      return EXIT_FAILURE; //abort ();
     }
   }
-  
-  // ifstream input_file(input_file_path.c_str()); /* the constructor for ifstream takes const char*, not string
-  // 						   so we need to use c_str() */
-  // string line;
-  // while (getline(input_file, line)) {
-  //   cout << line << endl;
-  // }
 
   newick_parser parser;
   parser.newick_string = "(((chimp:6,human:6):81,(mouse:17,rat:17):70):6,dog:93)";
@@ -75,25 +82,51 @@ int main(int argc, char *const argv[]) {
   /* START: Testing implementation of clade class */  
   parser.newick_string = "((A:1,B:1):2,C:3);";
   clade *p_tree = parser.parse_newick();
-  
   /* END: Testing implementation of clade class - */
+
+  /* START: Running simulations if -s */
+  if (simulate) {
+    if (!nsims) {
+      cout << "In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting..." << endl; // This good form?
+      return EXIT_FAILURE;
+    }
+    
+    else { cout << "Performing " << nsims << " simulation(s). " << endl; }
+
+    if (input_file_path.empty() && famdist.empty()) {
+      cout << "In order to perform simulations (s), you must either specify an input file from which root family sizes are estimated with -i, or specify a root family distribution with -f. Exiting..." << endl;
+    }
+
+    /* -i is provided, -f is not */
+    else if (famdist.empty() && !input_file_path.empty()) {
+      cout << "Simulations will use the root family distribution estimated from data provided with -i:" << input_file_path << endl;
+    }
+
+    /* -f is provided (-f has precedence over -i if both are provided) */
+    else {
+      cout << "Simulations will use the root family distribution specified with -f: " << famdist << endl;
+      // trial simulation = simulate_families_from_root_size(p_tree, nsims, root_family_size, max_family_size, lambda);
+      // print_simulation(simulation, cout);
+    }
+  }
+  /* END: Running simulations if -s */
   
-  //simulate_families();
+  return 0;
+}
+   
+  // ifstream input_file(input_file_path.c_str()); /* the constructor for ifstream takes const char*, not string
+  // 						   so we need to use c_str() */
+  // string line;
+  // while (getline(input_file, line)) {
+  //   cout << line << endl;
+  // }
 
-  int num_trials = 1;
-  int root_family_size = 300;
-  int max_family_size = 600;
-  double lambda = 0.0017;
+  // cout << "Cafe says this value should be 0.083" << endl;
+  // cout << the_probability_of_going_from_parent_fam_size_to_c(0.5, .42, 40, 42) << endl;
 
-  cout << "Cafe says this value should be 0.083" << endl;
-  cout << the_probability_of_going_from_parent_fam_size_to_c(0.5, .42, 40, 42) << endl;
+  // cout << "Cafe says this value should be something" << endl;
+  // cout << the_probability_of_going_from_parent_fam_size_to_c(lambda, .42, 300, 295) << endl;
 
-  cout << "Cafe says this value should be something" << endl;
-  cout << the_probability_of_going_from_parent_fam_size_to_c(lambda, .42, 300, 295) << endl;
-
-  //trial simulation = simulate_families_from_root_size(p_tree, num_trials, root_family_size, max_family_size, lambda);
-
-  //print_simulation(simulation, cout);
 
 //   map<int, int> root_size;
 // #if 1
@@ -145,14 +178,12 @@ int main(int argc, char *const argv[]) {
 
 //   print_simulation(simulations, cout);
 
-  cout << "Testing pruning algorithm" << endl;
-  GeneFamily family;
-  likelihood_computer pruner(600, &family);
-  p_tree->apply_prefix_order(pruner);
+  // cout << "Testing pruning algorithm" << endl;
+  // GeneFamily family;
+  // likelihood_computer pruner(600, &family);
+  // p_tree->apply_prefix_order(pruner);
   //double* likelihood = pruner.get_likelihoods();		// likelihood of the whole tree = multiplication of likelihood of all nodes
 
-  return 0;
-}
 
 /* START: Testing implementation of clade class */
 
