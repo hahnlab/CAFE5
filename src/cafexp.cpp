@@ -1,3 +1,4 @@
+#include "io.h"
 #include "utils.h"
 #include "clade.h"
 #include <getopt.h>
@@ -10,7 +11,6 @@
 // 1) http://en.cppreference.com/w/cpp/utility/program/EXIT_status, what is meant by "implementation defined"?
 // 2) What is stack unwinding? http://stackoverflow.com/questions/30250934/how-to-end-c-code
 // 2.1) Do we want to throw exceptions and catch them at main?
-
 
 using namespace std;
 
@@ -47,6 +47,7 @@ int main(int argc, char *const argv[]) {
   /* END: Option variables for main() */
 
   /* START: Option variables for simulations */
+  map<int, int> famdist_map;
   int root_family_size = 300;
   int max_family_size = 600;
   double lambda = 0.0017;
@@ -105,6 +106,7 @@ int main(int argc, char *const argv[]) {
     /* -f is provided (-f has precedence over -i if both are provided) */
     else {
       cout << "Simulations will use the root family distribution specified with -f: " << famdist << endl;
+      read_famdist(famdist);
       // trial simulation = simulate_families_from_root_size(p_tree, nsims, root_family_size, max_family_size, lambda);
       // print_simulation(simulation, cout);
     }
@@ -114,13 +116,6 @@ int main(int argc, char *const argv[]) {
   return 0;
 }
    
-  // ifstream input_file(input_file_path.c_str()); /* the constructor for ifstream takes const char*, not string
-  // 						   so we need to use c_str() */
-  // string line;
-  // while (getline(input_file, line)) {
-  //   cout << line << endl;
-  // }
-
   // cout << "Cafe says this value should be 0.083" << endl;
   // cout << the_probability_of_going_from_parent_fam_size_to_c(0.5, .42, 40, 42) << endl;
 
