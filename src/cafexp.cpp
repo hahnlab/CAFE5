@@ -94,12 +94,12 @@ int main(int argc, char *const argv[]) {
     else { cout << "Performing " << nsims << " simulation(s). " << endl; }
 
     if (input_file_path.empty() && famdist.empty()) {
-      cout << "In order to perform simulations (s), you must either specify an input file from which root family sizes are estimated with -i, or specify a root family distribution with -f. Exiting..." << endl;
+      cout << "In order to perform simulations (s), you must either specify an input file from which the root family size is estimated with -i, or specify a root family distribution with -f. Exiting..." << endl;
     }
 
     /* -i is provided, -f is not */
     else if (famdist.empty() && !input_file_path.empty()) {
-      cout << "Simulations will use the root family distribution estimated from data provided with -i:" << input_file_path << endl;
+      cout << "Simulations will use the root family size estimated from data provided with -i:" << input_file_path << endl;
     }
 
     /* -f is provided (-f has precedence over -i if both are provided) */
