@@ -1,4 +1,5 @@
 #include "clade.h"
+#include <queue>
 
 /* Recursive destructor */
 clade::~clade() {
@@ -150,6 +151,7 @@ bool clade::is_root() {
 
   return get_parent() == NULL;
 }
+
 
 /* Testing implementation of clade class */
 

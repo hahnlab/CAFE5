@@ -94,32 +94,74 @@ clade *newick_parser::new_clade(clade *p_parent) {
   return p_new_clade;
 }
 
+vector<vector<double> > get_matrix(int size, int branch_length, double lambda)
+{
+  vector<vector<double> > result(size);
+  for (int s = 0; s < size; s++)
+  {
+    result[s].resize(size);
+    for (int c = 0; c < size; c++)
+    {
+      result[s][c] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, s, c);
+      //cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
+    }
+  }
+  return result;
+}
+
+vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v)
+{
+  vector<double> result(matrix.size());
+
+  for (int s = 0; s < matrix.size(); s++)
+  {
+    result[s] = 0;
+    for (int c = 0; c < matrix[s].size(); c++)
+    {
+      result[s] += matrix[s][c] * v[c];
+    }
+  }
+}
+
+ostream& operator<<(ostream& ost, const vector<vector<double> >& matrix)
+{
+  for (int s = 0; s < matrix.size(); s++)
+  {
+    for (int c = 0; c < matrix[s].size(); c++)
+    {
+      ost << matrix[s][c] << "\t";
+    }
+    ost << "\n";
+  }
+
+  return ost;
+}
+
 class child_calculator {
   map<clade *, vector<double> > _factors;
   map<clade *, vector<double> >& _probabilities;
   int _max_root_family_size;
+  double _lambda;
 public:
-  child_calculator(int max_root_family_size, map<clade *, vector<double> >& probabilities) : _max_root_family_size(max_root_family_size), _probabilities(probabilities)
+  child_calculator(int max_root_family_size, double lambda, map<clade *, vector<double> >& probabilities) : _max_root_family_size(max_root_family_size), _lambda(lambda), _probabilities(probabilities)
   {
       
   }
+
   void operator()(clade * child)
   {
     vector<double>& likelihoods = _probabilities[child];
     vector<double>& factors = _factors[child];
     factors.resize(_max_root_family_size);
-    for (int s = 0; s <= factors.size(); s++)
-    {
-      for (int c = 0; c <= factors.size(); c++)
-      {
-        double lambda = 0.05; // TODO where does this come from?
-        factors[s] += the_probability_of_going_from_parent_fam_size_to_c(lambda, child->get_branch_length(), s, c) * likelihoods[c];
-        // p(node=c,child|s) = p(node=c|s)p(child|node=c) integrated over all c
-        // remember child likelihood[c]'s never sum up to become 1 because they are likelihoods conditioned on c's.
-        // incoming nodes to don't sum to 1. outgoing nodes sum to 1
-      }
-    }
+    vector<vector<double> > matrix = get_matrix(factors.size(), child->get_branch_length(), _lambda);
+    cout << "Child matrix calculated for " << child->get_taxon_name() << endl << matrix << endl << "Done" << endl;
+
+    _factors[child] = matrix_multiply(matrix, likelihoods);
+    // p(node=c,child|s) = p(node=c|s)p(child|node=c) integrated over all c
+    // remember child likelihood[c]'s never sum up to become 1 because they are likelihoods conditioned on c's.
+    // incoming nodes to don't sum to 1. outgoing nodes sum to 1
   }
+
   void update_probabilities(clade *node)
   {
     vector<double>& probabilities = _probabilities[node];
@@ -140,11 +182,14 @@ void likelihood_computer::operator()(clade *node)
   {
     _probabilities[node].resize(_max_possible_family_size);
     int species_size = _family->get_species_size(node->get_taxon_name());
+
     _probabilities[node][species_size] = 1.0;
+    cout << "Probabilities calculated for " << node->get_taxon_name() << endl;
+
   }
   else
   {
-    child_calculator calc(_max_possible_family_size, _probabilities);
+    child_calculator calc(_max_possible_family_size, _lambda, _probabilities);
     node->apply_to_descendants(calc);
     calc.update_probabilities(node);
   }

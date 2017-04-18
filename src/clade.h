@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <iterator>
 #include <stack>
+#include <queue>
 
 /* Ask Ben:
 1) branch_length is long, but in get_branch_length()'s declaration we use int
@@ -95,6 +96,33 @@ class clade {
          stack.push(*it);
        }
        f(c);
+     }
+   }
+
+   template <typename func> void apply_reverse_level_order(func& f) { 
+     stack<clade *> stack;
+     queue<clade *> q;
+
+     q.push(this);
+     while (!q.empty())
+     {
+       /* Dequeue node and make it current */
+       clade *current = q.front();
+       q.pop();
+       stack.push(current);
+
+       for (_desc_it = current->_descendants.begin(); _desc_it != current->_descendants.end(); ++_desc_it)
+       {
+         /* Enqueue child */
+         q.push(*_desc_it);
+       }
+     }
+
+     while (!stack.empty())
+     {
+       clade *current = stack.top();
+       stack.pop();
+       f(current);
      }
    }
 };

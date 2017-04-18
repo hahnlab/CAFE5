@@ -16,6 +16,10 @@ public:
   {
     return species_size.at(species);
   }
+  void set_species_size(std::string species, int sz)
+  {
+    species_size[species] = sz;
+  }
 };
 
 class newick_parser {
@@ -41,8 +45,9 @@ class likelihood_computer
   std::map<clade *, std::vector<double> > _probabilities;
   GeneFamily *_family;
   int _max_possible_family_size;
+  double _lambda;
 public:
-  likelihood_computer(int max_possible_family_size, GeneFamily *family) : _max_possible_family_size(max_possible_family_size)
+  likelihood_computer(int max_possible_family_size, double lambda, GeneFamily *family) : _max_possible_family_size(max_possible_family_size), _lambda(lambda)
   {
     _family = family;
   }

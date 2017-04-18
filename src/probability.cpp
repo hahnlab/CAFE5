@@ -68,10 +68,12 @@ double birthdeath_rate_with_log_alpha(int s, int c, double log_alpha, double coe
 
 double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int size)
 {
-
+  std::cout << "Lambda: " << lambda << ", branch_length: " << branch_length;
   double alpha = lambda*branch_length / (1 + lambda*branch_length);
   double coeff = 1 - 2 * alpha;
   
+  printf("Birthdeath rate for 1, 0 (alpha=%f, coeff=%f), : %f\n", alpha, coeff, birthdeath_rate_with_log_alpha(1, 0, log(alpha), coeff));
+
   double result = birthdeath_rate_with_log_alpha(parent_size, size, log(alpha), coeff);
 
 //  if (result < .000000000000000001)
