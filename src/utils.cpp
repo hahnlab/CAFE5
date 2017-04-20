@@ -196,5 +196,5 @@ void likelihood_computer::operator()(clade *node)
 
 bool max_value(const pair_type & p1, const pair_type & p2) { 
 
-  return p1.second < p2.second; 
+  return p1.first < p2.first; 
 }

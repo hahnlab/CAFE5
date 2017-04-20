@@ -80,7 +80,6 @@ class clade {
      for_each(_descendants.begin(), _descendants.end(), f); // for_each from std
    }
 
-   /* See comment on print_clade_name() in clade.cpp for debugging this */
    template <typename func> void apply_prefix_order(func& f) { // f must be passed by reference to avoid copies being made of f 
      // having a copy made would mean any state variables of f would be lost
      std::stack<clade *> stack;
@@ -100,8 +99,6 @@ class clade {
      }
    }
 
-   /* See comment on print_clade_name() in clade.cpp for debugging this
-      Note: we add and remove from queue's tail, but add and remove from stack's head */
    template <typename func> void apply_reverse_level_order(func& f) { 
      stack<clade *> stack;
      queue<clade *> q;
@@ -148,6 +145,4 @@ class descendant_finder {
   
   clade *get_result() { return _p_descendant_found;  }
 };
-
-void print_clade_name(clade *clade);
 #endif

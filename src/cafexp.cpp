@@ -116,7 +116,7 @@ int main(int argc, char *const argv[]) {
 	cout << "Simulations will use the root family distribution specified with -f: " << famdist << endl;
 	p_famdist_map = read_famdist(famdist);
       
-	int max_family_size = (*max_element(p_famdist_map->begin(), p_famdist_map->end(), max_value)).second;
+	int max_family_size = (*max_element(p_famdist_map->begin(), p_famdist_map->end(), max_value)).first;
 
 	cout << "max_family_size = " << max_family_size << endl;
       // trial simulation = simulate_families_from_root_size(p_tree, nsims, root_family_size, max_family_size, lambda);
