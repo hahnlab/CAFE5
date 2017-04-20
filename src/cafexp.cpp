@@ -7,10 +7,11 @@
 #include "probability.h"
 #include "family_generator.h"
 
-// Ask Ben
-// 1) http://en.cppreference.com/w/cpp/utility/program/EXIT_status, what is meant by "implementation defined"?
-// 2) What is stack unwinding? http://stackoverflow.com/questions/30250934/how-to-end-c-code
-// 2.1) Do we want to throw exceptions and catch them at main?
+/* Ask Ben */
+/*
+1) How does using pair_type bla works?
+2) If I remove the declar'n of max_value from utils.h (but leave the def'n in utils.cpp), cafexp does not compile
+*/
 
 using namespace std;
 
@@ -28,17 +29,6 @@ unsigned long long choose(unsigned long long n, unsigned long long k) {
   return r;
 }
 
-using pair_type = map<int, int>::value_type;
-
-bool max_value(const pair_type & p1, const pair_type & p2)
-{ 
-  return p1.second < p2.second; 
-}
-
-void print_name(clade *c)
-{
-  cout << c->get_taxon_name() << " (length: " << c->get_branch_length() << ")" << endl;
-}
 int main(int argc, char *const argv[]) {
 
   /* START: Option variables for main() */
@@ -87,63 +77,59 @@ int main(int argc, char *const argv[]) {
   parser.newick_string = "((A:1,B:1):2,C:3);";
   clade *p_tree = parser.parse_newick();
   p_tree->print_clade();
-
-  cout << "Tree " << p_tree->get_taxon_name() << " in reverse order: " << endl;
-  p_tree->apply_reverse_level_order(print_name);
   /* END: Testing implementation of clade class - */
 
   parser.newick_string = "(A:1,B:1);";
   p_tree = parser.parse_newick();
-  GeneFamily family;
-  family.set_species_size("A", 5);
-  family.set_species_size("B", 10);
+  // GeneFamily family;
+  // family.set_species_size("A", 5);
+  // family.set_species_size("B", 10);
 
-  lambda = 0.01;
-  cout << "About to run pruner" << endl;
-  likelihood_computer pruner(20, lambda, &family);
-  p_tree->apply_reverse_level_order(pruner);
-  cout << "Pruner complete" << endl;
-  double* likelihood = pruner.get_likelihoods();		// likelihood of the whole tree = multiplication of likelihood of all nodes
-  cout << "Likelihood 0: " << likelihood[0] << endl;
+  // lambda = 0.01;
+  // cout << "About to run pruner" << endl;
+  // likelihood_computer pruner(20, lambda, &family);
+  // p_tree->apply_reverse_level_order(pruner);
+  // cout << "Pruner complete" << endl;
+  // double* likelihood = pruner.get_likelihoods();		// likelihood of the whole tree = multiplication of likelihood of all nodes
+  // cout << "Likelihood 0: " << likelihood[0] << endl;
 
-  try
-  {
-  /* START: Running simulations if -s */
-  if (simulate) {
-    if (!nsims) {
-      throw runtime_error("In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting...");
-//      return EXIT_FAILURE;
-    }
+  try {
+    /* START: Running simulations if -s */
+    if (simulate) {
+      if (!nsims) {
+	throw runtime_error("In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting...");
+      }
     
-    else { cout << "Performing " << nsims << " simulation(s). " << endl; }
+      else { cout << "Performing " << nsims << " simulation(s). " << endl; }
 
-    if (input_file_path.empty() && famdist.empty()) {
-      cout << "In order to perform simulations (s), you must either specify an input file from which the root family size is estimated with -i, or specify a root family distribution with -f. Exiting..." << endl;
-    }
+      if (input_file_path.empty() && famdist.empty()) {
+	cout << "In order to perform simulations (s), you must either specify an input file from which the root family size is estimated with -i, or specify a root family distribution with -f. Exiting..." << endl;
+      }
 
-    /* -i is provided, -f is not */
-    else if (famdist.empty() && !input_file_path.empty()) {
-      cout << "Simulations will use the root family size estimated from data provided with -i:" << input_file_path << endl;
-    }
+      /* -i is provided, -f is not */
+      else if (famdist.empty() && !input_file_path.empty()) {
+	cout << "Simulations will use the root family size estimated from data provided with -i:" << input_file_path << endl;
+      }
 
-    /* -f is provided (-f has precedence over -i if both are provided) */
-    else {
-      cout << "Simulations will use the root family distribution specified with -f: " << famdist << endl;
-      p_famdist_map = read_famdist(famdist);
+      /* -f is provided (-f has precedence over -i if both are provided) */
+      else {
+	cout << "Simulations will use the root family distribution specified with -f: " << famdist << endl;
+	p_famdist_map = read_famdist(famdist);
       
-      int max_family_size = (*max_element(p_famdist_map->begin(), p_famdist_map->end(), max_value)).second;
+	int max_family_size = (*max_element(p_famdist_map->begin(), p_famdist_map->end(), max_value)).second;
 
-      cout << "max_family_size = " << max_family_size << endl;
+	cout << "max_family_size = " << max_family_size << endl;
       // trial simulation = simulate_families_from_root_size(p_tree, nsims, root_family_size, max_family_size, lambda);
       // print_simulation(simulation, cout);
+      }
     }
+    
+    return 0;
+    /* END: Running simulations if -s */
   }
-  return 0;
-  /* END: Running simulations if -s */
-  }
-  catch (runtime_error& err)
-  {
+  catch (runtime_error& err) {
     cout << err.what() << endl;
+    
     return EXIT_FAILURE;
   }
 }

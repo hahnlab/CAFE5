@@ -56,5 +56,7 @@ public:
   double *get_likelihoods() const { return NULL; }
 };
 
+using pair_type = map<int, int>::value_type;
 
+bool max_value(const pair_type & p1, const pair_type & p2); // def'n in utils.cpp
 #endif

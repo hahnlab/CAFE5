@@ -9,7 +9,6 @@ clade::~clade() {
   }
 }
 
-/* Returns pointer to parent */
 clade *clade::get_parent() {
 
   return _p_parent; // memory address
@@ -95,6 +94,7 @@ double clade::find_branch_length(string some_taxon_name) {
   return clade->_branch_length;
 }
 
+/* Names interior clades, starting from clade of first method call and going up the tree until root */
 void clade::_name_interior_clade() {
 
   vector<string> descendant_names; // vector of names
@@ -152,6 +152,14 @@ bool clade::is_root() {
   return get_parent() == NULL;
 }
 
+/* Function print_clade_name() is used in conjunction with apply_reverse_level_order and apply_prefix order for debugging purposes.
+   e.g.,
+   cout << "Tree " << p_tree->get_taxon_name() << " in reverse order: " << endl;
+   p_tree->apply_reverse_level_order(print_name)   
+*/
+void print_clade_name(clade *clade) {
+  cout << clade->get_taxon_name() << " (length of subtending branch: " << clade->get_branch_length() << ")" << endl;
+}
 
 /* Testing implementation of clade class */
 
