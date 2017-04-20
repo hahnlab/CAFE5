@@ -74,10 +74,15 @@ class clade {
 
    void print_clade(); // for testing purposes as of now
 
-   template <typename func> void apply_to_descendants(func f) {
+   template <typename func> void apply_to_descendants(func& f) {
+     cout << "desc Calc is " << &f << endl;
+
      // apply f to direct descendants
      // could replace with apply_prefix_order for functions f that recur through descendants
-     for_each(_descendants.begin(), _descendants.end(), f); // for_each from std
+     //for_each(_descendants.begin(), _descendants.end(), f); // for_each from std
+     // for_each apparently passes by value
+     for (int i = 0; i < _descendants.size(); ++i)
+       f(_descendants[i]);
    }
 
    template <typename func> void apply_prefix_order(func& f) { // f must be passed by reference to avoid copies being made of f 

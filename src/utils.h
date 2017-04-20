@@ -53,7 +53,10 @@ public:
   }
   void operator()(clade *node);
 
-  double *get_likelihoods() const { return NULL; }
+  std::vector<double> get_likelihoods(clade *node) const
+  { 
+    return _probabilities.at(node); 
+  }
 };
 
 using pair_type = map<int, int>::value_type;

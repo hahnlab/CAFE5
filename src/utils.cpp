@@ -120,6 +120,8 @@ vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vect
       result[s] += matrix[s][c] * v[c];
     }
   }
+
+  return result;
 }
 
 ostream& operator<<(ostream& ost, const vector<vector<double> >& matrix)
@@ -147,51 +149,63 @@ public:
       
   }
 
+  int num_factors() { return _factors.size();  }
   void operator()(clade * child)
   {
-    vector<double>& likelihoods = _probabilities[child];
-    vector<double>& factors = _factors[child];
-    factors.resize(_max_root_family_size);
-    vector<vector<double> > matrix = get_matrix(factors.size(), child->get_branch_length(), _lambda);
-    cout << "Child matrix calculated for " << child->get_taxon_name() << endl << matrix << endl << "Done" << endl;
+    cout << "() Calc is " << this << endl;
 
-    _factors[child] = matrix_multiply(matrix, likelihoods);
+    _factors[child].resize(_max_root_family_size);
+    vector<vector<double> > matrix = get_matrix(_factors[child].size(), child->get_branch_length(), _lambda);
+    //cout << "Child matrix calculated for " << child->get_taxon_name() << endl << matrix << endl << "Done" << endl;
+
+    _factors[child] = matrix_multiply(matrix, _probabilities[child]);
+    for (int i = 0; i < _factors[child].size(); ++i)
+      cout << "  Factor for child " << child->get_taxon_name() << i << ": " << _factors[child][i] << endl;
     // p(node=c,child|s) = p(node=c|s)p(child|node=c) integrated over all c
     // remember child likelihood[c]'s never sum up to become 1 because they are likelihoods conditioned on c's.
     // incoming nodes to don't sum to 1. outgoing nodes sum to 1
+    cout << "Factor count: " << _factors.size() << endl;
   }
 
   void update_probabilities(clade *node)
   {
-    vector<double>& probabilities = _probabilities[node];
-    probabilities.resize(_max_root_family_size);
-    for (int i = 0; i < probabilities.size(); i++)
+    cout << "Updating probabilities for " << node->get_taxon_name() << " - " << _factors.size() << " factors" << endl;
+    _probabilities[node].resize(_max_root_family_size);
+    for (int i = 0; i < _probabilities[node].size(); i++)
     {
-      probabilities[i] = 1;
+      _probabilities[node][i] = 1;
       map<clade *, std::vector<double> >::iterator it = _factors.begin();
       for (; it != _factors.end(); it++)
-        probabilities[i] *= it->second[i];
+      {
+        cout << "    Multiplying by " << it->second[i];
+        _probabilities[node][i] *= it->second[i];
+      }
     }
   }
 };
 
 void likelihood_computer::operator()(clade *node)
 {
+  cout << "Calculating probabilities for " << node->get_taxon_name() << endl;
   if (node->is_leaf())
   {
     _probabilities[node].resize(_max_possible_family_size);
     int species_size = _family->get_species_size(node->get_taxon_name());
 
     _probabilities[node][species_size] = 1.0;
-    cout << "Probabilities calculated for " << node->get_taxon_name() << endl;
 
   }
   else
   {
     child_calculator calc(_max_possible_family_size, _lambda, _probabilities);
+    cout << "l Calc is " << &calc << endl;
     node->apply_to_descendants(calc);
+    cout << "l Calc is " << &calc << endl;
+    cout << "Factors: " << calc.num_factors() << endl;
     calc.update_probabilities(node);
+    cout << "Factors: " << calc.num_factors() << endl;
   }
+  cout << "Probabilities calculated for " << node->get_taxon_name() << endl;
 }
 
 bool max_value(const pair_type & p1, const pair_type & p2) { 

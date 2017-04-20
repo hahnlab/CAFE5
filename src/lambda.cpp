@@ -33,10 +33,10 @@ double lambda_searcher(double* plambda, void* v)
     int max_possible_family_size = 0;  // TODO
 
     likelihood_computer pruner(max_possible_family_size, 0.001, &fam);
-    tree->apply_prefix_order(pruner);
-    double* likelihood = pruner.get_likelihoods();		// likelihood of the whole tree = multiplication of likelihood of all nodes
+    tree->apply_reverse_level_order(pruner);
+    vector<double> likelihood = pruner.get_likelihoods(tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
 
-    ML[i] = *std::max_element(likelihood, likelihood + root_family_size);	// this part find root size condition with maxlikelihood for each family			
+    ML[i] = *std::max_element(likelihood.begin(), likelihood.end());	// this part find root size condition with maxlikelihood for each family			
 
                                                                           // get posterior by adding lnPrior to lnLikelihood
     vector<double> posterior(root_family_size);

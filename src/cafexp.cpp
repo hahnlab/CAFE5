@@ -81,17 +81,24 @@ int main(int argc, char *const argv[]) {
 
   parser.newick_string = "(A:1,B:1);";
   p_tree = parser.parse_newick();
-  // GeneFamily family;
-  // family.set_species_size("A", 5);
-  // family.set_species_size("B", 10);
+  GeneFamily family;
+  family.set_species_size("A", 5);
+  family.set_species_size("B", 10);
 
-  // lambda = 0.01;
-  // cout << "About to run pruner" << endl;
-  // likelihood_computer pruner(20, lambda, &family);
-  // p_tree->apply_reverse_level_order(pruner);
-  // cout << "Pruner complete" << endl;
-  // double* likelihood = pruner.get_likelihoods();		// likelihood of the whole tree = multiplication of likelihood of all nodes
-  // cout << "Likelihood 0: " << likelihood[0] << endl;
+  lambda = 0.01;
+  cout << "About to run pruner" << endl;
+  likelihood_computer pruner(20, lambda, &family);
+  p_tree->apply_reverse_level_order(pruner);
+  cout << "Pruner complete" << endl;
+  vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
+  for (int i = 0; i<likelihood.size(); ++i)
+    cout << "AB Likelihood " << i << ": " << likelihood[i] << endl;
+  likelihood = pruner.get_likelihoods(p_tree->find_descendant("A"));		// likelihood of the whole tree = multiplication of likelihood of all nodes
+  for (int i = 0; i<likelihood.size(); ++i)
+    cout << "A Likelihood " << i << ": " << likelihood[i] << endl;
+  likelihood = pruner.get_likelihoods(p_tree->find_descendant("B"));		// likelihood of the whole tree = multiplication of likelihood of all nodes
+  for (int i = 0; i<likelihood.size(); ++i)
+    cout << "B Likelihood " << i << ": " << likelihood[i] << endl;
 
   try {
     /* START: Running simulations if -s */
