@@ -95,6 +95,7 @@ clade *newick_parser::new_clade(clade *p_parent) {
 
 vector<vector<double> > get_matrix(int size, int branch_length, double lambda)
 {
+  cout << "Computing matrix for branch " << branch_length << " lambda " << lambda << endl;
   vector<vector<double> > result(size);
   for (int s = 0; s < size; s++)
   {
@@ -152,11 +153,9 @@ public:
   int num_factors() { return _factors.size();  }
   void operator()(clade * child)
   {
-    cout << "() Calc is " << this << endl;
-
     _factors[child].resize(_max_root_family_size);
     vector<vector<double> > matrix = get_matrix(_factors[child].size(), child->get_branch_length(), _lambda);
-    //cout << "Child matrix calculated for " << child->get_taxon_name() << endl << matrix << endl << "Done" << endl;
+    cout << "Child matrix calculated for " << child->get_taxon_name() << endl << matrix << endl << "Done" << endl;
 
     _factors[child] = matrix_multiply(matrix, _probabilities[child]);
     for (int i = 0; i < _factors[child].size(); ++i)
@@ -186,7 +185,6 @@ public:
 
 void likelihood_computer::operator()(clade *node)
 {
-  cout << "Calculating probabilities for " << node->get_taxon_name() << endl;
   if (node->is_leaf())
   {
     _probabilities[node].resize(_max_possible_family_size);
@@ -198,17 +196,33 @@ void likelihood_computer::operator()(clade *node)
   else
   {
     child_calculator calc(_max_possible_family_size, _lambda, _probabilities);
-    cout << "l Calc is " << &calc << endl;
     node->apply_to_descendants(calc);
-    cout << "l Calc is " << &calc << endl;
-    cout << "Factors: " << calc.num_factors() << endl;
     calc.update_probabilities(node);
-    cout << "Factors: " << calc.num_factors() << endl;
   }
-  cout << "Probabilities calculated for " << node->get_taxon_name() << endl;
 }
 
-bool max_value(const pair_type & p1, const pair_type & p2) { 
+int gene_family::max_family_size() const
+{
+  int max = max_element(species_size_map.begin(), species_size_map.end(), max_value<string, int>)->second;
 
-  return p1.first < p2.first; 
+  // CAFE calculates a root_max and a not-root-max 
+  // we will use the same not_root_max
+  //fs->root_max = MAX(30, rint(max * 1.25));
+
+  return max + std::max(50, max / 5);
 }
+
+template <typename T, typename U>
+T do_get_species(const std::pair<T, U> & p1)
+{
+  return p1.first;
+}
+
+vector<string> gene_family::get_species() const
+{
+  vector<string> result(species_size_map.size());
+  transform(species_size_map.begin(), species_size_map.end(), result.begin(), do_get_species<string,int>);
+  
+  return result;
+}
+

@@ -8,18 +8,31 @@
 
 class clade;
 
-class GeneFamily
+class gene_family
 {
-  std::map<std::string, int> species_size;
+  std::string _id;
+  std::map<std::string, int> species_size_map;
 public:
+  gene_family(std::string id) : _id(id) {}
+
   int get_species_size(std::string species) const
   {
-    return species_size.at(species);
+    if (species_size_map.find(species) == species_size_map.end()) // checks if the key is in the map
+    {
+      throw std::runtime_error(species + " was not found in gene family " + _id);
+    }
+    return species_size_map.at(species);
   }
   void set_species_size(std::string species, int sz)
   {
-    species_size[species] = sz;
+    species_size_map[species] = sz;
   }
+
+  std::vector<std::string> get_species() const;
+
+  int max_family_size() const;
+
+  std::string id() const { return _id; }
 };
 
 class newick_parser {
@@ -43,11 +56,11 @@ class likelihood_computer
 {
   // represents probability of the node having various family sizes
   std::map<clade *, std::vector<double> > _probabilities;
-  GeneFamily *_family;
+  gene_family *_family;
   int _max_possible_family_size;
   double _lambda;
 public:
-  likelihood_computer(int max_possible_family_size, double lambda, GeneFamily *family) : _max_possible_family_size(max_possible_family_size), _lambda(lambda)
+  likelihood_computer(int max_possible_family_size, double lambda, gene_family *family) : _max_possible_family_size(max_possible_family_size), _lambda(lambda)
   {
     _family = family;
   }
@@ -59,7 +72,17 @@ public:
   }
 };
 
-using pair_type = map<int, int>::value_type;
+// these functions are intended to work with maps (key, value pairs)
+template <typename T, typename U>
+bool max_key(const std::pair<T, U> & p1, const std::pair<T, U> & p2)
+{
+  return p1.first < p2.first;
+}
 
-bool max_value(const pair_type & p1, const pair_type & p2); // def'n in utils.cpp
+template <typename T, typename U>
+bool max_value(const std::pair<T, U> & p1, const std::pair<T, U> & p2)
+{
+  return p1.second < p2.second;
+}
+
 #endif

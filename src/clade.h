@@ -10,6 +10,9 @@
 #include <iterator>
 #include <stack>
 #include <queue>
+#include <map>
+
+class gene_family;
 
 /* Ask Ben:
 1) branch_length is long, but in get_branch_length()'s declaration we use int
@@ -39,6 +42,8 @@ class clade {
 
    vector<clade*>::iterator _desc_it, _desc_end; // iterator (and its end check) for descendants
 
+   map<string, int> _gene_family_sizes; // key is id of gene family, value is size at this node
+
    /* methods */
    void _name_interior_clade();
 
@@ -50,15 +55,15 @@ class clade {
 
    ~clade(); // destructor
   
-   clade *get_parent();
+   clade *get_parent() const;
 
    void add_descendant(clade *p_descendant);
 
    void add_leaf_names(vector<string>& vector_names);
 
-   bool is_leaf();
+   bool is_leaf() const;
 
-   bool is_root();
+   bool is_root() const;
    
    double get_branch_length() const { return _branch_length; }
 
@@ -73,6 +78,17 @@ class clade {
    void print_immediate_descendants(); // for testing purposes as of now
 
    void print_clade(); // for testing purposes as of now
+
+   int get_gene_family_size(string family_id) const
+   {
+     if (_gene_family_sizes.find(family_id) == _gene_family_sizes.end())
+       return 0;
+     return _gene_family_sizes.at(family_id);
+   }
+
+   // TODO: Is this the best way to do this? It means we have redundant data 
+   // in the gene_families and nodes
+   void init_gene_family_sizes(const vector<gene_family>& families);
 
    template <typename func> void apply_to_descendants(func& f) {
      cout << "desc Calc is " << &f << endl;

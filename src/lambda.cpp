@@ -11,7 +11,7 @@ struct lambda_args
 {
   clade *tree;
   vector<double> prior_rfsize; // prior is a poisson distribution on the root size based on leaves' size
-  vector<GeneFamily> gene_families;
+  vector<gene_family> gene_families;
 };
 
 double lambda_searcher(double* plambda, void* v)
@@ -27,7 +27,7 @@ double lambda_searcher(double* plambda, void* v)
   double score = 0;
   for (i = 0; i < args->gene_families.size(); i++)	// i: family index
   {
-    GeneFamily& fam = args->gene_families[i];
+    gene_family& fam = args->gene_families[i];
     map<clade *, int> node_family_sizes;  // TODO: this holds the family count at each node
     int root_family_size = 0;   // TODO
     int max_possible_family_size = 0;  // TODO

@@ -12,6 +12,7 @@ struct option longopts[] = {
   { "prefix", optional_argument, NULL, 'p' },
   { "simulate", optional_argument, NULL, 's' },
   { "nsims", optional_argument, NULL, 'n' },
+  { "fixed_lambda", optional_argument, NULL, 'k' },
   { 0, 0, 0, 0 }
 };
 

@@ -6,6 +6,8 @@
 #include <map>
 #include "probability.h"
 #include "family_generator.h"
+#include "fminsearch.h"
+#include "poisson.h"
 
 /* Ask Ben */
 /*
@@ -29,6 +31,55 @@ unsigned long long choose(unsigned long long n, unsigned long long k) {
   return r;
 }
 
+
+vector<gene_family> initialize_sample_families()
+{
+  vector<gene_family> gene_families;
+
+  gene_families.push_back(gene_family("ENS01"));
+  gene_families.push_back(gene_family("ENS02"));
+  gene_families.push_back(gene_family("ENS03"));
+  gene_families.push_back(gene_family("ENS04"));
+
+  for (int i = 0; i < gene_families.size(); ++i)
+  {
+    gene_families[i].set_species_size("A", 5);
+    gene_families[i].set_species_size("B", 10);
+    gene_families[i].set_species_size("C", 2);
+    gene_families[i].set_species_size("D", 6);
+  }
+
+  return gene_families;
+
+}
+
+vector<double> get_posterior(vector<gene_family> gene_families, int max_family_size, double lambda, clade *p_tree)
+{
+  vector<double> posterior(max_family_size);
+
+  srand(10);
+
+  vector<double> root_poisson_lambda = find_poisson_lambda(p_tree, gene_families);
+  for (int i = 0; i < root_poisson_lambda.size(); ++i)
+    cout << "root_poisson_lambda " << i << "=" << root_poisson_lambda[i] << endl;
+
+  likelihood_computer pruner(max_family_size, lambda, &gene_families[0]);
+
+  p_tree->apply_reverse_level_order(pruner);
+  cout << "Pruner complete" << endl;
+  vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
+
+  for (int j = 0; j < max_family_size; j++)	// j: root family size
+  {
+    // likelihood and posterior both starts from 1 instead of 0 
+    posterior[j] = exp(log(likelihood[j]));// +log(prior_rfsize[j]));	//prior_rfsize also starts from 1
+  }
+
+  return posterior;
+}
+
+
+
 int main(int argc, char *const argv[]) {
 
   /* START: Option variables for main() */
@@ -36,23 +87,26 @@ int main(int argc, char *const argv[]) {
   string input_file_path;
   string famdist;
   bool simulate = false;
+  double fixed_lambda = -1;
   int nsims = 0; 
   /* END: Option variables for main() */
 
   /* START: Option variables for simulations */
   map<int, int>* p_famdist_map = NULL;
   int root_family_size = 300;
-  int max_family_size = 600;
   double lambda = 0.0017;
   /* END: Option variables for simulations */
 
-  while ((args = getopt_long(argc, argv, "i:n:f:s::", longopts, NULL)) != -1) {
+  while ((args = getopt_long(argc, argv, "i:n:f:k:s::", longopts, NULL)) != -1) {
     switch (args) {
     case 'i':
       input_file_path = optarg;
       break;
     case 's':
       simulate = true;
+      break;
+    case 'k':
+      fixed_lambda = atof(optarg);
       break;
     case 'n':
       nsims = atoi(optarg);
@@ -79,28 +133,38 @@ int main(int argc, char *const argv[]) {
   p_tree->print_clade();
   /* END: Testing implementation of clade class - */
 
-  parser.newick_string = "(A:1,B:1);";
+  parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
   p_tree = parser.parse_newick();
-  GeneFamily family;
-  family.set_species_size("A", 5);
-  family.set_species_size("B", 10);
+  vector<gene_family> gene_families = initialize_sample_families();
+
+  int max_family_size = gene_families[0].max_family_size();
 
   lambda = 0.01;
   cout << "About to run pruner" << endl;
-  likelihood_computer pruner(20, lambda, &family);
+  likelihood_computer pruner(max_family_size, lambda, &gene_families[0]);
   p_tree->apply_reverse_level_order(pruner);
   cout << "Pruner complete" << endl;
   vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
   for (int i = 0; i<likelihood.size(); ++i)
     cout << "AB Likelihood " << i << ": " << likelihood[i] << endl;
-  likelihood = pruner.get_likelihoods(p_tree->find_descendant("A"));		// likelihood of the whole tree = multiplication of likelihood of all nodes
-  for (int i = 0; i<likelihood.size(); ++i)
-    cout << "A Likelihood " << i << ": " << likelihood[i] << endl;
-  likelihood = pruner.get_likelihoods(p_tree->find_descendant("B"));		// likelihood of the whole tree = multiplication of likelihood of all nodes
-  for (int i = 0; i<likelihood.size(); ++i)
-    cout << "B Likelihood " << i << ": " << likelihood[i] << endl;
+//  likelihood = pruner.get_likelihoods(p_tree->find_descendant("A"));		// likelihood of the whole tree = multiplication of likelihood of all nodes
+//  for (int i = 0; i<likelihood.size(); ++i)
+//    cout << "A Likelihood " << i << ": " << likelihood[i] << endl;
+//  likelihood = pruner.get_likelihoods(p_tree->find_descendant("B"));		// likelihood of the whole tree = multiplication of likelihood of all nodes
+//  for (int i = 0; i<likelihood.size(); ++i)
+//    cout << "B Likelihood " << i << ": " << likelihood[i] << endl;
+
 
   try {
+    p_tree->init_gene_family_sizes(gene_families);
+
+    if (fixed_lambda >= 0)
+    {
+      vector<double> posterior = get_posterior(gene_families, max_family_size, fixed_lambda, p_tree);
+      double map = log(*max_element(posterior.begin(), posterior.end()));
+      cout << "Posterior values found - max log posterior is " << map << endl;
+    }
+
     /* START: Running simulations if -s */
     if (simulate) {
       if (!nsims) {
@@ -122,8 +186,9 @@ int main(int argc, char *const argv[]) {
       else {
 	cout << "Simulations will use the root family distribution specified with -f: " << famdist << endl;
 	p_famdist_map = read_famdist(famdist);
-      
-	int max_family_size = (*max_element(p_famdist_map->begin(), p_famdist_map->end(), max_value)).first;
+  int max = (*max_element(p_famdist_map->begin(), p_famdist_map->end(), max_key<int, int>)).first * 2;
+
+  // 
 
 	cout << "max_family_size = " << max_family_size << endl;
       // trial simulation = simulate_families_from_root_size(p_tree, nsims, root_family_size, max_family_size, lambda);

@@ -1,5 +1,6 @@
 #include "clade.h"
 #include <queue>
+#include "utils.h"
 
 /* Recursive destructor */
 clade::~clade() {
@@ -9,7 +10,7 @@ clade::~clade() {
   }
 }
 
-clade *clade::get_parent() {
+clade *clade::get_parent() const {
 
   return _p_parent; // memory address
 }
@@ -58,7 +59,8 @@ vector<clade*> clade::find_internal_nodes() {
   }
 }
 
-/* Recursively find pointer to clade with provided taxon name */
+
+  /* Recursively find pointer to clade with provided taxon name */
 clade *clade::find_descendant(string some_taxon_name) {
   descendant_finder finder(some_taxon_name);
   apply_prefix_order(finder);
@@ -142,12 +144,12 @@ void clade::print_clade() {
   }
 }
 
-bool clade::is_leaf() {
+bool clade::is_leaf() const {
 
   return _descendants.empty();
 }
 
-bool clade::is_root() {
+bool clade::is_root() const {
 
   return get_parent() == NULL;
 }
@@ -159,6 +161,21 @@ bool clade::is_root() {
 */
 void print_clade_name(clade *clade) {
   cout << clade->get_taxon_name() << " (length of subtending branch: " << clade->get_branch_length() << ")" << endl;
+}
+
+void clade::init_gene_family_sizes(const vector<gene_family>& families)
+{
+  if (is_leaf())
+  {
+    vector<string> species_names = families[0].get_species();
+    for (int i = 0; i<families.size(); ++i)
+    {
+      const gene_family& f = families[i];
+      this->_gene_family_sizes[f.id()] = f.get_species_size(this->get_taxon_name());
+    }
+  }
+  for (int i = 0; i < _descendants.size(); ++i)
+    _descendants[i]->init_gene_family_sizes(families);
 }
 
 /* Testing implementation of clade class */
