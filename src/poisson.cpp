@@ -53,6 +53,20 @@ double lnLPoisson(double* plambda, void* data)
   return -score;
 }
 
+vector<double> get_prior_rfsize_poisson_lambda(int min_family_size, int max_family_size, double poisson_lambda)
+{
+  int num_sizes = max_family_size - min_family_size;
+  vector<double> prior_rfsize(num_sizes);
+
+  for (int i = 0; i<num_sizes; i++) {
+
+    //param->prior_rfsize[i] = poisspdf(param->pcafe->rootfamilysizes[0]+i, parameters[0]);					// poisson
+    prior_rfsize[i] = poisspdf(i, poisson_lambda);					// shifted poisson
+                                                   //param->prior_rfsize[i] = gampdf(param->pcafe->rootfamilysizes[0]+i, parameters[0], parameters[1]);	// gamma
+  }
+  return prior_rfsize;
+}
+
 vector<double> find_poisson_lambda(clade* tree, vector<gene_family> gene_families)
 {
   // get all leaf sizes

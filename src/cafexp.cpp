@@ -63,16 +63,21 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
   for (int i = 0; i < root_poisson_lambda.size(); ++i)
     cout << "root_poisson_lambda " << i << "=" << root_poisson_lambda[i] << endl;
 
+  vector<double> prior_rfsize = get_prior_rfsize_poisson_lambda(0, max_family_size, root_poisson_lambda[0]);
+  for (int i = 0; i < prior_rfsize.size(); ++i)
+    cout << "prior_rfsize " << i << "=" << prior_rfsize[i] << endl;
+
+
   likelihood_computer pruner(max_family_size, lambda, &gene_families[0]);
 
   p_tree->apply_reverse_level_order(pruner);
   cout << "Pruner complete" << endl;
   vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
 
-  for (int j = 0; j < max_family_size; j++)	// j: root family size
+  for (int i = 0; i < max_family_size; i++)	// i: root family size
   {
     // likelihood and posterior both starts from 1 instead of 0 
-    posterior[j] = exp(log(likelihood[j]));// +log(prior_rfsize[j]));	//prior_rfsize also starts from 1
+    posterior[i] = exp(log(likelihood[i]) + log(prior_rfsize[i]));	//prior_rfsize also starts from 1
   }
 
   return posterior;
@@ -143,10 +148,10 @@ int main(int argc, char *const argv[]) {
   cout << "About to run pruner" << endl;
   likelihood_computer pruner(max_family_size, lambda, &gene_families[0]);
   p_tree->apply_reverse_level_order(pruner);
-  cout << "Pruner complete" << endl;
   vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
-  for (int i = 0; i<likelihood.size(); ++i)
-    cout << "AB Likelihood " << i << ": " << likelihood[i] << endl;
+  cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
+  //  for (int i = 0; i<likelihood.size(); ++i)
+//    cout << "AB Likelihood " << i << ": " << likelihood[i] << endl;
 //  likelihood = pruner.get_likelihoods(p_tree->find_descendant("A"));		// likelihood of the whole tree = multiplication of likelihood of all nodes
 //  for (int i = 0; i<likelihood.size(); ++i)
 //    cout << "A Likelihood " << i << ": " << likelihood[i] << endl;

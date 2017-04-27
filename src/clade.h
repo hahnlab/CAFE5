@@ -91,7 +91,6 @@ class clade {
    void init_gene_family_sizes(const vector<gene_family>& families);
 
    template <typename func> void apply_to_descendants(func& f) {
-     cout << "desc Calc is " << &f << endl;
 
      // apply f to direct descendants
      // could replace with apply_prefix_order for functions f that recur through descendants

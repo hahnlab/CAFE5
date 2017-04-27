@@ -155,20 +155,15 @@ public:
   {
     _factors[child].resize(_max_root_family_size);
     vector<vector<double> > matrix = get_matrix(_factors[child].size(), child->get_branch_length(), _lambda);
-    cout << "Child matrix calculated for " << child->get_taxon_name() << endl << matrix << endl << "Done" << endl;
 
     _factors[child] = matrix_multiply(matrix, _probabilities[child]);
-    for (int i = 0; i < _factors[child].size(); ++i)
-      cout << "  Factor for child " << child->get_taxon_name() << i << ": " << _factors[child][i] << endl;
     // p(node=c,child|s) = p(node=c|s)p(child|node=c) integrated over all c
     // remember child likelihood[c]'s never sum up to become 1 because they are likelihoods conditioned on c's.
     // incoming nodes to don't sum to 1. outgoing nodes sum to 1
-    cout << "Factor count: " << _factors.size() << endl;
   }
 
   void update_probabilities(clade *node)
   {
-    cout << "Updating probabilities for " << node->get_taxon_name() << " - " << _factors.size() << " factors" << endl;
     _probabilities[node].resize(_max_root_family_size);
     for (int i = 0; i < _probabilities[node].size(); i++)
     {
@@ -176,7 +171,6 @@ public:
       map<clade *, std::vector<double> >::iterator it = _factors.begin();
       for (; it != _factors.end(); it++)
       {
-        cout << "    Multiplying by " << it->second[i];
         _probabilities[node][i] *= it->second[i];
       }
     }
