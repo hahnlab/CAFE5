@@ -130,16 +130,9 @@ int main(int argc, char *const argv[]) {
   }
 
   newick_parser parser;
-  parser.newick_string = "(((chimp:6,human:6):81,(mouse:17,rat:17):70):6,dog:93)";
-
-  /* START: Testing implementation of clade class */  
-  parser.newick_string = "((A:1,B:1):2,C:3);";
-  clade *p_tree = parser.parse_newick();
-  p_tree->print_clade();
-  /* END: Testing implementation of clade class - */
-
+  // parser.newick_string = "(((chimp:6,human:6):81,(mouse:17,rat:17):70):6,dog:93)";
   parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-  p_tree = parser.parse_newick();
+  clade *p_tree = parser.parse_newick();
   vector<gene_family> gene_families = initialize_sample_families();
 
   int max_family_size = gene_families[0].max_family_size();
@@ -277,12 +270,20 @@ int main(int argc, char *const argv[]) {
 
 /* START: Testing implementation of clade class */
 
+/* Initializing tree */
+/*
+  parser.newick_string = "((A:1,B:1):2,C:3);";
+  clade *p_tree = parser.parse_newick();
+*/
+
 /* Testing print_immediate_descendants */
 /*
 cout << "Testing print_immediate_descendants():" << endl;
   p_tree->print_immediate_descendants();
+*/
 
-  // Testing print_clade() method
+/* Testing print_clade() method */
+/*
   cout << "Testing print_clade():" << endl;
   p_tree->print_clade();
 */

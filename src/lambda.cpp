@@ -4,6 +4,7 @@
 #include "clade.h"
 #include "fminsearch.h"
 #include "utils.h"
+#include "probability.h"
 
 using namespace std;
 

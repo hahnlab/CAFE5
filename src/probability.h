@@ -5,4 +5,24 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 double chooseln(double n, double k);
 double unifrnd();
 
+class likelihood_computer
+{
+  // represents probability of the node having various family sizes
+  std::map<clade *, std::vector<double> > _probabilities;
+  gene_family *_family;
+  int _max_possible_family_size;
+  double _lambda;
+public:
+  likelihood_computer(int max_possible_family_size, double lambda, gene_family *family) : _max_possible_family_size(max_possible_family_size), _lambda(lambda)
+  {
+    _family = family;
+  }
+  void operator()(clade *node);
+
+  std::vector<double> get_likelihoods(clade *node) const
+  { 
+    return _probabilities.at(node); 
+  }
+};
+
 #endif

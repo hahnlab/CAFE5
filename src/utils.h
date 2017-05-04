@@ -52,26 +52,6 @@ class newick_parser {
   clade *parse_newick();
 };
 
-class likelihood_computer
-{
-  // represents probability of the node having various family sizes
-  std::map<clade *, std::vector<double> > _probabilities;
-  gene_family *_family;
-  int _max_possible_family_size;
-  double _lambda;
-public:
-  likelihood_computer(int max_possible_family_size, double lambda, gene_family *family) : _max_possible_family_size(max_possible_family_size), _lambda(lambda)
-  {
-    _family = family;
-  }
-  void operator()(clade *node);
-
-  std::vector<double> get_likelihoods(clade *node) const
-  { 
-    return _probabilities.at(node); 
-  }
-};
-
 // these functions are intended to work with maps (key, value pairs)
 template <typename T, typename U>
 bool max_key(const std::pair<T, U> & p1, const std::pair<T, U> & p2)

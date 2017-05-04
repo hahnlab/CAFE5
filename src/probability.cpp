@@ -1,6 +1,8 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include "utils.h" // for gene_family class
+#include "clade.h"
 #include "probability.h"
 
 /* Useful links
@@ -32,6 +34,7 @@ double gammaln(double a)
 
 /* Old C implementation necessary for set_node_familysize_random. Now using uniform_real_distribution()
 */
+
 double unifrnd()
 {
   double result = rand() / (RAND_MAX + 1.0); // rand() returns an int from 0 to RAND_MAX (which is defined in std); the +1.0 is there probably so that we do not draw exactly 1.
@@ -82,3 +85,96 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 //  }
   return result;
 }
+
+/* START: Likelihood computation ---------------------- */
+
+vector<vector<double> > get_matrix(int size, int branch_length, double lambda)
+{
+  cout << "Computing matrix for branch " << branch_length << " lambda " << lambda << endl;
+  vector<vector<double> > result(size);
+  for (int s = 0; s < size; s++)
+  {
+    result[s].resize(size);
+    for (int c = 0; c < size; c++)
+    {
+      result[s][c] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, s, c);
+      //cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
+    }
+  }
+  return result;
+}
+
+/* Takes in a matrix and a vector, returns vector containing their product */
+vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v)
+{
+  vector<double> result(matrix.size());
+
+  for (int s = 0; s < matrix.size(); s++)
+  {
+    result[s] = 0;
+    for (int c = 0; c < matrix[s].size(); c++)
+    {
+      result[s] += matrix[s][c] * v[c];
+    }
+  }
+
+  return result;
+}
+
+class child_calculator {
+  map<clade *, vector<double> > _factors;
+  map<clade *, vector<double> >& _probabilities;
+  int _max_root_family_size;
+  double _lambda;
+public:
+  child_calculator(int max_root_family_size, double lambda, map<clade *, vector<double> >& probabilities) : _max_root_family_size(max_root_family_size), _lambda(lambda), _probabilities(probabilities)
+  {
+      
+  }
+
+  int num_factors() { return _factors.size();  }
+  void operator()(clade * child)
+  {
+    _factors[child].resize(_max_root_family_size);
+    vector<vector<double> > matrix = get_matrix(_factors[child].size(), child->get_branch_length(), _lambda);
+
+    _factors[child] = matrix_multiply(matrix, _probabilities[child]);
+    // p(node=c,child|s) = p(node=c|s)p(child|node=c) integrated over all c
+    // remember child likelihood[c]'s never sum up to become 1 because they are likelihoods conditioned on c's.
+    // incoming nodes to don't sum to 1. outgoing nodes sum to 1
+  }
+
+  void update_probabilities(clade *node)
+  {
+    _probabilities[node].resize(_max_root_family_size);
+    for (int i = 0; i < _probabilities[node].size(); i++)
+    {
+      _probabilities[node][i] = 1;
+      map<clade *, std::vector<double> >::iterator it = _factors.begin();
+      for (; it != _factors.end(); it++)
+      {
+        _probabilities[node][i] *= it->second[i];
+      }
+    }
+  }
+};
+
+void likelihood_computer::operator()(clade *node)
+{
+  if (node->is_leaf())
+  {
+    _probabilities[node].resize(_max_possible_family_size);
+    int species_size = _family->get_species_size(node->get_taxon_name());
+
+    _probabilities[node][species_size] = 1.0;
+
+  }
+  else
+  {
+    child_calculator calc(_max_possible_family_size, _lambda, _probabilities);
+    node->apply_to_descendants(calc);
+    calc.update_probabilities(node);
+  }
+}
+
+/* END: Likelihood computation ---------------------- */
