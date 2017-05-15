@@ -17,17 +17,21 @@ struct option longopts[] = {
 };
 
 
-/* Populates famdist_map with root family distribution read from famdist_file_path */
-map<int, int>* read_famdist(string famdist_file_path) {
+//! Populate famdist_map with root family distribution read from famdist_file_path
+/*!
+  This function is called by CAFExp's main function when "simulate" is specified 
+*/
+map<int, int>* read_rootdist(string rootdist_file_path) {
 
-  map<int, int> *p_famdist_map = new map<int, int>();
-  ifstream famdist_file(famdist_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
-  string line;
-  while (getline(famdist_file, line)) {
-    istringstream ist(line);
-    int fam_size, fam_count;
-    ist >> fam_size >> fam_count;
-    (*p_famdist_map)[fam_size] = fam_count;
-  }
-  return p_famdist_map;
+    map<int, int> *p_rootdist_map = new map<int, int>();
+    ifstream rootdist_file(rootdist_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
+    string line;
+    while (getline(rootdist_file, line)) {
+        istringstream ist(line);
+        int fam_size, fam_count;
+        ist >> fam_size >> fam_count;
+        (*p_rootdist_map)[fam_size] = fam_count;
+    }
+  
+  return p_rootdist_map;
 }

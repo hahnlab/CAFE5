@@ -90,14 +90,14 @@ int main(int argc, char *const argv[]) {
   /* START: Option variables for main() */
   int args; // getopt_long returns int or char
   string input_file_path;
-  string famdist;
+  string rootdist;
   bool simulate = false;
   double fixed_lambda = -1;
   int nsims = 0; 
   /* END: Option variables for main() */
 
   /* START: Option variables for simulations */
-  map<int, int>* p_famdist_map = NULL;
+  map<int, int>* p_rootdist_map = NULL;
   int root_family_size = 300;
   double lambda = 0.0017;
   /* END: Option variables for simulations */
@@ -165,33 +165,31 @@ int main(int argc, char *const argv[]) {
 
     /* START: Running simulations if -s */
     if (simulate) {
-      if (!nsims) {
-	throw runtime_error("In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting...");
-      }
+        if (!nsims) {
+            throw runtime_error("In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting...");
+        }
     
-      else { cout << "Performing " << nsims << " simulation(s). " << endl; }
+        else { cout << "Performing " << nsims << " simulation(s). " << endl; }
 
-      if (input_file_path.empty() && famdist.empty()) {
-	cout << "In order to perform simulations (s), you must either specify an input file from which the root family size is estimated with -i, or specify a root family distribution with -f. Exiting..." << endl;
-      }
+        if (input_file_path.empty() && rootdist.empty()) {
+            throw runtime_error("In order to perform simulations (s), you must either specify an input file from which the root family size is estimated with -i, or specify a root family distribution with -f. Exiting...");
+        }
 
-      /* -i is provided, -f is not */
-      else if (famdist.empty() && !input_file_path.empty()) {
-	cout << "Simulations will use the root family size estimated from data provided with -i:" << input_file_path << endl;
-      }
+        /* -i is provided, -f is not */
+        else if (rootdist.empty() && !input_file_path.empty()) {
+            cout << "Simulations will use the root family size estimated from data provided with -i:" << input_file_path << endl;
+        }
 
-      /* -f is provided (-f has precedence over -i if both are provided) */
-      else {
-	cout << "Simulations will use the root family distribution specified with -f: " << famdist << endl;
-	p_famdist_map = read_famdist(famdist);
-  int max = (*max_element(p_famdist_map->begin(), p_famdist_map->end(), max_key<int, int>)).first * 2;
+        /* -f is provided (-f has precedence over -i if both are provided) */
+        else {
+            cout << "Simulations will use the root family distribution specified with -f: " << rootdist << endl;
+            p_rootdist_map = read_rootdist(rootdist);
+            int max = (*max_element(p_rootdist_map->begin(), p_rootdist_map->end(), max_key<int, int>)).first * 2;
 
-  // 
-
-	cout << "max_family_size = " << max_family_size << endl;
-      // trial simulation = simulate_families_from_root_size(p_tree, nsims, root_family_size, max_family_size, lambda);
-      // print_simulation(simulation, cout);
-      }
+            cout << "max_family_size = " << max_family_size << endl;
+            // trial simulation = simulate_families_from_root_size(p_tree, nsims, root_family_size, max_family_size, lambda);
+            // print_simulation(simulation, cout);
+        }
     }
     
     return 0;
