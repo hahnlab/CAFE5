@@ -88,93 +88,119 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 
 /* START: Likelihood computation ---------------------- */
 
-vector<vector<double> > get_matrix(int size, int branch_length, double lambda)
-{
-  cout << "Computing matrix for branch " << branch_length << " lambda " << lambda << endl;
-  vector<vector<double> > result(size);
-  for (int s = 0; s < size; s++)
-  {
-    result[s].resize(size);
-    for (int c = 0; c < size; c++)
-    {
-      result[s][c] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, s, c);
-      //cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
+//! Compute transition probability matrix for all gene family sizes from 0 to size-1 (=_max_root_family_size-1)
+vector<vector<double> > get_matrix(int size, int branch_length, double lambda) {
+    
+    cout << "Computing matrix for branch " << branch_length << " lambda " << lambda << endl;
+
+    vector<vector<double> > result(size);
+    for (int s = 0; s < size; s++) {
+        result[s].resize(size);
+    
+        for (int c = 0; c < size; c++) {
+            result[s][c] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, s, c);
+            //cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
+        }
     }
-  }
-  return result;
+    
+    return result;
 }
 
-/* Takes in a matrix and a vector, returns vector containing their product */
-vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v)
-{
-  vector<double> result(matrix.size());
+//! Take in a matrix and a vector, compute product, return it
+vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v) {
+    vector<double> result(matrix.size());
 
-  for (int s = 0; s < matrix.size(); s++)
-  {
-    result[s] = 0;
-    for (int c = 0; c < matrix[s].size(); c++)
-    {
-      result[s] += matrix[s][c] * v[c];
+    for (int s = 0; s < matrix.size(); s++) {
+        result[s] = 0;
+    
+        for (int c = 0; c < matrix[s].size(); c++) {
+            result[s] += matrix[s][c] * v[c];
+        }
     }
-  }
 
-  return result;
+    return result;
 }
 
+//! Computation and storage of the vector of likelihoods (one likelihood/family size) of an internal node
+/*!
+  This class computes the vector of probabilities (of the data given the model; i.e., the likelihoods) for an internal node.
+   
+  An instance of it is created by likelihood_computer for a focal internal node (in the code: "node").
+ 
+  likelihood_computer then calls child_calculator as a function (using the () operator overload) on each descendant of the internal node (via apply_to_descendants()), computing the vector of likelihoods for each one. This vector (called a "factor") is then stored in the _factors map as keys, at _factors[child]. There will be as many factors as there are children.
+  
+  likelihood_computer then calls the update_probabilities() method of child_calculator, which multiplies the factors together, and stores the result (a vector of likelihoods) in _probabilities[node] ("node" here is the focal internal node).
+ 
+  Note that the _probabilities map stores the vectors of likelihoods from all nodes in the tree, and is a member of the likelihood_computer class.
+*/
 class child_calculator {
-  map<clade *, vector<double> > _factors;
-  map<clade *, vector<double> >& _probabilities;
-  int _max_root_family_size;
-  double _lambda;
+private:
+    map<clade *, vector<double> > _factors; //!< keys = pointers to clade objects (children of internal node), values = clade's contribution (factor) to the vector of likelihoods of the internal node
+    map<clade *, vector<double> >& _probabilities; //!< (member of likelihood_computer) keys = pointer to clade object (all nodes in the tree), values = clade's vector of likelihoods
+    int _max_root_family_size; //!< max gene family size for which likelihood is to be computed
+    double _lambda; //!< mambda used in likelihood computation
+
 public:
-  child_calculator(int max_root_family_size, double lambda, map<clade *, vector<double> >& probabilities) : _max_root_family_size(max_root_family_size), _lambda(lambda), _probabilities(probabilities)
-  {
-      
-  }
+    //! Constructor.
+    /*!
+      Used once per internal node by likelihood_computer().
+    */
+    child_calculator(int max_root_family_size, double lambda, map<clade *, vector<double> >& probabilities) : _max_root_family_size(max_root_family_size), _lambda(lambda), _probabilities(probabilities) {
+    }
 
-  int num_factors() { return _factors.size();  }
-  void operator()(clade * child)
-  {
-    _factors[child].resize(_max_root_family_size);
-    vector<vector<double> > matrix = get_matrix(_factors[child].size(), child->get_branch_length(), _lambda);
+    int num_factors() { return _factors.size(); }
+  
+    //! Operator () overload.
+    /*!
+      Makes child_calculator a functor. 
+      The functor is called once on each child by likelihood_computer through apply_to_descendants().
+     */
+    void operator()(clade * child) {
+        _factors[child].resize(_max_root_family_size); // Ben: Maybe I'm wrong, but are we ignoring the largest possible gene family size?
+        // Ben: Because if you look at get_matrix(), s goes from 0 to size-1. So if _max_root_family_size is 10, our vector stops at 9, yes?
+        vector<vector<double> > matrix = get_matrix(_factors[child].size(), child->get_branch_length(), _lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
 
-    _factors[child] = matrix_multiply(matrix, _probabilities[child]);
+        _factors[child] = matrix_multiply(matrix, _probabilities[child]);
     // p(node=c,child|s) = p(node=c|s)p(child|node=c) integrated over all c
     // remember child likelihood[c]'s never sum up to become 1 because they are likelihoods conditioned on c's.
     // incoming nodes to don't sum to 1. outgoing nodes sum to 1
-  }
-
-  void update_probabilities(clade *node)
-  {
-    _probabilities[node].resize(_max_root_family_size);
-    for (int i = 0; i < _probabilities[node].size(); i++)
-    {
-      _probabilities[node][i] = 1;
-      map<clade *, std::vector<double> >::iterator it = _factors.begin();
-      for (; it != _factors.end(); it++)
-      {
-        _probabilities[node][i] *= it->second[i];
-      }
     }
-  }
+
+    //! Method.
+    /*!
+     Called by likelihood_computer after all children have been processed. It multiplies all factors together and updates the _probabilities map.
+    */
+    void update_probabilities(clade *node) {
+        _probabilities[node].resize(_max_root_family_size);
+    
+        for (int i = 0; i < _probabilities[node].size(); i++) {
+            _probabilities[node][i] = 1;
+            map<clade *, std::vector<double> >::iterator it = _factors.begin();
+            
+            for (; it != _factors.end(); it++) {
+                _probabilities[node][i] *= it->second[i];
+            }
+        }
+    }
 };
 
-void likelihood_computer::operator()(clade *node)
-{
-  if (node->is_leaf())
-  {
-    _probabilities[node].resize(_max_possible_family_size);
-    int species_size = _family->get_species_size(node->get_taxon_name());
-
-    _probabilities[node][species_size] = 1.0;
-
-  }
-  else
-  {
-    child_calculator calc(_max_possible_family_size, _lambda, _probabilities);
-    node->apply_to_descendants(calc);
-    calc.update_probabilities(node);
-  }
+//! Operator () overload for likelihood_computer.
+/*!
+  The operator () overload here allows likelihood_computer to be called as a function (i.e., it makes likelihood_computer a functor).
+  This is what allows likelihood_computer to be called recursively in the pruning algorithm, through apply_reverse_level_order.
+*/
+void likelihood_computer::operator()(clade *node) {
+    if (node->is_leaf()) {
+        _probabilities[node].resize(_max_possible_family_size);
+        int species_size = _family->get_species_size(node->get_taxon_name());
+        _probabilities[node][species_size] = 1.0;
+    }
+  
+    else {
+        child_calculator calc(_max_possible_family_size, _lambda, _probabilities);
+        node->apply_to_descendants(calc);
+        calc.update_probabilities(node);
+    }
 }
 
 /* END: Likelihood computation ---------------------- */
