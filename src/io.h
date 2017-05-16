@@ -8,6 +8,6 @@ using namespace std;
 
 extern struct option longopts[];
 
-map<int, int> *read_famdist(string famdist_file_path);
+map<int, int> *read_rootdist(string famdist_file_path);
 
 #endif

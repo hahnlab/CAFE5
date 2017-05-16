@@ -84,7 +84,6 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
 }
 
 
-
 int main(int argc, char *const argv[]) {
 
   /* START: Option variables for main() */
@@ -117,7 +116,7 @@ int main(int argc, char *const argv[]) {
       nsims = atoi(optarg);
       break;
     case 'f':
-      famdist = optarg;
+      rootdist = optarg;
       break;
     case ':':   // missing argument
       fprintf(stderr, "%s: option `-%c' requires an argument",
@@ -187,8 +186,10 @@ int main(int argc, char *const argv[]) {
             int max = (*max_element(p_rootdist_map->begin(), p_rootdist_map->end(), max_key<int, int>)).first * 2;
 
             cout << "max_family_size = " << max_family_size << endl;
-            // trial simulation = simulate_families_from_root_size(p_tree, nsims, root_family_size, max_family_size, lambda);
-            // print_simulation(simulation, cout);
+            //vector<trial *> simulation = simulate_families_from_root_size(p_tree, nsims, root_family_size, max_family_size, lambda);
+            vector<vector<trial *> > simulation = simulate_families_from_distribution(p_tree, nsims, *p_rootdist_map, max_family_size, lambda);
+
+            print_simulation(simulation, cout);
         }
     }
     
