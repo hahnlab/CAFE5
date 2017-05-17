@@ -51,6 +51,9 @@ private:
         // std::tie : when given n input values, it returns a std:tuple (a container) of size n
         // the < operator is defined for std::tuple, and it allows lexicographical sorting of n-tuples (it sorts and returns the first); the std::tuple < operator is left intact below -- below we overload the < operator of the probability_calculator class
         //! Operator < overload
+        /*!
+          Necessary for the map method find() used below
+        */ 
         bool operator<(const key &o) const {
             return std::tie(size, parent_size, branch_length, lambda) < std::tie(o.size, o.parent_size, o.branch_length, o.lambda);
         }

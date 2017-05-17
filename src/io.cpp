@@ -37,6 +37,7 @@ map<int, int>* read_rootdist(string rootdist_file_path) {
 }
 
 /* START: Printing functions for simulation engine */
+
 //! Print simulations from provided root family distribution
 void print_simulation(std::vector<vector<trial *> > &sim, std::ostream& ost) {
 
@@ -58,4 +59,5 @@ void print_simulation(std::vector<vector<trial *> > &sim, std::ostream& ost) {
         }
     }
 }
+
 /* END: Printing functions for simulation engine */
