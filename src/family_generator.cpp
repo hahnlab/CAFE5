@@ -5,66 +5,70 @@
 #include "probability.h"
 #include "family_generator.h"
 
-static map<clade *, int> family_sizes; // key: clades, value: family size
-
 std::default_random_engine gen(12);
 std::uniform_real_distribution<> dis(0, 1); // draw random number from uniform distribution
 
-//! Computes probabilities of moving from one family size to another 
-/*!
-Contains a map that serves as a hash table to store precalculated values. If the
-given parameters have already been calculated, will return the cached value
-rather than calculating the value again
-*/
-class probability_calculator
-{
-  // C++ idiomatic way of creating a key that can be compared to another key
-  struct key
-  {
-    double lambda;
-    double branch_length;
-    int parent_size;
-    int size;
+////! Computation of the probabilities of moving from a family size (parent) to another (child)
+///*!
+//  Contains a map (_cash) that serves as a hash table to store precalculated values.
+//  If the given parameters have already been calculated, will return the cached value rather than calculating the value again.
+//*/
+//class probability_calculator {
+//private:
+//    // C++ idiomatic way of creating a key that can be compared to another key
+//    struct key {
+//        double lambda;
+//        double branch_length;
+//        int parent_size;
+//        int size;
+//
+//        // std::tie : when given n input values, it returns a std:tuple (a container) of size n
+//        // the < operator is defined for std::tuple, and it allows lexicographical sorting of n-tuples (it sorts and returns the first); the std::tuple < operator is left intact below -- below we overload the < operator of the probability_calculator class
+//        //! Operator < overload
+//        bool operator<(const key &o) const {
+//            return std::tie(size, parent_size, branch_length, lambda) < std::tie(o.size, o.parent_size, o.branch_length, o.lambda);
+//        }
+//    };
+//  
+//    map<key, double> _cache; //!< map that stores transition probabilities (given a parent and child size, branch length and lambda)
+//  
+//public:
+//    double get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int size) {
+//        key k = { lambda, branch_length, parent_size, size };
+//    
+//        if (_cache.find(k) == _cache.end()) { // if k is not in _cache
+//            _cache[k] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, parent_size, size);
+//        }
+//
+//        return _cache[k];
+//    }
+//};
 
-    bool operator<(const key &o) const
-    {
-      return std::tie(size, parent_size, branch_length, lambda) < std::tie(o.size, o.parent_size, o.branch_length, o.lambda);
-    }
-  };
-  map<key, double> _cache;
-public:
-  double get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int size)
-  {
-    key k = { lambda, branch_length, parent_size, size };
-    if (_cache.find(k) == _cache.end())
-    {
-      _cache[k] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, parent_size, size);
-    }
-
-    return _cache[k];
-  }
-};
 //! Set the family size of a node to a random value, using parent's family size
 /*!
   Starting from 0, the gene family size of the child (c) is increased until the cumulative probability of c (given the gene family size s of the parent) exceeds a random draw from a uniform distribution. When this happens, the last c becomes the child's gene family size.
  
   Note that the smaller the draw from the uniform, the higher the chance that c will be far away from s.
 */
-class random_familysize_setter
-{
-  trial *_p_tth_trial;
-  int _max_family_size;
-  double _lambda;
-  probability_calculator* _calculator;
-public:
-  random_familysize_setter(trial *p_tth_trial, int max_family_size, double lambda, probability_calculator* p_calc) :
-    _p_tth_trial(p_tth_trial), _max_family_size(max_family_size), _lambda(lambda), _calculator(p_calc)
-  {
-      
-  }
+class random_familysize_setter {
+private:
+    trial *_p_tth_trial;
+    int _max_family_size;
+    double _lambda;
+    probability_calculator* _calculator;
 
-//Before: void set_node_familysize_random(clade *node) {
-  void operator()(clade *node);
+public:
+    //! Constructor
+    random_familysize_setter(trial *p_tth_trial, int max_family_size, double lambda, probability_calculator* p_calc) :
+        _p_tth_trial(p_tth_trial), _max_family_size(max_family_size), _lambda(lambda), _calculator(p_calc) {
+    }
+
+    //! Operator () overload.
+    /*!
+      Makes random_family_setter a functor. 
+      The functor is called once on each node of the tree, recursively, and in each recursion it populates _p_tth_trial.
+    */
+    void operator()(clade *node);
 
 };
 
@@ -103,8 +107,7 @@ void random_familysize_setter::operator()(clade *node) {
     //      cout << "Probability of going from " << parent_family_size << " to 5 is " << to5 << endl;
     //    }
   }
-  cout << "Setting " << node->get_taxon_name() << " to: " << c << endl;
-  //Before: family_sizes[node] = c;
+  
   (*_p_tth_trial)[node] = c;
 }
 
@@ -116,30 +119,21 @@ void random_familysize_setter::operator()(clade *node) {
 //map<clade *, int> simulate_families_from_root_size(clade *tree, int num_trials, int root_family_size, int max_family_size, double lambda) {
 vector<trial *> simulate_families_from_root_size(clade *tree, int num_trials, int root_family_size, int max_family_size, double lambda) {
 
-  probability_calculator calc;
-    // family_sizes.clear(); // resets map {clade:fam size} (i.e., resets trial)
+    probability_calculator calc;
     vector<trial *> result;
     
-    cout << "Number of simulations: " << num_trials << endl;
-    
     for (int t = 0; t < num_trials; ++t) {
-        
-        cout << "Doing family " << t << endl;
         trial *p_tth_trial = new trial;
         random_familysize_setter rfs(p_tth_trial, max_family_size, lambda, &calc);
-        //Before: family_sizes[tree] = root_family_size; // set root family size
         (*p_tth_trial)[tree] = root_family_size;
-        tree->apply_prefix_order(rfs); 
-        //tree->apply_to_descendants(set_node_familysize_random); // setting the family size (random) of the descendants
+        tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
+        //tree->apply_to_descendants(rfs); // setting the family size (random) of the descendants
         
         result.push_back(p_tth_trial);
     }
-
-    //Before: return family_sizes;
+    
     return result;
 }
-
-// fix print_simulation
 
 //! Simulate gene family evolution from a distribution of root family sizes
 /*!
@@ -170,13 +164,10 @@ vector<vector<trial *> > simulate_families_from_distribution(clade *p_tree, int 
         it++;
     }
 
-    cout << "The size of vector<vector<trial>> is " << result.size() << endl;
-    cout << "When root = 1, the number of simulations should be 5: " << result[0].size() << endl;
-    cout << "Then, there should be 7 nodes: " << result[0][0]->size() << endl;
-//    cout << "I should be able to access species A in map: " << result[0][0][0]->first << endl;
     return result;
 }
 
+// Still need to fix this print simulation
 void print_simulation(trial &sim, std::ostream& ost)
 {
 	trial::iterator it = sim.begin();
@@ -190,38 +181,5 @@ void print_simulation(trial &sim, std::ostream& ost)
 	}
 	ost << endl;
 
-}
-
-//void print_simulation(std::vector<trial> &sim, std::ostream& ost) {
-void print_simulation(std::vector<vector<trial *> > &sim, std::ostream& ost) {
-
-    //Before: trial::iterator it = sim[0].begin();
-  // since sim is now a pointer to a trial we have to dereference it with an arrow rather than a dot
-    trial::iterator names_it = sim[0][0]->begin();
-    
-    // printing header with '#' followed by species names, in the order they will appear below
-    for (; names_it != sim[0][0]->end(); ++names_it) {
-	    ost << "#" << names_it->first->get_taxon_name() << endl;
-    }
-    
-    // now printing gene family sizes
-//Before:    for (int i = 0; i < sim.size(); ++i) {
-//        for (it = sim[i].begin(); it != sim[i].end(); ++it) {
-//            ost << it->second << "\t";
-//	}
-//        
-//        ost << endl;
-//    }
-
-    for (int i = 0; i < sim.size(); ++i) { // iterating over gene family sizes
-        for (int j; j < sim[i].size(); ++j) { // iterating over trial of ith gene family size
-            for (trial::iterator jth_trial_it = sim[i][j]->begin(); jth_trial_it != sim[i][j]->end(); ++jth_trial_it) { // accessing jth trial inside ith gene family
-                ost << "porra" << endl; // Swedish "jävla"
-                ost << jth_trial_it->second << "\t";
-            }
-            
-            ost << endl;
-        }
-    }
 }
 

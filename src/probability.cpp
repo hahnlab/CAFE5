@@ -32,9 +32,10 @@ double gammaln(double a)
 }
 */
 
+
+/* START: Math tools --------------------- */
 /* Old C implementation necessary for set_node_familysize_random. Now using uniform_real_distribution()
 */
-
 double unifrnd()
 {
   double result = rand() / (RAND_MAX + 1.0); // rand() returns an int from 0 to RAND_MAX (which is defined in std); the +1.0 is there probably so that we do not draw exactly 1.
@@ -48,6 +49,10 @@ double chooseln(double n, double r)
   else if (n <= 0 || r <= 0) return log(0);
   return lgamma(n + 1) - lgamma(r + 1) - lgamma(n - r + 1);
 }
+
+/* END: Math tools ----------------------- */
+
+/* START: Birth-death model components --------------------- */
 
 /* Eqn. (1) in 2005 paper. Assumes u = lambda */
 double birthdeath_rate_with_log_alpha(int s, int c, double log_alpha, double coeff)
@@ -85,6 +90,8 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 //  }
   return result;
 }
+
+/* END: Birth-death model components ----------------------- */
 
 /* START: Likelihood computation ---------------------- */
 
@@ -204,3 +211,4 @@ void likelihood_computer::operator()(clade *node) {
 }
 
 /* END: Likelihood computation ---------------------- */
+
