@@ -51,14 +51,14 @@ void random_familysize_setter::operator()(clade *node) {
     int c = 0; // c is the family size we will go to
 
     if (parent_family_size > 0) {
-        for (; c < _max_family_size - 1; c++)  // Ben: why -1
+        for (; c < _max_family_size - 1; c++) { // Ben: why -1
             double prob = _calculator->get_from_parent_fam_size_to_c(_lambda, node->get_branch_length(), parent_family_size, c);
             cumul += prob;
 
             if (cumul >= rnd) {
                 break;
             }
-        }
+        }   
     }
   
   (*_p_tth_trial)[node] = c;

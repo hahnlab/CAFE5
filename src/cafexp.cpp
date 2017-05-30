@@ -1,13 +1,14 @@
-#include "io.h"
-#include "utils.h"
-#include "clade.h"
 #include <getopt.h>
 #include <cmath>
 #include <map>
+#include "io.h"
+#include "utils.h"
+#include "clade.h"
 #include "probability.h"
 #include "family_generator.h"
 #include "fminsearch.h"
 #include "poisson.h"
+#include "core.h"
 
 /* Ask Ben */
 /*
@@ -190,6 +191,13 @@ int main(int argc, char *const argv[]) {
             vector<vector<trial *> > simulation = simulate_families_from_distribution(p_tree, nsims, *p_rootdist_map, max_family_size, lambda);
 
             print_simulation(simulation, cout);
+            
+            int n_processes = 2;
+            std::vector<double> lambda_multipliers {1.0, 2.0};
+            //core core_model;
+            core core_model(lambda, p_tree, max_family_size, n_processes, lambda_multipliers); // here is where, for example, I'd like to also be able to initialize core_model with a single lambda_multiplier
+            core_model.start_processes();
+            core_model.print_parameter_values();
         }
     }
     
