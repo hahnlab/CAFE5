@@ -64,10 +64,27 @@ void random_familysize_setter::operator()(clade *node) {
   (*_p_tth_trial)[node] = c;
 }
 
-//! Simulate gene family evolution from a single root family size 
+//! Simulate one gene family from a single root family size 
 /*!
   Wraps around random_familysize_setter, which is the main engine of the simulator.
-  Given a root gene family size and a lambda, simulates gene family counts for all nodes in the tree.
+  Given a root gene family size, a lambda, simulates gene family counts for all nodes in the tree just once.
+  Returns a trial, key = pointer to node, value = gene family size
+*/
+trial * simulate_family_from_root_size(clade *tree, int root_family_size, int max_family_size, double lambda) {
+
+    probability_calculator calc;
+    trial *result = new trial;
+    random_familysize_setter rfs(result, max_family_size, lambda, &calc);
+    (*result)[tree] = root_family_size;
+    tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
+    
+    return result;
+}
+
+//! Simulate gene families from a single root family size 
+/*!
+  Wraps around random_familysize_setter, which is the main engine of the simulator.
+  Given a root gene family size, a lambda, and the number of trials, simulates gene family counts for all nodes in the tree (once per trial).
   Returns family_sizes map (= trial), key = pointer to node, value = gene family size
 */
 //map<clade *, int> simulate_families_from_root_size(clade *tree, int num_trials, int root_family_size, int max_family_size, double lambda) {
@@ -109,20 +126,3 @@ vector<vector<trial *> > simulate_families_from_distribution(clade *p_tree, int 
 
     return result;
 }
-
-// Still need to fix this print simulation
-void print_simulation(trial &sim, std::ostream& ost)
-{
-	trial::iterator it = sim.begin();
-	for (; it != sim.end(); ++it)
-	{
-		ost << "#" << it->first->get_taxon_name() << endl;
-	}
-	for (it = sim.begin(); it != sim.end(); ++it)
-	{
-		ost << it->second << "\t";
-	}
-	ost << endl;
-
-}
-

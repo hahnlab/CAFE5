@@ -32,6 +32,17 @@ unsigned long long choose(unsigned long long n, unsigned long long k) {
   return r;
 }
 
+vector<int> vectorize_map(map<int, int> *p_root_dist) {
+    vector<int> vectorized_map;
+    
+    for (map<int, int>::iterator it = p_root_dist->begin(); it != p_root_dist->end(); ++it) {
+        for (int i=0; i < it->second; ++i) {
+            vectorized_map.push_back(it->first);
+        }
+    }
+    
+    return vectorized_map;
+}
 
 vector<gene_family> initialize_sample_families()
 {
@@ -169,7 +180,7 @@ int main(int argc, char *const argv[]) {
             throw runtime_error("In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting...");
         }
     
-        else { cout << "Performing " << nsims << " simulation(s). " << endl; }
+        else { cout << endl << "Performing " << nsims << " simulation batches." << endl; }
 
         if (input_file_path.empty() && rootdist.empty()) {
             throw runtime_error("In order to perform simulations (s), you must either specify an input file from which the root family size is estimated with -i, or specify a root family distribution with -f. Exiting...");
@@ -177,27 +188,35 @@ int main(int argc, char *const argv[]) {
 
         /* -i is provided, -f is not */
         else if (rootdist.empty() && !input_file_path.empty()) {
-            cout << "Simulations will use the root family size estimated from data provided with -i:" << input_file_path << endl;
+            cout << endl << "Simulations will use the root family size estimated from data provided with -i:" << input_file_path << endl;
         }
 
         /* -f is provided (-f has precedence over -i if both are provided) */
         else {
             cout << "Simulations will use the root family distribution specified with -f: " << rootdist << endl;
-            p_rootdist_map = read_rootdist(rootdist);
+            p_rootdist_map = read_rootdist(rootdist); // in map form
+            vector<int> rootdist_vec;
+            rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
+                    
             int max = (*max_element(p_rootdist_map->begin(), p_rootdist_map->end(), max_key<int, int>)).first * 2;
 
-            cout << "max_family_size = " << max_family_size << endl;
+            //cout << "max_family_size = " << max_family_size << endl;
             //vector<trial *> simulation = simulate_families_from_root_size(p_tree, nsims, root_family_size, max_family_size, lambda);
-            vector<vector<trial *> > simulation = simulate_families_from_distribution(p_tree, nsims, *p_rootdist_map, max_family_size, lambda);
+            //vector<vector<trial *> > simulation = simulate_families_from_distribution(p_tree, nsims, *p_rootdist_map, max_family_size, lambda);
 
-            print_simulation(simulation, cout);
+            //print_simulation(simulation, cout);
             
-            int n_processes = 2;
-            std::vector<double> lambda_multipliers {1.0, 2.0};
-            //core core_model;
-            core core_model(lambda, p_tree, max_family_size, n_processes, lambda_multipliers); // here is where, for example, I'd like to also be able to initialize core_model with a single lambda_multiplier
+            // total_n_families, lambda_multipliers and lambda_bins will not be harcoded in the future
+            int total_n_families = 10;
+            std::vector<double> lambda_multipliers {1.0, 4.0};
+            std::vector<int> lambda_bins {0, 0, 0, 1, 1, 0, 1, 0, 1, 1}; // the number of elements must be the same as the total key values in p_rootdist_map; here I'm hardcoding it to have 10 elements, as example/test_root_dist.txt has a distribution for 10 families
+            
+            // Ben: we need to initialize core_model with the basic objects like tree and lambda in the very beginning of main()... and then populate it accordingly, depending on user-specified flags, like -s for instance
+            core core_model(cout, lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_multipliers, lambda_bins); // here is where, for example, I'd like to also be able to initialize core_model with a single lambda_multiplier
             core_model.start_processes();
-            core_model.print_parameter_values();
+            core_model.simulate_processes();
+            core_model.print_simulations(cout);
+            //core_model.print_parameter_values();
         }
     }
     
