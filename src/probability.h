@@ -1,6 +1,9 @@
 #ifndef PROBABILITY_H_A2E01F6E_6A7D_44FB_A9C0_6512F15FF939
 #define PROBABILITY_H_A2E01F6E_6A7D_44FB_A9C0_6512F15FF939
 
+#include <random>
+#include <vector>
+#include <iostream>
 #include "utils.h"
 
 class clade;
@@ -74,4 +77,8 @@ public:
 };
 
 /* END: Probability calculator for simulator -------- */
+
+/* START: Uniform distribution */
+std::vector<int> uniform_dist(int n_draws, int min, int max);
+/* END: Uniform distribution - */
 #endif

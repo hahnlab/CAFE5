@@ -212,3 +212,17 @@ void likelihood_computer::operator()(clade *node) {
 
 /* END: Likelihood computation ---------------------- */
 
+std::vector<int> uniform_dist(int n_draws, int min, int max) {
+    
+    std::default_random_engine generator;
+    std::uniform_int_distribution<int> distribution(min, max);
+    std::vector<int> uniform_vec(n_draws); // storing results
+    
+    for (int i = 0; i < n_draws; ++i) {
+        int number = distribution(generator);
+        //cout << "Number is: " << number << endl;
+        uniform_vec.push_back(number);
+    }
+        
+    return uniform_vec;
+}

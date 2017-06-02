@@ -13,14 +13,23 @@ private:
     double _lambda_multiplier;
     clade *_p_tree;
     int _max_family_size;
-    int _root_size;
+    vector<int> _rootdist;
+    int _root_size; // will be drawn from _rootdist by process itself
     trial *_my_simulation;
     
 public:
-    process(): _ost(cout), _lambda(0.0), _lambda_multiplier(1.0) {}  
-    process(ostream & ost, double lambda, double lambda_multiplier, clade *p_tree, int max_family_size, int root_size): _ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree), _max_family_size(max_family_size), _root_size(root_size) {} //, _n_simulations(n_simulations) {}
+    process(): _ost(cout), _lambda(0.0), _lambda_multiplier(1.0) {}
+    
+    process(ostream & ost, double lambda, double lambda_multiplier, clade *p_tree, int max_family_size, int root_size): _ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree), _max_family_size(max_family_size), _rootdist(root_dist) {
+    
+        /* Draw from root_dist and fill _root_size for simulation */
+        
+    }
+    
     void run_simulation();
+    
     void print_simulation(std::ostream & ost);
+    
     trial * get_simulation();
 };
 

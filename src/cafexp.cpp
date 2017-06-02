@@ -188,7 +188,7 @@ int main(int argc, char *const argv[]) {
 
         /* -i is provided, -f is not */
         else if (rootdist.empty() && !input_file_path.empty()) {
-            cout << endl << "Simulations will use the root family size estimated from data provided with -i:" << input_file_path << endl;
+            cout << endl << "Simulations will use the equilibrium root family size estimated from data provided with -i:" << input_file_path << endl;
         }
 
         /* -f is provided (-f has precedence over -i if both are provided) */
@@ -211,7 +211,7 @@ int main(int argc, char *const argv[]) {
             std::vector<double> lambda_multipliers {1.0, 4.0};
             std::vector<int> lambda_bins {0, 0, 0, 1, 1, 0, 1, 0, 1, 1}; // the number of elements must be the same as the total key values in p_rootdist_map; here I'm hardcoding it to have 10 elements, as example/test_root_dist.txt has a distribution for 10 families
             
-            // Ben: we need to initialize core_model with the basic objects like tree and lambda in the very beginning of main()... and then populate it accordingly, depending on user-specified flags, like -s for instance
+            rootdist_vec.clear(); // if we want to use uniform
             core core_model(cout, lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_multipliers, lambda_bins); // here is where, for example, I'd like to also be able to initialize core_model with a single lambda_multiplier
             core_model.start_processes();
             core_model.simulate_processes();
