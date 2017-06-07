@@ -1,3 +1,9 @@
+#include <assert.h>
+#include <math.h>
+#include <iostream>
+#include <vector>
+#include "gamma.h"
+
 ///
 /// Various functions taken directly from PAML for gamma distributed rates
 ///
@@ -178,7 +184,7 @@ l4:
    q = ch;
    p1 = .5*ch;
    if ((t = incomplete_gamma (p1, xx, g)) < 0) {
-      cout << "\nErr incomplete gamma";
+      std::cout << "\nErr incomplete gamma";
       return (-1);
    }
    
@@ -228,23 +234,26 @@ double point_normal(double prob) {
 
 //! Populate vector of frequencies and vector of rates across gene families.
 /*!
-  c++ wrapper that interfaces with Yang's code
+  c++ wrapper that interfaces with Z. Yang's code
+  
+  v_freq: vector of probabilities of each gamma category (should be the same)
+  v_rate: vector of rate medians (for each gamma category) 
 */
-void get_gamma(vector <double> *v_freq, vector <double> *v_rate, double alpha) {
-    assert(v_freq != NULL && v_rate != NULL);
+void get_gamma(std::vector<double> &v_freq, std::vector<double> &v_rate, double alpha) {
     assert(v_freq.size() == v_rate.size());
-    int NoCat = vFreq.size();
-    double *freq = new double[NoCat], *rate = new double[NoCat];
+    assert(v_freq.size() != 0);
+    
+    int n_cat = v_freq.size(); // number of rate categories
+    double *freq = new double[n_cat], *rate = new double[n_cat];
 
-    // Calls ZY's code. Note the choice of median or not matches ZY's implementation in PAML
-    discrete_gamma(freq, rate, alpha, alpha, NoCat, 0);
+    discrete_gamma(freq, rate, alpha, alpha, n_cat, 0); // calls ZY's code, with alpha = beta, 0 is flag for median
 
-    for (i = 0; i < NoCat; ++i) {
+    for (int i = 0; i < n_cat; ++i) {
 	v_freq[i] = freq[i];
 	v_rate[i] = rate[i];
     }
-    
-    delete [] freq;
-    delete [] rate;
+ 
+    delete freq;   
+    delete rate;
 }
 

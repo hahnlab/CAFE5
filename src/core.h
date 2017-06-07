@@ -18,8 +18,8 @@ private:
     vector<int> _rootdist_vec; // in case the user wants to use a specific root size distribution for all simulations
     vector<vector<int> > _rootdist_bins; // holds the distribution for each lambda bin
     vector<double> _lambda_multipliers;
-    vector<int> _lambda_bins; // must be same size as root family distribution total count
-    vector<process*> _processes; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier; maybe later each process will run more simulations under the same lambda multiplier?
+    vector<int> _lambda_bins; // (gamma categories) must be same size as root family distribution total count
+    vector<process*> _processes; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
     
 public:
     core(): _ost(cout), _total_n_families(1), _lambda_multipliers(1) {}
@@ -31,8 +31,8 @@ public:
         }
         
         else {
-            _rootdist_vec = uniform_dist(total_n_families, 0, max_family_size); // the user did not specify one... using uniform!
-            _rootdist_bins.push_back(_rootdist_vec);
+            _rootdist_vec = uniform_dist(total_n_families, 1, max_family_size); // the user did not specify one... using uniform from 1 to max_family_size!
+            _rootdist_bins.push_back(_rootdist_vec); // just 1st element (but we could specify different root dists for each lambda bin)
         }
     }
     

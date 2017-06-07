@@ -1,7 +1,6 @@
 #ifndef PROBABILITY_H_A2E01F6E_6A7D_44FB_A9C0_6512F15FF939
 #define PROBABILITY_H_A2E01F6E_6A7D_44FB_A9C0_6512F15FF939
 
-#include <random>
 #include <vector>
 #include <iostream>
 #include "utils.h"
@@ -81,4 +80,7 @@ public:
 /* START: Uniform distribution */
 std::vector<int> uniform_dist(int n_draws, int min, int max);
 /* END: Uniform distribution - */
+
+std::vector<int> * weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_probs);
+
 #endif

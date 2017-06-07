@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <random>
 #include "utils.h" // for gene_family class
 #include "clade.h"
 #include "probability.h"
@@ -36,8 +37,7 @@ double gammaln(double a)
 /* START: Math tools --------------------- */
 /* Old C implementation necessary for set_node_familysize_random. Now using uniform_real_distribution()
 */
-double unifrnd()
-{
+double unifrnd() {
   double result = rand() / (RAND_MAX + 1.0); // rand() returns an int from 0 to RAND_MAX (which is defined in std); the +1.0 is there probably so that we do not draw exactly 1.
   return result;
 }
@@ -214,15 +214,43 @@ void likelihood_computer::operator()(clade *node) {
 
 std::vector<int> uniform_dist(int n_draws, int min, int max) {
     
-    std::default_random_engine generator;
-    std::uniform_int_distribution<int> distribution(min, max);
-    std::vector<int> uniform_vec(n_draws); // storing results
+    std::random_device rd; // seed
+    std::default_random_engine generator(rd()); // seeding generator
+    std::uniform_int_distribution<int> distribution(min, max); // initializing uniform generator
+    std::vector<int> uniform_vec(n_draws); // for storing results
     
     for (int i = 0; i < n_draws; ++i) {
-        int number = distribution(generator);
+        int number = distribution(generator); // drawing from uniform generator by plugging in random number
         //cout << "Number is: " << number << endl;
-        uniform_vec.push_back(number);
+        uniform_vec[i] = number;
     }
         
     return uniform_vec;
 }
+
+/* START: Weighted draw from vector */
+std::vector<int> * weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_probs) {
+    std::random_device rd;
+    std::mt19937 gen(rd()); // seeding random number engine
+    
+    for (int i = 0; i != gamma_cat_probs.size(); ++i) {
+        cout << gamma_cat_probs[i];
+    }
+    
+    std::vector<double> intervals(gamma_cat_probs.size()+1);
+    for (int i = 0; i != intervals.size(); ++i) {
+        intervals[i] = i ;
+        //std::cout << i << " ith interval" << std::endl;
+    }
+    
+    std::piecewise_constant_distribution<double> d(intervals.begin(), intervals.end(), gamma_cat_probs.begin());
+    std::vector<int> *p_gamma_cats = new std::vector<int>(n_draws);
+
+    for (int i = 0; i < n_draws; ++i) {
+        (*p_gamma_cats)[i] = d(gen);
+        //cout << (*p_gamma_cats)[i] << ", ";
+    }
+    
+    return p_gamma_cats;
+}
+/* END: Weighted draw from vector */

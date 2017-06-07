@@ -6,6 +6,22 @@
 #include "core.h"
 #include "family_generator.h"
 
+/* START: Drawing random root size from uniform */
+template<typename itr, typename random_generator>
+itr select_randomly(itr start, itr end, random_generator& g) {
+    std::uniform_int_distribution<> dis(0, std::distance(start, end) - 1);
+    std::advance(start, dis(g)); // advances iterator (start) by dis(g), where g is a seeded mt generator
+    return start;
+}
+
+template<typename itr>
+itr select_randomly(itr start, itr end) {
+    static std::random_device rd; // randomly generates uniformly distributed ints (seed)
+    static std::mt19937 gen(rd()); // seeding Mersenne Twister generator
+    return select_randomly(start, end, gen); // plug in mt generator to advance our container and draw random element from it
+}
+/* END: Drawing random root size from uniform */
+
 class process {
 private:
     ostream & _ost;
@@ -20,10 +36,10 @@ private:
 public:
     process(): _ost(cout), _lambda(0.0), _lambda_multiplier(1.0) {}
     
-    process(ostream & ost, double lambda, double lambda_multiplier, clade *p_tree, int max_family_size, int root_size): _ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree), _max_family_size(max_family_size), _rootdist(root_dist) {
-    
-        /* Draw from root_dist and fill _root_size for simulation */
-        
+    process(ostream & ost, double lambda, double lambda_multiplier, clade *p_tree, int max_family_size, vector<int> rootdist): _ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree), _max_family_size(max_family_size), _rootdist(rootdist) {
+
+        _root_size = *select_randomly(_rootdist.begin(), _rootdist.end()); // getting a random root size from the provided (core's) root distribution
+        //cout << "_root_size is " << _root_size << endl;
     }
     
     void run_simulation();
@@ -59,8 +75,8 @@ trial * process::get_simulation() {
 void core::start_processes() {
     
     for (int i = 0; i < _total_n_families; ++i) {
-        double lambda_bin = _lambda_bins[i];
-        process *p_new_process = new process(_ost, _lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _rootdist_vec[i]); // if a single _lambda_multiplier, how do we do it?
+        double lambda_bin = _lambda_bins[i];      
+        process *p_new_process = new process(_ost, _lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
         _processes.push_back(p_new_process);
     }
     

@@ -9,6 +9,7 @@
 #include "fminsearch.h"
 #include "poisson.h"
 #include "core.h"
+#include "gamma.h"
 
 /* Ask Ben */
 /*
@@ -208,11 +209,20 @@ int main(int argc, char *const argv[]) {
             
             // total_n_families, lambda_multipliers and lambda_bins will not be harcoded in the future
             int total_n_families = 10;
-            std::vector<double> lambda_multipliers {1.0, 4.0};
-            std::vector<int> lambda_bins {0, 0, 0, 1, 1, 0, 1, 0, 1, 1}; // the number of elements must be the same as the total key values in p_rootdist_map; here I'm hardcoding it to have 10 elements, as example/test_root_dist.txt has a distribution for 10 families
+            int n_cat = 5; // number of gamma categories
+            double alpha = 0.5;
+            std::vector<double> gamma_cat_probs(n_cat), lambda_multipliers(n_cat);
             
-            rootdist_vec.clear(); // if we want to use uniform
-            core core_model(cout, lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_multipliers, lambda_bins); // here is where, for example, I'd like to also be able to initialize core_model with a single lambda_multiplier
+            get_gamma(gamma_cat_probs, lambda_multipliers, alpha); // passing vectors by reference
+            
+            std::vector<int> *p_gamma_cats = weighted_cat_draw(total_n_families, gamma_cat_probs);
+            
+            //std::vector<double> lambda_multipliers {1.0, 4.0};
+            //std::vector<int> lambda_bins {0, 0, 0, 1, 1, 0, 1, 0, 1, 1}; // the number of elements must be the same as the total key values in p_rootdist_map; here I'm hardcoding it to have 10 elements, as example/test_root_dist.txt has a distribution for 10 families
+            
+            rootdist_vec.clear(); // if we want to use uniform (comment to use the file provided with -f)
+            
+            core core_model(cout, lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_multipliers, *p_gamma_cats);
             core_model.start_processes();
             core_model.simulate_processes();
             core_model.print_simulations(cout);
