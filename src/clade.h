@@ -35,6 +35,7 @@ class clade {
    string _taxon_name;
 
    double _branch_length; // or lambda value
+   int _lambda_index;
 
    clade *_p_parent; // needs to be pointer; instance creates infinite loop
 
@@ -49,9 +50,9 @@ class clade {
 
  public:
    /* methods */
-   clade(): _p_parent(NULL), _branch_length(0) {} // basic constructor
+   clade(): _p_parent(NULL), _branch_length(0), _lambda_index(0) {} // basic constructor
 
-   clade(string some_taxon_name, double length): _taxon_name(some_taxon_name), _branch_length(length) {} // constructor giving taxon name and branch length
+   clade(string some_taxon_name, double length): _taxon_name(some_taxon_name), _branch_length(length), _lambda_index(0) {} // constructor giving taxon name and branch length
 
    ~clade(); // destructor
   
@@ -66,6 +67,8 @@ class clade {
    bool is_root() const;
    
    double get_branch_length() const { return _branch_length; }
+
+   int get_lambda_index() const { return _lambda_index; }
 
    vector<clade*> find_internal_nodes();
    

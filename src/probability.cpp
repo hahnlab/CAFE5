@@ -145,14 +145,14 @@ private:
     map<clade *, vector<double> > _factors; //!< keys = pointers to clade objects (children of internal node), values = clade's contribution (factor) to the vector of likelihoods of the internal node
     map<clade *, vector<double> >& _probabilities; //!< (member of likelihood_computer) keys = pointer to clade object (all nodes in the tree), values = clade's vector of likelihoods
     int _max_root_family_size; //!< max gene family size for which likelihood is to be computed
-    double _lambda; //!< mambda used in likelihood computation
+    lambda* _lambda; //!< lambda used in likelihood computation
 
 public:
     //! Constructor.
     /*!
       Used once per internal node by likelihood_computer().
     */
-    child_calculator(int max_root_family_size, double lambda, map<clade *, vector<double> >& probabilities) : _max_root_family_size(max_root_family_size), _lambda(lambda), _probabilities(probabilities) {
+    child_calculator(int max_root_family_size, lambda* lambda, map<clade *, vector<double> >& probabilities) : _max_root_family_size(max_root_family_size), _lambda(lambda), _probabilities(probabilities) {
     }
 
     int num_factors() { return _factors.size(); }
@@ -165,9 +165,8 @@ public:
     void operator()(clade * child) {
         _factors[child].resize(_max_root_family_size); // Ben: Maybe I'm wrong, but are we ignoring the largest possible gene family size?
         // Ben: Because if you look at get_matrix(), s goes from 0 to size-1. So if _max_root_family_size is 10, our vector stops at 9, yes?
-        vector<vector<double> > matrix = get_matrix(_factors[child].size(), child->get_branch_length(), _lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
+		_factors[child] = _lambda->calculate_child_factor(child, _factors[child].size(), _probabilities[child]);
 
-        _factors[child] = matrix_multiply(matrix, _probabilities[child]);
     // p(node=c,child|s) = p(node=c|s)p(child|node=c) integrated over all c
     // remember child likelihood[c]'s never sum up to become 1 because they are likelihoods conditioned on c's.
     // incoming nodes to don't sum to 1. outgoing nodes sum to 1

@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <map>
 
 class clade;
 
@@ -48,8 +49,10 @@ class newick_parser {
   std::string newick_string;
 
   /* methods */
-  newick_parser(): tokenizer("\\(|\\)|[^\\s\\(\\)\\:\\;\\,]+|\\:[+-]?[0-9]*\\.?[0-9]+([eE][+-]?[0-9]+)?|\\,|\\;"), lp_count(0), rp_count(0) {} // constructor
+  newick_parser(bool parse_lambdas): tokenizer("\\(|\\)|[^\\s\\(\\)\\:\\;\\,]+|\\:[+-]?[0-9]*\\.?[0-9]+([eE][+-]?[0-9]+)?|\\,|\\;"), 
+	  lp_count(0), rp_count(0), parse_to_lambdas(parse_lambdas) {} // constructor
   clade *parse_newick();
+  bool parse_to_lambdas;	// flag for reading lambda tree
 };
 
 // these functions are intended to work with maps (key, value pairs)

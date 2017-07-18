@@ -33,7 +33,8 @@ double lambda_searcher(double* plambda, void* v)
     int root_family_size = 0;   // TODO
     int max_possible_family_size = 0;  // TODO
 
-    likelihood_computer pruner(max_possible_family_size, 0.001, &fam);
+	single_lambda lambda(0.001);
+    likelihood_computer pruner(max_possible_family_size, &lambda, &fam);
     tree->apply_reverse_level_order(pruner);
     vector<double> likelihood = pruner.get_likelihoods(tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
 

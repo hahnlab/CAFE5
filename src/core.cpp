@@ -25,7 +25,7 @@ itr select_randomly(itr start, itr end) {
 class process {
 private:
     ostream & _ost;
-    double _lambda;
+    lambda* _lambda;
     double _lambda_multiplier;
     clade *_p_tree;
     int _max_family_size;
@@ -34,9 +34,9 @@ private:
     trial *_my_simulation;
     
 public:
-    process(): _ost(cout), _lambda(0.0), _lambda_multiplier(1.0) {}
+    process(): _ost(cout), _lambda(NULL), _lambda_multiplier(1.0) {}
     
-    process(ostream & ost, double lambda, double lambda_multiplier, clade *p_tree, int max_family_size, vector<int> rootdist): _ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree), _max_family_size(max_family_size), _rootdist(rootdist) {
+    process(ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size, vector<int> rootdist): _ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree), _max_family_size(max_family_size), _rootdist(rootdist) {
 
         _root_size = *select_randomly(_rootdist.begin(), _rootdist.end()); // getting a random root size from the provided (core's) root distribution
         //cout << "_root_size is " << _root_size << endl;
@@ -51,7 +51,7 @@ public:
 
 //! Run process' simulation
 void process::run_simulation() {
-    double lambda_m = _lambda * _lambda_multiplier;
+    double lambda_m = dynamic_cast<single_lambda*>(_lambda)->get_single_lambda() * _lambda_multiplier;
     _my_simulation = simulate_family_from_root_size(_p_tree, _root_size, _max_family_size, lambda_m);
 }
 
@@ -108,7 +108,7 @@ void core::print_parameter_values() {
     
     cout << endl << "You have set the following parameter values:" << endl;
     
-    if (_lambda == 0.0) {
+    if (dynamic_cast<single_lambda*>(_lambda)->get_single_lambda() == 0.0) {
         cout << "Lambda has not been specified." << endl;
     }
     else {

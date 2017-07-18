@@ -11,6 +11,32 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 double chooseln(double n, double k);
 double unifrnd();
 
+class lambda
+{
+public:
+	virtual std::vector<double> calculate_child_factor(clade *child, std::size_t sz, std::vector<double> probabilities) = 0;
+};
+
+class single_lambda : public lambda
+{
+	double _lambda;
+public:
+	single_lambda(double lambda) : _lambda(lambda)
+	{
+
+	}
+
+	double get_single_lambda() const { return _lambda; }
+	virtual std::vector<double> calculate_child_factor(clade *child, std::size_t sz, std::vector<double> probabilities);
+};
+
+class multiple_lambda : public lambda
+{
+	std::map<clade*, double> _lambdas;
+	virtual std::vector<double> calculate_child_factor(clade *child, std::size_t sz, std::vector<double> probabilities);
+};
+
+
 /* START: Likelihood computation ---------------------- */
 
 class likelihood_computer {
@@ -18,10 +44,10 @@ private:
     std::map<clade *, std::vector<double> > _probabilities; //!< represents probability of the node having various family sizes
     gene_family *_family;
     int _max_possible_family_size;
-    double _lambda;
+    lambda* _lambda;
     
 public:
-    likelihood_computer(int max_possible_family_size, double lambda, gene_family *family) : _max_possible_family_size(max_possible_family_size), _lambda(lambda) {
+    likelihood_computer(int max_possible_family_size, lambda* lambda, gene_family *family) : _max_possible_family_size(max_possible_family_size), _lambda(lambda) {
         _family = family;
     }
   

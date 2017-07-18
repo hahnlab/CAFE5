@@ -11,7 +11,7 @@ class process;
 class core {
 private:
     std::ostream & _ost; 
-    double _lambda; // TODO: multiple lambdas for different branches
+    lambda *_lambda; // TODO: multiple lambdas for different branches
     clade *_p_tree;
     int _max_family_size;
     int _total_n_families;
@@ -24,7 +24,7 @@ private:
 public:
     core(): _ost(cout), _total_n_families(1), _lambda_multipliers(1) {}
     
-    core(ostream & ost, double lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec, vector<double> lambda_multipliers, vector<int> lambda_bins): _ost(ost), _lambda(lambda), _p_tree(p_tree), _max_family_size(max_family_size), _total_n_families(total_n_families), _rootdist_vec(rootdist_vec), _lambda_multipliers(lambda_multipliers), _lambda_bins(lambda_bins) {
+    core(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec, vector<double> lambda_multipliers, vector<int> lambda_bins): _ost(ost), _lambda(lambda), _p_tree(p_tree), _max_family_size(max_family_size), _total_n_families(total_n_families), _rootdist_vec(rootdist_vec), _lambda_multipliers(lambda_multipliers), _lambda_bins(lambda_bins) {
     
         if (!rootdist_vec.empty()) {
             _rootdist_bins.push_back(rootdist_vec); // just 1st element

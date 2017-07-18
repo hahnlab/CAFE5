@@ -80,8 +80,8 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
   for (int i = 0; i < prior_rfsize.size(); ++i)
     cout << "prior_rfsize " << i << "=" << prior_rfsize[i] << endl;
 
-
-  likelihood_computer pruner(max_family_size, lambda, &gene_families[0]);
+  single_lambda lam(lambda);
+  likelihood_computer pruner(max_family_size, &lam, &gene_families[0]);
 
   p_tree->apply_reverse_level_order(pruner);
   cout << "Pruner complete" << endl;
@@ -96,6 +96,20 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
   return posterior;
 }
 
+vector<vector<double> > get_matrix(int size, int branch_length, double lambda);
+vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v);
+
+std::vector<double> single_lambda::calculate_child_factor(clade *child, std::size_t sz, std::vector<double> probabilities)
+{
+	std::vector<std::vector<double> > matrix = get_matrix(sz, child->get_branch_length(), _lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
+	return matrix_multiply(matrix, probabilities);
+}
+
+std::vector<double> multiple_lambda::calculate_child_factor(clade *child, std::size_t sz, std::vector<double> probabilities)
+{
+	std::vector<std::vector<double> > matrix = get_matrix(sz, child->get_branch_length(), _lambdas[child]); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
+	return matrix_multiply(matrix, probabilities);
+}
 
 int main(int argc, char *const argv[]) {
 
@@ -111,7 +125,7 @@ int main(int argc, char *const argv[]) {
   /* START: Option variables for simulations */
   map<int, int>* p_rootdist_map = NULL;
   int root_family_size = 300;
-  double lambda = 0.0017;
+  //double lambda = 0.0017;
   /* END: Option variables for simulations */
 
   while ((args = getopt_long(argc, argv, "i:n:f:k:s::", longopts, NULL)) != -1) {
@@ -141,17 +155,32 @@ int main(int argc, char *const argv[]) {
     }
   }
 
-  newick_parser parser;
+  newick_parser parser(false);
   // parser.newick_string = "(((chimp:6,human:6):81,(mouse:17,rat:17):70):6,dog:93)";
   parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
   clade *p_tree = parser.parse_newick();
+
+  newick_parser lambda_parser(true);
+  lambda_parser.newick_string = "((A:1,B:1):1,(C:2,D:2):2);";
+  clade *p_lambda_tree = parser.parse_newick();
+  p_lambda_tree->print_clade();
+  exit(0);
+
+
   vector<gene_family> gene_families = initialize_sample_families();
 
   int max_family_size = gene_families[0].max_family_size();
 
-  lambda = 0.01;
+  single_lambda lambda(0.01);
+
+  std::vector<double> lambdas = { 0.01, 0.02, 0.03 };
+  std::map<clade *, int> lambda_indices;
+  lambda_indices[p_tree] = 0;
+
+  multiple_lambda lambda2();
+
   cout << "About to run pruner" << endl;
-  likelihood_computer pruner(max_family_size, lambda, &gene_families[0]);
+  likelihood_computer pruner(max_family_size, &lambda, &gene_families[0]);
   p_tree->apply_reverse_level_order(pruner);
   vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
   cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
@@ -222,7 +251,7 @@ int main(int argc, char *const argv[]) {
             
             rootdist_vec.clear(); // if we want to use uniform (comment to use the file provided with -f)
             
-            core core_model(cout, lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_multipliers, *p_gamma_cats);
+            core core_model(cout, &lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_multipliers, *p_gamma_cats);
             core_model.start_processes();
             core_model.simulate_processes();
             core_model.print_simulations(cout);
