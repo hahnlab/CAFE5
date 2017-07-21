@@ -15,6 +15,7 @@ class lambda
 {
 public:
 	virtual std::vector<double> calculate_child_factor(clade *child, std::size_t sz, std::vector<double> probabilities) = 0;
+	// = 0 implies that this class does NOT implement this method, but any descendant class MUST implement it
 };
 
 class single_lambda : public lambda
@@ -32,7 +33,12 @@ public:
 
 class multiple_lambda : public lambda
 {
-	std::map<clade*, double> _lambdas;
+	std::map<std::string, int> _node_name_to_lambda_index;
+	std::vector<double> _lambdas;
+public:
+	multiple_lambda(std::map<std::string, int> a, std::vector<double> b) : _node_name_to_lambda_index(a), _lambdas(b)
+	{
+	}
 	virtual std::vector<double> calculate_child_factor(clade *child, std::size_t sz, std::vector<double> probabilities);
 };
 

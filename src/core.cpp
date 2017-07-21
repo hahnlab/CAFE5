@@ -2,6 +2,7 @@
 #include <iostream>
 #include <valarray>
 #include <fstream>
+#include <random>
 #include "clade.h"
 #include "core.h"
 #include "family_generator.h"

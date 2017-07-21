@@ -89,6 +89,8 @@ class clade {
      return _gene_family_sizes.at(family_id);
    }
 
+   std::map<std::string, int> get_lambda_index_map();
+
    // TODO: Is this the best way to do this? It means we have redundant data 
    // in the gene_families and nodes
    void init_gene_family_sizes(const vector<gene_family>& families);

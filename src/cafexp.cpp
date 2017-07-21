@@ -107,8 +107,16 @@ std::vector<double> single_lambda::calculate_child_factor(clade *child, std::siz
 
 std::vector<double> multiple_lambda::calculate_child_factor(clade *child, std::size_t sz, std::vector<double> probabilities)
 {
-	std::vector<std::vector<double> > matrix = get_matrix(sz, child->get_branch_length(), _lambdas[child]); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
+	std::string nodename = child->get_taxon_name();
+	int lambda_index = _node_name_to_lambda_index[nodename];
+	double lambda = _lambdas[lambda_index];
+	std::vector<std::vector<double> > matrix = get_matrix(sz, child->get_branch_length(), lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
 	return matrix_multiply(matrix, probabilities);
+}
+
+void do_something(clade *c)
+{
+	cout << "Clade id is: " << c->get_taxon_name() << endl;
 }
 
 int main(int argc, char *const argv[]) {
@@ -162,10 +170,8 @@ int main(int argc, char *const argv[]) {
 
   newick_parser lambda_parser(true);
   lambda_parser.newick_string = "((A:1,B:1):1,(C:2,D:2):2);";
-  clade *p_lambda_tree = parser.parse_newick();
+  clade *p_lambda_tree = lambda_parser.parse_newick();
   p_lambda_tree->print_clade();
-  exit(0);
-
 
   vector<gene_family> gene_families = initialize_sample_families();
 
@@ -173,12 +179,15 @@ int main(int argc, char *const argv[]) {
 
   single_lambda lambda(0.01);
 
-  std::vector<double> lambdas = { 0.01, 0.02, 0.03 };
-  std::map<clade *, int> lambda_indices;
-  lambda_indices[p_tree] = 0;
+  std::vector<double> lambdas = { 0.01, 0.05 };
+  std::map<clade *, int> lambda_index_map;
+  std::map<std::string, int> node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
 
-  multiple_lambda lambda2();
+  lambda_index_map[p_tree] = 0;
 
+  multiple_lambda lambda2(node_name_to_lambda_index, lambdas);
+
+  exit(0);
   cout << "About to run pruner" << endl;
   likelihood_computer pruner(max_family_size, &lambda, &gene_families[0]);
   p_tree->apply_reverse_level_order(pruner);

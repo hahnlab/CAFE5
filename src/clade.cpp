@@ -134,7 +134,7 @@ void clade::print_clade() {
   
   string blanks(depth, ' '); // initializing string with the fill constructor (repeat ' ' depth many times, depth will be some integer), this blanks string will help us indent the printing
 
-  cout << blanks << "My name is: " << _taxon_name << endl;
+  cout << blanks << "My name is: " << _taxon_name << ", subtending branch is: "  << _branch_length << ", Lambda index is: " << _lambda_index << endl;
 
   /* Base case: it is a leaf */
   if (_descendants.empty()) { return; }
@@ -177,6 +177,24 @@ void clade::init_gene_family_sizes(const vector<gene_family>& families)
   for (int i = 0; i < _descendants.size(); ++i)
     _descendants[i]->init_gene_family_sizes(families);
 }
+
+class named_lambda_index_getter
+{
+public:
+	std::map<std::string, int> node_name_to_lambda_index;
+	void operator()(clade *c)
+	{
+		node_name_to_lambda_index[c->get_taxon_name()] = c->get_lambda_index();
+	}
+};
+
+std::map<std::string, int> clade::get_lambda_index_map()
+{
+	named_lambda_index_getter m;
+	apply_prefix_order(m);
+	return m.node_name_to_lambda_index;
+}
+
 
 /* Testing implementation of clade class */
 
