@@ -98,7 +98,7 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 //! Compute transition probability matrix for all gene family sizes from 0 to size-1 (=_max_root_family_size-1)
 vector<vector<double> > get_matrix(int size, int branch_length, double lambda) {
     
-    cout << "Computing matrix for branch " << branch_length << " lambda " << lambda << endl;
+    cout << "Computing matrix for branch length " << branch_length << " lambda " << lambda << endl;
 
     vector<vector<double> > result(size);
     for (int s = 0; s < size; s++) {

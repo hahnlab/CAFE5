@@ -110,6 +110,7 @@ std::vector<double> multiple_lambda::calculate_child_factor(clade *child, std::s
 	std::string nodename = child->get_taxon_name();
 	int lambda_index = _node_name_to_lambda_index[nodename];
 	double lambda = _lambdas[lambda_index];
+	cout << "Matrix for " << child->get_taxon_name() << endl;
 	std::vector<std::vector<double> > matrix = get_matrix(sz, child->get_branch_length(), lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
 	return matrix_multiply(matrix, probabilities);
 }
@@ -132,7 +133,7 @@ int main(int argc, char *const argv[]) {
 
   /* START: Option variables for simulations */
   map<int, int>* p_rootdist_map = NULL;
-  int root_family_size = 300;
+  int root_family_size = 60;
   //double lambda = 0.0017;
   /* END: Option variables for simulations */
 
@@ -179,7 +180,7 @@ int main(int argc, char *const argv[]) {
 
   single_lambda lambda(0.01);
 
-  std::vector<double> lambdas = { 0.01, 0.05 };
+  std::vector<double> lambdas = { 0.0, 0.46881494730996, 0.68825840825707 };
   std::map<clade *, int> lambda_index_map;
   std::map<std::string, int> node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
 
@@ -187,12 +188,14 @@ int main(int argc, char *const argv[]) {
 
   multiple_lambda lambda2(node_name_to_lambda_index, lambdas);
 
-  exit(0);
-  cout << "About to run pruner" << endl;
-  likelihood_computer pruner(max_family_size, &lambda, &gene_families[0]);
+  cout << "About to run pruner (max family size " << max_family_size << ")" << endl;
+  likelihood_computer pruner(max_family_size, &lambda2, &gene_families[0]);
   p_tree->apply_reverse_level_order(pruner);
   vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
-  cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
+  //cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
+  for (int i = 0; i<likelihood.size(); ++i)
+	  cout << "Likelihood of size " << i << " at root: " << likelihood[i] << endl;
+  exit(0);
   //  for (int i = 0; i<likelihood.size(); ++i)
 //    cout << "AB Likelihood " << i << ": " << likelihood[i] << endl;
 //  likelihood = pruner.get_likelihoods(p_tree->find_descendant("A"));		// likelihood of the whole tree = multiplication of likelihood of all nodes
