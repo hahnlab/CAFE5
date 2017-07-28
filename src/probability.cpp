@@ -228,14 +228,12 @@ std::vector<int> uniform_dist(int n_draws, int min, int max) {
 }
 
 /* START: Weighted draw from vector */
+//! Draw ints or doubles from n_draws equal intervals using specified weights.
 std::vector<int> * weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_probs) {
     std::random_device rd;
     std::mt19937 gen(rd()); // seeding random number engine
-    
-    for (int i = 0; i != gamma_cat_probs.size(); ++i) {
-        cout << gamma_cat_probs[i];
-    }
-    
+
+    // creating equal-sized intervals (n_draws of them)
     std::vector<double> intervals(gamma_cat_probs.size()+1);
     for (int i = 0; i != intervals.size(); ++i) {
         intervals[i] = i ;
@@ -244,7 +242,8 @@ std::vector<int> * weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_
     
     std::piecewise_constant_distribution<double> d(intervals.begin(), intervals.end(), gamma_cat_probs.begin());
     std::vector<int> *p_gamma_cats = new std::vector<int>(n_draws);
-
+    
+    // now drawing
     for (int i = 0; i < n_draws; ++i) {
         (*p_gamma_cats)[i] = d(gen);
         //cout << (*p_gamma_cats)[i] << ", ";

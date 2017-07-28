@@ -73,21 +73,21 @@ trial * process::get_simulation() {
 }
 
 //! Populate _processes (vector of processes)
-void core::start_processes() {
+void core::start_sim_processes() {
     
     for (int i = 0; i < _total_n_families; ++i) {
-        double lambda_bin = _lambda_bins[i];      
+        double lambda_bin = _gamma_cats[i];      
         process *p_new_process = new process(_ost, _lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
-        _processes.push_back(p_new_process);
+        _sim_processes.push_back(p_new_process);
     }
     
-    cout << _processes.size() << " processes have been started." << endl;
+    cout << _sim_processes.size() << " processes have been started." << endl;
 }
 
 //! Run simulations in all processes, in series... (TODO: in parallel!)
 void core::simulate_processes() {
     for (int i  = 0; i < _total_n_families; ++i) {
-        _processes[i]->run_simulation();
+        _sim_processes[i]->run_simulation();
     }
 }
 
@@ -95,12 +95,12 @@ void core::simulate_processes() {
 void core::print_simulations(std::ostream& ost) {
     
     // Printing header
-    for (trial::iterator it = _processes[0]->get_simulation()->begin(); it != _processes[0]->get_simulation()->end(); ++it) {
+    for (trial::iterator it = _sim_processes[0]->get_simulation()->begin(); it != _sim_processes[0]->get_simulation()->end(); ++it) {
 	ost << "#" << it->first->get_taxon_name() << endl;
     }
     
     for (int i = 0; i < _total_n_families; ++i) {
-        _processes[i]->print_simulation(cout);
+        _sim_processes[i]->print_simulation(cout);
     }
 }
 

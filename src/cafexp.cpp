@@ -264,7 +264,7 @@ int main(int argc, char *const argv[]) {
             rootdist_vec.clear(); // if we want to use uniform (comment to use the file provided with -f)
             
             core core_model(cout, &lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_multipliers, *p_gamma_cats);
-            core_model.start_processes();
+            core_model.start_sim_processes();
             core_model.simulate_processes();
             core_model.print_simulations(cout);
             //core_model.print_parameter_values();
