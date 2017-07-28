@@ -19,20 +19,6 @@
 
 using namespace std;
 
-unsigned long long choose(unsigned long long n, unsigned long long k) {
-
-  if (k > n) { return 0; }
-
-  unsigned long long r = 1;
-
-  for (unsigned long long d = 1; d <= k; ++d) {
-    r *= n--;
-    r /= d;
-  }
-
-  return r;
-}
-
 vector<gene_family> initialize_sample_families()
 {
   vector<gene_family> gene_families;
