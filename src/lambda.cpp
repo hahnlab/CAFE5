@@ -43,7 +43,7 @@ double find_best_lambda(lambda_search_params *params)
 {
 	int lambda_len = 1;
 	FMinSearch* pfm;
-	pfm = fminsearch_new_with_eq(calculate_lambda_score, lambda_len, &params);
+	pfm = fminsearch_new_with_eq(calculate_lambda_score, lambda_len, params);
 	pfm->tolx = 1e-6;
 	pfm->tolf = 1e-6;
 	double result;
