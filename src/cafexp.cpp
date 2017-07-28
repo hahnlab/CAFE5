@@ -10,6 +10,8 @@
 #include "poisson.h"
 #include "core.h"
 #include "gamma.h"
+#include "fminsearch.h"
+#include "lambda.h"
 
 /* Ask Ben */
 /*
@@ -103,6 +105,7 @@ int main(int argc, char *const argv[]) {
   bool simulate = false;
   double fixed_lambda = -1;
   int nsims = 0; 
+  bool lambda_search = true;
   /* END: Option variables for main() */
 
   /* START: Option variables for simulations */
@@ -151,6 +154,14 @@ int main(int argc, char *const argv[]) {
   vector<gene_family> gene_families = initialize_sample_families();
 
   int max_family_size = gene_families[0].max_family_size();
+
+  if (lambda_search)
+  {
+	  lambda_search_params params(p_tree, gene_families, max_family_size);
+	  double lambda = find_best_lambda(&params);
+	  cout << "Best lambda match is " << lambda;
+	  exit(0);
+  }
 
   single_lambda lambda(0.01);
 
