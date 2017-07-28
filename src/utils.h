@@ -42,5 +42,5 @@ bool max_value(const std::pair<T, U> & p1, const std::pair<T, U> & p2)
 }
 
 //! Used when simulating gene families (-s)
-vector<int> vectorize_map(map<int, int> *p_root_dist);
+std::vector<int> vectorize_map(std::map<int, int> *p_root_dist);
 #endif

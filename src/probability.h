@@ -4,9 +4,9 @@
 #include <vector>
 #include <iostream>
 #include "utils.h"
+#include "io.h"
 
 class clade;
-
 double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int size);
 double chooseln(double n, double k);
 double unifrnd();

@@ -111,8 +111,8 @@ ostream& operator<<(ostream& ost, const vector<vector<double> >& matrix)
 }
 
 //! Used when simulating gene families (-s)
-vector<int> vectorize_map(map<int, int> *p_root_dist) {
-    vector<int> vectorized_map;
+std::vector<int> vectorize_map(map<int, int> *p_root_dist) {
+    std::vector<int> vectorized_map;
     
     for (map<int, int>::iterator it = p_root_dist->begin(); it != p_root_dist->end(); ++it) {
         for (int i=0; i < it->second; ++i) {

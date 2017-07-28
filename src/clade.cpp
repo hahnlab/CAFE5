@@ -1,6 +1,7 @@
+#include "io.h"
 #include "clade.h"
-#include <queue>
 #include "utils.h"
+#include <queue>
 
 /* Recursive destructor */
 clade::~clade() {

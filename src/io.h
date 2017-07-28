@@ -1,6 +1,7 @@
 #ifndef io_h
 #define io_h
 
+#include "utils.h"
 #include "family_generator.h"
 #include "clade.h"
 #include <string>
