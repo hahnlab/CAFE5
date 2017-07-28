@@ -110,28 +110,15 @@ ostream& operator<<(ostream& ost, const vector<vector<double> >& matrix)
   return ost;
 }
 
-int gene_family::max_family_size() const
-{
-  int max = max_element(species_size_map.begin(), species_size_map.end(), max_value<string, int>)->second;
-
-  // CAFE calculates a root_max and a not-root-max 
-  // we will use the same not_root_max
-  //fs->root_max = MAX(30, rint(max * 1.25));
-
-  return max + std::max(50, max / 5);
+//! Used when simulating gene families (-s)
+vector<int> vectorize_map(map<int, int> *p_root_dist) {
+    vector<int> vectorized_map;
+    
+    for (map<int, int>::iterator it = p_root_dist->begin(); it != p_root_dist->end(); ++it) {
+        for (int i=0; i < it->second; ++i) {
+            vectorized_map.push_back(it->first);
+        }
+    }
+    
+    return vectorized_map;
 }
-
-template <typename T, typename U>
-T do_get_species(const std::pair<T, U> & p1)
-{
-  return p1.first;
-}
-
-vector<string> gene_family::get_species() const
-{
-  vector<string> result(species_size_map.size());
-  transform(species_size_map.begin(), species_size_map.end(), result.begin(), do_get_species<string,int>);
-  
-  return result;
-}
-

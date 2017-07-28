@@ -61,3 +61,30 @@ void print_simulation(std::vector<vector<trial *> > &sim, std::ostream& ost) {
 }
 
 /* END: Printing functions for simulation engine */
+
+/* START: Reading in gene family data */
+
+//! Return highest gene family count. 
+/*!
+  CAFE had a not_root_max (which we use; see below) and a root_max = MAX(30, rint(max*1.25));
+*/
+int gene_family::max_family_size() const {
+    int max_size = max_element(species_size_map.begin(), species_size_map.end(), max_value<string, int>)->second;
+    return max_size + std::max(50, max_size / 5);
+}
+
+//! Return first element of pair
+template <typename type1, typename type2>
+type1 do_get_species(const std::pair<type1, type2> & p1) {
+    return p1.first;
+}
+
+//! Return vector of species names
+vector<string> gene_family::get_species() const {
+    vector<string> result(species_size_map.size());
+    transform(species_size_map.begin(), species_size_map.end(), result.begin(), do_get_species<string,int>); // transform performs an operation on all elements of a container (here, the operation is the template)
+    
+    return result;
+}
+
+/* END: Reading in gene family data */

@@ -33,18 +33,6 @@ unsigned long long choose(unsigned long long n, unsigned long long k) {
   return r;
 }
 
-vector<int> vectorize_map(map<int, int> *p_root_dist) {
-    vector<int> vectorized_map;
-    
-    for (map<int, int>::iterator it = p_root_dist->begin(); it != p_root_dist->end(); ++it) {
-        for (int i=0; i < it->second; ++i) {
-            vectorized_map.push_back(it->first);
-        }
-    }
-    
-    return vectorized_map;
-}
-
 vector<gene_family> initialize_sample_families()
 {
   vector<gene_family> gene_families;
