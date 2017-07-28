@@ -134,7 +134,7 @@ vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vect
    
   An instance of it is created by likelihood_computer for a focal internal node (in the code: "node").
  
-  likelihood_computer then calls child_calculator as a function (using the () operator overload) on each descendant of the internal node (via apply_to_descendants()), computing the vector of likelihoods for each one. This vector (called a "factor") is then stored in the _factors map as keys, at _factors[child]. There will be as many factors as there are children.
+  likelihood_computer then calls child_calculator as a function (using the () operator overload) on each descendant of the internal node (via apply_to_descendants()), computing the vector of likelihoods for each one. This vector (called a "factor") is then stored in the _factors map as keys, at _factors[child]. There will be as many factors as there are children. The computation of the factors is different depending on whether one or more lambdas are specified -- this is taken care of by the abstract class lambda (and its pure virtual method calculate_child_factor).
   
   likelihood_computer then calls the update_probabilities() method of child_calculator, which multiplies the factors together, and stores the result (a vector of likelihoods) in _probabilities[node] ("node" here is the focal internal node).
  
@@ -161,6 +161,7 @@ public:
     /*!
       Makes child_calculator a functor. 
       The functor is called once on each child by likelihood_computer through apply_to_descendants().
+      Note that depending on whether one or multiple lambdas are specified, the computation of the likelihood will be different. It is the abstract class lambda (which has a pure virtual method calculate_child_factor) that decides how to do it. 
      */
     void operator()(clade * child) {
         _factors[child].resize(_max_root_family_size); // Ben: Maybe I'm wrong, but are we ignoring the largest possible gene family size?

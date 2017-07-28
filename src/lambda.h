@@ -4,7 +4,43 @@
 #include <vector>
 
 class clade;
+
 class gene_family;
+
+/* START: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
+
+//! Abstract class to hold lambda value.
+/*!
+  The main feature of this abstract class is its pure virtual member calculate_child_factor. This method is required because one or more lambda may be specified, and this determines how the pruner should compute the likelihoods. So this abstract class is what decides how the likelihood is computed for each descendant.
+ */
+class lambda {
+public:
+    virtual std::vector<double> calculate_child_factor(clade *child, std::size_t max_size, std::vector<double> probabilities) = 0; //!< Pure virtual function (= 0 is the 'pure specifier' and indicates this function MUST be overridden by a derived class' method)
+};
+
+//! (lambda) Derived class 1: one lambda for whole tree
+class single_lambda : public lambda {
+private:
+    double _lambda;
+    
+public:
+    single_lambda(double lambda) : _lambda(lambda) { } //!< Constructor 
+    double get_single_lambda() const { return _lambda; }
+    virtual std::vector<double> calculate_child_factor(clade *child, std::size_t max_size, std::vector<double> probabilities); //!< Computes tr. prob. matrix, and multiplies by likelihood vector. Returns result (=factor).
+};
+
+//! (lambda) Derived class 2: multiple lambdas
+class multiple_lambda : public lambda {
+private:
+    std::map<std::string, int> _node_name_to_lambda_index;
+    std::vector<double> _lambdas;
+    
+public:
+    multiple_lambda(std::map<std::string, int> nodename_index_map, std::vector<double> lambda_vector) : _node_name_to_lambda_index(nodename_index_map), _lambdas(lambda_vector) { } //!< Constructor
+    virtual std::vector<double> calculate_child_factor(clade *child, std::size_t max_size, std::vector<double> probabilities); //!< Computes tr. prob. matrix (uses right lambda for each branch) and multiplies by likelihood vector. Returns result (=factor).
+};
+
+/* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
 struct lambda_search_params
 {

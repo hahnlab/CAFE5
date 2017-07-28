@@ -75,22 +75,6 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
 vector<vector<double> > get_matrix(int size, int branch_length, double lambda);
 vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v);
 
-std::vector<double> single_lambda::calculate_child_factor(clade *child, std::size_t sz, std::vector<double> probabilities)
-{
-	std::vector<std::vector<double> > matrix = get_matrix(sz, child->get_branch_length(), _lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
-	return matrix_multiply(matrix, probabilities);
-}
-
-std::vector<double> multiple_lambda::calculate_child_factor(clade *child, std::size_t sz, std::vector<double> probabilities)
-{
-	std::string nodename = child->get_taxon_name();
-	int lambda_index = _node_name_to_lambda_index[nodename];
-	double lambda = _lambdas[lambda_index];
-	cout << "Matrix for " << child->get_taxon_name() << endl;
-	std::vector<std::vector<double> > matrix = get_matrix(sz, child->get_branch_length(), lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
-	return matrix_multiply(matrix, probabilities);
-}
-
 void do_something(clade *c)
 {
 	cout << "Clade id is: " << c->get_taxon_name() << endl;
@@ -105,7 +89,7 @@ int main(int argc, char *const argv[]) {
   bool simulate = false;
   double fixed_lambda = -1;
   int nsims = 0; 
-  bool lambda_search = true;
+  bool lambda_search = false;
   /* END: Option variables for main() */
 
   /* START: Option variables for simulations */

@@ -5,43 +5,12 @@
 #include <iostream>
 #include "utils.h"
 #include "io.h"
+#include "lambda.h"
 
 class clade;
 double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int size);
 double chooseln(double n, double k);
 double unifrnd();
-
-class lambda
-{
-public:
-	virtual std::vector<double> calculate_child_factor(clade *child, std::size_t sz, std::vector<double> probabilities) = 0;
-	// = 0 implies that this class does NOT implement this method, but any descendant class MUST implement it
-};
-
-class single_lambda : public lambda
-{
-	double _lambda;
-public:
-	single_lambda(double lambda) : _lambda(lambda)
-	{
-
-	}
-
-	double get_single_lambda() const { return _lambda; }
-	virtual std::vector<double> calculate_child_factor(clade *child, std::size_t sz, std::vector<double> probabilities);
-};
-
-class multiple_lambda : public lambda
-{
-	std::map<std::string, int> _node_name_to_lambda_index;
-	std::vector<double> _lambdas;
-public:
-	multiple_lambda(std::map<std::string, int> a, std::vector<double> b) : _node_name_to_lambda_index(a), _lambdas(b)
-	{
-	}
-	virtual std::vector<double> calculate_child_factor(clade *child, std::size_t sz, std::vector<double> probabilities);
-};
-
 
 /* START: Likelihood computation ---------------------- */
 
@@ -106,6 +75,10 @@ public:
         return _cache[k];
     }
 };
+
+vector<vector<double> > get_matrix(int size, int branch_length, double lambda);
+
+vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v); 
 
 /* END: Probability calculator for simulator -------- */
 
