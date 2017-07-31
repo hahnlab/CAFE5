@@ -1,4 +1,5 @@
 #include "io.h"
+#include "utils.h"
 #include <string>
 #include <fstream>
 #include <iostream>
@@ -9,6 +10,8 @@ using namespace std;
 
 struct option longopts[] = {
   { "infile", required_argument, NULL, 'i' },
+  { "tree", required_argument, NULL, 't' },
+  { "lambda_tree", optional_argument, NULL, 'y' },
   { "prefix", optional_argument, NULL, 'p' },
   { "simulate", optional_argument, NULL, 's' },
   { "nsims", optional_argument, NULL, 'n' },
@@ -16,10 +19,53 @@ struct option longopts[] = {
   { 0, 0, 0, 0 }
 };
 
+//! Read tree from user-provided tree file
+/*!
+  This function is called by CAFExp's main function when "--tree"/"-t" is specified
+*/
+clade* read_tree(string tree_file_path, bool lambda_tree) {
+    newick_parser parser(false);
+    
+    // if this function is used to read lambda tree instead of phylogenetic tree
+    if (lambda_tree) {
+       parser.parse_to_lambdas = true;
+    }
+    
+    ifstream tree_file(tree_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
+    string line;
+    
+    if (tree_file.good()) {
+        getline(tree_file, line);
+    }
+    tree_file.close();
+    
+    parser.newick_string = line;
+    clade *p_tree = parser.parse_newick();
+    return p_tree;
+}
+
+//! Read gene family data from user-provided tab-delimited file
+/*!
+  This function is called by CAFExp's main function when "--infile"/"-i" is specified  
+*/
+vector<gene_family> read_gene_families(string input_file_path) {
+    vector<gene_family> gene_families;
+    ifstream input_file(input_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
+    string line;
+    bool is_first_line = true;
+    while (getline(input_file, line)) {
+        if (is_first_line) {
+            // do stuff
+            is_first_line = false;
+        }
+        
+        
+    }
+}
 
 //! Populate famdist_map with root family distribution read from famdist_file_path
 /*!
-  This function is called by CAFExp's main function when "simulate" is specified 
+  This function is called by CAFExp's main function when "--simulate"/"-s" is specified 
 */
 map<int, int>* read_rootdist(string rootdist_file_path) {
 

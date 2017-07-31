@@ -72,9 +72,6 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
   return posterior;
 }
 
-vector<vector<double> > get_matrix(int size, int branch_length, double lambda);
-vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v);
-
 void do_something(clade *c)
 {
 	cout << "Clade id is: " << c->get_taxon_name() << endl;
@@ -85,51 +82,63 @@ int main(int argc, char *const argv[]) {
   /* START: Option variables for main() */
   int args; // getopt_long returns int or char
   string input_file_path;
+  string tree_file_path;
+  string lambda_tree_file_path;
   string rootdist;
   bool simulate = false;
   double fixed_lambda = -1;
   int nsims = 0; 
   bool lambda_search = false;
   /* END: Option variables for main() */
-
+  
+  /* START: Input variables for inference and simulation */
+  std::vector<gene_family> gene_families;
+  /* END: Input variables for inference and simulation */
+  
   /* START: Option variables for simulations */
   map<int, int>* p_rootdist_map = NULL;
   int root_family_size = 60;
   //double lambda = 0.0017;
   /* END: Option variables for simulations */
 
-  while ((args = getopt_long(argc, argv, "i:n:f:k:s::", longopts, NULL)) != -1) {
-    switch (args) {
-    case 'i':
-      input_file_path = optarg;
-      break;
-    case 's':
-      simulate = true;
-      break;
-    case 'k':
-      fixed_lambda = atof(optarg);
-      break;
-    case 'n':
-      nsims = atoi(optarg);
-      break;
-    case 'f':
-      rootdist = optarg;
-      break;
-    case ':':   // missing argument
-      fprintf(stderr, "%s: option `-%c' requires an argument",
-	      argv[0], optopt);
-      break;
-    default: // '?' is parsed (
-      cout << "Exiting..." << endl;
-      return EXIT_FAILURE; //abort ();
-    }
+  while ((args = getopt_long(argc, argv, "i:t:y:n:f:k:s::", longopts, NULL)) != -1) {
+      switch (args) {
+        case 'i':
+            input_file_path = optarg;
+            break;    
+        case 't':
+            tree_file_path = optarg;
+            break;
+        case 'y':
+            lambda_tree_file_path = optarg;
+            break;
+        case 's':
+            simulate = true;
+            break;
+        case 'k':
+            fixed_lambda = atof(optarg);
+            break;
+        case 'n':
+            nsims = atoi(optarg);
+            break;
+        case 'f':
+            rootdist = optarg;
+            break;
+        case ':':   // missing argument
+            fprintf(stderr, "%s: option `-%c' requires an argument",
+                    argv[0], optopt);
+            break;
+        default: // '?' is parsed (
+            cout << "Exiting..." << endl;
+            return EXIT_FAILURE; //abort ();
+      }
   }
 
-  newick_parser parser(false);
-  // parser.newick_string = "(((chimp:6,human:6):81,(mouse:17,rat:17):70):6,dog:93)";
-  parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-  clade *p_tree = parser.parse_newick();
-
+   newick_parser parser(false);
+   //parser.newick_string = "(((chimp:6,human:6):81,(mouse:17,rat:17):70):6,dog:93)";
+   parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
+   clade *p_tree = parser.parse_newick();
+  
   newick_parser lambda_parser(true);
   lambda_parser.newick_string = "((A:1,B:1):1,(C:2,D:2):2);";
   clade *p_lambda_tree = lambda_parser.parse_newick();
@@ -164,7 +173,7 @@ int main(int argc, char *const argv[]) {
   //cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
   for (int i = 0; i<likelihood.size(); ++i)
 	  cout << "Likelihood of size " << i << " at root: " << likelihood[i] << endl;
-  exit(0);
+
   //  for (int i = 0; i<likelihood.size(); ++i)
 //    cout << "AB Likelihood " << i << ": " << likelihood[i] << endl;
 //  likelihood = pruner.get_likelihoods(p_tree->find_descendant("A"));		// likelihood of the whole tree = multiplication of likelihood of all nodes
@@ -176,15 +185,29 @@ int main(int argc, char *const argv[]) {
 
 
   try {
-    p_tree->init_gene_family_sizes(gene_families);
-
+    p_tree->init_gene_family_sizes(gene_families);    
+    clade *p_tree1 = read_tree(tree_file_path, false); // phylogenetic tree
+    p_tree1->print_clade();
+    clade *p_lambda_tree1 = new clade(); // lambda tree
+    
+    /* Reading gene family data if -i */
+    if (!input_file_path.empty()) {
+        
+    }
+    
+    /* Reading lambda tree if -y */
+    if (!lambda_tree_file_path.empty()) {
+        p_lambda_tree1 = read_tree(lambda_tree_file_path, true);
+        p_lambda_tree1->print_clade();
+    }
+    
     if (fixed_lambda >= 0)
     {
       vector<double> posterior = get_posterior(gene_families, max_family_size, fixed_lambda, p_tree);
       double map = log(*max_element(posterior.begin(), posterior.end()));
       cout << "Posterior values found - max log posterior is " << map << endl;
     }
-
+    
     /* START: Running simulations if -s */
     if (simulate) {
         if (!nsims) {

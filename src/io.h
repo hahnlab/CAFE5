@@ -16,6 +16,8 @@ extern struct option longopts[];
 
 class clade;
 
+clade *read_tree(string tree_file_path, bool lambda_tree);
+
 map<int, int> *read_rootdist(string famdist_file_path);
 
 /* START: Printing functions for simulation engine */
