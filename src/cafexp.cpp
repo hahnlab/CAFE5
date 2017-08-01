@@ -80,12 +80,15 @@ void do_something(clade *c)
 int main(int argc, char *const argv[]) {
     /* START: Option variables for main() */
     int args; // getopt_long returns int or char
+    int prev_arg;
     string input_file_path;
     string tree_file_path;
     string lambda_tree_file_path;
     string rootdist;
+    bool estimate = false;
     bool simulate = false;
-    double fixed_lambda = -1;
+    double fixed_lambda = 0.0;
+    cout << "fixed_lambda is " << fixed_lambda << endl;
     int nsims = 0; 
     bool lambda_search = false;
     /* END: Option variables for main() */
@@ -100,11 +103,22 @@ int main(int argc, char *const argv[]) {
     //double lambda = 0.0017;
     /* END: Option variables for simulations */
 
-    while ((args = getopt_long(argc, argv, "i:t:y:n:f:k:s::", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:t:y:n:f:k:e::s::", longopts, NULL)) != -1 ) {
+    // while ((args = getopt_long(argc, argv, "i:t:y:n:f:k:e::s::", longopts, NULL)) != -1) {
+        if (optind == prev_arg + 2 && *optarg == '-') {
+            cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
+            exit(EXIT_FAILURE);
+            // args = ':';
+            // --optind;
+        }
+            
         switch (args) {
             case 'i':
                 input_file_path = optarg;
-                break;    
+                break;
+            case 'e':
+                estimate = true;
+                break;
             case 't':
                 tree_file_path = optarg;
                 break;
@@ -133,15 +147,15 @@ int main(int argc, char *const argv[]) {
           }
       }
     
-    newick_parser parser(false);
-    //parser.newick_string = "(((chimp:6,human:6):81,(mouse:17,rat:17):70):6,dog:93)";
-    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-    clade *p_tree = parser.parse_newick();
-  
-    newick_parser lambda_parser(true);
-    lambda_parser.newick_string = "((A:1,B:1):1,(C:2,D:2):2);";
-    clade *p_lambda_tree = lambda_parser.parse_newick();
-    p_lambda_tree->print_clade();
+//    newick_parser parser(false);
+//    //parser.newick_string = "(((chimp:6,human:6):81,(mouse:17,rat:17):70):6,dog:93)";
+//    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
+//    clade *p_tree = parser.parse_newick();
+//  
+//    newick_parser lambda_parser(true);
+//    lambda_parser.newick_string = "((A:1,B:1):1,(C:2,D:2):2);";
+//    clade *p_lambda_tree = lambda_parser.parse_newick();
+//    p_lambda_tree->print_clade();
 
     //vector<gene_family> gene_families = initialize_sample_families();
         
@@ -181,12 +195,14 @@ int main(int argc, char *const argv[]) {
   
     try {
         //p_tree->init_gene_family_sizes(gene_families);
-        vector<gene_family> * p_gene_families = new vector<gene_family>;
-        int max_family_size;
-        clade *p_tree1 = read_tree(tree_file_path, false); // phylogenetic tree
-        p_tree1->print_clade();
-        clade *p_lambda_tree1 = new clade(); // lambda tree
+        vector<gene_family> * p_gene_families = new vector<gene_family>; // storing gene family data
+        int max_family_size; // gene family max size
+        clade *p_lambda_tree = new clade(); // lambda tree
     
+        /* START: Reading tree */
+        clade *p_tree = read_tree(tree_file_path, false); // phylogenetic tree
+        /* END: Reading tree */
+        
         /* Reading gene family data if -i */
         if (!input_file_path.empty()) {
             p_gene_families = read_gene_families(input_file_path);
@@ -194,18 +210,33 @@ int main(int argc, char *const argv[]) {
 //            max_family_size = p_gene_families[0].max_family_size();
         }
     
-        /* Reading lambda tree if -y */
+        /* START: Reading lambda tree if -y */
         if (!lambda_tree_file_path.empty()) {
-            p_lambda_tree1 = read_tree(lambda_tree_file_path, true);
-            p_lambda_tree1->print_clade();
+            p_lambda_tree = read_tree(lambda_tree_file_path, true);
+            p_lambda_tree->print_clade();
         }
-    
-        if (fixed_lambda >= 0) {
-          vector<double> posterior = get_posterior((*p_gene_families), max_family_size, fixed_lambda, p_tree);
-          double map = log(*max_element(posterior.begin(), posterior.end()));
-          cout << "Posterior values found - max log posterior is " << map << endl;
+        /* END: Reading lambda tree if -y */
+                
+        /* START: Estimating lambda(s) */
+        if (estimate) {
+            if (input_file_path.empty()) {
+                throw runtime_error("In order to estimate the lambda(s) value(s) (-e), you must specify an input file path (gene family data) with -i. Exiting...");
+            }
+            
+            if (fixed_lambda > 0.0) {
+                throw runtime_error("You cannot both estimate and fix the lambda(s) value(s). Exiting...");
+            }
+            
         }
-    
+        /* END: Estimating lambda(s) */
+        
+        if (fixed_lambda > 0.0) {
+            cout << fixed_lambda << endl;
+            // vector<double> posterior = get_posterior((*p_gene_families), max_family_size, fixed_lambda, p_tree);
+            // double map = log(*max_element(posterior.begin(), posterior.end()));
+            // cout << "Posterior values found - max log posterior is " << map << endl;
+        }
+        
         /* START: Running simulations if -s */
         if (simulate) {
             if (!nsims) {
