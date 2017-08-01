@@ -144,16 +144,7 @@ int main(int argc, char *const argv[]) {
     p_lambda_tree->print_clade();
 
     //vector<gene_family> gene_families = initialize_sample_families();
-
-    vector<gene_family> * p_gene_families = read_gene_families(input_file_path);
-	if (p_gene_families->empty())
-	{
-		cout << "No gene families specified!" << endl;
-		exit(1);
-	}
-    int max_family_size = (*p_gene_families)[0].max_family_size();
-    exit(0);
-    
+        
 //    if (lambda_search) {
 //        lambda_search_params params(p_tree, p_gene_families, max_family_size);
 //        double lambda = find_best_lambda(&params);
@@ -162,22 +153,22 @@ int main(int argc, char *const argv[]) {
 //    }
 
     single_lambda lambda(0.01);
-
-    std::vector<double> lambdas = { 0.0, 0.46881494730996, 0.68825840825707 };
-    std::map<clade *, int> lambda_index_map;
-    std::map<std::string, int> node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
-  
-    lambda_index_map[p_tree] = 0;
-
-    multiple_lambda lambda2(node_name_to_lambda_index, lambdas);
-
-    cout << "About to run pruner (max family size " << max_family_size << ")" << endl;
-    likelihood_computer pruner(max_family_size, &lambda2, &(*p_gene_families)[0]);
-    p_tree->apply_reverse_level_order(pruner);
-    vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
-    //cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
-    for (int i = 0; i<likelihood.size(); ++i)
-        cout << "Likelihood of size " << i << " at root: " << likelihood[i] << endl;    
+//
+//    std::vector<double> lambdas = { 0.0, 0.46881494730996, 0.68825840825707 };
+//    std::map<clade *, int> lambda_index_map;
+//    std::map<std::string, int> node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
+//  
+//    lambda_index_map[p_tree] = 0;
+//
+//    multiple_lambda lambda2(node_name_to_lambda_index, lambdas);
+//
+//    cout << "About to run pruner (max family size " << max_family_size << ")" << endl;
+//    likelihood_computer pruner(max_family_size, &lambda2, &(*p_gene_families)[0]);
+//    p_tree->apply_reverse_level_order(pruner);
+//    vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
+//    //cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
+//    for (int i = 0; i<likelihood.size(); ++i)
+//        cout << "Likelihood of size " << i << " at root: " << likelihood[i] << endl;    
 
   //  for (int i = 0; i<likelihood.size(); ++i)
 //    cout << "AB Likelihood " << i << ": " << likelihood[i] << endl;
@@ -189,15 +180,19 @@ int main(int argc, char *const argv[]) {
 //    cout << "B Likelihood " << i << ": " << likelihood[i] << endl;
   
     try {
-        //p_tree->init_gene_family_sizes(gene_families);    
+        //p_tree->init_gene_family_sizes(gene_families);
+        vector<gene_family> * p_gene_families = new vector<gene_family>;
+        int max_family_size;
         clade *p_tree1 = read_tree(tree_file_path, false); // phylogenetic tree
         p_tree1->print_clade();
         clade *p_lambda_tree1 = new clade(); // lambda tree
     
-//    /* Reading gene family data if -i */
-//    if (!input_file_path.empty()) {
-//        
-//    }
+        /* Reading gene family data if -i */
+        if (!input_file_path.empty()) {
+            p_gene_families = read_gene_families(input_file_path);
+            max_family_size = 10;
+//            max_family_size = p_gene_families[0].max_family_size();
+        }
     
         /* Reading lambda tree if -y */
         if (!lambda_tree_file_path.empty()) {

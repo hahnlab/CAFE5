@@ -50,18 +50,16 @@ clade* read_tree(string tree_file_path, bool lambda_tree) {
 */
 vector<gene_family> * read_gene_families(std::string input_file_path) {
     vector<gene_family> * p_gene_families = new std::vector<gene_family>;
-    // auto p_gene_families = new std::vector<gene_family>; // means the same as previous line
     map<int, std::string> sp_col_map; // {col_idx: sp_name} 
     ifstream input_file(input_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
     std::string line;
     bool is_first_line = true;
     while (getline(input_file, line)) {
-        std::vector<std::string> tokens;
+        std::vector<std::string> tokens = tokenize_str(line, '\t');
         
         // header
         if (is_first_line) {
             is_first_line = false;
-            tokens = tokenize_str(line, '\t');
             
             for (int i = 0; i < tokens.size(); ++i) {
                 if (i == 0 || i == 1) {} // ignores description and ID cols
@@ -70,22 +68,23 @@ vector<gene_family> * read_gene_families(std::string input_file_path) {
         }
         
         // not header
-//        else {
-//            gene_family genfam; 
-//            
-//            for (int i = 0; i < tokens.size(); ++i) {
-//                if (i == 0)
-//                    genfam.set_desc(tokens[i]);
-//                if (i == 1)
-//                    genfam.set_id(tokens[i]);
-//                else {
-//                    std::string sp_name = sp_col_map[i];
-//                    genfam.set_species_size(sp_name, atoi(tokens[i].c_str()));
-//                }
-//            }
-//            
-//            p_gene_families->push_back(genfam);
-//        }
+        else {
+            gene_family genfam; 
+            
+            for (int i = 0; i < tokens.size(); ++i) {
+                if (i == 0)
+                    genfam.set_desc(tokens[i]);
+                if (i == 1)
+                    genfam.set_id(tokens[i]);
+                else {
+                    std::string sp_name = sp_col_map[i];
+                    cout << sp_name << " " << tokens[i] << endl;
+                    genfam.set_species_size(sp_name, atoi(tokens[i].c_str()));
+                }
+            }
+            
+            p_gene_families->push_back(genfam);
+        }
     }
     
     return p_gene_families;
