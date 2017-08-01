@@ -146,6 +146,11 @@ int main(int argc, char *const argv[]) {
     //vector<gene_family> gene_families = initialize_sample_families();
 
     vector<gene_family> * p_gene_families = read_gene_families(input_file_path);
+	if (p_gene_families->empty())
+	{
+		cout << "No gene families specified!" << endl;
+		exit(1);
+	}
     int max_family_size = (*p_gene_families)[0].max_family_size();
     exit(0);
     
