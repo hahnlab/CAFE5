@@ -21,26 +21,26 @@
 
 using namespace std;
 
-vector<gene_family> initialize_sample_families()
-{
-  vector<gene_family> gene_families;
-
-  gene_families.push_back(gene_family("ENS01"));
-  gene_families.push_back(gene_family("ENS02"));
-  gene_families.push_back(gene_family("ENS03"));
-  gene_families.push_back(gene_family("ENS04"));
-
-  for (int i = 0; i < gene_families.size(); ++i)
-  {
-    gene_families[i].set_species_size("A", 5);
-    gene_families[i].set_species_size("B", 10);
-    gene_families[i].set_species_size("C", 2);
-    gene_families[i].set_species_size("D", 6);
-  }
-
-  return gene_families;
-
-}
+//vector<gene_family> initialize_sample_families()
+//{
+//  vector<gene_family> gene_families;
+//
+//  gene_families.push_back(gene_family("ENS01"));
+//  gene_families.push_back(gene_family("ENS02"));
+//  gene_families.push_back(gene_family("ENS03"));
+//  gene_families.push_back(gene_family("ENS04"));
+//
+//  for (int i = 0; i < gene_families.size(); ++i)
+//  {
+//    gene_families[i].set_species_size("A", 5);
+//    gene_families[i].set_species_size("B", 10);
+//    gene_families[i].set_species_size("C", 2);
+//    gene_families[i].set_species_size("D", 6);
+//  }
+//
+//  return gene_families;
+//
+//}
 
 vector<double> get_posterior(vector<gene_family> gene_families, int max_family_size, double lambda, clade *p_tree)
 {
@@ -143,15 +143,18 @@ int main(int argc, char *const argv[]) {
     clade *p_lambda_tree = lambda_parser.parse_newick();
     p_lambda_tree->print_clade();
 
-    vector<gene_family> gene_families = initialize_sample_families();
-    int max_family_size = gene_families[0].max_family_size();
+    //vector<gene_family> gene_families = initialize_sample_families();
 
-    if (lambda_search) {
-        lambda_search_params params(p_tree, gene_families, max_family_size);
-        double lambda = find_best_lambda(&params);
-	cout << "Best lambda match is " << lambda;
-	exit(0);
-    }
+    vector<gene_family> * p_gene_families = read_gene_families(input_file_path);
+    int max_family_size = (*p_gene_families)[0].max_family_size();
+    exit(0);
+    
+//    if (lambda_search) {
+//        lambda_search_params params(p_tree, p_gene_families, max_family_size);
+//        double lambda = find_best_lambda(&params);
+//	cout << "Best lambda match is " << lambda;
+//	exit(0);
+//    }
 
     single_lambda lambda(0.01);
 
@@ -164,7 +167,7 @@ int main(int argc, char *const argv[]) {
     multiple_lambda lambda2(node_name_to_lambda_index, lambdas);
 
     cout << "About to run pruner (max family size " << max_family_size << ")" << endl;
-    likelihood_computer pruner(max_family_size, &lambda2, &gene_families[0]);
+    likelihood_computer pruner(max_family_size, &lambda2, &(*p_gene_families)[0]);
     p_tree->apply_reverse_level_order(pruner);
     vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
     //cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
@@ -181,8 +184,7 @@ int main(int argc, char *const argv[]) {
 //    cout << "B Likelihood " << i << ": " << likelihood[i] << endl;
   
     try {
-        read_gene_families(input_file_path);
-        p_tree->init_gene_family_sizes(gene_families);    
+        //p_tree->init_gene_family_sizes(gene_families);    
         clade *p_tree1 = read_tree(tree_file_path, false); // phylogenetic tree
         p_tree1->print_clade();
         clade *p_lambda_tree1 = new clade(); // lambda tree
@@ -199,7 +201,7 @@ int main(int argc, char *const argv[]) {
         }
     
         if (fixed_lambda >= 0) {
-          vector<double> posterior = get_posterior(gene_families, max_family_size, fixed_lambda, p_tree);
+          vector<double> posterior = get_posterior((*p_gene_families), max_family_size, fixed_lambda, p_tree);
           double map = log(*max_element(posterior.begin(), posterior.end()));
           cout << "Posterior values found - max log posterior is " << map << endl;
         }

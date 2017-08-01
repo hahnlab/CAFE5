@@ -48,21 +48,47 @@ clade* read_tree(string tree_file_path, bool lambda_tree) {
 /*!
   This function is called by CAFExp's main function when "--infile"/"-i" is specified  
 */
-void read_gene_families(string input_file_path) {
-    vector<gene_family> gene_families;
+vector<gene_family> * read_gene_families(std::string input_file_path) {
+    vector<gene_family> * p_gene_families = new std::vector<gene_family>;
+    // auto p_gene_families = new std::vector<gene_family>; // means the same as previous line
+    map<int, std::string> sp_col_map; // {col_idx: sp_name} 
     ifstream input_file(input_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
-    string line;
+    std::string line;
     bool is_first_line = true;
     while (getline(input_file, line)) {
         std::vector<std::string> tokens;
         
+        // header
         if (is_first_line) {
-            tokens = tokenize_str(line, '\t');
             is_first_line = false;
+            tokens = tokenize_str(line, '\t');
+            
+            for (int i = 0; i < tokens.size(); ++i) {
+                if (i == 0 || i == 1) {} // ignores description and ID cols
+                sp_col_map[i] = tokens[i];
+            }
         }
         
-        
+        // not header
+//        else {
+//            gene_family genfam; 
+//            
+//            for (int i = 0; i < tokens.size(); ++i) {
+//                if (i == 0)
+//                    genfam.set_desc(tokens[i]);
+//                if (i == 1)
+//                    genfam.set_id(tokens[i]);
+//                else {
+//                    std::string sp_name = sp_col_map[i];
+//                    genfam.set_species_size(sp_name, atoi(tokens[i].c_str()));
+//                }
+//            }
+//            
+//            p_gene_families->push_back(genfam);
+//        }
     }
+    
+    return p_gene_families;
 }
 
 //! Populate famdist_map with root family distribution read from famdist_file_path
@@ -117,7 +143,7 @@ void print_simulation(std::vector<vector<trial *> > &sim, std::ostream& ost) {
   CAFE had a not_root_max (which we use; see below) and a root_max = MAX(30, rint(max*1.25));
 */
 int gene_family::max_family_size() const {
-    int max_size = max_element(species_size_map.begin(), species_size_map.end(), max_value<string, int>)->second;
+    int max_size = max_element(_species_size_map.begin(), _species_size_map.end(), max_value<string, int>)->second;
     return max_size + std::max(50, max_size / 5);
 }
 
@@ -129,8 +155,8 @@ type1 do_get_species(const std::pair<type1, type2> & p1) {
 
 //! Return vector of species names
 vector<string> gene_family::get_species() const {
-    vector<string> result(species_size_map.size());
-    transform(species_size_map.begin(), species_size_map.end(), result.begin(), do_get_species<string,int>); // transform performs an operation on all elements of a container (here, the operation is the template)
+    vector<string> result(_species_size_map.size());
+    transform(_species_size_map.begin(), _species_size_map.end(), result.begin(), do_get_species<string,int>); // transform performs an operation on all elements of a container (here, the operation is the template)
     
     return result;
 }

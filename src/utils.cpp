@@ -130,7 +130,6 @@ std::vector<std::string> tokenize_str(std::string some_string, char some_delim) 
     std::vector<std::string> tokens;
     
     while(std::getline(ist, token, some_delim)) {
-        std::cout << token << endl;
         tokens.push_back(token);
     }
     
