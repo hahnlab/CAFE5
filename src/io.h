@@ -16,9 +16,11 @@ extern struct option longopts[];
 
 class clade;
 
-clade *read_tree(string tree_file_path, bool lambda_tree);
+clade *read_tree(std::string tree_file_path, bool lambda_tree);
 
-map<int, int> *read_rootdist(string famdist_file_path);
+map<int, int> *read_rootdist(std::string famdist_file_path);
+
+void read_gene_families(std::string input_file_path);
 
 /* START: Printing functions for simulation engine */
 void print_simulation(std::vector<vector<trial *> >  &sim, std::ostream& ost);

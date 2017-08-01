@@ -123,6 +123,20 @@ std::vector<int> vectorize_map(map<int, int> *p_root_dist) {
     return vectorized_map;
 }
 
+//! Split string into vector of strings given delimiter
+std::vector<std::string> tokenize_str(std::string some_string, char some_delim) {
+    std::istringstream ist(some_string);
+    std::string token;
+    std::vector<std::string> tokens;
+    
+    while(std::getline(ist, token, some_delim)) {
+        std::cout << token << endl;
+        tokens.push_back(token);
+    }
+    
+    return tokens;
+}
+
 //unsigned long long choose(unsigned long long n, unsigned long long k) {
 //
 //  if (k > n) { return 0; }

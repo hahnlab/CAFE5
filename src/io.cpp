@@ -48,14 +48,16 @@ clade* read_tree(string tree_file_path, bool lambda_tree) {
 /*!
   This function is called by CAFExp's main function when "--infile"/"-i" is specified  
 */
-vector<gene_family> read_gene_families(string input_file_path) {
+void read_gene_families(string input_file_path) {
     vector<gene_family> gene_families;
     ifstream input_file(input_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
     string line;
     bool is_first_line = true;
     while (getline(input_file, line)) {
+        std::vector<std::string> tokens;
+        
         if (is_first_line) {
-            // do stuff
+            tokens = tokenize_str(line, '\t');
             is_first_line = false;
         }
         
