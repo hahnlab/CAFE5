@@ -81,16 +81,20 @@ int main(int argc, char *const argv[]) {
     /* START: Option variables for main() */
     int args; // getopt_long returns int or char
     int prev_arg;
-    string input_file_path;
-    string tree_file_path;
-    string lambda_tree_file_path;
-    string rootdist;
+    std::string input_file_path;
+    std::string tree_file_path;
+    std::string lambda_tree_file_path;
+    std::string rootdist;
+
     bool estimate = false;
-    bool simulate = false;
-    double fixed_lambda = 0.0;
-    single_lambda lambda(fixed_lambda);
-    int nsims = 0; 
     bool lambda_search = false;
+    
+    bool simulate = false;
+    int nsims = 0; 
+    
+    double fixed_lambda = 0.0;
+    std::string fixed_multiple_lambdas;
+
     /* END: Option variables for main() */
   
     /* START: Input variables for inference and simulation */
@@ -103,7 +107,7 @@ int main(int argc, char *const argv[]) {
     //double lambda = 0.0017;
     /* END: Option variables for simulations */
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1 ) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:t:y:n:f:l:m:e::s::", longopts, NULL)) != -1 ) {
     // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -130,6 +134,9 @@ int main(int argc, char *const argv[]) {
                 break;
             case 'l':
                 fixed_lambda = atof(optarg);
+                break;
+            case 'm':
+                fixed_multiple_lambdas = optarg;
                 break;
             case 'n':
                 nsims = atoi(optarg);
@@ -177,7 +184,7 @@ int main(int argc, char *const argv[]) {
 //    multiple_lambda lambda2(node_name_to_lambda_index, lambdas);
 //
 //    cout << "About to run pruner (max family size " << max_family_size << ")" << endl;
-//    likelihood_computer pruner(max_family_size, &lambda2, &(*p_gene_families)[0]);
+//    likelihood_computer pruner(max_family_size, &lambda, &(*p_gene_families)[0]);
 //    p_tree->apply_reverse_level_order(pruner);
 //    vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
 //    //cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
@@ -196,9 +203,21 @@ int main(int argc, char *const argv[]) {
     try {
         //p_tree->init_gene_family_sizes(gene_families);
         vector<gene_family> * p_gene_families = new vector<gene_family>; // storing gene family data
-        int max_family_size; // gene family max size
+        int max_family_size = -1; // largest gene family size among all gene families
         clade *p_lambda_tree = new clade(); // lambda tree
-    
+        
+        /* START: Checking conflicting options */
+        //! The user cannot specify both -e and -l
+        if (estimate && fixed_lambda > 0.0) {
+            throw runtime_error("You cannot both estimate (-e) and fix the lambda(s) value(s) (-l). Exiting...");
+        }
+        
+        //! The user cannot specify both -l and -y
+        if (fixed_lambda > 0.0 && !fixed_multiple_lambdas.empty()) {
+            throw runtime_error("You cannot fix one lambda value (-l) and many lambda values (-m). Exiting...");
+        }
+        /* END: Checking conflicting options */
+        
         /* START: Reading tree (-t) */
         clade *p_tree = read_tree(tree_file_path, false); // phylogenetic tree
         /* END: Reading tree */
@@ -206,16 +225,17 @@ int main(int argc, char *const argv[]) {
         /* START: Reading gene family data (-i) */
         if (!input_file_path.empty()) {
             p_gene_families = read_gene_families(input_file_path);
-//            max_family_size = 10;
-            max_family_size = (*p_gene_families)[0].get_max_size();
+            
+            // Iterating over gene families to get max gene family size
+            for (std::vector<gene_family>::iterator it = p_gene_families->begin(); it != p_gene_families->end(); ++it) {
+                int this_family_max_size = it->get_max_size();
+                if (max_family_size < this_family_max_size)
+                    max_family_size = this_family_max_size;
+            }
+
             cout << max_family_size << endl;;
         }
         /* END: Reading gene family data (-i) */
-    
-        //! The user cannot specify both -e and -l
-        if (estimate && fixed_lambda > 0.0) {
-            throw runtime_error("You cannot both estimate and fix the lambda(s) value(s). Exiting...");
-        }
         
         /* START: Reading lambda tree (-y) */
         if (!lambda_tree_file_path.empty()) {
@@ -231,8 +251,20 @@ int main(int argc, char *const argv[]) {
             // vector<double> posterior = get_posterior((*p_gene_families), max_family_size, fixed_lambda, p_tree);
             // double map = log(*max_element(posterior.begin(), posterior.end()));
             // cout << "Posterior values found - max log posterior is " << map << endl;
+            
+            likelihood_computer pruner(max_family_size, &lambda, &(*p_gene_families)[0]); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
+            p_tree->apply_reverse_level_order(pruner);
+            vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
+            cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
+            for (int i = 0; i<likelihood.size(); ++i)
+                cout << "Likelihood of size " << i << " at root: " << likelihood[i] << endl;    
         }
         /* END: Computing likelihood of user-specified lambda */
+        
+        if (!fixed_multiple_lambdas.empty()) {
+            if (lambda_tree_file_path.empty())
+                throw runtime_error("You must specify a lambda tree (-y) if you fix multiple lambda values (-m). Exiting...");       
+        }
         
         /* START: Estimating lambda(s) (-e) */
         if (estimate) {

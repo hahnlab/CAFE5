@@ -30,15 +30,13 @@ class newick_parser {
 
 // these functions are intended to work with maps (key, value pairs)
 template <typename T, typename U>
-bool max_key(const std::pair<T, U> & p1, const std::pair<T, U> & p2)
-{
-  return p1.first < p2.first;
+bool max_key(const std::pair<T, U> & p1, const std::pair<T, U> & p2) {
+    return p1.first < p2.first;
 }
 
 template <typename T, typename U>
-bool max_value(const std::pair<T, U> & p1, const std::pair<T, U> & p2)
-{
-  return p1.second < p2.second;
+bool max_value(const std::pair<T, U> & p1, const std::pair<T, U> & p2) {
+    return p1.second < p2.second;
 }
 
 //! Used when simulating gene families (-s)

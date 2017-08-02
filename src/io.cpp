@@ -11,17 +11,17 @@ using namespace std;
 struct option longopts[] = {
   { "infile", required_argument, NULL, 'i' },
   { "tree", required_argument, NULL, 't' },
-  { "lambda_tree", optional_argument, NULL, 'y' },
+  { "fixed_lambda", required_argument, NULL, 'l' },
+  { "fixed_multiple_lambdas", required_argument, NULL, 'm' },
+  { "lambda_tree", required_argument, NULL, 'y' },
   { "prefix", optional_argument, NULL, 'p' },
   { "estimate", optional_argument, NULL, 'e' },
   { "simulate", optional_argument, NULL, 's' },
   { "nsims", optional_argument, NULL, 'n' },
-  { "fixed_lambda", optional_argument, NULL, 'l' },
   { 0, 0, 0, 0 }
 };
 
 /* START: Reading in gene family data */
-
 //! Find highest gene family count. 
 /*!
   CAFE had a not_root_max (which we use = _parsed_max_family_size; see below) and a root_max = MAX(30, rint(max*1.25));
@@ -43,7 +43,6 @@ int gene_family::get_species_size(std::string species) const {
       
     return _species_size_map.at(species);
 }
-
 /* END: Reading in gene family data */
 
 //! Read tree from user-provided tree file
