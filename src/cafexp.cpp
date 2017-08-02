@@ -81,9 +81,16 @@ int main(int argc, char *const argv[]) {
     /* START: Option variables for main() */
     int args; // getopt_long returns int or char
     int prev_arg;
+    
     std::string input_file_path;
+    vector<gene_family> * p_gene_families = new vector<gene_family>; // storing gene family data
+    int max_family_size = -1; // largest gene family size among all gene families
+    
     std::string tree_file_path;
+    
     std::string lambda_tree_file_path;
+    clade *p_lambda_tree = new clade(); // lambda tree
+    
     std::string rootdist;
 
     bool estimate = false;
@@ -94,7 +101,6 @@ int main(int argc, char *const argv[]) {
     
     double fixed_lambda = 0.0;
     std::string fixed_multiple_lambdas;
-
     /* END: Option variables for main() */
   
     /* START: Input variables for inference and simulation */
@@ -153,19 +159,7 @@ int main(int argc, char *const argv[]) {
                 return EXIT_FAILURE; //abort ();
           }
       }
-    
-//    newick_parser parser(false);
-//    //parser.newick_string = "(((chimp:6,human:6):81,(mouse:17,rat:17):70):6,dog:93)";
-//    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-//    clade *p_tree = parser.parse_newick();
-//  
-//    newick_parser lambda_parser(true);
-//    lambda_parser.newick_string = "((A:1,B:1):1,(C:2,D:2):2);";
-//    clade *p_lambda_tree = lambda_parser.parse_newick();
-//    p_lambda_tree->print_clade();
-
-    //vector<gene_family> gene_families = initialize_sample_families();
-        
+            
 //    if (lambda_search) {
 //        lambda_search_params params(p_tree, p_gene_families, max_family_size);
 //        double lambda = find_best_lambda(&params);
@@ -173,7 +167,6 @@ int main(int argc, char *const argv[]) {
 //	exit(0);
 //    }
 
-//    single_lambda lambda(0.01);
 //
 //    std::vector<double> lambdas = { 0.0, 0.46881494730996, 0.68825840825707 };
 //    std::map<clade *, int> lambda_index_map;
@@ -183,29 +176,8 @@ int main(int argc, char *const argv[]) {
 //
 //    multiple_lambda lambda2(node_name_to_lambda_index, lambdas);
 //
-//    cout << "About to run pruner (max family size " << max_family_size << ")" << endl;
-//    likelihood_computer pruner(max_family_size, &lambda, &(*p_gene_families)[0]);
-//    p_tree->apply_reverse_level_order(pruner);
-//    vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
-//    //cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
-//    for (int i = 0; i<likelihood.size(); ++i)
-//        cout << "Likelihood of size " << i << " at root: " << likelihood[i] << endl;    
-
-  //  for (int i = 0; i<likelihood.size(); ++i)
-//    cout << "AB Likelihood " << i << ": " << likelihood[i] << endl;
-//  likelihood = pruner.get_likelihoods(p_tree->find_descendant("A"));		// likelihood of the whole tree = multiplication of likelihood of all nodes
-//  for (int i = 0; i<likelihood.size(); ++i)
-//    cout << "A Likelihood " << i << ": " << likelihood[i] << endl;
-//  likelihood = pruner.get_likelihoods(p_tree->find_descendant("B"));		// likelihood of the whole tree = multiplication of likelihood of all nodes
-//  for (int i = 0; i<likelihood.size(); ++i)
-//    cout << "B Likelihood " << i << ": " << likelihood[i] << endl;
-  
-    try {
-        //p_tree->init_gene_family_sizes(gene_families);
-        vector<gene_family> * p_gene_families = new vector<gene_family>; // storing gene family data
-        int max_family_size = -1; // largest gene family size among all gene families
-        clade *p_lambda_tree = new clade(); // lambda tree
-        
+ 
+    try {        
         /* START: Checking conflicting options */
         //! The user cannot specify both -e and -l
         if (estimate && fixed_lambda > 0.0) {
@@ -235,14 +207,14 @@ int main(int argc, char *const argv[]) {
 
             cout << max_family_size << endl;;
         }
-        /* END: Reading gene family data (-i) */
+        /* END: Reading gene family data */
         
         /* START: Reading lambda tree (-y) */
         if (!lambda_tree_file_path.empty()) {
             p_lambda_tree = read_tree(lambda_tree_file_path, true);
             p_lambda_tree->print_clade();
         }
-        /* END: Reading lambda tree if -y */
+        /* END: Reading lambda tree */
         
         /* START: Computing likelihood of user-specified lambda (-l) */
         if (fixed_lambda > 0.0) {
@@ -330,20 +302,13 @@ int main(int argc, char *const argv[]) {
         }
     
         return 0;
-    /* END: Running simulations if -s */
+    /* END: Running simulations */
     }
     catch (runtime_error& err) {
         cout << err.what() << endl;
         return EXIT_FAILURE;
     }
 } // end main
-   
-  // cout << "Cafe says this value should be 0.083" << endl;
-  // cout << the_probability_of_going_from_parent_fam_size_to_c(0.5, .42, 40, 42) << endl;
-
-  // cout << "Cafe says this value should be something" << endl;
-  // cout << the_probability_of_going_from_parent_fam_size_to_c(lambda, .42, 300, 295) << endl;
-
 
 //   map<int, int> root_size;
 // #if 1
