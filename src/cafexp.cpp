@@ -88,7 +88,7 @@ int main(int argc, char *const argv[]) {
     bool estimate = false;
     bool simulate = false;
     double fixed_lambda = 0.0;
-    cout << "fixed_lambda is " << fixed_lambda << endl;
+    single_lambda lambda(fixed_lambda);
     int nsims = 0; 
     bool lambda_search = false;
     /* END: Option variables for main() */
@@ -103,8 +103,8 @@ int main(int argc, char *const argv[]) {
     //double lambda = 0.0017;
     /* END: Option variables for simulations */
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:t:y:n:f:k:e::s::", longopts, NULL)) != -1 ) {
-    // while ((args = getopt_long(argc, argv, "i:t:y:n:f:k:e::s::", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1 ) {
+    // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
             exit(EXIT_FAILURE);
@@ -128,7 +128,7 @@ int main(int argc, char *const argv[]) {
             case 's':
                 simulate = true;
                 break;
-            case 'k':
+            case 'l':
                 fixed_lambda = atof(optarg);
                 break;
             case 'n':
@@ -166,7 +166,7 @@ int main(int argc, char *const argv[]) {
 //	exit(0);
 //    }
 
-    single_lambda lambda(0.01);
+//    single_lambda lambda(0.01);
 //
 //    std::vector<double> lambdas = { 0.0, 0.46881494730996, 0.68825840825707 };
 //    std::map<clade *, int> lambda_index_map;
@@ -199,45 +199,50 @@ int main(int argc, char *const argv[]) {
         int max_family_size; // gene family max size
         clade *p_lambda_tree = new clade(); // lambda tree
     
-        /* START: Reading tree */
+        /* START: Reading tree (-t) */
         clade *p_tree = read_tree(tree_file_path, false); // phylogenetic tree
         /* END: Reading tree */
         
-        /* Reading gene family data if -i */
+        /* START: Reading gene family data (-i) */
         if (!input_file_path.empty()) {
             p_gene_families = read_gene_families(input_file_path);
-            max_family_size = 10;
-//            max_family_size = p_gene_families[0].max_family_size();
+//            max_family_size = 10;
+            max_family_size = (*p_gene_families)[0].get_max_size();
+            cout << max_family_size << endl;;
         }
+        /* END: Reading gene family data (-i) */
     
-        /* START: Reading lambda tree if -y */
+        //! The user cannot specify both -e and -l
+        if (estimate && fixed_lambda > 0.0) {
+            throw runtime_error("You cannot both estimate and fix the lambda(s) value(s). Exiting...");
+        }
+        
+        /* START: Reading lambda tree (-y) */
         if (!lambda_tree_file_path.empty()) {
             p_lambda_tree = read_tree(lambda_tree_file_path, true);
             p_lambda_tree->print_clade();
         }
         /* END: Reading lambda tree if -y */
-                
-        /* START: Estimating lambda(s) */
-        if (estimate) {
-            if (input_file_path.empty()) {
-                throw runtime_error("In order to estimate the lambda(s) value(s) (-e), you must specify an input file path (gene family data) with -i. Exiting...");
-            }
-            
-            if (fixed_lambda > 0.0) {
-                throw runtime_error("You cannot both estimate and fix the lambda(s) value(s). Exiting...");
-            }
-            
-        }
-        /* END: Estimating lambda(s) */
         
+        /* START: Computing likelihood of user-specified lambda (-l) */
         if (fixed_lambda > 0.0) {
-            cout << fixed_lambda << endl;
+            cout << "Specified lambda (-l): " << fixed_lambda << ". Computing likelihood..." << endl;
+            single_lambda lambda(fixed_lambda);
             // vector<double> posterior = get_posterior((*p_gene_families), max_family_size, fixed_lambda, p_tree);
             // double map = log(*max_element(posterior.begin(), posterior.end()));
             // cout << "Posterior values found - max log posterior is " << map << endl;
         }
+        /* END: Computing likelihood of user-specified lambda */
         
-        /* START: Running simulations if -s */
+        /* START: Estimating lambda(s) (-e) */
+        if (estimate) {
+            if (input_file_path.empty()) {
+                throw runtime_error("In order to estimate the lambda(s) value(s) (-e), you must specify an input file path (gene family data) with -i. Exiting...");
+            }
+        }
+        /* END: Estimating lambda(s) */
+        
+        /* START: Running simulations (-s) */
         if (simulate) {
             if (!nsims) {
                 throw runtime_error("In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting...");
@@ -284,11 +289,11 @@ int main(int argc, char *const argv[]) {
 
                 rootdist_vec.clear(); // if we want to use uniform (comment to use the file provided with -f)
 
-                core core_model(cout, &lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_multipliers, *p_gamma_cats);
-                core_model.start_sim_processes();
-                core_model.simulate_processes();
-                core_model.print_simulations(cout);
-                //core_model.print_parameter_values();
+                // core core_model(cout, &lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_multipliers, *p_gamma_cats);
+                // core_model.start_sim_processes();
+                // core_model.simulate_processes();
+                // core_model.print_simulations(cout);
+                // core_model.print_parameter_values();
             }
         }
     

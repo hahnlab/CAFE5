@@ -13,11 +13,38 @@ struct option longopts[] = {
   { "tree", required_argument, NULL, 't' },
   { "lambda_tree", optional_argument, NULL, 'y' },
   { "prefix", optional_argument, NULL, 'p' },
+  { "estimate", optional_argument, NULL, 'e' },
   { "simulate", optional_argument, NULL, 's' },
   { "nsims", optional_argument, NULL, 'n' },
-  { "fixed_lambda", optional_argument, NULL, 'k' },
+  { "fixed_lambda", optional_argument, NULL, 'l' },
   { 0, 0, 0, 0 }
 };
+
+/* START: Reading in gene family data */
+
+//! Find highest gene family count. 
+/*!
+  CAFE had a not_root_max (which we use = _parsed_max_family_size; see below) and a root_max = MAX(30, rint(max*1.25));
+*/
+void gene_family::find_max_size() {
+    // Max family size can only be found if there is data inside the object in the first place
+    if (!_species_size_map.empty()) {
+        _max_family_size = (*max_element(_species_size_map.begin(), _species_size_map.end(), max_value<string, int>)).second;
+        _parsed_max_family_size = _max_family_size + std::max(50, _max_family_size/5);
+    }
+}
+
+//! Mainly for debugging: In case one want to grab the gene count for a given species
+int gene_family::get_species_size(std::string species) const {
+    // First checks if species data has been entered (i.e., is key in map?)
+    if (_species_size_map.find(species) == _species_size_map.end()) {
+        throw std::runtime_error(species + " was not found in gene family " + _id);
+    }
+      
+    return _species_size_map.at(species);
+}
+
+/* END: Reading in gene family data */
 
 //! Read tree from user-provided tree file
 /*!
@@ -83,6 +110,7 @@ vector<gene_family> * read_gene_families(std::string input_file_path) {
                 }
             }
             
+            genfam.find_max_size(); // getting max gene family size for this gene family
             p_gene_families->push_back(genfam);
         }
     }
@@ -136,15 +164,6 @@ void print_simulation(std::vector<vector<trial *> > &sim, std::ostream& ost) {
 /* END: Printing functions for simulation engine */
 
 /* START: Reading in gene family data */
-
-//! Return highest gene family count. 
-/*!
-  CAFE had a not_root_max (which we use; see below) and a root_max = MAX(30, rint(max*1.25));
-*/
-int gene_family::max_family_size() const {
-    int max_size = max_element(_species_size_map.begin(), _species_size_map.end(), max_value<string, int>)->second;
-    return max_size + std::max(50, max_size / 5);
-}
 
 //! Return first element of pair
 template <typename type1, typename type2>
