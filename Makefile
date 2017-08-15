@@ -1,6 +1,6 @@
 # compilers and flags
 CC = g++
-CFLAGS = -std=c++11 -I. -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
+CFLAGS = -std=c++11 -g -I. -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 LINKER = g++ -std=c++11 -o
 LFLAGS = -I.
 

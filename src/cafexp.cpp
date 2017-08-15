@@ -53,8 +53,8 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
     cout << "root_poisson_lambda " << i << "=" << root_poisson_lambda[i] << endl;
 
   vector<double> prior_rfsize = get_prior_rfsize_poisson_lambda(0, max_family_size, root_poisson_lambda[0]);
-  for (int i = 0; i < prior_rfsize.size(); ++i)
-    cout << "prior_rfsize " << i << "=" << prior_rfsize[i] << endl;
+  //for (int i = 0; i < prior_rfsize.size(); ++i)
+  //  cout << "prior_rfsize " << i << "=" << prior_rfsize[i] << endl;
 
   single_lambda lam(lambda);
   likelihood_computer pruner(max_family_size, &lam, &gene_families[0]);
@@ -94,7 +94,6 @@ int main(int argc, char *const argv[]) {
     std::string rootdist;
 
     bool estimate = false;
-    bool lambda_search = false;
     
     bool simulate = false;
     int nsims = 0; 
@@ -159,13 +158,7 @@ int main(int argc, char *const argv[]) {
                 return EXIT_FAILURE; //abort ();
           }
       }
-            
-//    if (lambda_search) {
-//        lambda_search_params params(p_tree, p_gene_families, max_family_size);
-//        double lambda = find_best_lambda(&params);
-//	cout << "Best lambda match is " << lambda;
-//	exit(0);
-//    }
+
 
 //
 //    std::vector<double> lambdas = { 0.0, 0.46881494730996, 0.68825840825707 };
@@ -243,6 +236,12 @@ int main(int argc, char *const argv[]) {
             if (input_file_path.empty()) {
                 throw runtime_error("In order to estimate the lambda(s) value(s) (-e), you must specify an input file path (gene family data) with -i. Exiting...");
             }
+
+			p_tree->init_gene_family_sizes(*p_gene_families);
+			lambda_search_params params(p_tree, *p_gene_families, max_family_size);
+			double lambda = find_best_lambda(&params);
+			cout << "Best lambda match is " << lambda << endl;
+			return 0;
         }
         /* END: Estimating lambda(s) */
         
