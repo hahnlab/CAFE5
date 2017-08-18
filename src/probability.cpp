@@ -2,6 +2,8 @@
 #include <cmath>
 #include <iostream>
 #include <random>
+#include <cassert>
+
 #include "utils.h" // for gene_family class
 #include "clade.h"
 #include "probability.h"
@@ -97,14 +99,15 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 
 //! Compute transition probability matrix for all gene family sizes from 0 to size-1 (=_max_root_family_size-1)
 vector<vector<double> > get_matrix(int size, int branch_length, double lambda) {
-    
-    cout << "Computing matrix for branch length " << branch_length << " lambda " << lambda << endl;
 
-    vector<vector<double> > result(size);
-    for (int s = 0; s < size; s++) {
-        result[s].resize(size);
+	vector<vector<double> > result(size+1);
+	result[0].resize(size + 1);
+	result[0][0] = 1.0;		//Once you are zero you are almost surely zero
+
+	for (int s = 1; s <= size; s++) {
+        result[s].resize(size+1);
     
-        for (int c = 0; c < size; c++) {
+        for (int c = 0; c <= size; c++) {
             result[s][c] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, s, c);
             //cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
         }
@@ -115,9 +118,12 @@ vector<vector<double> > get_matrix(int size, int branch_length, double lambda) {
 
 //! Take in a matrix and a vector, compute product, return it
 vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v) {
+
+	assert(v.size() == matrix.size());
+
     vector<double> result(matrix.size());
 
-    for (int s = 0; s < matrix.size(); s++) {
+	for (int s = 0; s < matrix.size(); s++) {
         result[s] = 0;
     
         for (int c = 0; c < matrix[s].size(); c++) {
@@ -178,7 +184,7 @@ public:
      Called by likelihood_computer after all children have been processed. It multiplies all factors together and updates the _probabilities map.
     */
     void update_probabilities(clade *node) {
-        _probabilities[node].resize(_max_root_family_size);
+        _probabilities[node].resize(_max_root_family_size+1);
     
         for (int i = 0; i < _probabilities[node].size(); i++) {
             _probabilities[node][i] = 1;
@@ -198,7 +204,7 @@ public:
 */
 void likelihood_computer::operator()(clade *node) {
     if (node->is_leaf()) {
-        _probabilities[node].resize(_max_possible_family_size);
+        _probabilities[node].resize(_max_possible_family_size+1);
         int species_size = _family->get_species_size(node->get_taxon_name());
         _probabilities[node][species_size] = 1.0;
     }

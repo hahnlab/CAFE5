@@ -21,8 +21,15 @@ public:
   void operator()(clade *node)
   {
     if (node->is_leaf())
-      for (int i = 0; i<_gene_families.size(); ++i)
-        sizes.push_back(node->get_gene_family_size(_gene_families[i].id()));
+		for (int i = 0; i < _gene_families.size(); ++i)
+		{
+			int family_size = node->get_gene_family_size(_gene_families[i].id());
+			if (family_size > 0) // ignore the zero counts ( we condition that rootsize is at least one )
+			{
+				// poisson prior -> shifted poisson prior as in CAFE (check with Mira to understand this reasoning)
+				sizes.push_back(family_size-1);
+			}
+		}
   }
   vector<int> sizes;
 };
@@ -72,8 +79,6 @@ vector<double> find_poisson_lambda(clade* tree, vector<gene_family> gene_familie
   // get all leaf sizes
   leaf_size_gatherer loader(gene_families);
   tree->apply_prefix_order(loader);
-  for (vector<int>::iterator it = loader.sizes.begin(); it != loader.sizes.end(); ++it)
-    cout << "Leaf size is " << (*it) << endl;
 
   FMinSearch* pfm;
   vector<double> result(1);

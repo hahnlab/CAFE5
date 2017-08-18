@@ -44,13 +44,14 @@ public:
 
 struct lambda_search_params
 {
-	lambda_search_params(clade *pt, std::vector<gene_family> f, int mfs) : ptree(pt), families(f), max_family_size(mfs)
+	lambda_search_params(clade *pt, std::vector<gene_family> f, int mfs) : ptree(pt), families(f), max_family_size(mfs), initial_lambda(0)
 	{
 
 	}
 	clade *ptree;
 	std::vector<gene_family> families;
 	int max_family_size;
+	double initial_lambda;
 };
 
 

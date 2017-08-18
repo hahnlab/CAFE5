@@ -34,6 +34,7 @@ double calculate_lambda_score(double* plambda, void* args)
 {
 	lambda_search_params *param = (lambda_search_params *)args;
 
+	cout << "Max family size: " << param->max_family_size << ", lambda: " << *plambda << endl;
 	vector<double> posterior = get_posterior(param->families, param->max_family_size, *plambda, param->ptree);
 	return -log(*max_element(posterior.begin(), posterior.end()));
 }
@@ -41,12 +42,15 @@ double calculate_lambda_score(double* plambda, void* args)
 
 double find_best_lambda(lambda_search_params *params)
 {
+	double max_branch_length = 1.0;
+	params->initial_lambda = 1.0 / max_branch_length * unifrnd();
+	cout << "init lambda = " << params->initial_lambda;
 	int lambda_len = 1;
 	FMinSearch* pfm;
 	pfm = fminsearch_new_with_eq(calculate_lambda_score, lambda_len, params);
 	pfm->tolx = 1e-6;
 	pfm->tolf = 1e-6;
-	double result;
+	double result = params->initial_lambda;
 	fminsearch_min(pfm, &result);
 	double *re = fminsearch_get_minX(pfm);
 	return *re;

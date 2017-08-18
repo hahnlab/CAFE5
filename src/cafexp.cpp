@@ -49,8 +49,6 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
   srand(10);
 
   vector<double> root_poisson_lambda = find_poisson_lambda(p_tree, gene_families);
-  for (int i = 0; i < root_poisson_lambda.size(); ++i)
-    cout << "root_poisson_lambda " << i << "=" << root_poisson_lambda[i] << endl;
 
   vector<double> prior_rfsize = get_prior_rfsize_poisson_lambda(0, max_family_size, root_poisson_lambda[0]);
   //for (int i = 0; i < prior_rfsize.size(); ++i)
@@ -60,13 +58,13 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
   likelihood_computer pruner(max_family_size, &lam, &gene_families[0]);
 
   p_tree->apply_reverse_level_order(pruner);
-  cout << "Pruner complete" << endl;
+  //cout << "Pruner complete" << endl;
   vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
 
-  for (int i = 0; i < max_family_size; i++)	// i: root family size
+  for (int i = 0; i < max_family_size-1; i++)	// i: root family size
   {
     // likelihood and posterior both starts from 1 instead of 0 
-    posterior[i] = exp(log(likelihood[i]) + log(prior_rfsize[i]));	//prior_rfsize also starts from 1
+    posterior[i] = exp(log(likelihood[i+1]) + log(prior_rfsize[i]));	//prior_rfsize also starts from 1
   }
 
   return posterior;
@@ -233,6 +231,7 @@ int main(int argc, char *const argv[]) {
         
         /* START: Estimating lambda(s) (-e) */
         if (estimate) {
+			srand(10);
             if (input_file_path.empty()) {
                 throw runtime_error("In order to estimate the lambda(s) value(s) (-e), you must specify an input file path (gene family data) with -i. Exiting...");
             }
