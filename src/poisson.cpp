@@ -10,27 +10,24 @@
 using namespace std;
 
 
-class leaf_size_gatherer
-{
+class leaf_size_gatherer {
   vector<gene_family> _gene_families;
+
 public:
   leaf_size_gatherer(vector<gene_family> gene_families) : _gene_families(gene_families)
   {
 
   }
-  void operator()(clade *node)
-  {
+  void operator()(clade *node) {
     if (node->is_leaf())
-		for (int i = 0; i < _gene_families.size(); ++i)
-		{
+		for (int i = 0; i < _gene_families.size(); ++i) {
 			int family_size = node->get_gene_family_size(_gene_families[i].id());
-			if (family_size > 0) // ignore the zero counts ( we condition that rootsize is at least one )
-			{
-				// poisson prior -> shifted poisson prior as in CAFE (check with Mira to understand this reasoning)
-				sizes.push_back(family_size-1);
+			if (family_size > 0) { // ignore the zero counts (we condition that root family size is at least one)
+                            sizes.push_back(family_size-1); // we - 1 b/c we are using a "shifted" Poisson prior; Mira said this produces a better fit (as a result of us disallowing the root to have size 0)
 			}
-		}
+                }
   }
+  
   vector<int> sizes;
 };
 

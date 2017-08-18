@@ -61,10 +61,11 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
   //cout << "Pruner complete" << endl;
   vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
 
-  for (int i = 0; i < max_family_size-1; i++)	// i: root family size
-  {
-    // likelihood and posterior both starts from 1 instead of 0 
-    posterior[i] = exp(log(likelihood[i+1]) + log(prior_rfsize[i]));	//prior_rfsize also starts from 1
+  int root_max_family_size = 30;
+  for (int i = 0; i < root_max_family_size-1; i++) {
+    // our lk vector has a lk for family size = 0, but we are ignoring it (the root cannot have size 1) -- so we do i + 1 when calculating the posterior
+    // our prior on the root family size starts at family size = 1, and goes to root_max_family size; because there is no 0 here, we do root_max_family_size - 1 in the for loop
+      posterior[i] = exp(log(likelihood[i+1]) + log(prior_rfsize[i]));	//prior_rfsize also starts from 1
   }
 
   return posterior;

@@ -100,10 +100,10 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 //! Compute transition probability matrix for all gene family sizes from 0 to size-1 (=_max_root_family_size-1)
 vector<vector<double> > get_matrix(int size, int branch_length, double lambda) {
 
-	vector<vector<double> > result(size+1);
-	result[0].resize(size + 1);
-	result[0][0] = 1.0;		//Once you are zero you are almost surely zero
-
+	vector<vector<double> > result(size+1); // this matrix will have a probability of going from 0 -> other states; here we create size + 1 (the + 1 comes from parent size being 0) rows
+	result[0].resize(size + 1); // we make the first row be of size (size + 1) for the initialization in the next line
+	result[0][0] = 1.0; // and so here we set the probability of 0 remaining 0 to 1 (if you lose the gene family, you do not regain it)
+        
 	for (int s = 1; s <= size; s++) {
         result[s].resize(size+1);
     
@@ -119,7 +119,7 @@ vector<vector<double> > get_matrix(int size, int branch_length, double lambda) {
 //! Take in a matrix and a vector, compute product, return it
 vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v) {
 
-	assert(v.size() == matrix.size());
+    assert(v.size() == matrix.size());
 
     vector<double> result(matrix.size());
 
@@ -204,7 +204,7 @@ public:
 */
 void likelihood_computer::operator()(clade *node) {
     if (node->is_leaf()) {
-        _probabilities[node].resize(_max_possible_family_size+1);
+        _probabilities[node].resize(_max_possible_family_size+1); // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
         int species_size = _family->get_species_size(node->get_taxon_name());
         _probabilities[node][species_size] = 1.0;
     }
