@@ -38,6 +38,7 @@ private:
 
 public:
   gene_family() { find_max_size(); } //!< Constructor
+  gene_family(trial *a_trial);
   
   void set_desc(std::string desc) { _desc = desc; }
   

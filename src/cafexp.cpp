@@ -1,6 +1,8 @@
 #include <getopt.h>
 #include <cmath>
 #include <map>
+#include <iomanip>
+
 #include "io.h"
 #include "utils.h"
 #include "clade.h"
@@ -66,6 +68,7 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
     // our lk vector has a lk for family size = 0, but we are ignoring it (the root cannot have size 1) -- so we do i + 1 when calculating the posterior
     // our prior on the root family size starts at family size = 1, and goes to root_max_family size; because there is no 0 here, we do root_max_family_size - 1 in the for loop
       posterior[i] = exp(log(likelihood[i+1]) + log(prior_rfsize[i]));	//prior_rfsize also starts from 1
+	  cout << "Likelihood of size " << i << " is " << likelihood[i + 1] << " - prior " << prior_rfsize[i] << endl;
   }
 
   return posterior;
@@ -74,6 +77,30 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
 void do_something(clade *c)
 {
 	cout << "Clade id is: " << c->get_taxon_name() << endl;
+}
+
+double pvalue(double v, vector<double>& conddist)
+{
+	int idx = std::upper_bound(conddist.begin(), conddist.end(), v) - conddist.begin();
+	return  idx / (double)conddist.size();
+}
+
+void call_viterbi(int max_family_size, int root_family_size, int number_of_simulations, lambda *p_lambda, vector<gene_family>& families, clade* p_tree)
+{
+	double lambda_val = dynamic_cast<single_lambda *>(p_lambda)->get_single_lambda();
+	auto cd = get_conditional_distribution_matrix(p_tree, root_family_size, max_family_size, number_of_simulations, lambda_val);
+
+	for (int i = 0; i < families.size(); ++i)
+	{
+		likelihood_computer pruner(max_family_size, p_lambda, &families[i]);
+		p_tree->apply_reverse_level_order(pruner);
+		double likelihood = pruner.max_likelihood(p_tree);	// max value but do we need a posteriori value instead?
+		vector<double> pvalues(max_family_size);
+		for (int s = 0; s < max_family_size; s++)
+		{
+			pvalues[s] = pvalue(likelihood, cd[s]);
+		}
+	}
 }
 
 int main(int argc, char *const argv[]) {
@@ -201,34 +228,53 @@ int main(int argc, char *const argv[]) {
         }
         /* END: Reading gene family data */
         
+		std::map<std::string, int> node_name_to_lambda_index;
         /* START: Reading lambda tree (-y) */
         if (!lambda_tree_file_path.empty()) {
             p_lambda_tree = read_tree(lambda_tree_file_path, true);
-            p_lambda_tree->print_clade();
+
+			std::map<clade *, int> lambda_index_map;
+			node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
+			
+			p_lambda_tree->print_clade();
         }
         /* END: Reading lambda tree */
         
-        /* START: Computing likelihood of user-specified lambda (-l) */
+		lambda *p_lambda = NULL;
+		/* START: Read in user-specified multiple lambdas (-m) */
+		if (!fixed_multiple_lambdas.empty()) {
+			if (lambda_tree_file_path.empty())
+				throw runtime_error("You must specify a lambda tree (-y) if you fix multiple lambda values (-m). Exiting...");
+
+			vector<string> lambdastrings = tokenize_str(fixed_multiple_lambdas, ',');
+			vector<double> lambdas(lambdastrings.size());
+
+			transform(lambdastrings.begin(), lambdastrings.end(), lambdas.begin(),
+				[](string const& val) {return stod(val);});
+			p_lambda = new multiple_lambda(node_name_to_lambda_index, lambdas);
+		}
+		
+		/* START: Computing likelihood of user-specified lambda (-l) */
         if (fixed_lambda > 0.0) {
             cout << "Specified lambda (-l): " << fixed_lambda << ". Computing likelihood..." << endl;
-            single_lambda lambda(fixed_lambda);
+            p_lambda = new single_lambda(fixed_lambda);
             // vector<double> posterior = get_posterior((*p_gene_families), max_family_size, fixed_lambda, p_tree);
             // double map = log(*max_element(posterior.begin(), posterior.end()));
             // cout << "Posterior values found - max log posterior is " << map << endl;
-            
-            likelihood_computer pruner(max_family_size, &lambda, &(*p_gene_families)[0]); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
-            p_tree->apply_reverse_level_order(pruner);
-            vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
-            cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
-            for (int i = 0; i<likelihood.size(); ++i)
-                cout << "Likelihood of size " << i << " at root: " << likelihood[i] << endl;    
+
         }
+
+		if (p_lambda != NULL)
+		{
+			likelihood_computer pruner(max_family_size, p_lambda, &(*p_gene_families)[0]); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
+			p_tree->apply_reverse_level_order(pruner);
+			vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
+			cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
+			for (int i = 0; i<likelihood.size(); ++i)
+				cout << "Likelihood of size " << i << " at root: " << likelihood[i] << endl;
+		}
         /* END: Computing likelihood of user-specified lambda */
-        
-        if (!fixed_multiple_lambdas.empty()) {
-            if (lambda_tree_file_path.empty())
-                throw runtime_error("You must specify a lambda tree (-y) if you fix multiple lambda values (-m). Exiting...");       
-        }
+
         
         /* START: Estimating lambda(s) (-e) */
         if (estimate) {
@@ -237,10 +283,19 @@ int main(int argc, char *const argv[]) {
                 throw runtime_error("In order to estimate the lambda(s) value(s) (-e), you must specify an input file path (gene family data) with -i. Exiting...");
             }
 
+			if (p_lambda_tree != NULL)
+			{
+			}
+
+
 			p_tree->init_gene_family_sizes(*p_gene_families);
 			lambda_search_params params(p_tree, *p_gene_families, max_family_size);
-			double lambda = find_best_lambda(&params);
-			cout << "Best lambda match is " << lambda << endl;
+			single_lambda* p_single_lambda = new single_lambda(find_best_lambda(&params));
+			cout << "Best lambda match is " << setw(15) << setprecision(14) << p_single_lambda->get_single_lambda() << endl;
+
+			p_lambda = p_single_lambda;
+			call_viterbi(max_family_size, root_family_size, 100, p_lambda, *p_gene_families, p_tree);
+
 			return 0;
         }
         /* END: Estimating lambda(s) */

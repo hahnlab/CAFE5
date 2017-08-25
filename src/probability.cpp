@@ -259,3 +259,37 @@ std::vector<int> * weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_
     return p_gamma_cats;
 }
 /* END: Weighted draw from vector */
+
+std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, double lambda)
+{
+	vector<trial *> simulation = simulate_families_from_root_size(p_tree, number_of_simulations, root_family_size, max_family_size, lambda);
+	cout << "Simulation yielded " << simulation.size() << " trials" << endl;
+
+	vector<double> result;
+	for (vector<trial*>::iterator ith_trial = simulation.begin(); ith_trial != simulation.end(); ++ith_trial)
+	{
+		gene_family gf(*ith_trial);
+		single_lambda lam(lambda);
+		likelihood_computer pruner(max_family_size, &lam, &gf); 
+		p_tree->apply_reverse_level_order(pruner);
+		result.push_back(pruner.max_likelihood(p_tree));
+	}
+
+	return result;
+}
+
+std::vector<std::vector<double> > get_conditional_distribution_matrix(clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, double lambda)
+{
+	std::vector<std::vector<double> > matrix(root_family_size);
+	for (int i = 0; i < root_family_size; ++i)
+	{
+		matrix[i] = get_random_probabilities(p_tree, number_of_simulations, root_family_size, max_family_size, lambda);
+		for (size_t j = 0; j < matrix[i].size(); j++)
+		{
+			cout << matrix[i][j] << " ";
+		}
+		cout << endl;
+	}
+
+	return matrix;
+}

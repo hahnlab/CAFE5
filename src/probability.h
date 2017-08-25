@@ -31,6 +31,16 @@ public:
     std::vector<double> get_likelihoods(clade *node) const { 
         return _probabilities.at(node);
     }
+
+	double max_likelihood(clade *node) const
+	{
+		if (_probabilities.at(node).empty())
+			throw std::runtime_error("No probabilities calculated");
+
+		// use "at" rather than [] so the method can be const
+		return *std::max_element(_probabilities.at(node).begin(), _probabilities.at(node).end());
+	}
+
 };
 
 /* END: Likelihood computation ---------------------- */
@@ -87,5 +97,7 @@ std::vector<int> uniform_dist(int n_draws, int min, int max);
 /* END: Uniform distribution - */
 
 std::vector<int> * weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_probs);
+
+std::vector<std::vector<double> > get_conditional_distribution_matrix(clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, double lambda);
 
 #endif

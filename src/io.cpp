@@ -22,6 +22,17 @@ struct option longopts[] = {
 };
 
 /* START: Reading in gene family data */
+
+gene_family::gene_family(trial *t)
+{
+	for (auto it = t->begin(); it != t->end(); ++it)
+	{
+		if (it->first->is_leaf())
+			this->_species_size_map[it->first->get_taxon_name()] = it->second;
+	}
+	find_max_size();
+}
+
 //! Find highest gene family count. 
 /*!
   CAFE had a not_root_max (which we use = _parsed_max_family_size; see below) and a root_max = MAX(30, rint(max*1.25));

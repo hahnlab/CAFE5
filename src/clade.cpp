@@ -185,7 +185,7 @@ public:
 	std::map<std::string, int> node_name_to_lambda_index;
 	void operator()(clade *c)
 	{
-		node_name_to_lambda_index[c->get_taxon_name()] = c->get_lambda_index();
+		node_name_to_lambda_index[c->get_taxon_name()] = c->get_lambda_index()-1; // -1 is to adjust the index offset
 	}
 };
 
