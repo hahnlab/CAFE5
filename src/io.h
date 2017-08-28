@@ -54,7 +54,10 @@ public:
   void find_max_size();
   
   //! Getting max gene family size
-  int get_max_size() { return _parsed_max_family_size; }
+  int get_max_size() { return _max_family_size; }
+
+  //! Getting parsed max gene family size
+  int get_parsed_max_size() { return _parsed_max_family_size; }
 
   std::string id() const { return _id; }
   

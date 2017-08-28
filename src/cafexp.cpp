@@ -44,7 +44,7 @@ using namespace std;
 //
 //}
 
-vector<double> get_posterior(vector<gene_family> gene_families, int max_family_size, double lambda, clade *p_tree)
+vector<double> get_posterior(vector<gene_family> gene_families, int max_family_size, int max_root_family_size, double lambda, clade *p_tree)
 {
   vector<double> posterior(max_family_size);
 
@@ -57,7 +57,7 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
   //  cout << "prior_rfsize " << i << "=" << prior_rfsize[i] << endl;
 
   single_lambda lam(lambda);
-  likelihood_computer pruner(max_family_size, &lam, &gene_families[0]);
+  likelihood_computer pruner(max_root_family_size, max_family_size, &lam, &gene_families[0]);
 
   p_tree->apply_reverse_level_order(pruner);
   //cout << "Pruner complete" << endl;
@@ -85,20 +85,34 @@ double pvalue(double v, vector<double>& conddist)
 	return  idx / (double)conddist.size();
 }
 
-void call_viterbi(int max_family_size, int root_family_size, int number_of_simulations, lambda *p_lambda, vector<gene_family>& families, clade* p_tree)
+void call_viterbi(int max_family_size, int max_root_family_size, int number_of_simulations, lambda *p_lambda, vector<gene_family>& families, clade* p_tree)
 {
 	double lambda_val = dynamic_cast<single_lambda *>(p_lambda)->get_single_lambda();
-	auto cd = get_conditional_distribution_matrix(p_tree, root_family_size, max_family_size, number_of_simulations, lambda_val);
+	auto cd = get_conditional_distribution_matrix(p_tree, max_root_family_size, max_family_size, number_of_simulations, lambda_val);
 
 	for (int i = 0; i < families.size(); ++i)
 	{
-		likelihood_computer pruner(max_family_size, p_lambda, &families[i]);
+		int max = families[i].get_max_size();
+		max_root_family_size = rint(max*1.25);
+
+		likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &families[i]);
 		p_tree->apply_reverse_level_order(pruner);
-		double likelihood = pruner.max_likelihood(p_tree);	// max value but do we need a posteriori value instead?
-		vector<double> pvalues(max_family_size);
-		for (int s = 0; s < max_family_size; s++)
+		auto lh = pruner.get_likelihoods(p_tree);
+		std::cout << "likelihoods = ";
+		for (int i = 0; i < lh.size(); ++i)
+			std::cout << lh[i] << " ";
+		std::cout << std::endl;
+
+		double observed_max_likelihood = pruner.max_likelihood(p_tree);	// max value but do we need a posteriori value instead?
+	//	std::cout << "observed_likelihood = ";
+	//	for (int i = 0; i < root_family_size; ++i)
+	//		std::cout << observed_likelihood[i] << " ";
+	//	std::cout << std::endl;
+	//	max_family_size = std::max(50, max_family_size / 5);
+		vector<double> pvalues(max_root_family_size);
+		for (int s = 0; s < max_root_family_size; s++)
 		{
-			pvalues[s] = pvalue(likelihood, cd[s]);
+			pvalues[s] = pvalue(observed_max_likelihood, cd[s]);
 		}
 	}
 }
@@ -111,7 +125,8 @@ int main(int argc, char *const argv[]) {
     std::string input_file_path;
     vector<gene_family> * p_gene_families = new vector<gene_family>; // storing gene family data
     int max_family_size = -1; // largest gene family size among all gene families
-    
+	int max_root_family_size = 30;
+
     std::string tree_file_path;
     
     std::string lambda_tree_file_path;
@@ -134,7 +149,6 @@ int main(int argc, char *const argv[]) {
   
     /* START: Option variables for simulations */
     map<int, int>* p_rootdist_map = NULL;
-    int root_family_size = 60;
     //double lambda = 0.0017;
     /* END: Option variables for simulations */
 
@@ -219,12 +233,12 @@ int main(int argc, char *const argv[]) {
             
             // Iterating over gene families to get max gene family size
             for (std::vector<gene_family>::iterator it = p_gene_families->begin(); it != p_gene_families->end(); ++it) {
-                int this_family_max_size = it->get_max_size();
+                int this_family_max_size = it->get_parsed_max_size();
                 if (max_family_size < this_family_max_size)
                     max_family_size = this_family_max_size;
             }
 
-            cout << max_family_size << endl;;
+            cout << max_family_size << endl;
         }
         /* END: Reading gene family data */
         
@@ -261,17 +275,17 @@ int main(int argc, char *const argv[]) {
             // vector<double> posterior = get_posterior((*p_gene_families), max_family_size, fixed_lambda, p_tree);
             // double map = log(*max_element(posterior.begin(), posterior.end()));
             // cout << "Posterior values found - max log posterior is " << map << endl;
-
+			call_viterbi(max_family_size, max_root_family_size, 15, p_lambda, *p_gene_families, p_tree);
         }
 
 		if (p_lambda != NULL)
 		{
-			likelihood_computer pruner(max_family_size, p_lambda, &(*p_gene_families)[0]); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
+			likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &(*p_gene_families)[0]); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
 			p_tree->apply_reverse_level_order(pruner);
 			vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
 			cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
 			for (int i = 0; i<likelihood.size(); ++i)
-				cout << "Likelihood of size " << i << " at root: " << likelihood[i] << endl;
+				cout << "Likelihood of size " << i+1 << " at root: " << likelihood[i] << endl;
 		}
         /* END: Computing likelihood of user-specified lambda */
 
@@ -289,12 +303,11 @@ int main(int argc, char *const argv[]) {
 
 
 			p_tree->init_gene_family_sizes(*p_gene_families);
-			lambda_search_params params(p_tree, *p_gene_families, max_family_size);
+			lambda_search_params params(p_tree, *p_gene_families, max_family_size, max_root_family_size);
 			single_lambda* p_single_lambda = new single_lambda(find_best_lambda(&params));
 			cout << "Best lambda match is " << setw(15) << setprecision(14) << p_single_lambda->get_single_lambda() << endl;
 
 			p_lambda = p_single_lambda;
-			call_viterbi(max_family_size, root_family_size, 100, p_lambda, *p_gene_families, p_tree);
 
 			return 0;
         }

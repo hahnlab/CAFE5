@@ -18,11 +18,15 @@ class likelihood_computer {
 private:
     std::map<clade *, std::vector<double> > _probabilities; //!< represents probability of the node having various family sizes
     gene_family *_family;
-    int _max_possible_family_size;
-    lambda* _lambda;
+    int _max_root_family_size;
+	int _max_parsed_family_size;
+	lambda* _lambda;
     
 public:
-    likelihood_computer(int max_possible_family_size, lambda* lambda, gene_family *family) : _max_possible_family_size(max_possible_family_size), _lambda(lambda) {
+    likelihood_computer(int max_root_family_size, int max_parsed_family_size, lambda* lambda, gene_family *family) : 
+		_max_root_family_size(max_root_family_size),
+		_max_parsed_family_size(max_parsed_family_size),
+		_lambda(lambda) {
         _family = family;
     }
   
@@ -88,7 +92,7 @@ public:
 
 vector<vector<double> > get_matrix(int size, int branch_length, double lambda);
 
-vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v); 
+vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size);
 
 /* END: Probability calculator for simulator -------- */
 
