@@ -56,7 +56,8 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
   //for (int i = 0; i < prior_rfsize.size(); ++i)
   //  cout << "prior_rfsize " << i << "=" << prior_rfsize[i] << endl;
 
-  single_lambda lam(lambda);
+  probability_calculator calc;
+  single_lambda lam(&calc, lambda);
   likelihood_computer pruner(max_root_family_size, max_family_size, &lam, &gene_families[0]);
 
   p_tree->apply_reverse_level_order(pruner);
@@ -144,6 +145,8 @@ int main(int argc, char *const argv[]) {
     
     double fixed_lambda = 0.0;
     std::string fixed_multiple_lambdas;
+
+	probability_calculator calculator;
     /* END: Option variables for main() */
   
     /* START: Input variables for inference and simulation */
@@ -155,7 +158,7 @@ int main(int argc, char *const argv[]) {
     //double lambda = 0.0017;
     /* END: Option variables for simulations */
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:t:y:n:f:l:m:e::s::", longopts, NULL)) != -1 ) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:e::s::g::", longopts, NULL)) != -1 ) {
     // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -273,17 +276,17 @@ int main(int argc, char *const argv[]) {
 
 			transform(lambdastrings.begin(), lambdastrings.end(), lambdas.begin(),
 				[](string const& val) {return stod(val);});
-			p_lambda = new multiple_lambda(node_name_to_lambda_index, lambdas);
+			p_lambda = new multiple_lambda(&calculator, node_name_to_lambda_index, lambdas);
 		}
 		
 		/* START: Computing likelihood of user-specified lambda (-l) */
         if (fixed_lambda > 0.0) {
             cout << "Specified lambda (-l): " << fixed_lambda << ". Computing likelihood..." << endl;
-            p_lambda = new single_lambda(fixed_lambda);
+            p_lambda = new single_lambda(&calculator, fixed_lambda);
             // vector<double> posterior = get_posterior((*p_gene_families), max_family_size, fixed_lambda, p_tree);
             // double map = log(*max_element(posterior.begin(), posterior.end()));
             // cout << "Posterior values found - max log posterior is " << map << endl;
-			call_viterbi(max_family_size, max_root_family_size, 15, p_lambda, *p_gene_families, p_tree);
+			// call_viterbi(max_family_size, max_root_family_size, 15, p_lambda, *p_gene_families, p_tree);
         }
 
 		if (p_lambda != NULL)
@@ -297,7 +300,6 @@ int main(int argc, char *const argv[]) {
 		}
         /* END: Computing likelihood of user-specified lambda */
 
-        
         /* START: Estimating lambda(s) (-e) */
         if (estimate) {
 	    srand(10);
@@ -313,7 +315,7 @@ int main(int argc, char *const argv[]) {
 
 			p_tree->init_gene_family_sizes(*p_gene_families);
 			lambda_search_params params(p_tree, *p_gene_families, max_family_size, max_root_family_size);
-			single_lambda* p_single_lambda = new single_lambda(find_best_lambda(&params));
+			single_lambda* p_single_lambda = new single_lambda(&calculator, find_best_lambda(&params));
 			cout << "Best lambda match is " << setw(15) << setprecision(14) << p_single_lambda->get_single_lambda() << endl;
 
 			p_lambda = p_single_lambda;
@@ -381,11 +383,11 @@ int main(int argc, char *const argv[]) {
         
     /* START: Printing log file(s) (-g) */
     if (do_log) {
+
         string prob_matrix_suffix = "_tr_prob_matrices.txt";
         string prob_matrix_file_name = output_prefix + prob_matrix_suffix;
-        //std::ofstream ofst = output_prefix + prob_matrix_suffix;
-        
-        
+        std::ofstream ofst(output_prefix + prob_matrix_suffix);
+		calculator.print_cache(ofst, max_family_size);
     }
     /* END: Printing log file(s) */
                 

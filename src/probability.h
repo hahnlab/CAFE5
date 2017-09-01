@@ -89,17 +89,13 @@ public:
 */
 class probability_calculator {
 private:
-    int _parent_size;
-    int _child_size;
     std::map<cache_key, std::map<std::tuple<int, int>, double> > _cache; //!< nested map that stores transition probabilities for a given lambda and branch_length (outer), then for a given parent and child size (inner)
-  
 public:
-    double get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size);
-    
-    void print_cache(std::ostream &ost) const;
-};
+    double get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size, double *value);
+	std::vector<std::vector<double> > get_matrix(int size, int branch_length, double lambda);
 
-vector<vector<double> > get_matrix(int size, int branch_length, double lambda);
+    void print_cache(std::ostream &ost, int max_size) const;
+};
 
 vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size);
 

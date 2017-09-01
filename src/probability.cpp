@@ -97,52 +97,67 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 
 /* START: Likelihood computation ---------------------- */
 //! Calls BD formulas, but checks/populates cache
-double probability_calculator::get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size) {
+double probability_calculator::get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size, double *value) {
         // key k = { lambda, branch_length, parent_size, size };
-        cache_key lambda_br_length_key = cache_key(lambda, branch_length);
-        std::tuple<int, int> parent_child_size_key = std::make_tuple(_parent_size, _child_size);
-        
-        if (_cache.find(lambda_br_length_key) == _cache.end()) { // if lambda and branch length not in _cache
-            _cache[lambda_br_length_key] = std::map<std::tuple<int, int>, double>();
-        }
-            
-        // populate inner map containing transition probabilities if those are not already there
-        if (_cache[lambda_br_length_key].find(parent_child_size_key) == _cache[lambda_br_length_key].end()) {
-            _cache[lambda_br_length_key][parent_child_size_key] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, parent_size, child_size);
-        }
-        
-        return _cache[lambda_br_length_key][parent_child_size_key];
-    }
+	cache_key lambda_br_length_key = cache_key(lambda, branch_length);
+	std::tuple<int, int> parent_child_size_key = std::make_tuple(parent_size, child_size);
+	if (_cache.find(lambda_br_length_key) == _cache.end()) { // if lambda and branch length not in _cache
+		_cache[lambda_br_length_key] = std::map<std::tuple<int, int>, double>();
+	}
+
+	// populate inner map containing transition probabilities if those are not already there
+	if (_cache[lambda_br_length_key].find(parent_child_size_key) == _cache[lambda_br_length_key].end()) {
+		double actual_value = value == NULL ? the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, parent_size, child_size) : *value;
+		_cache[lambda_br_length_key][parent_child_size_key] = actual_value;
+	}
+
+	return _cache[lambda_br_length_key][parent_child_size_key];
+}
 
 //! Prints cache (still working on it)
-void probability_calculator::print_cache(std::ostream &ost) const {
+void probability_calculator::print_cache(std::ostream &ost, int max_size) const {
     for (std::map<cache_key, std::map<std::tuple<int, int>, double> >::const_iterator key_value = _cache.begin(); key_value != _cache.end(); ++key_value) {
         double lambda = key_value->first.get_lambda();
         double branch_length = key_value->first.get_branch_length();
-            
-        for (std::map<std::tuple<int, int>, double>::const_iterator key_value2 = key_value->second.begin(); key_value2 != key_value->second.end(); ++key_value2) {
-            std::tuple<int, int> parent_child_tuple = key_value2->first;
-            int parent_size = std::get<0>(parent_child_tuple);
-            int child_size = std::get<1>(parent_child_tuple);
-            double tr_prob = key_value2->second;
-            ost << "lambda: " << lambda << "branch length: " << branch_length << ", Pr(" << parent_size << " to " << child_size << ") = " << tr_prob << endl;
-        }
+		ost << "lambda: " << lambda << " branch length: " << branch_length << endl;
+
+		for (int i = 0; i <= max_size; ++i)
+		{
+			ost << i << " ";
+			for (int j = 0; j <= max_size; ++j)
+			{
+				auto key = std::make_tuple(i, j);
+				double tr_prob = std::nan("");
+				if (key_value->second.find(key) != key_value->second.end())
+					tr_prob = key_value->second.at(key);
+				ost << tr_prob << " ";
+			}
+			ost << endl;
+		}
+
     }
 }
 
 //! Compute transition probability matrix for all gene family sizes from 0 to size-1 (=_max_root_family_size-1)
-vector<vector<double> > get_matrix(int size, int branch_length, double lambda) {
+vector<vector<double> > probability_calculator::get_matrix(int size, int branch_length, double lambda) {
 
 	vector<vector<double> > result(size);
 	result[0].resize(size);
-	result[0][0] = 1.0; // here we set the probability of 0 remaining 0 to 1 (if you lose the gene family, you do not regain it)
-        
+	
+	double zero_val = 1.0;
+	result[0][0] = get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0, &zero_val); // here we set the probability of 0 remaining 0 to 1 (if you lose the gene family, you do not regain it)
+	zero_val = 0.0;
+	for (int i = 0; i < result[0].size(); ++i)
+	{
+		result[0][i] = get_from_parent_fam_size_to_c(lambda, branch_length, 0, i, &zero_val);
+	}
 	for (int s = 1; s < size; s++) {
         result[s].resize(size);
     
         for (int c = 0; c < size; c++) {
-            result[s][c] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, s, c);
-            // cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
+            // result[s][c] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, s, c);
+			result[s][c] = get_from_parent_fam_size_to_c(lambda, branch_length, s, c, NULL);
+			// cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
         }
     }
     
@@ -216,7 +231,7 @@ public:
      */
     void operator()(clade * child) {
 		_factors[child].resize(_probabilities_vec_size);
-		cout << "Child factor size is " << _probabilities_vec_size << endl;
+		// cout << "Child factor size is " << _probabilities_vec_size << endl;
 		_factors[child] = _lambda->calculate_child_factor(child, _probabilities[child],
 			s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
 
@@ -317,7 +332,7 @@ std::vector<int> * weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_
 }
 /* END: Weighted draw from vector */
 
-std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, double lambda)
+std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, double lambda, probability_calculator *calc)
 {
 	vector<trial *> simulation = simulate_families_from_root_size(p_tree, number_of_simulations, root_family_size, max_family_size, lambda);
 	cout << "Simulation yielded " << simulation.size() << " trials" << endl;
@@ -326,7 +341,7 @@ std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simula
 	for (vector<trial*>::iterator ith_trial = simulation.begin(); ith_trial != simulation.end(); ++ith_trial)
 	{
 		gene_family gf(*ith_trial);
-		single_lambda lam(lambda);
+		single_lambda lam(calc, lambda);
 		likelihood_computer pruner(root_family_size, max_family_size, &lam, &gf); 
 		p_tree->apply_reverse_level_order(pruner);
 		result.push_back(pruner.max_likelihood(p_tree));
@@ -337,11 +352,12 @@ std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simula
 
 std::vector<std::vector<double> > get_conditional_distribution_matrix(clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, double lambda)
 {
+	probability_calculator calc;
 	cout << "get_conditional_distribution_matrix" << endl;
 	std::vector<std::vector<double> > matrix(root_family_size);
 	for (int i = 0; i < root_family_size; ++i)
 	{
-		matrix[i] = get_random_probabilities(p_tree, number_of_simulations, root_family_size, max_family_size, lambda);
+		matrix[i] = get_random_probabilities(p_tree, number_of_simulations, root_family_size, max_family_size, lambda, &calc);
 #if 0
 		for (size_t j = 0; j < matrix[i].size(); j++)
 		{
