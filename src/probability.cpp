@@ -96,6 +96,39 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 /* END: Birth-death model components ----------------------- */
 
 /* START: Likelihood computation ---------------------- */
+//! Calls BD formulas, but checks/populates cache
+double probability_calculator::get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size) {
+        // key k = { lambda, branch_length, parent_size, size };
+        cache_key lambda_br_length_key = cache_key(lambda, branch_length);
+        std::tuple<int, int> parent_child_size_key = std::make_tuple(_parent_size, _child_size);
+        
+        if (_cache.find(lambda_br_length_key) == _cache.end()) { // if lambda and branch length not in _cache
+            _cache[lambda_br_length_key] = std::map<std::tuple<int, int>, double>();
+        }
+            
+        // populate inner map containing transition probabilities if those are not already there
+        if (_cache[lambda_br_length_key].find(parent_child_size_key) == _cache[lambda_br_length_key].end()) {
+            _cache[lambda_br_length_key][parent_child_size_key] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, parent_size, child_size);
+        }
+        
+        return _cache[lambda_br_length_key][parent_child_size_key];
+    }
+
+//! Prints cache (still working on it)
+void probability_calculator::print_cache(std::ostream &ost) const {
+    for (std::map<cache_key, std::map<std::tuple<int, int>, double> >::const_iterator key_value = _cache.begin(); key_value != _cache.end(); ++key_value) {
+        double lambda = key_value->first.get_lambda();
+        double branch_length = key_value->first.get_branch_length();
+            
+        for (std::map<std::tuple<int, int>, double>::const_iterator key_value2 = key_value->second.begin(); key_value2 != key_value->second.end(); ++key_value2) {
+            std::tuple<int, int> parent_child_tuple = key_value2->first;
+            int parent_size = std::get<0>(parent_child_tuple);
+            int child_size = std::get<1>(parent_child_tuple);
+            double tr_prob = key_value2->second;
+            ost << "lambda: " << lambda << "branch length: " << branch_length << ", Pr(" << parent_size << " to " << child_size << ") = " << tr_prob << endl;
+        }
+    }
+}
 
 //! Compute transition probability matrix for all gene family sizes from 0 to size-1 (=_max_root_family_size-1)
 vector<vector<double> > get_matrix(int size, int branch_length, double lambda) {
