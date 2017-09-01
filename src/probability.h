@@ -2,6 +2,7 @@
 #define PROBABILITY_H_A2E01F6E_6A7D_44FB_A9C0_6512F15FF939
 
 #include <vector>
+#include <tuple>
 #include <iostream>
 #include "utils.h"
 #include "io.h"
@@ -59,21 +60,17 @@ class cache_key {
 private:
     double _lambda;
     double _branch_length;
-    int _parent_size;
-    int _child_size;
     
 public:
     //! Basic constructor
-    cache_key(): _lambda(0.0), _branch_length(0,0), _parent_size(0), _child_size(0) {}
+    // cache_key(): _lambda(0.0), _branch_length(0,0), _parent_size(0), _child_size(0) {}
     
     //! Constructor passing values
-    cache_key(double some_lambda, double some_branch_length, int some_parent_size, int some_child_size): _lambda(some_lambda), _branch_length(some_branch_length), _parent_size(some_parent_size), _child_size(some_parent_size) {}
+    cache_key(double some_lambda, double some_branch_length): _lambda(some_lambda), _branch_length(some_branch_length) { }
     
-    double get_lambda() { return _lambda; }
-    double get_branch_length() { return _branch_length; }
-    int get_parent_size() { return _parent_size; }
-    int get_child_size() { return _child_size; }
-    
+    double get_lambda() const { return _lambda; }
+    double get_branch_length() const { return _branch_length; }
+        
     // std::tie : when given n input values, it returns a std:tuple (a container) of size n
     // the < operator is defined for std::tuple, and it allows lexicographical sorting of n-tuples (it sorts and returns the first); the std::tuple < operator is left intact below -- below we overload the < operator of the probability_calculator class
     //! Operator < overload
@@ -81,7 +78,7 @@ public:
       Necessary for the map method find() used below
     */ 
     bool operator<(const cache_key &o) const {
-        return std::tie(_child_size, _parent_size, _branch_length, _lambda) < std::tie(o._child_size, o._parent_size, o._branch_length, o._lambda);
+        return std::tie(_branch_length, _lambda) < std::tie(o._branch_length, o._lambda);
     }
 };
 
@@ -92,6 +89,8 @@ public:
 */
 class probability_calculator {
 private:
+    int _parent_size;
+    int _child_size;
 //    // C++ idiomatic way of creating a key that can be compared to another key    
 //    struct key {
 //        double lambda;
@@ -110,25 +109,40 @@ private:
 //        }
 //    };
   
-    std::map<cache_key, double> _cache; //!< map that stores transition probabilities (given a parent and child size, branch length and lambda)
+    std::map<cache_key, std::map<std::tuple<int, int>, double> > _cache; //!< nested map that stores transition probabilities for a given lambda and branch_length (outer), then for a given parent and child size (inner)
   
 public:
     double get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size) {
         // key k = { lambda, branch_length, parent_size, size };
-        cache_key k = cache_key(lambda, branch_length, parent_size, child_size);
-    
-        if (_cache.find(k) == _cache.end()) { // if k is not in _cache
-            _cache[k] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, parent_size, child_size);
+        cache_key lambda_br_length_key = cache_key(lambda, branch_length);
+        std::tuple<int, int> parent_child_size_key = std::make_tuple(_parent_size, _child_size);
+        
+        if (_cache.find(lambda_br_length_key) == _cache.end()) { // if lambda and branch length not in _cache
+            _cache[lambda_br_length_key] = std::map<std::tuple<int, int>, double>();
         }
-
-        return _cache[k];
+            
+        // populate inner map containing transition probabilities if those are not already there
+        if (_cache[lambda_br_length_key].find(parent_child_size_key) == _cache[lambda_br_length_key].end()) {
+            _cache[lambda_br_length_key][parent_child_size_key] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, parent_size, child_size);
+        }
+        
+        return _cache[lambda_br_length_key][parent_child_size_key];
     }
     
-//    void print_cache(std::ostream &ost) const {
-//        for (auto key_value = _cache.begin(); key_value != _cache.end(); ++key_value) {
-//            ost << key_value.first << ", " << key_value.second << endl;
-//        }
-//    }
+    void print_cache(std::ostream &ost) const {
+        for (std::map<cache_key, std::map<std::tuple<int, int>, double> >::const_iterator key_value = _cache.begin(); key_value != _cache.end(); ++key_value) {
+            double lambda = key_value->first.get_lambda();
+            double branch_length = key_value->first.get_branch_length();
+            
+            for (std::map<std::tuple<int, int>, double>::const_iterator key_value2 = key_value->second.begin(); key_value2 != key_value->second.end(); ++key_value2) {
+                std::tuple<int, int> parent_child_tuple = key_value2->first;
+                int parent_size = std::get<0>(parent_child_tuple);
+                int child_size = std::get<1>(parent_child_tuple);
+                double tr_prob = key_value2->second;
+                ost << "lambda: " << lambda << "branch length: " << branch_length << ", Pr(" << parent_size << " to " << child_size << ") = " << tr_prob << endl;
+            }
+        }
+    }
 };
 
 vector<vector<double> > get_matrix(int size, int branch_length, double lambda);
