@@ -88,6 +88,12 @@ public:
 
         return _cache[k];
     }
+    
+    void print_cache(std::ostream &ost) const {
+        for (auto key_value = _cache.begin(); key_value != _cache.end(); ++key_value) {
+            ost << key_value.first << ", " << key_value.second << endl;
+        }
+    }
 };
 
 vector<vector<double> > get_matrix(int size, int branch_length, double lambda);

@@ -123,9 +123,10 @@ int main(int argc, char *const argv[]) {
     int prev_arg;
     
     std::string input_file_path;
+    std::string output_prefix;
     vector<gene_family> * p_gene_families = new vector<gene_family>; // storing gene family data
     int max_family_size = -1; // largest gene family size among all gene families
-	int max_root_family_size = 30;
+    int max_root_family_size = 30;
 
     std::string tree_file_path;
     
@@ -134,6 +135,8 @@ int main(int argc, char *const argv[]) {
     
     std::string rootdist;
 
+    bool do_log = false;
+    
     bool estimate = false;
     
     bool simulate = false;
@@ -165,6 +168,9 @@ int main(int argc, char *const argv[]) {
             case 'i':
                 input_file_path = optarg;
                 break;
+            case 'o':
+                output_prefix = optarg;
+                break;
             case 'e':
                 estimate = true;
                 break;
@@ -189,6 +195,9 @@ int main(int argc, char *const argv[]) {
             case 'f':
                 rootdist = optarg;
                 break;
+            case 'g':
+                do_log = true;
+                break;
             case ':':   // missing argument
                 fprintf(stderr, "%s: option `-%c' requires an argument",
                         argv[0], optopt);
@@ -198,7 +207,6 @@ int main(int argc, char *const argv[]) {
                 return EXIT_FAILURE; //abort ();
           }
       }
-
 
 //
 //    std::vector<double> lambdas = { 0.0, 0.46881494730996, 0.68825840825707 };
@@ -292,7 +300,8 @@ int main(int argc, char *const argv[]) {
         
         /* START: Estimating lambda(s) (-e) */
         if (estimate) {
-			srand(10);
+	    srand(10);
+            
             if (input_file_path.empty()) {
                 throw runtime_error("In order to estimate the lambda(s) value(s) (-e), you must specify an input file path (gene family data) with -i. Exiting...");
             }
@@ -368,8 +377,17 @@ int main(int argc, char *const argv[]) {
             }
         }
     
-        return 0;
     /* END: Running simulations */
+        
+    /* START: Printing log file(s) (-g) */
+    if (do_log) {            
+        std::ofstream ofst = output_prefix + "_tr_prob_matrices.txt";
+        
+        
+    }
+    /* END: Printing log file(s) */
+                
+    return 0;
     }
     catch (runtime_error& err) {
         cout << err.what() << endl;

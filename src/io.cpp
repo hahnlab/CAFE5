@@ -10,6 +10,7 @@ using namespace std;
 
 struct option longopts[] = {
   { "infile", required_argument, NULL, 'i' },
+  { "output_prefix", required_argument, NULL, 'o'}, 
   { "tree", required_argument, NULL, 't' },
   { "fixed_lambda", required_argument, NULL, 'l' },
   { "fixed_multiple_lambdas", required_argument, NULL, 'm' },
@@ -18,6 +19,7 @@ struct option longopts[] = {
   { "estimate", optional_argument, NULL, 'e' },
   { "simulate", optional_argument, NULL, 's' },
   { "nsims", optional_argument, NULL, 'n' },
+  { "log", optional_argument, NULL, 'g'},
   { 0, 0, 0, 0 }
 };
 
