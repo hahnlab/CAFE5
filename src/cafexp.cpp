@@ -380,8 +380,10 @@ int main(int argc, char *const argv[]) {
     /* END: Running simulations */
         
     /* START: Printing log file(s) (-g) */
-    if (do_log) {            
-        std::ofstream ofst = output_prefix + "_tr_prob_matrices.txt";
+    if (do_log) {
+        string prob_matrix_suffix = "_tr_prob_matrices.txt";
+        string prob_matrix_file_name = output_prefix + prob_matrix_suffix;
+        //std::ofstream ofst = output_prefix + prob_matrix_suffix;
         
         
     }
