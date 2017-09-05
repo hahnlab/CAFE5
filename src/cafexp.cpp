@@ -222,24 +222,12 @@ int main(int argc, char *const argv[]) {
         /* END: Checking conflicting options */
         
         /* START: Reading tree (-t) */
-        clade *p_tree = read_tree(my_input_parameters.tree_file_path, false); // phylogenetic tree
+        clade *p_tree = my_executer.read_input_tree(my_input_parameters, false); // phylogenetic tree
         /* END: Reading tree */
         
         /* START: Reading gene family data (-i) */
         p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size);
         cout << "My max family size is: " << max_family_size << " and my max root family size is: " << max_root_family_size << endl;
-//        if (!my_input_parameters.input_file_path.empty()) {
-//            p_gene_families = read_gene_families(my_input_parameters.input_file_path);
-//            
-//            // Iterating over gene families to get max gene family size
-//            for (std::vector<gene_family>::iterator it = p_gene_families->begin(); it != p_gene_families->end(); ++it) {
-//                int this_family_max_size = it->get_parsed_max_size();
-//                if (max_family_size < this_family_max_size)
-//                    max_family_size = this_family_max_size;
-//            }
-//
-//            cout << max_family_size << endl;
-//        }
         /* END: Reading gene family data */
         
 		std::map<std::string, int> node_name_to_lambda_index;
