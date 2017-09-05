@@ -207,19 +207,7 @@ int main(int argc, char *const argv[]) {
  
     execute my_executer;
     try {
-        
-        /* START: Checking conflicting options */
-        //! The user cannot specify both -e and -l
-        if (my_input_parameters.estimate && my_input_parameters.fixed_lambda > 0.0) {
-            throw runtime_error("You cannot both estimate (-e) and fix the lambda(s) value(s) (-l). Exiting...");
-        }
-        
-        //! The user cannot specify both -l and -y
-        if (my_input_parameters.fixed_lambda > 0.0 && !my_input_parameters.fixed_multiple_lambdas.empty()) {
-            throw runtime_error("You cannot fix one lambda value (-l) and many lambda values (-m). Exiting...");
-        }
-        /* END: Checking conflicting options */
-                
+        my_input_parameters.check_input(); // seeing if options are not mutually exclusive              
         
         /* -t */
         clade *p_tree = my_executer.read_input_tree(my_input_parameters); // phylogenetic tree
@@ -288,12 +276,12 @@ int main(int argc, char *const argv[]) {
 
             /* -f is provided (-f has precedence over -i if both are provided) */
             else {
-                cout << "Simulations will use the root family distribution specified with -f: " << my_input_parameters.rootdist << endl;
-                p_rootdist_map = read_rootdist(my_input_parameters.rootdist); // in map form
-                vector<int> rootdist_vec;
-                rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
-
-                int max = (*max_element(p_rootdist_map->begin(), p_rootdist_map->end(), max_key<int, int>)).first * 2;
+//                cout << "Simulations will use the root family distribution specified with -f: " << my_input_parameters.rootdist << endl;
+//                p_rootdist_map = read_rootdist(my_input_parameters.rootdist); // in map form
+//                vector<int> rootdist_vec;
+//                rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
+//
+//                int max = (*max_element(p_rootdist_map->begin(), p_rootdist_map->end(), max_key<int, int>)).first * 2;
 
                 //cout << "max_family_size = " << max_family_size << endl;
                 //vector<trial *> simulation = simulate_families_from_root_size(p_tree, nsims, root_family_size, max_family_size, lambda);
@@ -305,16 +293,25 @@ int main(int argc, char *const argv[]) {
                 int total_n_families = 10;
                 int n_cat = 5; // number of gamma categories
                 double alpha = 0.5;
+                
                 std::vector<double> gamma_cat_probs(n_cat), lambda_multipliers(n_cat);
 
                 get_gamma(gamma_cat_probs, lambda_multipliers, alpha); // passing vectors by reference
+                
+                for (auto i = gamma_cat_probs.begin(); i != gamma_cat_probs.end(); ++i) {
+                    cout << "Should be all the same probability: " << *i << endl;
+                }
+                
+                for (auto i = lambda_multipliers.begin(); i != lambda_multipliers.end(); ++i) {
+                    cout << "Lambda multiplier (rho) is: " << *i << endl;
+                }
 
                 std::vector<int> *p_gamma_cats = weighted_cat_draw(total_n_families, gamma_cat_probs);
 
                 //std::vector<double> lambda_multipliers {1.0, 4.0};
                 //std::vector<int> lambda_bins {0, 0, 0, 1, 1, 0, 1, 0, 1, 1}; // the number of elements must be the same as the total key values in p_rootdist_map; here I'm hardcoding it to have 10 elements, as example/test_root_dist.txt has a distribution for 10 families
 
-                rootdist_vec.clear(); // if we want to use uniform (comment to use the file provided with -f)
+//                rootdist_vec.clear(); // if we want to use uniform (comment to use the file provided with -f)
 
                 // core core_model(cout, &lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_multipliers, *p_gamma_cats);
                 // core_model.start_sim_processes();
