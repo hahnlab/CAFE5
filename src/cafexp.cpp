@@ -123,29 +123,14 @@ int main(int argc, char *const argv[]) {
     int args; // getopt_long returns int or char
     int prev_arg;
     
-    std::string input_file_path;
-    std::string output_prefix;
+	input_parameters params;
+
     vector<gene_family> * p_gene_families = new vector<gene_family>; // storing gene family data
     int max_family_size = -1; // largest gene family size among all gene families
     int max_root_family_size = 30;
 
-    std::string tree_file_path;
-    
-    std::string lambda_tree_file_path;
     clade *p_lambda_tree = new clade(); // lambda tree
     
-    std::string rootdist;
-
-    bool do_log = false;
-    
-    bool estimate = false;
-    
-    bool simulate = false;
-    int nsims = 0; 
-    
-    double fixed_lambda = 0.0;
-    std::string fixed_multiple_lambdas;
-
 	probability_calculator calculator;
     /* END: Option variables for main() */
   
@@ -169,37 +154,37 @@ int main(int argc, char *const argv[]) {
             
         switch (args) {
             case 'i':
-                input_file_path = optarg;
+                params.input_file_path = optarg;
                 break;
             case 'o':
-                output_prefix = optarg;
+                params.output_prefix = optarg;
                 break;
             case 'e':
-                estimate = true;
+				params.estimate = true;
                 break;
             case 't':
-                tree_file_path = optarg;
+				params.tree_file_path = optarg;
                 break;
             case 'y':
-                lambda_tree_file_path = optarg;
+				params.lambda_tree_file_path = optarg;
                 break;
             case 's':
-                simulate = true;
+				params.simulate = true;
                 break;
             case 'l':
-                fixed_lambda = atof(optarg);
+				params.fixed_lambda = atof(optarg);
                 break;
             case 'm':
-                fixed_multiple_lambdas = optarg;
+				params.fixed_multiple_lambdas = optarg;
                 break;
             case 'n':
-                nsims = atoi(optarg);
+				params.nsims = atoi(optarg);
                 break;
             case 'f':
-                rootdist = optarg;
+				params.rootdist = optarg;
                 break;
             case 'g':
-                do_log = true;
+				params.do_log = true;
                 break;
             case ':':   // missing argument
                 fprintf(stderr, "%s: option `-%c' requires an argument",
@@ -224,23 +209,23 @@ int main(int argc, char *const argv[]) {
     try {        
         /* START: Checking conflicting options */
         //! The user cannot specify both -e and -l
-        if (estimate && fixed_lambda > 0.0) {
+        if (params.estimate && params.fixed_lambda > 0.0) {
             throw runtime_error("You cannot both estimate (-e) and fix the lambda(s) value(s) (-l). Exiting...");
         }
         
         //! The user cannot specify both -l and -y
-        if (fixed_lambda > 0.0 && !fixed_multiple_lambdas.empty()) {
+        if (params.fixed_lambda > 0.0 && !params.fixed_multiple_lambdas.empty()) {
             throw runtime_error("You cannot fix one lambda value (-l) and many lambda values (-m). Exiting...");
         }
         /* END: Checking conflicting options */
         
         /* START: Reading tree (-t) */
-        clade *p_tree = read_tree(tree_file_path, false); // phylogenetic tree
+        clade *p_tree = read_tree(params.tree_file_path, false); // phylogenetic tree
         /* END: Reading tree */
         
         /* START: Reading gene family data (-i) */
-        if (!input_file_path.empty()) {
-            p_gene_families = read_gene_families(input_file_path);
+        if (!params.input_file_path.empty()) {
+            p_gene_families = read_gene_families(params.input_file_path);
             
             // Iterating over gene families to get max gene family size
             for (std::vector<gene_family>::iterator it = p_gene_families->begin(); it != p_gene_families->end(); ++it) {
@@ -255,8 +240,8 @@ int main(int argc, char *const argv[]) {
         
 		std::map<std::string, int> node_name_to_lambda_index;
         /* START: Reading lambda tree (-y) */
-        if (!lambda_tree_file_path.empty()) {
-            p_lambda_tree = read_tree(lambda_tree_file_path, true);
+        if (!params.lambda_tree_file_path.empty()) {
+            p_lambda_tree = read_tree(params.lambda_tree_file_path, true);
 
 			std::map<clade *, int> lambda_index_map;
 			node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
@@ -267,11 +252,11 @@ int main(int argc, char *const argv[]) {
         
 		lambda *p_lambda = NULL;
 		/* START: Read in user-specified multiple lambdas (-m) */
-		if (!fixed_multiple_lambdas.empty()) {
-			if (lambda_tree_file_path.empty())
+		if (!params.fixed_multiple_lambdas.empty()) {
+			if (params.lambda_tree_file_path.empty())
 				throw runtime_error("You must specify a lambda tree (-y) if you fix multiple lambda values (-m). Exiting...");
 
-			vector<string> lambdastrings = tokenize_str(fixed_multiple_lambdas, ',');
+			vector<string> lambdastrings = tokenize_str(params.fixed_multiple_lambdas, ',');
 			vector<double> lambdas(lambdastrings.size());
 
 			transform(lambdastrings.begin(), lambdastrings.end(), lambdas.begin(),
@@ -280,9 +265,9 @@ int main(int argc, char *const argv[]) {
 		}
 		
 		/* START: Computing likelihood of user-specified lambda (-l) */
-        if (fixed_lambda > 0.0) {
-            cout << "Specified lambda (-l): " << fixed_lambda << ". Computing likelihood..." << endl;
-            p_lambda = new single_lambda(&calculator, fixed_lambda);
+        if (params.fixed_lambda > 0.0) {
+            cout << "Specified lambda (-l): " << params.fixed_lambda << ". Computing likelihood..." << endl;
+            p_lambda = new single_lambda(&calculator, params.fixed_lambda);
             // vector<double> posterior = get_posterior((*p_gene_families), max_family_size, fixed_lambda, p_tree);
             // double map = log(*max_element(posterior.begin(), posterior.end()));
             // cout << "Posterior values found - max log posterior is " << map << endl;
@@ -301,10 +286,10 @@ int main(int argc, char *const argv[]) {
         /* END: Computing likelihood of user-specified lambda */
 
         /* START: Estimating lambda(s) (-e) */
-        if (estimate) {
+        if (params.estimate) {
 	    srand(10);
             
-            if (input_file_path.empty()) {
+            if (params.input_file_path.empty()) {
                 throw runtime_error("In order to estimate the lambda(s) value(s) (-e), you must specify an input file path (gene family data) with -i. Exiting...");
             }
 
@@ -325,26 +310,26 @@ int main(int argc, char *const argv[]) {
         /* END: Estimating lambda(s) */
         
         /* START: Running simulations (-s) */
-        if (simulate) {
-            if (!nsims) {
+        if (params.simulate) {
+            if (!params.nsims) {
                 throw runtime_error("In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting...");
             }
 
-            else { cout << endl << "Performing " << nsims << " simulation batches." << endl; }
+            else { cout << endl << "Performing " << params.nsims << " simulation batches." << endl; }
 
-            if (input_file_path.empty() && rootdist.empty()) {
+            if (params.input_file_path.empty() && params.rootdist.empty()) {
                 throw runtime_error("In order to perform simulations (s), you must either specify an input file from which the root family size is estimated with -i, or specify a root family distribution with -f. Exiting...");
             }
 
             /* -i is provided, -f is not */
-            else if (rootdist.empty() && !input_file_path.empty()) {
-                cout << endl << "Simulations will use the equilibrium root family size estimated from data provided with -i:" << input_file_path << endl;
+            else if (params.rootdist.empty() && !params.input_file_path.empty()) {
+                cout << endl << "Simulations will use the equilibrium root family size estimated from data provided with -i:" << params.input_file_path << endl;
             }
 
             /* -f is provided (-f has precedence over -i if both are provided) */
             else {
-                cout << "Simulations will use the root family distribution specified with -f: " << rootdist << endl;
-                p_rootdist_map = read_rootdist(rootdist); // in map form
+                cout << "Simulations will use the root family distribution specified with -f: " << params.rootdist << endl;
+                p_rootdist_map = read_rootdist(params.rootdist); // in map form
                 vector<int> rootdist_vec;
                 rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
 
@@ -382,11 +367,11 @@ int main(int argc, char *const argv[]) {
     /* END: Running simulations */
         
     /* START: Printing log file(s) (-g) */
-    if (do_log) {
+    if (params.do_log) {
 
         string prob_matrix_suffix = "_tr_prob_matrices.txt";
-        string prob_matrix_file_name = output_prefix + prob_matrix_suffix;
-        std::ofstream ofst(output_prefix + prob_matrix_suffix);
+        string prob_matrix_file_name = params.output_prefix + prob_matrix_suffix;
+        std::ofstream ofst(params.output_prefix + prob_matrix_suffix);
 		calculator.print_cache(ofst, max_family_size);
     }
     /* END: Printing log file(s) */
