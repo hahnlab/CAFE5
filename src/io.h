@@ -28,19 +28,22 @@ void print_simulation(std::vector<vector<trial *> >  &sim, std::ostream& ost);
 
 /* START: Reading in gene family data */
 
-struct input_parameters
-{
-	std::string input_file_path;
-	std::string output_prefix;
-	bool estimate = false;
-	std::string tree_file_path;
-	double fixed_lambda = 0.0;
-	bool simulate = false;
-	std::string fixed_multiple_lambdas;
-	std::string rootdist;
-	int nsims = 0;
-	bool do_log = false;
-	std::string lambda_tree_file_path;
+struct input_parameters {
+public:	
+    std::string input_file_path;
+    std::string output_prefix;
+    bool estimate = false;
+    std::string tree_file_path;
+    double fixed_lambda = 0.0;
+    bool simulate = false;
+    std::string fixed_multiple_lambdas;
+    std::string rootdist;
+    int nsims = 0;
+    bool do_log = false;
+    std::string lambda_tree_file_path;
+    
+    //! Check calls
+    void check_input();
 };
 
 class gene_family {
