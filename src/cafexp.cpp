@@ -130,7 +130,7 @@ int main(int argc, char *const argv[]) {
     int max_family_size = -1; // largest gene family size among all gene families
     int max_root_family_size = 30;
     
-	probability_calculator calculator;
+    probability_calculator calculator;
     /* END: Option variables for main() */
   
     /* START: Input variables for inference and simulation */
@@ -206,7 +206,8 @@ int main(int argc, char *const argv[]) {
 //
  
     execute my_executer;
-    try {        
+    try {
+        
         /* START: Checking conflicting options */
         //! The user cannot specify both -e and -l
         if (my_input_parameters.estimate && my_input_parameters.fixed_lambda > 0.0) {
@@ -218,55 +219,23 @@ int main(int argc, char *const argv[]) {
             throw runtime_error("You cannot fix one lambda value (-l) and many lambda values (-m). Exiting...");
         }
         /* END: Checking conflicting options */
+                
         
-        /* START: Reading tree (-t) */
+        /* -t */
         clade *p_tree = my_executer.read_input_tree(my_input_parameters); // phylogenetic tree
-        /* END: Reading tree */
         
-        /* START: Reading gene family data (-i) */
+        /* -i */
         p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size);
         cout << "My max family size is: " << max_family_size << " and my max root family size is: " << max_root_family_size << endl;
-        /* END: Reading gene family data */
         
-        clade *p_lambda_tree = new clade(); // lambda tree
-        /* START: Reading lambda tree (-y) */
+        clade *p_lambda_tree = new clade();
+        /* -y */
         p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
         
-//        if (!my_input_parameters.lambda_tree_file_path.empty()) {
-//            p_lambda_tree = read_tree(my_input_parameters.lambda_tree_file_path, true);
-//
-//			std::map<clade *, int> lambda_index_map;
-//			node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
-//			
-//			p_lambda_tree->print_clade();
-//        }
-        /* END: Reading lambda tree */
-        
 	lambda *p_lambda = NULL;
-	/* START: Read in user-specified single or multiple lambdas (-l/-m) */
+	/* -l/-m */
         p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
         
-//		if (!my_input_parameters.fixed_multiple_lambdas.empty()) {
-//			if (my_input_parameters.lambda_tree_file_path.empty())
-//				throw runtime_error("You must specify a lambda tree (-y) if you fix multiple lambda values (-m). Exiting...");
-//
-//			vector<string> lambdastrings = tokenize_str(my_input_parameters.fixed_multiple_lambdas, ',');
-//			vector<double> lambdas(lambdastrings.size());
-//
-//			transform(lambdastrings.begin(), lambdastrings.end(), lambdas.begin(),
-//				[](string const& val) {return stod(val);});
-//			p_lambda = new multiple_lambda(&calculator, node_name_to_lambda_index, lambdas);
-//		}
-        
-//        if (my_input_parameters.fixed_lambda > 0.0) {
-//            cout << "Specified lambda (-l): " << my_input_parameters.fixed_lambda << ". Computing likelihood..." << endl;
-//            p_lambda = new single_lambda(&calculator, my_input_parameters.fixed_lambda);
-//            // vector<double> posterior = get_posterior((*p_gene_families), max_family_size, fixed_lambda, p_tree);
-//            // double map = log(*max_element(posterior.begin(), posterior.end()));
-//            // cout << "Posterior values found - max log posterior is " << map << endl;
-//			// call_viterbi(max_family_size, max_root_family_size, 15, p_lambda, *p_gene_families, p_tree);
-//        }
-
         if (p_lambda != NULL)	{
             likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &(*p_gene_families)[0]); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
             p_tree->apply_reverse_level_order(pruner);
@@ -275,7 +244,6 @@ int main(int argc, char *const argv[]) {
             for (int i = 0; i<likelihood.size(); ++i)
             	cout << "Likelihood of size " << i+1 << " at root: " << likelihood[i] << endl;
 	}
-        /* END: Computing likelihood of user-specified lambda */
 
         /* START: Estimating lambda(s) (-e) */
         if (my_input_parameters.estimate) {
