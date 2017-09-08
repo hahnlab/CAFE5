@@ -121,6 +121,7 @@ void call_viterbi(int max_family_size, int max_root_family_size, int number_of_s
 
 int main(int argc, char *const argv[]) {
     /* START: Option variables for main() */
+    core model; // initializing empty model
     int args; // getopt_long returns int or char
     int prev_arg;
     
@@ -211,9 +212,12 @@ int main(int argc, char *const argv[]) {
         
         /* -t */
         clade *p_tree = my_executer.read_input_tree(my_input_parameters); // phylogenetic tree
+        model.set_tree(p_tree);
         
         /* -i */
-        p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size);
+        p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size); // max_family_size and max_root_family_size are passed as reference, and set by read_gene_family_data
+        model.set_gene_families(p_gene_families);
+        model.set_max_sizes(max_family_size, max_root_family_size);
         
         clade *p_lambda_tree = new clade();
         /* -y */
@@ -222,6 +226,7 @@ int main(int argc, char *const argv[]) {
 	lambda *p_lambda = NULL;
 	/* -l/-m */
         p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
+        model.set_lambda(p_lambda);
         
         if (!my_input_parameters.simulate && p_lambda != NULL)	{
             likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &(*p_gene_families)[0]); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
@@ -277,14 +282,18 @@ int main(int argc, char *const argv[]) {
             else {
 //                cout << "Simulations will use the root family distribution specified with -f: " << my_input_parameters.rootdist << endl;
                 p_rootdist_map = read_rootdist(my_input_parameters.rootdist); // in map form
-				vector<int> rootdist_vec;
-				if (!p_rootdist_map)
-					throw runtime_error("p_rootdist_map not specified. Exiting...");
-				rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
-//
-				max_family_size = (*max_element(p_rootdist_map->begin(), p_rootdist_map->end(), max_key<int, int>)).first * 2;
+		vector<int> rootdist_vec;
+		
+                if (!p_rootdist_map)
+                    throw runtime_error("p_rootdist_map not specified. Exiting...");
+		
+                rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
+                rootdist_vec.clear();
+                model.set_rootdist_vec(rootdist_vec);
+                
+		// max_family_size = (*max_element(p_rootdist_map->begin(), p_rootdist_map->end(), max_key<int, int>)).first * 2;
 
-				cout << "My max family size is: " << max_family_size << " and my max root family size is: " << max_root_family_size << endl;
+            	// cout << "My max family size is: " << max_family_size << " and my max root family size is: " << max_root_family_size << endl;
 
                 //cout << "max_family_size = " << max_family_size << endl;
                 //vector<trial *> simulation = simulate_families_from_root_size(p_tree, nsims, root_family_size, max_family_size, lambda);
@@ -293,21 +302,30 @@ int main(int argc, char *const argv[]) {
                 //print_simulation(simulation, cout);
 
                 // total_n_families, lambda_multipliers and lambda_bins will not be harcoded in the future
-                int total_n_families = 10;
+                int total_n_families_sim = 10;
+                model.set_total_n_families_sim(total_n_families_sim);
+                
                 int n_cat = 2; // number of gamma categories
-                double alpha = 0.5;
+                model.adjust_n_gamma_cats(n_cat);
+                
+                // double alpha = 0.5;
+                // model.set_alpha(alpha);
                 
                 vector<double> lambda_multipliers = {1.0, 4.0};
+                model.set_lambda_multipliers(lambda_multipliers);
+                
                 std::vector<int> lambda_bins {0, 0, 0, 1, 1, 0, 1, 0, 1, 1}; // the number of elements must be the same as the total key values in p_rootdist_map; here I'm hardcoding it to have 10 elements, as example/test_root_dist.txt has a distribution for 10 families
+                model.set_lambda_bins(lambda_bins);
+                
+                model.set_max_size_sim(100);
 
-                rootdist_vec.clear(); // if we want to use uniform (comment to use the file provided with -f)
-
+               
                 // core core_model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, n_cat, alpha);
 				
-				core core_model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_bins, lambda_multipliers);
-				core_model.start_sim_processes();
-                core_model.simulate_processes();
-                core_model.print_simulations(cout);
+		// model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_bins, lambda_multipliers);
+		model.start_sim_processes();
+                model.simulate_processes();
+                model.print_simulations(cout);
                 // core_model.print_parameter_values();
             }
         }

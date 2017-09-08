@@ -31,24 +31,27 @@ private:
     double _lambda_multiplier;
     clade *_p_tree;
     int _max_family_size;
-    vector<int> _rootdist;
-    int _root_size; // will be drawn from _rootdist by process itself
+    int _max_root_family_size;
+    int _max_family_size_sim;
+    vector<int> _rootdist_vec;
+    int _root_size; // will be drawn from _rootdist_vec by process itself
     trial *_my_simulation;
     
 public:
     process(): _ost(cout), _lambda(NULL), _lambda_multiplier(1.0) {}
     
-    process(ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size, vector<int> rootdist): _ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree), _max_family_size(max_family_size), _rootdist(rootdist) {
+    process(ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size, int max_root_family_size, int max_family_size_sim, vector<int> rootdist): _ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree), _max_family_size(max_family_size), _max_root_family_size(max_root_family_size), _max_family_size_sim(max_family_size_sim), _rootdist_vec(rootdist) {
 
-		if (_rootdist.empty())
-		{
-			// generating uniform root distribution when no distribution is provided 
-			_rootdist.resize(max_family_size);
-			for (size_t i = 0; i < _rootdist.size(); ++i)
-				_rootdist[i] = i;
-		}
+        // generating uniform root distribution when no distribution is provided 
+	if (_rootdist_vec.empty()) {
+            cout << "Max family size to simulate: " << _max_family_size_sim << endl;
+            _rootdist_vec.resize(_max_family_size_sim);
+			
+            for (size_t i = 0; i < _rootdist_vec.size(); ++i)
+		_rootdist_vec[i] = i;
+        }
 
-		_root_size = *select_randomly(_rootdist.begin(), _rootdist.end()); // getting a random root size from the provided (core's) root distribution
+        _root_size = *select_randomly(_rootdist_vec.begin(), _rootdist_vec.end()); // getting a random root size from the provided (core's) root distribution
         cout << "_root_size is " << _root_size << endl;
     }
     
@@ -62,7 +65,7 @@ public:
 //! Run process' simulation
 void process::run_simulation() {
     double lambda_m = dynamic_cast<single_lambda*>(_lambda)->get_single_lambda() * _lambda_multiplier;
-    _my_simulation = simulate_family_from_root_size(_p_tree, _root_size, _max_family_size, lambda_m);
+    _my_simulation = simulate_family_from_root_size(_p_tree, _root_size, _max_family_size_sim, lambda_m);
 }
 
 //! Printing process' simulation
@@ -82,8 +85,8 @@ trial * process::get_simulation() {
 }
 
 core::core(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
-	int n_gamma_cats, double alpha) : _ost(ost), _lambda(lambda), _p_tree(p_tree), _max_family_size(max_family_size), 
-	_total_n_families(total_n_families), _rootdist_vec(rootdist_vec), _gamma_cat_probs(n_gamma_cats),
+	int n_gamma_cats, double alpha) : _ost(ost), _p_lambda(lambda), _p_tree(p_tree), _max_family_size(max_family_size), 
+	_total_n_families_sim(total_n_families), _rootdist_vec(rootdist_vec), _gamma_cat_probs(n_gamma_cats),
 	_lambda_multipliers(n_gamma_cats)
 {
 	if (!rootdist_vec.empty()) {
@@ -118,18 +121,77 @@ core::core(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, in
 }
 
 core::core(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
-	vector<int>& cats, vector<double>&mul) : _ost(ost), _lambda(lambda), _p_tree(p_tree), _max_family_size(max_family_size),
-	_total_n_families(total_n_families), _rootdist_vec(rootdist_vec),
+	vector<int>& cats, vector<double>&mul) : _ost(ost), _p_lambda(lambda), _p_tree(p_tree), _max_family_size(max_family_size),
+	_total_n_families_sim(total_n_families), _rootdist_vec(rootdist_vec),
 	_gamma_cats(cats), _lambda_multipliers(mul)
 {
+}
+
+//! Set pointer to lambda in core class
+void core::set_lambda(lambda *p_lambda) {
+    _p_lambda = p_lambda;
+}
+
+//! Set pointer to lambda in core class
+void core::set_tree(clade *p_tree) {
+    _p_tree = p_tree;
+}
+
+//! Set pointer to vector of gene family class instances
+void core::set_gene_families(std::vector<gene_family> *p_gene_families) {
+    _p_gene_families = p_gene_families;
+}
+
+//! Set max family sizes and max root family sizes for INFERENCE
+void core::set_max_sizes(int max_family_size, int max_root_family_size) {
+    _max_family_size = max_family_size;
+    _max_root_family_size = max_root_family_size;
+}
+
+//! Set max family sizes and max root family sizes
+void core::set_max_size_sim(int max_family_size_sim) {
+    _max_family_size_sim = max_family_size_sim;
+}
+
+
+//! Set root distribution vector
+void core::set_rootdist_vec(std::vector<int> rootdist_vec) {
+    _rootdist_vec = rootdist_vec;
+}
+
+//! Set total number of families to simulate
+void core::set_total_n_families_sim(int total_n_families_sim) {
+    _total_n_families_sim = total_n_families_sim;
+}
+
+//! Resize all gamma-related vectors according to provided number (integer) of gamma categories
+void core::adjust_n_gamma_cats(int n_gamma_cats) {
+    _gamma_cat_probs.resize(n_gamma_cats);
+    _lambda_multipliers.resize(n_gamma_cats);
+    _gamma_cats.resize(n_gamma_cats);
+}
+
+//! Set alpha for gamma distribution
+void core::set_alpha(double alpha) {
+    _alpha = alpha;
+}
+
+//! Set lambda multipliers for each gamma category
+void core::set_lambda_multipliers(std::vector<double> lambda_multipliers) {
+    _lambda_multipliers = lambda_multipliers;
+}
+
+//! Set lambda bins (each int is a vector pointing to a gamma category)
+void core::set_lambda_bins(std::vector<int> lambda_bins) {
+    _gamma_cats = lambda_bins;
 }
 
 //! Populate _processes (vector of processes)
 void core::start_sim_processes() {
     
-    for (int i = 0; i < _total_n_families; ++i) {
+    for (int i = 0; i < _total_n_families_sim; ++i) {
         double lambda_bin = _gamma_cats[i];      
-        process *p_new_process = new process(_ost, _lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
+        process *p_new_process = new process(_ost, _p_lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _max_root_family_size, _max_family_size_sim, _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
         _sim_processes.push_back(p_new_process);
     }
     
@@ -138,7 +200,7 @@ void core::start_sim_processes() {
 
 //! Run simulations in all processes, in series... (TODO: in parallel!)
 void core::simulate_processes() {
-    for (int i  = 0; i < _total_n_families; ++i) {
+    for (int i  = 0; i < _total_n_families_sim; ++i) {
         _sim_processes[i]->run_simulation();
     }
 }
@@ -151,7 +213,7 @@ void core::print_simulations(std::ostream& ost) {
 	ost << "#" << it->first->get_taxon_name() << endl;
     }
     
-    for (int i = 0; i < _total_n_families; ++i) {
+    for (int i = 0; i < _total_n_families_sim; ++i) {
         _sim_processes[i]->print_simulation(cout);
     }
 }
@@ -161,11 +223,11 @@ void core::print_parameter_values() {
     
     cout << endl << "You have set the following parameter values:" << endl;
     
-    if (dynamic_cast<single_lambda*>(_lambda)->get_single_lambda() == 0.0) {
+    if (dynamic_cast<single_lambda*>(_p_lambda)->get_single_lambda() == 0.0) {
         cout << "Lambda has not been specified." << endl;
     }
     else {
-        cout << "Lambda: " << _lambda << endl;
+        cout << "Lambda: " << _p_lambda << endl;
     }
     
     if (_p_tree == NULL) {
