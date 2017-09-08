@@ -128,7 +128,7 @@ int main(int argc, char *const argv[]) {
 
     vector<gene_family> * p_gene_families = new vector<gene_family>; // storing gene family data
     int max_family_size = -1; // largest gene family size among all gene families
-    int max_root_family_size = 30;
+    int max_root_family_size = -1;
     
     probability_calculator calculator;
     /* END: Option variables for main() */
@@ -214,7 +214,6 @@ int main(int argc, char *const argv[]) {
         
         /* -i */
         p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size);
-        cout << "My max family size is: " << max_family_size << " and my max root family size is: " << max_root_family_size << endl;
         
         clade *p_lambda_tree = new clade();
         /* -y */
@@ -224,7 +223,7 @@ int main(int argc, char *const argv[]) {
 	/* -l/-m */
         p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
         
-        if (p_lambda != NULL)	{
+        if (!my_input_parameters.simulate && p_lambda != NULL)	{
             likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &(*p_gene_families)[0]); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
             p_tree->apply_reverse_level_order(pruner);
             vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
@@ -277,11 +276,15 @@ int main(int argc, char *const argv[]) {
             /* -f is provided (-f has precedence over -i if both are provided) */
             else {
 //                cout << "Simulations will use the root family distribution specified with -f: " << my_input_parameters.rootdist << endl;
-//                p_rootdist_map = read_rootdist(my_input_parameters.rootdist); // in map form
-//                vector<int> rootdist_vec;
-//                rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
+                p_rootdist_map = read_rootdist(my_input_parameters.rootdist); // in map form
+				vector<int> rootdist_vec;
+				if (!p_rootdist_map)
+					throw runtime_error("p_rootdist_map not specified. Exiting...");
+				rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
 //
-//                int max = (*max_element(p_rootdist_map->begin(), p_rootdist_map->end(), max_key<int, int>)).first * 2;
+				max_family_size = (*max_element(p_rootdist_map->begin(), p_rootdist_map->end(), max_key<int, int>)).first * 2;
+
+				cout << "My max family size is: " << max_family_size << " and my max root family size is: " << max_root_family_size << endl;
 
                 //cout << "max_family_size = " << max_family_size << endl;
                 //vector<trial *> simulation = simulate_families_from_root_size(p_tree, nsims, root_family_size, max_family_size, lambda);
@@ -291,32 +294,20 @@ int main(int argc, char *const argv[]) {
 
                 // total_n_families, lambda_multipliers and lambda_bins will not be harcoded in the future
                 int total_n_families = 10;
-                int n_cat = 5; // number of gamma categories
+                int n_cat = 2; // number of gamma categories
                 double alpha = 0.5;
                 
-                std::vector<double> gamma_cat_probs(n_cat), lambda_multipliers(n_cat);
+                vector<double> lambda_multipliers = {1.0, 4.0};
+                std::vector<int> lambda_bins {0, 0, 0, 1, 1, 0, 1, 0, 1, 1}; // the number of elements must be the same as the total key values in p_rootdist_map; here I'm hardcoding it to have 10 elements, as example/test_root_dist.txt has a distribution for 10 families
 
-                get_gamma(gamma_cat_probs, lambda_multipliers, alpha); // passing vectors by reference
-                
-                for (auto i = gamma_cat_probs.begin(); i != gamma_cat_probs.end(); ++i) {
-                    cout << "Should be all the same probability: " << *i << endl;
-                }
-                
-                for (auto i = lambda_multipliers.begin(); i != lambda_multipliers.end(); ++i) {
-                    cout << "Lambda multiplier (rho) is: " << *i << endl;
-                }
+                rootdist_vec.clear(); // if we want to use uniform (comment to use the file provided with -f)
 
-                std::vector<int> *p_gamma_cats = weighted_cat_draw(total_n_families, gamma_cat_probs);
-
-                //std::vector<double> lambda_multipliers {1.0, 4.0};
-                //std::vector<int> lambda_bins {0, 0, 0, 1, 1, 0, 1, 0, 1, 1}; // the number of elements must be the same as the total key values in p_rootdist_map; here I'm hardcoding it to have 10 elements, as example/test_root_dist.txt has a distribution for 10 families
-
-//                rootdist_vec.clear(); // if we want to use uniform (comment to use the file provided with -f)
-
-                // core core_model(cout, &lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_multipliers, *p_gamma_cats);
-                // core_model.start_sim_processes();
-                // core_model.simulate_processes();
-                // core_model.print_simulations(cout);
+                // core core_model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, n_cat, alpha);
+				
+				core core_model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_bins, lambda_multipliers);
+				core_model.start_sim_processes();
+                core_model.simulate_processes();
+                core_model.print_simulations(cout);
                 // core_model.print_parameter_values();
             }
         }

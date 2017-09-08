@@ -18,24 +18,19 @@ private:
     vector<int> _rootdist_vec; // in case the user wants to use a specific root size distribution for all simulations
     vector<vector<int> > _rootdist_bins; // holds the distribution for each lambda bin
     vector<double> _lambda_multipliers;
-    vector<int> _gamma_cats; // each item is an index to a gamma category, from 0 to n_cat; vector must be of length = _total_n_families
+	vector<double> _gamma_cat_probs;	// 
+	vector<int> _gamma_cats; // each item is an index to a gamma category, from 0 to n_cat; vector must be of length = _total_n_families
     vector<process*> _sim_processes; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
     
 public:
     core(): _ost(cout), _total_n_families(1), _lambda_multipliers(1) {}
     
-    core(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec, vector<double> lambda_multipliers, vector<int> gamma_cats): _ost(ost), _lambda(lambda), _p_tree(p_tree), _max_family_size(max_family_size), _total_n_families(total_n_families), _rootdist_vec(rootdist_vec), _lambda_multipliers(lambda_multipliers), _gamma_cats(gamma_cats) {
+	core(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
+		int n_gamma_cats, double alpha);
     
-        if (!rootdist_vec.empty()) {
-            _rootdist_bins.push_back(rootdist_vec); // just 1st element
-        }
-        
-        else {
-            _rootdist_vec = uniform_dist(total_n_families, 1, max_family_size); // the user did not specify one... using uniform from 1 to max_family_size!
-            _rootdist_bins.push_back(_rootdist_vec); // just 1st element (but we could specify different root dists for each lambda bin)
-        }
-    }
-    
+	core(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
+		vector<int>& cats, vector<double>&mul);
+
     void start_sim_processes();
     
     void simulate_processes();

@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "utils.h"
 #include "io.h"
 #include "execute.h"
@@ -22,6 +24,8 @@ std::vector<gene_family> * execute::read_gene_family_data(const input_parameters
             cout << max_family_size << endl;
         }
     
+	max_root_family_size = std::max(30, static_cast<int>(std::rint(max_family_size*1.25)));
+
     return p_gene_families;
 }
 

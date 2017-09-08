@@ -6,6 +6,7 @@
 #include "clade.h"
 #include "core.h"
 #include "family_generator.h"
+#include "gamma.h"
 
 /* START: Drawing random root size from uniform */
 template<typename itr, typename random_generator>
@@ -39,8 +40,16 @@ public:
     
     process(ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size, vector<int> rootdist): _ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree), _max_family_size(max_family_size), _rootdist(rootdist) {
 
-        _root_size = *select_randomly(_rootdist.begin(), _rootdist.end()); // getting a random root size from the provided (core's) root distribution
-        //cout << "_root_size is " << _root_size << endl;
+		if (_rootdist.empty())
+		{
+			// generating uniform root distribution when no distribution is provided 
+			_rootdist.resize(max_family_size);
+			for (size_t i = 0; i < _rootdist.size(); ++i)
+				_rootdist[i] = i;
+		}
+
+		_root_size = *select_randomly(_rootdist.begin(), _rootdist.end()); // getting a random root size from the provided (core's) root distribution
+        cout << "_root_size is " << _root_size << endl;
     }
     
     void run_simulation();
@@ -70,6 +79,49 @@ void process::print_simulation(std::ostream & ost) {
 //! Return simulation
 trial * process::get_simulation() {
     return _my_simulation;
+}
+
+core::core(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
+	int n_gamma_cats, double alpha) : _ost(ost), _lambda(lambda), _p_tree(p_tree), _max_family_size(max_family_size), 
+	_total_n_families(total_n_families), _rootdist_vec(rootdist_vec), _gamma_cat_probs(n_gamma_cats),
+	_lambda_multipliers(n_gamma_cats)
+{
+	if (!rootdist_vec.empty()) {
+		_rootdist_bins.push_back(rootdist_vec); // just 1st element
+	}
+
+	else {
+		_rootdist_vec = uniform_dist(total_n_families, 1, max_family_size); // the user did not specify one... using uniform from 1 to max_family_size!
+		_rootdist_bins.push_back(_rootdist_vec); // just 1st element (but we could specify different root dists for each lambda bin)
+	}
+
+	if (n_gamma_cats > 1)
+	{
+		get_gamma(_gamma_cat_probs, _lambda_multipliers, alpha); // passing vectors by reference
+		auto cats = weighted_cat_draw(total_n_families, _gamma_cat_probs);
+		_gamma_cats = *cats;
+		delete cats;
+	}
+
+	for (auto i = _gamma_cat_probs.begin(); i != _gamma_cat_probs.end(); ++i) {
+		cout << "Should be all the same probability: " << *i << endl;
+	}
+
+	for (auto i = _lambda_multipliers.begin(); i != _lambda_multipliers.end(); ++i) {
+		cout << "Lambda multiplier (rho) is: " << *i << endl;
+	}
+
+	for (auto i = _gamma_cats.begin(); i != _gamma_cats.end(); ++i) {
+		cout << "Gamma category is: " << *i << endl;
+	}
+
+}
+
+core::core(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
+	vector<int>& cats, vector<double>&mul) : _ost(ost), _lambda(lambda), _p_tree(p_tree), _max_family_size(max_family_size),
+	_total_n_families(total_n_families), _rootdist_vec(rootdist_vec),
+	_gamma_cats(cats), _lambda_multipliers(mul)
+{
 }
 
 //! Populate _processes (vector of processes)
