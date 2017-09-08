@@ -36,13 +36,13 @@ private:
     vector<int> _rootdist_vec;
     int _root_size; // will be drawn from _rootdist_vec by process itself
     trial *_my_simulation;
+	gene_family *_p_gene_family;
     
 public:
     process(): _ost(cout), _lambda(NULL), _lambda_multiplier(1.0) {}
     
     process(ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size, int max_root_family_size, int max_family_size_sim, vector<int> rootdist): _ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree), _max_family_size(max_family_size), _max_root_family_size(max_root_family_size), _max_family_size_sim(max_family_size_sim), _rootdist_vec(rootdist) {
-
-        // generating uniform root distribution when no distribution is provided 
+			// generating uniform root distribution when no distribution is provided 
 	if (_rootdist_vec.empty()) {
             cout << "Max family size to simulate: " << _max_family_size_sim << endl;
             _rootdist_vec.resize(_max_family_size_sim);
@@ -55,8 +55,14 @@ public:
         cout << "_root_size is " << _root_size << endl;
     }
     
+
+	process(ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size, int max_root_family_size, gene_family *fam, vector<int> rootdist) : _ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree), _max_family_size(max_family_size), _max_root_family_size(max_root_family_size), _rootdist_vec(rootdist) {
+		_p_gene_family = fam;
+	}
+
     void run_simulation();
-    
+
+	void prune();
     void print_simulation(std::ostream & ost);
     
     trial * get_simulation();
@@ -64,8 +70,17 @@ public:
 
 //! Run process' simulation
 void process::run_simulation() {
-    double lambda_m = dynamic_cast<single_lambda*>(_lambda)->get_single_lambda() * _lambda_multiplier;
-    _my_simulation = simulate_family_from_root_size(_p_tree, _root_size, _max_family_size_sim, lambda_m);
+	single_lambda *sl = dynamic_cast<single_lambda*>(_lambda);	// we don't support multiple lambdas yet
+	double lambda_m = sl->get_single_lambda() * _lambda_multiplier;
+	_my_simulation = simulate_family_from_root_size(_p_tree, _root_size, _max_family_size_sim, lambda_m);
+}
+
+void process::prune()
+{
+	single_lambda *sl = dynamic_cast<single_lambda*>(_lambda);	// we don't support multiple lambdas yet
+	likelihood_computer pruner(_max_root_family_size, _max_family_size, sl->multiply(_lambda_multiplier), _p_gene_family); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
+	_p_tree->apply_reverse_level_order(pruner);
+	vector<double> likelihood = pruner.get_likelihoods(_p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
 }
 
 //! Printing process' simulation
@@ -82,6 +97,12 @@ void process::print_simulation(std::ostream & ost) {
 //! Return simulation
 trial * process::get_simulation() {
     return _my_simulation;
+}
+
+void gamma_bundle::prune()
+{
+	for (int i = 0; i < processes.size(); ++i)
+		processes[i]->prune();
 }
 
 core::core(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
@@ -198,11 +219,36 @@ void core::start_sim_processes() {
     cout << _sim_processes.size() << " processes have been started." << endl;
 }
 
+void core::start_inference_processes() {
+
+	for (int i = 0; i < _p_gene_families->size(); ++i)
+	{
+		gamma_bundle bundle;
+		for (int j = 0; j < _gamma_cats.size(); ++j)
+		{
+			double lambda_bin = _gamma_cats[i];
+			process *p_new_process = new process(_ost, _p_lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
+			bundle.add(p_new_process);
+		}
+
+		_inference_bundles.push_back(bundle);
+	}
+
+	cout << _sim_processes.size() << " processes have been started." << endl;
+}
+
+
 //! Run simulations in all processes, in series... (TODO: in parallel!)
 void core::simulate_processes() {
     for (int i  = 0; i < _total_n_families_sim; ++i) {
         _sim_processes[i]->run_simulation();
     }
+}
+
+void core::infer_processes() {
+	for (int i = 0; i < _inference_bundles.size(); ++i) {
+		_inference_bundles[i].prune();
+	}
 }
 
 //! Print processes' simulations

@@ -33,6 +33,11 @@ public:
     single_lambda(probability_calculator *p_calc, double lam) : lambda(p_calc), _lambda(lam) { } //!< Constructor 
     double get_single_lambda() const { return _lambda; }
     virtual std::vector<double> calculate_child_factor(clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size); //!< Computes tr. prob. matrix, and multiplies by likelihood vector. Returns result (=factor).
+
+	single_lambda *multiply(double factor)
+	{
+		return new single_lambda(_p_calc, _lambda * factor);
+	}
 };
 
 //! (lambda) Derived class 2: multiple lambdas

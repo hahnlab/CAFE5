@@ -8,6 +8,19 @@ class clade; // core.cpp includes clade.h before including core.h
 
 class process;
 
+
+class gamma_bundle
+{
+	std::vector<process *> processes;
+public:
+	void add(process *p) {
+		processes.push_back(p);
+	}
+
+	void prune();
+};
+
+
 class core {
 private:
     std::ostream & _ost; 
@@ -31,6 +44,7 @@ private:
     vector<process*> _sim_processes; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
     
     //! Inference
+	vector<gamma_bundle> _inference_bundles; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
 public:
     core(): _ost(cout), _p_lambda(NULL), _p_tree(NULL), _p_gene_families(NULL), _total_n_families_sim(1), _lambda_multipliers(1) {}
     
@@ -65,9 +79,13 @@ public:
     
     //! Simulation methods
     void start_sim_processes();
-    
+	void start_inference_processes();
+
     void simulate_processes();
-    
+
+	//! Inference methods
+	void infer_processes();
+
     //! Gamma methods
     void adjust_n_gamma_cats(int n_gamma_cats);
     
