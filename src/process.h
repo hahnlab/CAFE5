@@ -21,7 +21,7 @@ protected:
 
 	process(std::ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size,
 		int max_root_family_size, std::vector<int> rootdist) :
-		_ost(std::cout), _lambda(NULL), _lambda_multiplier(1.0), _p_tree(p_tree),
+		_ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree),
 		_max_family_size(max_family_size), _max_root_family_size(max_root_family_size),
 		_rootdist_vec(rootdist) {}
 };
