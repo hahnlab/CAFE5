@@ -7,13 +7,14 @@
 class clade; // core.cpp includes clade.h before including core.h
 
 class process;
-
+class inference_process;
+class simulation_process;
 
 class gamma_bundle
 {
-	std::vector<process *> processes;
+	std::vector<inference_process *> processes;
 public:
-	void add(process *p) {
+	void add(inference_process *p) {
 		processes.push_back(p);
 	}
 
@@ -28,7 +29,6 @@ private:
     clade *_p_tree;
     int _max_family_size;
     int _max_root_family_size;
-    int _max_family_size_sim;
     int _total_n_families_sim;
     vector<gene_family> * _p_gene_families;
     vector<int> _rootdist_vec; // in case the user wants to use a specific root size distribution for all simulations
@@ -41,7 +41,7 @@ private:
     double _alpha;
     
     //! Simulations
-    vector<process*> _sim_processes; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
+    vector<simulation_process*> _sim_processes; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
     
     //! Inference
 	vector<gamma_bundle> _inference_bundles; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
@@ -64,8 +64,6 @@ public:
     void set_gene_families(std::vector<gene_family> *p_gene_families);
     
     void set_max_sizes(int max_family_size, int max_root_family_size);
-    
-    void set_max_size_sim(int max_family_size_sim);
     
     void set_rootdist_vec(std::vector<int> rootdist_vec);
     
