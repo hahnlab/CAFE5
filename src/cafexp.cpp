@@ -122,7 +122,7 @@ void call_viterbi(int max_family_size, int max_root_family_size, int number_of_s
 int main(int argc, char *const argv[]) {
     /* START: Option variables for main() */
     std::vector<core *> models;
-    // models.push_back(new core());
+    models.push_back(new base_core());
     int args; // getopt_long returns int or char
     int prev_arg;
     
@@ -230,33 +230,8 @@ int main(int argc, char *const argv[]) {
         lambda *p_lambda = NULL;
 	p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
 
-        
-	for (int i = 0; i < models.size(); ++i) {
-            models[i]->set_tree(p_tree);
-
-
-            /* -i */
-            p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size); // max_family_size and max_root_family_size are passed as reference, and set by read_gene_family_data
-            models[i]->set_gene_families(p_gene_families);
-            
-            gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
-            if (p_model != NULL) {
-                /* -k */
-		p_model->adjust_n_gamma_cats(my_input_parameters.n_gamma_cats);
-                p_model->adjust_family_gamma_membership(p_gene_families->size());
-                double alpha = 0.5;
-		p_model->set_alpha(alpha);
-            }
-            
-            models[i]->set_max_sizes(max_family_size, max_root_family_size);
-            models[i]->set_lambda(p_lambda);
-	
-            cout << endl << "Starting inference processes for model " << i << endl;
-            models[i]->start_inference_processes();
-            
-            cout << endl << "Inferring processes for model " << i << endl;
-            models[i]->infer_processes();
-        }
+    if (!my_input_parameters.simulate)
+        my_executer.infer(models, p_tree, p_lambda, my_input_parameters, max_family_size, max_root_family_size);
         
 
 //        if (!my_input_parameters.simulate && p_lambda != NULL)	{

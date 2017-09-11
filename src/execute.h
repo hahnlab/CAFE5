@@ -6,6 +6,7 @@
 struct input_parameters;
 class lambda;
 class probability_calculator;
+class core;
 
 class execute {
 public:
@@ -20,5 +21,8 @@ public:
 
     //! Read in single or multiple lambda (-l or -m)
     lambda * read_lambda(const input_parameters &my_input_parameters, probability_calculator &my_calculator, clade * p_lambda_tree);
+
+    void infer(std::vector<core *>& models, clade *p_tree, lambda *p_lambda, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size);
+
 };
 #endif /* EXECUTE_H */

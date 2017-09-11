@@ -5,6 +5,7 @@
 #include "execute.h"
 #include "probability.h"
 #include "lambda.h"
+#include "core.h"
 
 //! Read user provided gene family data (whose path is stored in input_parameters instance)
 std::vector<gene_family> * execute::read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size) {
@@ -89,3 +90,33 @@ lambda * execute::read_lambda(const input_parameters &my_input_parameters, proba
     
     return p_lambda;
 } 
+
+void execute::infer(std::vector<core *>& models, clade *p_tree, lambda *p_lambda, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
+{
+    for (int i = 0; i < models.size(); ++i) {
+        models[i]->set_tree(p_tree);
+
+
+        /* -i */
+        std::vector<gene_family> * p_gene_families = read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size); // max_family_size and max_root_family_size are passed as reference, and set by read_gene_family_data
+        models[i]->set_gene_families(p_gene_families);
+
+        gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
+        if (p_model != NULL) {
+            /* -k */
+            p_model->adjust_n_gamma_cats(my_input_parameters.n_gamma_cats);
+            p_model->adjust_family_gamma_membership(p_gene_families->size());
+            double alpha = 0.5;
+            p_model->set_alpha(alpha);
+        }
+
+        models[i]->set_max_sizes(max_family_size, max_root_family_size);
+        models[i]->set_lambda(p_lambda);
+
+        cout << endl << "Starting inference processes for model " << i << endl;
+        models[i]->start_inference_processes();
+
+        cout << endl << "Inferring processes for model " << i << endl;
+        models[i]->infer_processes();
+    }
+}

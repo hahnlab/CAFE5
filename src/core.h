@@ -64,14 +64,20 @@ public:
     void simulate_processes();
 
     //! Inference methods
-    virtual void start_inference_processes();
+    virtual void start_inference_processes() = 0;
     
-    virtual void infer_processes();
+    virtual void infer_processes() = 0;
     
     //! Printing methods
     void print_parameter_values();
     
     void adjust_family(ostream& ost);
+};
+
+class base_core : public core {
+    std::vector<inference_process *> processes;
+    virtual void start_inference_processes();
+    virtual void infer_processes();
 };
 
 class gamma_core : public core {

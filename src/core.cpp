@@ -156,13 +156,24 @@ void core::simulate_processes() {
     }
 }
 
-void core::start_inference_processes()
+void base_core::start_inference_processes()
 {
+    for (int i = 0; i < _p_gene_families->size(); ++i) {
+
+        cout << "Started inference process " << i + 1 << endl;
+
+            //            double lambda_bin = _gamma_cat_probs[j];
+        inference_process *p_new_process = new inference_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
+        processes.push_back(p_new_process);
+    }
 }
 
-void core::infer_processes()
+void base_core::infer_processes()
 {
 	// prune all the families with the same lambda
+    for (int i = 0; i < processes.size(); ++i) {
+        processes[i]->prune();
+    }
 }
 
 //! Infer bundle
