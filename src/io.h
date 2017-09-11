@@ -41,6 +41,7 @@ public:
     int nsims = 0;
     bool do_log = false;
     std::string lambda_tree_file_path;
+    int n_gamma_cats = 1;
     
     //! Check calls
     void check_input();

@@ -79,12 +79,13 @@ public:
     
     //! Simulation methods
     void start_sim_processes();
-	void start_inference_processes();
+
+    void start_inference_processes();
 
     void simulate_processes();
 
-	//! Inference methods
-	void infer_processes();
+    //! Inference methods
+    void infer_processes();
 
     //! Gamma methods
     void adjust_n_gamma_cats(int n_gamma_cats);

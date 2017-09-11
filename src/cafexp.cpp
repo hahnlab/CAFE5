@@ -143,7 +143,7 @@ int main(int argc, char *const argv[]) {
     //double lambda = 0.0017;
     /* END: Option variables for simulations */
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:e::s::g::", longopts, NULL)) != -1 ) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:k:e::s::g::", longopts, NULL)) != -1 ) {
     // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -160,31 +160,35 @@ int main(int argc, char *const argv[]) {
                 my_input_parameters.output_prefix = optarg;
                 break;
             case 'e':
-				my_input_parameters.estimate = true;
+		my_input_parameters.estimate = true;
                 break;
             case 't':
-				my_input_parameters.tree_file_path = optarg;
+		my_input_parameters.tree_file_path = optarg;
                 break;
             case 'y':
-				my_input_parameters.lambda_tree_file_path = optarg;
+		my_input_parameters.lambda_tree_file_path = optarg;
                 break;
             case 's':
-				my_input_parameters.simulate = true;
+		my_input_parameters.simulate = true;
                 break;
             case 'l':
-				my_input_parameters.fixed_lambda = atof(optarg);
+		my_input_parameters.fixed_lambda = atof(optarg);
                 break;
             case 'm':
-				my_input_parameters.fixed_multiple_lambdas = optarg;
+		my_input_parameters.fixed_multiple_lambdas = optarg;
+                break;
+            case 'k':
+                my_input_parameters.n_gamma_cats = atoi(optarg);
+                cout << "You have specified " << my_input_parameters.n_gamma_cats << " gamma classes." << endl;
                 break;
             case 'n':
-				my_input_parameters.nsims = atoi(optarg);
+		my_input_parameters.nsims = atoi(optarg);
                 break;
             case 'f':
-				my_input_parameters.rootdist = optarg;
+		my_input_parameters.rootdist = optarg;
                 break;
             case 'g':
-				my_input_parameters.do_log = true;
+		my_input_parameters.do_log = true;
                 break;
             case ':':   // missing argument
                 fprintf(stderr, "%s: option `-%c' requires an argument",
@@ -219,23 +223,29 @@ int main(int argc, char *const argv[]) {
         model.set_gene_families(p_gene_families);
         model.set_max_sizes(max_family_size, max_root_family_size);
         
+        
+        /* -k */
+        model.adjust_n_gamma_cats(my_input_parameters.n_gamma_cats);
+        
+        
         clade *p_lambda_tree = new clade();
         /* -y */
         p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
+        
         
 	lambda *p_lambda = NULL;
 	/* -l/-m */
         p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
         model.set_lambda(p_lambda);
         
-        if (!my_input_parameters.simulate && p_lambda != NULL)	{
-            likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &(*p_gene_families)[0]); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
-            p_tree->apply_reverse_level_order(pruner);
-            vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
-            cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
-            for (int i = 0; i<likelihood.size(); ++i)
-            	cout << "Likelihood of size " << i+1 << " at root: " << likelihood[i] << endl;
-	}
+//        if (!my_input_parameters.simulate && p_lambda != NULL)	{
+//            likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &(*p_gene_families)[0]); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
+//            p_tree->apply_reverse_level_order(pruner);
+//            vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
+//            cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
+//            for (int i = 0; i<likelihood.size(); ++i)
+//            	cout << "Likelihood of size " << i+1 << " at root: " << likelihood[i] << endl;
+//	}
 
         /* START: Estimating lambda(s) (-e) */
         if (my_input_parameters.estimate) {
@@ -305,8 +315,6 @@ int main(int argc, char *const argv[]) {
                 int total_n_families_sim = 10;
                 model.set_total_n_families_sim(total_n_families_sim);
                 
-                int n_cat = 2; // number of gamma categories
-                model.adjust_n_gamma_cats(n_cat);
                 
                 // double alpha = 0.5;
                 // model.set_alpha(alpha);
