@@ -15,17 +15,20 @@ std::vector<gene_family> * execute::read_gene_family_data(const input_parameters
             
         // Iterating over gene families to get max gene family size
         for (std::vector<gene_family>::iterator it = p_gene_families->begin(); it != p_gene_families->end(); ++it) {
-            int this_family_max_size = it->get_parsed_max_size();
+            int this_family_max_size = it->get_max_size();
             
             if (max_family_size < this_family_max_size)
                 max_family_size = this_family_max_size;
-            }
-
-            cout << max_family_size << endl;
         }
-    
-	max_root_family_size = std::max(30, static_cast<int>(std::rint(max_family_size*1.25)));
 
+        max_root_family_size = std::max(30, static_cast<int>(std::rint(max_family_size*1.25)));
+        max_family_size = max_family_size + std::max(50, max_family_size/5);
+        cout << "Max family size is: " << max_family_size << endl;
+        cout << "Max root family size is: " << max_root_family_size << endl;
+            
+        }
+
+    
     return p_gene_families;
 }
 

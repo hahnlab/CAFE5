@@ -214,14 +214,17 @@ int main(int argc, char *const argv[]) {
     try {
         my_input_parameters.check_input(); // seeing if options are not mutually exclusive              
         
+        
         /* -t */
         clade *p_tree = my_executer.read_input_tree(my_input_parameters); // phylogenetic tree
         model.set_tree(p_tree);
+        
         
         /* -i */
         p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size); // max_family_size and max_root_family_size are passed as reference, and set by read_gene_family_data
         model.set_gene_families(p_gene_families);
         model.set_max_sizes(max_family_size, max_root_family_size);
+        model.adjust_family_gamma_membership(p_gene_families->size());
         
         
         /* -k */
@@ -237,7 +240,10 @@ int main(int argc, char *const argv[]) {
 	/* -l/-m */
         p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
         model.set_lambda(p_lambda);
-        
+        double alpha = 1;
+        model.set_alpha(alpha);
+        model.start_inference_processes();
+        model.infer_processes();
 //        if (!my_input_parameters.simulate && p_lambda != NULL)	{
 //            likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &(*p_gene_families)[0]); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
 //            p_tree->apply_reverse_level_order(pruner);
@@ -314,7 +320,7 @@ int main(int argc, char *const argv[]) {
                 // total_n_families, lambda_multipliers and lambda_bins will not be harcoded in the future
                 int total_n_families_sim = 10;
                 model.set_total_n_families_sim(total_n_families_sim);
-                
+                model.adjust_family_gamma_membership(total_n_families_sim);
                 
                 // double alpha = 0.5;
                 // model.set_alpha(alpha);
@@ -333,7 +339,7 @@ int main(int argc, char *const argv[]) {
 		// model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_bins, lambda_multipliers);
 		model.start_sim_processes();
                 model.simulate_processes();
-                model.print_simulations(cout);
+                model.adjust_family(cout);
                 // core_model.print_parameter_values();
             }
         }

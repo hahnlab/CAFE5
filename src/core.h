@@ -90,10 +90,12 @@ public:
     //! Gamma methods
     void adjust_n_gamma_cats(int n_gamma_cats);
     
+    void adjust_family_gamma_membership(int n_families);
+    
     //! Printing methods
     void print_parameter_values();
     
-    void print_simulations(ostream& ost);
+    void adjust_family(ostream& ost);
 };
 
 #endif /* CORE_H */

@@ -36,13 +36,14 @@ private:
     vector<int> _rootdist_vec;
     int _root_size; // will be drawn from _rootdist_vec by process itself
     trial *_my_simulation;
-	gene_family *_p_gene_family;
+    gene_family *_p_gene_family;
     
 public:
     process(): _ost(cout), _lambda(NULL), _lambda_multiplier(1.0) {}
     
     process(ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size, int max_root_family_size, int max_family_size_sim, vector<int> rootdist): _ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree), _max_family_size(max_family_size), _max_root_family_size(max_root_family_size), _max_family_size_sim(max_family_size_sim), _rootdist_vec(rootdist) {
-			// generating uniform root distribution when no distribution is provided 
+			
+        // generating uniform root distribution when no distribution is provided 
 	if (_rootdist_vec.empty()) {
             cout << "Max family size to simulate: " << _max_family_size_sim << endl;
             _rootdist_vec.resize(_max_family_size_sim);
@@ -76,14 +77,26 @@ void process::run_simulation() {
 	_my_simulation = simulate_family_from_root_size(_p_tree, _root_size, _max_family_size_sim, lambda_m);
 }
 
+//! Prune process
 void process::prune() {
     single_lambda *sl = dynamic_cast<single_lambda*>(_lambda);	// we don't support multiple lambdas yet
+    
+    cout << endl << "Max root family size is: " << _max_root_family_size << endl;
+    cout << "Max family size is: " << _max_family_size << endl;
+    cout << "Lambda multiplier is: " << _lambda_multiplier << endl;
+    
     likelihood_computer pruner(_max_root_family_size, _max_family_size, sl->multiply(_lambda_multiplier), _p_gene_family); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
     
     cout << "  About to prune process." << endl;
     _p_tree->apply_reverse_level_order(pruner);
     
-    vector<double> likelihood = pruner.get_likelihoods(_p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
+    vector<double> partial_likelihood = pruner.get_likelihoods(_p_tree); // likelihood of the whole tree = multiplication of likelihood of all nodes
+    
+    int count = 1;
+    for (std::vector<double>::iterator it = partial_likelihood.begin(); it != partial_likelihood.end(); ++it) {
+        cout << "Likelihood " << count << ": " << *it << endl;
+        count = count+1;
+    }
 }
 
 //! Printing process' simulation
@@ -102,12 +115,12 @@ trial * process::get_simulation() {
     return _my_simulation;
 }
 
-void gamma_bundle::prune()
-{
-	for (int i = 0; i < processes.size(); ++i)
-		processes[i]->prune();
+void gamma_bundle::prune() {
+    for (int i = 0; i < processes.size(); ++i)
+	processes[i]->prune();
 }
 
+//! Simulation: core constructor when just alpha is provided.
 core::core(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
 	int n_gamma_cats, double alpha) : _ost(ost), _p_lambda(lambda), _p_tree(p_tree), _max_family_size(max_family_size), 
 	_total_n_families_sim(total_n_families), _rootdist_vec(rootdist_vec), _gamma_cat_probs(n_gamma_cats),
@@ -192,12 +205,18 @@ void core::set_total_n_families_sim(int total_n_families_sim) {
 void core::adjust_n_gamma_cats(int n_gamma_cats) {
     _gamma_cat_probs.resize(n_gamma_cats);
     _lambda_multipliers.resize(n_gamma_cats);
-    _gamma_cats.resize(n_gamma_cats);
+}
+
+//! Resize gamma_cats vector that assigns gamma class membership of families to be inferred/simulated
+void core::adjust_family_gamma_membership(int n_families) {
+    _gamma_cats.resize(n_families);
 }
 
 //! Set alpha for gamma distribution
 void core::set_alpha(double alpha) {
     _alpha = alpha;
+    if (_gamma_cats.size() > 1)
+	get_gamma(_gamma_cat_probs, _lambda_multipliers, alpha); // passing vectors by reference
 }
 
 //! Set lambda multipliers for each gamma category
@@ -219,17 +238,18 @@ void core::start_sim_processes() {
         _sim_processes.push_back(p_new_process);
     }
     
-    cout << _sim_processes.size() << " processes have been started." << endl;
+    // cout << _sim_processes.size() << " processes have been started." << endl;
 }
 
 void core::start_inference_processes() {
 
     for (int i = 0; i < _p_gene_families->size(); ++i) {
 	gamma_bundle bundle;
+        
         cout << "Started inference bundle " << i+1 << endl;
 	
-        for (int j = 0; j < _gamma_cats.size(); ++j) {
-            double lambda_bin = _gamma_cats[i];
+        for (int j = 0; j < _gamma_cat_probs.size(); ++j) {
+            double lambda_bin = _gamma_cat_probs[j];
             process *p_new_process = new process(_ost, _p_lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
             bundle.add(p_new_process);
             
@@ -239,8 +259,6 @@ void core::start_inference_processes() {
 
 	_inference_bundles.push_back(bundle);
     }
-
-    cout << _sim_processes.size() << " processes have been started." << endl;
 }
 
 
@@ -251,15 +269,16 @@ void core::simulate_processes() {
     }
 }
 
+//! Infer bundle
 void core::infer_processes() {
-	for (int i = 0; i < _inference_bundles.size(); ++i) {
-		_inference_bundles[i].prune();
-                cout << "About to prune a gamma bundle." << endl;
-	}
+    for (int i = 0; i < _inference_bundles.size(); ++i) {
+        cout << endl << "About to prune a gamma bundle." << endl;
+	_inference_bundles[i].prune();
+    }
 }
 
 //! Print processes' simulations
-void core::print_simulations(std::ostream& ost) {
+void core::adjust_family(std::ostream& ost) {
     
     // Printing header
     for (trial::iterator it = _sim_processes[0]->get_simulation()->begin(); it != _sim_processes[0]->get_simulation()->end(); ++it) {
