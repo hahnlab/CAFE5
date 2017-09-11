@@ -128,7 +128,7 @@ void core::start_sim_processes() {
     // cout << _sim_processes.size() << " processes have been started." << endl;
 }
 
-void core::start_inference_processes() {
+void gamma_core::start_inference_processes() {
 
     for (int i = 0; i < _p_gene_families->size(); ++i) {
 	gamma_bundle bundle;
@@ -156,8 +156,17 @@ void core::simulate_processes() {
     }
 }
 
+void core::start_inference_processes()
+{
+}
+
+void core::infer_processes()
+{
+	// prune all the families with the same lambda
+}
+
 //! Infer bundle
-void core::infer_processes() {
+void gamma_core::infer_processes() {
     for (int i = 0; i < _inference_bundles.size(); ++i) {
         cout << endl << "About to prune a gamma bundle." << endl;
 	_inference_bundles[i].prune();

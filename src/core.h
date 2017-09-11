@@ -23,7 +23,7 @@ public:
 
 
 class core {
-private:
+protected:
     std::ostream & _ost; 
     lambda *_p_lambda; // TODO: multiple lambdas for different branches
     clade *_p_tree;
@@ -43,8 +43,6 @@ private:
     //! Simulations
     vector<simulation_process*> _sim_processes; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
     
-    //! Inference
-	vector<gamma_bundle> _inference_bundles; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
 public:
     core(): _ost(cout), _p_lambda(NULL), _p_tree(NULL), _p_gene_families(NULL), _total_n_families_sim(1), _lambda_multipliers(1) {}
     
@@ -78,12 +76,11 @@ public:
     //! Simulation methods
     void start_sim_processes();
 
-    void start_inference_processes();
-
     void simulate_processes();
 
     //! Inference methods
-    void infer_processes();
+	virtual void start_inference_processes();
+	virtual void infer_processes();
 
     //! Gamma methods
     void adjust_n_gamma_cats(int n_gamma_cats);
@@ -96,5 +93,13 @@ public:
     void adjust_family(ostream& ost);
 };
 
+class gamma_core : public core
+{
+	//! Inference
+	vector<gamma_bundle> _inference_bundles; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
+	void start_inference_processes();
+
+	void infer_processes();
+};
 #endif /* CORE_H */
 
