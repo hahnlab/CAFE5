@@ -71,11 +71,11 @@ void inference_process::prune() {
 
 	vector<double> partial_likelihood = pruner.get_likelihoods(_p_tree); // likelihood of the whole tree = multiplication of likelihood of all nodes
 
-	int count = 1;
-	for (std::vector<double>::iterator it = partial_likelihood.begin(); it != partial_likelihood.end(); ++it) {
-		cout << "Likelihood " << count << ": " << *it << endl;
-		count = count + 1;
-	}
+//	int count = 1;
+//	for (std::vector<double>::iterator it = partial_likelihood.begin(); it != partial_likelihood.end(); ++it) {
+//		cout << "Likelihood " << count << ": " << *it << endl;
+//		count = count + 1;
+//	}
 }
 
 //! Printing process' simulation

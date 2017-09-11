@@ -121,8 +121,8 @@ void call_viterbi(int max_family_size, int max_root_family_size, int number_of_s
 
 int main(int argc, char *const argv[]) {
     /* START: Option variables for main() */
-	std::vector<core *> models;
-	models.push_back(new core());
+    std::vector<core *> models;
+    // models.push_back(new core());
     int args; // getopt_long returns int or char
     int prev_arg;
     
@@ -181,8 +181,8 @@ int main(int argc, char *const argv[]) {
             case 'k':
                 my_input_parameters.n_gamma_cats = atoi(optarg);
                 cout << "You have specified " << my_input_parameters.n_gamma_cats << " gamma classes." << endl;
-				if (my_input_parameters.n_gamma_cats > 1)
-					models.push_back(new gamma_core());
+		if (my_input_parameters.n_gamma_cats > 1)
+                    models.push_back(new gamma_core());
                 break;
             case 'n':
 		my_input_parameters.nsims = atoi(optarg);
@@ -217,38 +217,46 @@ int main(int argc, char *const argv[]) {
     try {
         my_input_parameters.check_input(); // seeing if options are not mutually exclusive              
         
-		/* -t */
-		clade *p_tree = my_executer.read_input_tree(my_input_parameters); // phylogenetic tree
+	/* -t */
+	clade *p_tree = my_executer.read_input_tree(my_input_parameters); // phylogenetic tree
 
-		clade *p_lambda_tree = new clade();
-		/* -y */
-		p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
-
-
-		lambda *p_lambda = NULL;
-		/* -l/-m */
-		p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
-
-		for (int i = 0; i < models.size(); ++i)
-		{
-			models[i]->set_tree(p_tree);
+        
+	/* -y */
+        clade *p_lambda_tree = new clade();
+	p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
 
 
-			/* -i */
-			p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size); // max_family_size and max_root_family_size are passed as reference, and set by read_gene_family_data
-			models[i]->set_gene_families(p_gene_families);
-			models[i]->set_max_sizes(max_family_size, max_root_family_size);
-			models[i]->adjust_family_gamma_membership(p_gene_families->size());
+	/* -l/-m */
+        lambda *p_lambda = NULL;
+	p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
 
-			/* -k */
-			models[i]->adjust_n_gamma_cats(my_input_parameters.n_gamma_cats);
+        
+	for (int i = 0; i < models.size(); ++i) {
+            models[i]->set_tree(p_tree);
 
-			models[i]->set_lambda(p_lambda);
-			double alpha = 1;
-			models[i]->set_alpha(alpha);
-			models[i]->start_inference_processes();
-			models[i]->infer_processes();
-		}
+
+            /* -i */
+            p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size); // max_family_size and max_root_family_size are passed as reference, and set by read_gene_family_data
+            models[i]->set_gene_families(p_gene_families);
+            
+            gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
+            if (p_model != NULL) {
+                /* -k */
+		p_model->adjust_n_gamma_cats(my_input_parameters.n_gamma_cats);
+                p_model->adjust_family_gamma_membership(p_gene_families->size());
+                double alpha = 0.5;
+		p_model->set_alpha(alpha);
+            }
+            
+            models[i]->set_max_sizes(max_family_size, max_root_family_size);
+            models[i]->set_lambda(p_lambda);
+	
+            cout << endl << "Starting inference processes for model " << i << endl;
+            models[i]->start_inference_processes();
+            
+            cout << endl << "Inferring processes for model " << i << endl;
+            models[i]->infer_processes();
+        }
         
 
 //        if (!my_input_parameters.simulate && p_lambda != NULL)	{
@@ -330,23 +338,27 @@ int main(int argc, char *const argv[]) {
 							// total_n_families, lambda_multipliers and lambda_bins will not be harcoded in the future
 					int total_n_families_sim = 10;
 					models[i]->set_total_n_families_sim(total_n_families_sim);
-					models[i]->adjust_family_gamma_membership(total_n_families_sim);
+                                        
+                                        gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
+                                        if (p_model != NULL) {
+                                            p_model->adjust_family_gamma_membership(total_n_families_sim);
 
 					// double alpha = 0.5;
 					// model.set_alpha(alpha);
 
-					vector<double> lambda_multipliers = { 1.0, 4.0 };
-					models[i]->set_lambda_multipliers(lambda_multipliers);
+                                            vector<double> lambda_multipliers = { 1.0, 4.0 };
+                                            p_model->set_lambda_multipliers(lambda_multipliers);
 
-					std::vector<int> lambda_bins{ 0, 0, 0, 1, 1, 0, 1, 0, 1, 1 }; // the number of elements must be the same as the total key values in p_rootdist_map; here I'm hardcoding it to have 10 elements, as example/test_root_dist.txt has a distribution for 10 families
-					models[i]->set_lambda_bins(lambda_bins);
+                                            std::vector<int> lambda_bins{ 0, 0, 0, 1, 1, 0, 1, 0, 1, 1 }; // the number of elements must be the same as the total key values in p_rootdist_map; here I'm hardcoding it to have 10 elements, as example/test_root_dist.txt has a distribution for 10 families
+                                            p_model->set_lambda_bins(lambda_bins);
+                                        }
 
 					// core core_model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, n_cat, alpha);
 
 			// model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_bins, lambda_multipliers);
 					models[i]->start_sim_processes();
 					models[i]->simulate_processes();
-					models[i]->adjust_family(cout);
+					// models[i]->adjust_family(cout);
 					// core_model.print_parameter_values();
 				}
             }
