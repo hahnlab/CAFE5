@@ -113,7 +113,7 @@ public:
     
     void set_lambda_multipliers(std::vector<double> lambda_multipliers);
     
-    void set_lambda_bins(std::vector<int> lambda_bins);
+    void set_gamma_cats(std::vector<int> gamma_cats);
         
     //! Simulation methods
     void start_sim_processes();

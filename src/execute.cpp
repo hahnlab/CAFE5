@@ -10,7 +10,8 @@
 //! Read user provided gene family data (whose path is stored in input_parameters instance)
 std::vector<gene_family> * execute::read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size) {
     
-    std::vector<gene_family> *p_gene_families;
+    std::vector<gene_family> *p_gene_families = NULL;
+    
     if (!my_input_parameters.input_file_path.empty()) {
         p_gene_families = read_gene_families(my_input_parameters.input_file_path);
             
@@ -29,6 +30,7 @@ std::vector<gene_family> * execute::read_gene_family_data(const input_parameters
             
         }
 
+    else { p_gene_families = new std::vector<gene_family>(); }
     
     return p_gene_families;
 }
@@ -61,7 +63,7 @@ lambda * execute::read_lambda(const input_parameters &my_input_parameters, proba
         
     // -l
     if (my_input_parameters.fixed_lambda > 0.0) {
-        cout << "Specified lambda (-l): " << my_input_parameters.fixed_lambda << ". Computing likelihood..." << endl;
+        cout << "Specified lambda (-l): " << my_input_parameters.fixed_lambda << endl;
         p_lambda = new single_lambda(&my_calculator, my_input_parameters.fixed_lambda);
             // vector<double> posterior = get_posterior((*p_gene_families), max_family_size, fixed_lambda, p_tree);
             // double map = log(*max_element(posterior.begin(), posterior.end()));
@@ -91,16 +93,12 @@ lambda * execute::read_lambda(const input_parameters &my_input_parameters, proba
     return p_lambda;
 } 
 
-void execute::infer(std::vector<core *>& models, clade *p_tree, lambda *p_lambda, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
+void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gene_families, clade *p_tree, lambda *p_lambda, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
 {
     for (int i = 0; i < models.size(); ++i) {
-        models[i]->set_tree(p_tree);
-
-
-        /* -i */
-        std::vector<gene_family> * p_gene_families = read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size); // max_family_size and max_root_family_size are passed as reference, and set by read_gene_family_data
         models[i]->set_gene_families(p_gene_families);
-
+        models[i]->set_tree(p_tree);
+        
         gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
         if (p_model != NULL) {
             /* -k */

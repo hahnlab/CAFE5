@@ -127,8 +127,7 @@ int main(int argc, char *const argv[]) {
     int prev_arg;
     
     input_parameters my_input_parameters;
-
-    vector<gene_family> * p_gene_families = new vector<gene_family>; // storing gene family data
+    
     int max_family_size = -1; // largest gene family size among all gene families
     int max_root_family_size = -1;
     
@@ -217,6 +216,10 @@ int main(int argc, char *const argv[]) {
     try {
         my_input_parameters.check_input(); // seeing if options are not mutually exclusive              
         
+        /* -i */
+        std::vector<gene_family> * p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size); // max_family_size and max_root_family_size are passed as reference, and set by read_gene_family_data
+        
+        
 	/* -t */
 	clade *p_tree = my_executer.read_input_tree(my_input_parameters); // phylogenetic tree
 
@@ -229,10 +232,11 @@ int main(int argc, char *const argv[]) {
 	/* -l/-m */
         lambda *p_lambda = NULL;
 	p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
-
-    if (!my_input_parameters.simulate)
-        my_executer.infer(models, p_tree, p_lambda, my_input_parameters, max_family_size, max_root_family_size);
         
+
+        if (!my_input_parameters.simulate && !p_gene_families->empty()) {
+            my_executer.infer(models, p_gene_families, p_tree, p_lambda, my_input_parameters, max_family_size, max_root_family_size);
+        }
 
 //        if (!my_input_parameters.simulate && p_lambda != NULL)	{
 //            likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &(*p_gene_families)[0]); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
@@ -295,10 +299,16 @@ int main(int argc, char *const argv[]) {
 		
                 rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
                 rootdist_vec.clear();
-
-				for (int i = 0; i < models.size(); ++i)
-				{
-					models[i]->set_rootdist_vec(rootdist_vec);
+                
+                cout << "I will simulate with this many models: " << models.size() << endl;
+		
+                for (int i = 0; i < models.size(); ++i) {
+                    
+                    cout << "Simulating for model " << i << endl;
+                    
+                    models[i]->set_rootdist_vec(rootdist_vec);
+                    
+                    cout << "I just set the root distribution." << endl;
 
 					// max_family_size = (*max_element(p_rootdist_map->begin(), p_rootdist_map->end(), max_key<int, int>)).first * 2;
 
@@ -311,21 +321,22 @@ int main(int argc, char *const argv[]) {
 							//print_simulation(simulation, cout);
 
 							// total_n_families, lambda_multipliers and lambda_bins will not be harcoded in the future
-					int total_n_families_sim = 10;
-					models[i]->set_total_n_families_sim(total_n_families_sim);
-                                        
-                                        gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
-                                        if (p_model != NULL) {
-                                            p_model->adjust_family_gamma_membership(total_n_families_sim);
+                    int total_n_families_sim = 10;
+                    models[i]->set_total_n_families_sim(total_n_families_sim);
+                    
+                    cout << "I just set number of families to simulate." << endl;
+                    
+                    gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
+                    if (p_model != NULL) {
+                        p_model->adjust_family_gamma_membership(total_n_families_sim);
+			double alpha = 0.5;
+			p_model->set_alpha(alpha);
 
-					// double alpha = 0.5;
-					// model.set_alpha(alpha);
+                        vector<double> lambda_multipliers = { 1.0, 4.0 };
+                        p_model->set_lambda_multipliers(lambda_multipliers);
 
-                                            vector<double> lambda_multipliers = { 1.0, 4.0 };
-                                            p_model->set_lambda_multipliers(lambda_multipliers);
-
-                                            std::vector<int> lambda_bins{ 0, 0, 0, 1, 1, 0, 1, 0, 1, 1 }; // the number of elements must be the same as the total key values in p_rootdist_map; here I'm hardcoding it to have 10 elements, as example/test_root_dist.txt has a distribution for 10 families
-                                            p_model->set_lambda_bins(lambda_bins);
+                        std::vector<int> gamma_cats{ 0, 0, 0, 1, 1, 0, 1, 0, 1, 1 }; // the number of elements must be the same as the total key values in p_rootdist_map; here I'm hardcoding it to have 10 elements, as example/test_root_dist.txt has a distribution for 10 families
+                        p_model->set_gamma_cats(gamma_cats);
                                         }
 
 					// core core_model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, n_cat, alpha);

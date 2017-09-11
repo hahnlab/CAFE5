@@ -112,8 +112,8 @@ void gamma_core::set_lambda_multipliers(std::vector<double> lambda_multipliers) 
 }
 
 //! Set lambda bins (each int is a vector pointing to a gamma category)
-void gamma_core::set_lambda_bins(std::vector<int> lambda_bins) {
-    _gamma_cats = lambda_bins;
+void gamma_core::set_gamma_cats(std::vector<int> gamma_cats) {
+    _gamma_cats = gamma_cats;
 }
 
 //! Populate _processes (vector of processes)
