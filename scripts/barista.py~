@@ -1,5 +1,0 @@
-class Barista():
-    """ """
-
-if __name__ == __main__:
-    pour_me_one = Barista()

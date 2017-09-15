@@ -49,16 +49,17 @@ class Barista:
         self.add_option('-n', self.simulationsN)
         self.add_option('-f', self.root_dist_path)
         self.add_option('-k', self.gammacatN)
-
+        self.add_option('-i', self.gene_families_path)
+        
         if self.simulate:
             self.command_line += ['-s']
         
     def pour_me_one(self):
-        print " ".join(self.command_line)
-        # return subprocess.check_output(" ".join(self.command_line))
+        # print " ".join(self.command_line)
+        return subprocess.check_output(" ".join(self.command_line), shell=True)
         
 if __name__ == "__main__":
     # sys.argv[1] = config file
 
     barista = Barista(sys.argv[1])
-    barista.pour_me_one()
+    print barista.pour_me_one()
