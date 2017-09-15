@@ -185,9 +185,20 @@ void gamma_core::start_inference_processes() {
 
 //! Run simulations in all processes, in series... (TODO: in parallel!)
 void core::simulate_processes() {
-    for (int i  = 0; i < _total_n_families_sim; ++i) {
+    for (int i = 0; i < _total_n_families_sim; ++i) {
         _sim_processes[i]->run_simulation();
-        _sim_processes[i]->print_simulation(cout);
+    }
+}
+
+void core::print_processes(std::ostream& ost) {
+
+    trial *sim = _sim_processes[0]->get_simulation();
+    for (trial::iterator it = sim->begin(); it != sim->end(); ++it) {
+          ost << "#" << it->first->get_taxon_name() << "\n";
+    }
+
+    for (int i = 0; i < _total_n_families_sim; ++i) {
+        _sim_processes[i]->print_simulation(ost);
     }
 }
 

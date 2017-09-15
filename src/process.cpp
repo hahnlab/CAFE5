@@ -81,7 +81,7 @@ void inference_process::prune() {
 //! Printing process' simulation
 void simulation_process::print_simulation(std::ostream & ost) {
 
-	// Printing gene counts
+    // Printing gene counts
 	for (trial::iterator it = _my_simulation->begin(); it != _my_simulation->end(); ++it) {
 		ost << it->second << "\t";
 	}

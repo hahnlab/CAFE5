@@ -65,6 +65,8 @@ public:
 
     void simulate_processes();
 
+    void print_processes(std::ostream& ost);
+
     //! Inference methods
     virtual void start_inference_processes() = 0;
     

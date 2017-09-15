@@ -174,7 +174,17 @@ void execute::simulate(std::vector<core *>& models, clade *p_tree, lambda *p_lam
 
         // model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_bins, lambda_multipliers);
         models[i]->start_sim_processes();
+        
+        ostringstream ost;
+        ost << "simulation_" << my_input_parameters.output_prefix << ".txt";
+        std::ofstream ofst(ost.str());
         models[i]->simulate_processes();
+        models[i]->print_processes(ofst);
+        //    for (trial::iterator it = _my_simulation->begin(); it != _my_simulation->end(); ++it) {
+        //        ost << "#" << it->first->get_taxon_name() << "\n";
+        //    }
+
+
         // models[i]->adjust_family(cout);
         // core_model.print_parameter_values();
     }
