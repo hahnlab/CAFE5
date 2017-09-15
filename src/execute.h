@@ -24,5 +24,6 @@ public:
 
     void infer(std::vector<core *>& models, std::vector<gene_family> *p_gene_families, clade *p_tree, lambda *p_lambda, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size);
 
+    void simulate(std::vector<core *>& models, clade *p_tree, lambda *p_lambda, const input_parameters &my_input_parameters);
 };
 #endif /* EXECUTE_H */

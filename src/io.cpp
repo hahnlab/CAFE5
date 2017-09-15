@@ -34,6 +34,11 @@ void input_parameters::check_input() {
     if (fixed_lambda > 0.0 && !fixed_multiple_lambdas.empty()) {
         throw runtime_error("You cannot fix one lambda value (-l) and many lambda values (-m). Exiting...");
     }
+
+    //! The user cannot specify both -i and -s
+    if (!input_file_path.empty() && simulate) {
+        throw runtime_error("You cannot simulate and try to infer simultaneously. Exiting...");
+    }
 }
 
 /* START: Reading in gene family data */

@@ -59,7 +59,9 @@ public:
     void set_total_n_families_sim(int total_n_families_sim);
     
     //! Simulation methods
-    virtual void start_sim_processes() {}
+    void start_sim_processes();
+
+    virtual simulation_process* create_simulation_process(int family_number) = 0;
 
     void simulate_processes();
 
@@ -78,6 +80,7 @@ class base_core : public core {
     std::vector<inference_process *> processes;
     virtual void start_inference_processes();
     virtual void infer_processes();
+    virtual simulation_process* create_simulation_process(int family_number);
 };
 
 class gamma_core : public core {
@@ -109,15 +112,17 @@ public:
     void adjust_family_gamma_membership(int n_families);
         
     //! Setters
-    void set_alpha(double alpha);
-    
+    void set_alpha(double alpha, int n_families);
+    void initialize_with_alpha(int n_gamma_cats, int n_families, double alpha);
+    void initialize_without_alpha(int n_gamma_cats, int n_families, vector<double> lambda_multipliers, std::vector<int> gamma_cats);
+
     void set_lambda_multipliers(std::vector<double> lambda_multipliers);
     
     void set_gamma_cats(std::vector<int> gamma_cats);
         
     //! Simulation methods
-    void start_sim_processes();
-    
+    virtual simulation_process* create_simulation_process(int family_number);
+
     //! Inference methods
     void start_inference_processes();
 

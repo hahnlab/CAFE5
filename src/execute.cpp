@@ -101,11 +101,7 @@ void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gen
         
         gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
         if (p_model != NULL) {
-            /* -k */
-            p_model->adjust_n_gamma_cats(my_input_parameters.n_gamma_cats);
-            p_model->adjust_family_gamma_membership(p_gene_families->size());
-            double alpha = 0.5;
-            p_model->set_alpha(alpha);
+            p_model->initialize_with_alpha(my_input_parameters.n_gamma_cats, p_gene_families->size(), 0.5);
         }
 
         models[i]->set_max_sizes(max_family_size, max_root_family_size);
@@ -116,5 +112,70 @@ void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gen
 
         cout << endl << "Inferring processes for model " << i << endl;
         models[i]->infer_processes();
+    }
+}
+
+void execute::simulate(std::vector<core *>& models, clade *p_tree, lambda *p_lambda, const input_parameters &my_input_parameters)
+{
+    //                cout << "Simulations will use the root family distribution specified with -f: " << my_input_parameters.rootdist << endl;
+    std::map<int, int> *p_rootdist_map = read_rootdist(my_input_parameters.rootdist); // in map form
+    vector<int> rootdist_vec;
+
+    if (!p_rootdist_map)
+        throw runtime_error("p_rootdist_map not specified. Exiting...");
+
+    rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
+    rootdist_vec.clear();
+
+    cout << "I will simulate with this many models: " << models.size() << endl;
+
+    for (int i = 0; i < models.size(); ++i) {
+
+        cout << "Simulating for model " << i << endl;
+
+        models[i]->set_tree(p_tree);
+        models[i]->set_lambda(p_lambda);
+        models[i]->set_rootdist_vec(rootdist_vec);
+
+        cout << "I just set the root distribution." << endl;
+
+        // max_family_size = (*max_element(p_rootdist_map->begin(), p_rootdist_map->end(), max_key<int, int>)).first * 2;
+
+        // cout << "My max family size is: " << max_family_size << " and my max root family size is: " << max_root_family_size << endl;
+
+        //cout << "max_family_size = " << max_family_size << endl;
+        //vector<trial *> simulation = simulate_families_from_root_size(p_tree, nsims, root_family_size, max_family_size, lambda);
+        //vector<vector<trial *> > simulation = simulate_families_from_distribution(p_tree, nsims, *p_rootdist_map, max_family_size, lambda);
+
+        //print_simulation(simulation, cout);
+
+        // lambda_multipliers and lambda_bins will not be harcoded in the future
+        models[i]->set_total_n_families_sim(my_input_parameters.nsims);
+
+        cout << "I just set number of families to simulate." << endl;
+
+        gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
+        if (p_model != NULL) {
+            bool has_alpha = false;
+            if (has_alpha)
+            {
+                p_model->initialize_with_alpha(my_input_parameters.n_gamma_cats, my_input_parameters.nsims, 0.5);
+            }
+            else
+            {
+                vector<double> lambda_multipliers = { 1.0, 4.0 };
+                std::vector<int> gamma_cats{ 0, 0, 0, 1, 1, 0, 1, 0, 1, 1 }; // the number of elements must be the same as the total key values in p_rootdist_map; here I'm hardcoding it to have 10 elements, as example/test_root_dist.txt has a distribution for 10 families
+                p_model->initialize_without_alpha(my_input_parameters.n_gamma_cats, my_input_parameters.nsims,
+                    lambda_multipliers, gamma_cats);
+            }
+        }
+
+        // core core_model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, n_cat, alpha);
+
+        // model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_bins, lambda_multipliers);
+        models[i]->start_sim_processes();
+        models[i]->simulate_processes();
+        // models[i]->adjust_family(cout);
+        // core_model.print_parameter_values();
     }
 }

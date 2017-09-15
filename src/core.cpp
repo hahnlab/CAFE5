@@ -2,6 +2,8 @@
 #include <iostream>
 #include <valarray>
 #include <fstream>
+#include <assert.h>
+
 #include "clade.h"
 #include "core.h"
 #include "family_generator.h"
@@ -84,6 +86,25 @@ void core::set_total_n_families_sim(int total_n_families_sim) {
     _total_n_families_sim = total_n_families_sim;
 }
 
+void gamma_core::initialize_with_alpha(int n_gamma_cats, int n_families, double alpha)
+{
+    adjust_n_gamma_cats(n_gamma_cats);
+    adjust_family_gamma_membership(n_families);
+    set_alpha(alpha, n_families);
+}
+
+void gamma_core::initialize_without_alpha(int n_gamma_cats, int n_families, vector<double> lambda_multipliers, std::vector<int> gamma_cats)
+{
+    assert(lambda_multipliers.size() == n_gamma_cats);
+    assert(gamma_cats.size() == n_families);
+    //    adjust_n_gamma_cats(n_gamma_cats);
+//    adjust_family_gamma_membership(n_families);
+//    set_alpha(alpha, n_families);
+
+    set_lambda_multipliers(lambda_multipliers);
+    set_gamma_cats(gamma_cats);
+}
+
 //! Resize all gamma-related vectors according to provided number (integer) of gamma categories
 void gamma_core::adjust_n_gamma_cats(int n_gamma_cats) {
     _gamma_cat_probs.resize(n_gamma_cats);
@@ -96,13 +117,17 @@ void gamma_core::adjust_family_gamma_membership(int n_families) {
 }
 
 //! Set alpha for gamma distribution
-void gamma_core::set_alpha(double alpha) {   
+void gamma_core::set_alpha(double alpha, int n_families) {   
     _alpha = alpha;
     if (_gamma_cats.size() > 1)
-	get_gamma(_gamma_cat_probs, _lambda_multipliers, alpha); // passing vectors by reference
+    	get_gamma(_gamma_cat_probs, _lambda_multipliers, alpha); // passing vectors by reference
     
-    for (std::vector<double>::iterator it = _lambda_multipliers.begin(); it != _lambda_multipliers.end(); ++it) {
-        cout << "Multiplier is : " << *it << endl;
+    vector<int>* cats = weighted_cat_draw(n_families, _gamma_cat_probs);
+    _gamma_cats = *cats;
+    delete cats;
+
+    for (std::vector<double>::iterator it = _gamma_cat_probs.begin(); it != _gamma_cat_probs.end(); ++it) {
+        cout << "Gamma cat prob is : " << *it << endl;
     }
 }
 
@@ -116,17 +141,26 @@ void gamma_core::set_gamma_cats(std::vector<int> gamma_cats) {
     _gamma_cats = gamma_cats;
 }
 
-//! Populate _processes (vector of processes)
-void gamma_core::start_sim_processes() {
-    
+void core::start_sim_processes() {
+
     for (int i = 0; i < _total_n_families_sim; ++i) {
-        double lambda_bin = _gamma_cats[i];      
-        simulation_process *p_new_process = new simulation_process(_ost, _p_lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
-        _sim_processes.push_back(p_new_process);
+        _sim_processes.push_back(create_simulation_process(i));
     }
-    
+
     // cout << _sim_processes.size() << " processes have been started." << endl;
 }
+
+//! Populate _processes (vector of processes)
+simulation_process* gamma_core::create_simulation_process(int family_number) {
+    double lambda_bin = _gamma_cats[family_number];
+    return new simulation_process(_ost, _p_lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
+}
+
+simulation_process* base_core::create_simulation_process(int family_number) {
+    return new simulation_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
+}
+
+
 
 void gamma_core::start_inference_processes() {
 
@@ -153,6 +187,7 @@ void gamma_core::start_inference_processes() {
 void core::simulate_processes() {
     for (int i  = 0; i < _total_n_families_sim; ++i) {
         _sim_processes[i]->run_simulation();
+        _sim_processes[i]->print_simulation(cout);
     }
 }
 
