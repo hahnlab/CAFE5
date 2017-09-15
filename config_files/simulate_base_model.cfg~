@@ -1,0 +1,17 @@
+[CAFExp folder]
+cafexp = /home/binho/Documents/IU/hahn_lab_stuff/CAFExp/
+
+[input files]
+# gene families = examples/genfam_data.txt
+tree = examples/tree.txt
+# lambda tree = examples/lambda_tree.txt
+
+[options]
+## infer = true # boolean
+simulate = true # boolean
+n simulations = 10 # int
+
+[parameters]
+lambda = 0.01 # double
+alpha = 0.5 # double
+
