@@ -1,7 +1,6 @@
 #include <getopt.h>
 #include <cmath>
 #include <map>
-#include <iomanip>
 
 #include "io.h"
 #include "execute.h"
@@ -119,7 +118,7 @@ void call_viterbi(int max_family_size, int max_root_family_size, int number_of_s
 	}
 }
 
-std::vector<core *> build_models(const input_parameters& my_input_parameters)
+std::vector<core *> build_models(const input_parameters& my_input_parameters, clade *p_tree, lambda *p_lambda)
 {
     std::vector<core *> models;
     if (!my_input_parameters.input_file_path.empty())
@@ -134,6 +133,11 @@ std::vector<core *> build_models(const input_parameters& my_input_parameters)
             models.push_back(new gamma_core());
         else
             models.push_back(new base_core());
+    }
+    for (size_t i = 0; i < models.size(); ++i)
+    {
+        models[i]->set_tree(p_tree);
+        models[i]->set_lambda(p_lambda);
     }
     return models;
 }
@@ -249,67 +253,44 @@ int main(int argc, char *const argv[]) {
         lambda *p_lambda = NULL;
 	p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
         
-    vector<core *> models = build_models(my_input_parameters);
-        if (!my_input_parameters.simulate && !p_gene_families->empty()) {
-            my_executer.infer(models, p_gene_families, p_tree, p_lambda, my_input_parameters, max_family_size, max_root_family_size);
-        }
-
-//        if (!my_input_parameters.simulate && p_lambda != NULL)	{
-//            likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &(*p_gene_families)[0]); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
-//            p_tree->apply_reverse_level_order(pruner);
-//            vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
-//            cout << "Pruner complete. Likelihood of size 1 at root: " << likelihood[1] << endl;
-//            for (int i = 0; i<likelihood.size(); ++i)
-//            	cout << "Likelihood of size " << i+1 << " at root: " << likelihood[i] << endl;
-//	}
+    vector<core *> models = build_models(my_input_parameters, p_tree, p_lambda);
+    if (!my_input_parameters.simulate && !p_gene_families->empty()) {
+        my_executer.infer(models, p_gene_families, my_input_parameters, max_family_size, max_root_family_size);
+    }
 
         /* START: Estimating lambda(s) (-e) */
-        if (my_input_parameters.estimate) {
-	    srand(10);
-            
-            if (my_input_parameters.input_file_path.empty()) {
-                throw runtime_error("In order to estimate the lambda(s) value(s) (-e), you must specify an input file path (gene family data) with -i. Exiting...");
-            }
+    if (my_input_parameters.estimate) {
+        srand(10);
 
-			if (p_lambda_tree != NULL)
-			{
-			}
+        p_lambda = my_executer.estimate_lambda(my_input_parameters, p_tree, p_lambda_tree, p_gene_families, max_family_size, max_root_family_size, calculator);
 
+        return 0;
+    }
+    /* END: Estimating lambda(s) */
 
-			p_tree->init_gene_family_sizes(*p_gene_families);
-			lambda_search_params params(p_tree, *p_gene_families, max_family_size, max_root_family_size);
-			single_lambda* p_single_lambda = new single_lambda(&calculator, find_best_lambda(&params));
-			cout << "Best lambda match is " << setw(15) << setprecision(14) << p_single_lambda->get_single_lambda() << endl;
-
-			p_lambda = p_single_lambda;
-
-			return 0;
+    /* START: Running simulations (-s) */
+    if (my_input_parameters.simulate) {
+        if (!my_input_parameters.nsims) {
+            throw runtime_error("In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting...");
         }
-        /* END: Estimating lambda(s) */
-        
-        /* START: Running simulations (-s) */
-        if (my_input_parameters.simulate) {
-            if (!my_input_parameters.nsims) {
-                throw runtime_error("In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting...");
-            }
 
-            else { cout << endl << "Performing " << my_input_parameters.nsims << " simulation batches." << endl; }
+        else { cout << endl << "Performing " << my_input_parameters.nsims << " simulation batches." << endl; }
 
-            if (my_input_parameters.input_file_path.empty() && my_input_parameters.rootdist.empty()) {
-                throw runtime_error("In order to perform simulations (s), you must either specify an input file from which the root family size is estimated with -i, or specify a root family distribution with -f. Exiting...");
-            }
-
-            /* -i is provided, -f is not */
-            else if (my_input_parameters.rootdist.empty() && !my_input_parameters.input_file_path.empty()) {
-                cout << endl << "Simulations will use the equilibrium root family size estimated from data provided with -i:" << my_input_parameters.input_file_path << endl;
-            }
-
-            /* -f is provided (-f has precedence over -i if both are provided) */
-            else {
-                my_executer.simulate(models, p_tree, p_lambda, my_input_parameters);
-            }
+        if (my_input_parameters.input_file_path.empty() && my_input_parameters.rootdist.empty()) {
+            throw runtime_error("In order to perform simulations (s), you must either specify an input file from which the root family size is estimated with -i, or specify a root family distribution with -f. Exiting...");
         }
-    
+
+        /* -i is provided, -f is not */
+        else if (my_input_parameters.rootdist.empty() && !my_input_parameters.input_file_path.empty()) {
+            cout << endl << "Simulations will use the equilibrium root family size estimated from data provided with -i:" << my_input_parameters.input_file_path << endl;
+        }
+
+        /* -f is provided (-f has precedence over -i if both are provided) */
+        else {
+            my_executer.simulate(models, my_input_parameters);
+        }
+    }
+
     /* END: Running simulations */
         
     /* START: Printing log file(s) (-g) */

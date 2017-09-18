@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iomanip>
 
 #include "utils.h"
 #include "io.h"
@@ -93,11 +94,10 @@ lambda * execute::read_lambda(const input_parameters &my_input_parameters, proba
     return p_lambda;
 } 
 
-void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gene_families, clade *p_tree, lambda *p_lambda, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
+void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gene_families, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
 {
     for (int i = 0; i < models.size(); ++i) {
         models[i]->set_gene_families(p_gene_families);
-        models[i]->set_tree(p_tree);
         
         gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
         if (p_model != NULL) {
@@ -105,7 +105,6 @@ void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gen
         }
 
         models[i]->set_max_sizes(max_family_size, max_root_family_size);
-        models[i]->set_lambda(p_lambda);
 
         cout << endl << "Starting inference processes for model " << i << endl;
         models[i]->start_inference_processes();
@@ -115,7 +114,7 @@ void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gen
     }
 }
 
-void execute::simulate(std::vector<core *>& models, clade *p_tree, lambda *p_lambda, const input_parameters &my_input_parameters)
+void execute::simulate(std::vector<core *>& models, const input_parameters &my_input_parameters)
 {
     //                cout << "Simulations will use the root family distribution specified with -f: " << my_input_parameters.rootdist << endl;
     std::map<int, int> *p_rootdist_map = read_rootdist(my_input_parameters.rootdist); // in map form
@@ -133,8 +132,6 @@ void execute::simulate(std::vector<core *>& models, clade *p_tree, lambda *p_lam
 
         cout << "Simulating for model " << i << endl;
 
-        models[i]->set_tree(p_tree);
-        models[i]->set_lambda(p_lambda);
         models[i]->set_rootdist_vec(rootdist_vec);
 
         cout << "I just set the root distribution." << endl;
@@ -188,4 +185,24 @@ void execute::simulate(std::vector<core *>& models, clade *p_tree, lambda *p_lam
         // models[i]->adjust_family(cout);
         // core_model.print_parameter_values();
     }
+}
+
+lambda * execute::estimate_lambda(const input_parameters &my_input_parameters, clade *p_tree, clade *p_lambda_tree, 
+    std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size, probability_calculator& calculator)
+{
+    if (my_input_parameters.input_file_path.empty()) {
+        throw runtime_error("In order to estimate the lambda(s) value(s) (-e), you must specify an input file path (gene family data) with -i. Exiting...");
+    }
+
+    if (p_lambda_tree != NULL)
+    {
+    }
+
+
+    p_tree->init_gene_family_sizes(*p_gene_families);
+    lambda_search_params params(p_tree, *p_gene_families, max_family_size, max_root_family_size);
+    single_lambda* p_single_lambda = new single_lambda(&calculator, find_best_lambda(&params));
+    cout << "Best lambda match is " << setw(15) << setprecision(14) << p_single_lambda->get_single_lambda() << endl;
+
+    return p_single_lambda;
 }
