@@ -173,7 +173,7 @@ void execute::simulate(std::vector<core *>& models, const input_parameters &my_i
         models[i]->start_sim_processes();
         
         ostringstream ost;
-        ost << "simulation_" << my_input_parameters.output_prefix << ".txt";
+        ost << "simulation" << (my_input_parameters.output_prefix.empty() ? "" : "_") << my_input_parameters.output_prefix << ".txt";
         std::ofstream ofst(ost.str());
         models[i]->simulate_processes();
         models[i]->print_processes(ofst);
