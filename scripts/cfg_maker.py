@@ -6,26 +6,50 @@ import argparse
 class ArgStash:
 
     def __init__(self, my_args):
+        # dealing with multiple simulation/inference runs (either through -n, or through -i)
+        self.n_runs = int()
+        self.instructions_list = list()
+        if my_args.instr_path and my_args.number_runs != "1":
+            exit('You can only run many simulations with the same parameters, or specify a file with instructions. Exiting...\n')
+        elif my_args.instr_path:
+            self.instr_path = my_args.instr_path
+            self.read_instruction_file()
+        else:
+            self.n_runs = int(my_args.number_runs)
+
+        # where to write .cfg files 
         self.output_path = './'
         if my_args.output_path:
             self.output_path = my_args.output_path
-            
-        self.n_runs = int(my_args.number_runs)
+
+        # CAFExp options
         self.cafexp_path = my_args.cafexp_path
-        self.input_args = self.tokenize_string(args.input_args)
-        self.input_values = self.tokenize_string(args.input_values)
-        self.options_args = self.tokenize_string(args.options_args)
-        self.options_values = self.tokenize_string(args.options_values)
-        self.parameters_args = self.tokenize_string(args.parameters_args)
-        self.parameters_values = self.tokenize_string(args.parameters_values)
+        self.input_args = self.tokenize_string(my_args.input_args)
+        self.input_values = self.tokenize_string(my_args.input_values)
+        self.options_args = self.tokenize_string(my_args.options_args)
+        self.options_values = self.tokenize_string(my_args.options_values)
+        self.parameters_args = self.tokenize_string(my_args.parameters_args)
+        self.parameters_values = self.tokenize_string(my_args.parameters_values)
         self.output_args, self.output_values = list(), list()
         
         if args.output_args:
             self.output_args = self.tokenize_string(args.output_args)
             self.output_values = self.tokenize_string(args.output_values)
 
+        # finally writing stuff
         self.cfg_writer()
-        
+
+    def read_instruction_file(self):
+        with open(self.instr_path, 'r') as instr_file:
+            for idx, line in enumerate(instr_file):
+                line = line.rstrip()
+
+                if not line.startswith('#'):
+                    tokens = line.split()
+                    self.instructions_list.append(tokens)
+
+        self.n_runs = len(self.instructions_list)
+    
     def cfg_writer(self):
         for r in xrange(self.n_runs):
             with open(self.output_path + 'config_file_' + str(r+1) + '.cfg', 'w') as config_file:
@@ -49,12 +73,13 @@ class ArgStash:
                 if 'n' in options_dict: config_file.write(options_dict['n'])
                 config_file.write('\ngammacatN = ')
                 if 'k' in options_dict: config_file.write(options_dict['k'])
-                config_file.write('\ngammacatMultiplier = ')
-                config_file.write('\ngammacat = ')
+                config_file.write('\ngammacatMultiplier = 1,4')
+                config_file.write('\ngammacat = 0,0,0,0,0,1,1,1,1,1')
 
                 par_dict = self.dictionize_lists(self.parameters_args, self.parameters_values)
                 config_file.write('\n\n[parameters]\nlambda = ')
-                if 'l' in par_dict: config_file.write(par_dict['l'])
+                if 'l' in par_dict and not self.instructions_list: config_file.write(par_dict['l'])
+                else: config_file.write(self.instructions_list[r][1])
                 config_file.write('\nalpha = ')
                 # if 'a' in parameters_dict: config_file.write(parameters_dict['a'])
 
@@ -62,8 +87,10 @@ class ArgStash:
                 config_file.write('\n\n[output]\noutput folder = ')
 
                 config_file.write('\noutput suffix = ')
-                if self.n_runs > 1:
+                if self.n_runs > 1 and not self.instructions_list:
                     config_file.write(str(r+1))
+                else:
+                    config_file.write(self.instructions_list[r][3])
                     # config_file.write('\noutput prefix = '+str(r+1))
             
             
@@ -94,6 +121,7 @@ if __name__ == "__main__":
     parser.add_argument("-ouv", "--output-values", action="store", dest="output_values", default=None, type=str, help="values for output section, separated by comma", required=False)
     parser.add_argument("-o", "--output-path", action="store", dest="output_path", default="./", type=str, help="path to write cfg files")
     parser.add_argument("-n", "--n-runs", action="store", dest="number_runs", default="1", type=str, help="number of runs (will go into output suffix, one per cfg file, 1:number_runs)")
+    parser.add_argument("-i", "--intructions-path", action="store", dest="instr_path", default=None, type=str, help="path to file with simulation instructions")
     
     args = parser.parse_args()
 

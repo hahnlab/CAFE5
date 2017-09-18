@@ -1,0 +1,5 @@
+# simulations to run
+# simN lambda alpha suffix
+1 0.01 0.1 l0.01
+2 0.02 0.2 l0.02
+3 0.03 0.3 l0.03
