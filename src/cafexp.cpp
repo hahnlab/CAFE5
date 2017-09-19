@@ -142,7 +142,7 @@ std::vector<core *> build_models(const input_parameters& my_input_parameters, cl
     return models;
 }
 
-int main(int argc, char *const argv[]) {
+int cafexp(int argc, char *const argv[]) {
     /* START: Option variables for main() */
     int args; // getopt_long returns int or char
     int prev_arg;
@@ -235,75 +235,73 @@ int main(int argc, char *const argv[]) {
     execute my_executer;
     try {
         my_input_parameters.check_input(); // seeing if options are not mutually exclusive              
-        
+
+        /* -t */
+        clade *p_tree = my_executer.read_input_tree(my_input_parameters); // phylogenetic tree
+
         /* -i */
-        std::vector<gene_family> * p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size); // max_family_size and max_root_family_size are passed as reference, and set by read_gene_family_data
-        
-        
-	/* -t */
-	clade *p_tree = my_executer.read_input_tree(my_input_parameters); // phylogenetic tree
+        std::vector<gene_family> * p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size, p_tree); // max_family_size and max_root_family_size are passed as reference, and set by read_gene_family_data
 
-        
-	/* -y */
+        /* -y */
         clade *p_lambda_tree = new clade();
-	p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
+        p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
 
 
-	/* -l/-m */
+        /* -l/-m */
         lambda *p_lambda = NULL;
-	p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
-        
-    vector<core *> models = build_models(my_input_parameters, p_tree, p_lambda);
-    if (!my_input_parameters.simulate && !p_gene_families->empty()) {
-        my_executer.infer(models, p_gene_families, my_input_parameters, max_family_size, max_root_family_size);
-    }
+        p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
+
+        vector<core *> models = build_models(my_input_parameters, p_tree, p_lambda);
+        if (!my_input_parameters.simulate && !p_gene_families->empty()) {
+            my_executer.infer(models, p_gene_families, my_input_parameters, max_family_size, max_root_family_size);
+        }
 
         /* START: Estimating lambda(s) (-e) */
-    if (my_input_parameters.estimate) {
-        srand(10);
+        if (my_input_parameters.estimate) {
+            srand(10);
 
-        p_lambda = my_executer.estimate_lambda(my_input_parameters, p_tree, p_lambda_tree, p_gene_families, max_family_size, max_root_family_size, calculator);
+            p_lambda = my_executer.estimate_lambda(my_input_parameters, p_tree, p_lambda_tree, p_gene_families, max_family_size, max_root_family_size, calculator);
+
+            return 0;
+        }
+        /* END: Estimating lambda(s) */
+
+        /* START: Running simulations (-s) */
+        if (my_input_parameters.simulate) {
+            if (!my_input_parameters.nsims) {
+                throw runtime_error("In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting...");
+            }
+
+            else { cout << endl << "Performing " << my_input_parameters.nsims << " simulation batches." << endl; }
+
+            if (my_input_parameters.input_file_path.empty() && my_input_parameters.rootdist.empty()) {
+                throw runtime_error("In order to perform simulations (s), you must either specify an input file from which the root family size is estimated with -i, or specify a root family distribution with -f. Exiting...");
+            }
+
+            /* -i is provided, -f is not */
+            else if (my_input_parameters.rootdist.empty() && !my_input_parameters.input_file_path.empty()) {
+                cout << endl << "Simulations will use the equilibrium root family size estimated from data provided with -i:" << my_input_parameters.input_file_path << endl;
+            }
+
+            /* -f is provided (-f has precedence over -i if both are provided) */
+            else {
+                my_executer.simulate(models, my_input_parameters);
+            }
+        }
+
+        /* END: Running simulations */
+
+        /* START: Printing log file(s) (-g) */
+        if (my_input_parameters.do_log) {
+
+            string prob_matrix_suffix = "_tr_prob_matrices.txt";
+            string prob_matrix_file_name = my_input_parameters.output_prefix + prob_matrix_suffix;
+            std::ofstream ofst(my_input_parameters.output_prefix + prob_matrix_suffix);
+            calculator.print_cache(ofst, max_family_size);
+        }
+        /* END: Printing log file(s) */
 
         return 0;
-    }
-    /* END: Estimating lambda(s) */
-
-    /* START: Running simulations (-s) */
-    if (my_input_parameters.simulate) {
-        if (!my_input_parameters.nsims) {
-            throw runtime_error("In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting...");
-        }
-
-        else { cout << endl << "Performing " << my_input_parameters.nsims << " simulation batches." << endl; }
-
-        if (my_input_parameters.input_file_path.empty() && my_input_parameters.rootdist.empty()) {
-            throw runtime_error("In order to perform simulations (s), you must either specify an input file from which the root family size is estimated with -i, or specify a root family distribution with -f. Exiting...");
-        }
-
-        /* -i is provided, -f is not */
-        else if (my_input_parameters.rootdist.empty() && !my_input_parameters.input_file_path.empty()) {
-            cout << endl << "Simulations will use the equilibrium root family size estimated from data provided with -i:" << my_input_parameters.input_file_path << endl;
-        }
-
-        /* -f is provided (-f has precedence over -i if both are provided) */
-        else {
-            my_executer.simulate(models, my_input_parameters);
-        }
-    }
-
-    /* END: Running simulations */
-        
-    /* START: Printing log file(s) (-g) */
-    if (my_input_parameters.do_log) {
-
-        string prob_matrix_suffix = "_tr_prob_matrices.txt";
-        string prob_matrix_file_name = my_input_parameters.output_prefix + prob_matrix_suffix;
-        std::ofstream ofst(my_input_parameters.output_prefix + prob_matrix_suffix);
-		calculator.print_cache(ofst, max_family_size);
-    }
-    /* END: Printing log file(s) */
-                
-    return 0;
     }
     catch (runtime_error& err) {
         cout << err.what() << endl;

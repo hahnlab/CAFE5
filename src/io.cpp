@@ -105,38 +105,68 @@ clade* read_tree(string tree_file_path, bool lambda_tree) {
 /*!
   This function is called by CAFExp's main function when "--infile"/"-i" is specified  
 */
-vector<gene_family> * read_gene_families(std::string input_file_path) {
+vector<gene_family> * read_gene_families(std::string input_file_path, clade *p_tree) {
     vector<gene_family> * p_gene_families = new std::vector<gene_family>;
     map<int, std::string> sp_col_map; // {col_idx: sp_name} 
     ifstream input_file(input_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
     std::string line;
-    bool is_first_line = true;
+    bool is_header = true;
+    map<int, string> leaf_indices;
+    int index = 0;
     while (getline(input_file, line)) {
         std::vector<std::string> tokens = tokenize_str(line, '\t');
-        
+        if (!leaf_indices.empty() && line[0] != '#')
+            is_header = false;
+
         // header
-        if (is_first_line) {
-            is_first_line = false;
-            
-            for (int i = 0; i < tokens.size(); ++i) {
-                if (i == 0 || i == 1) {} // ignores description and ID cols
-                sp_col_map[i] = tokens[i];
+        if (is_header) {
+            if (line[0] == '#')
+            {
+                string taxon_name = line.substr(1);
+                clade *p_descendant = p_tree->find_descendant(taxon_name);
+                if (p_descendant->is_leaf())
+                {
+                    leaf_indices[index] = taxon_name;
+                }
+                index++;
+            }
+            else
+            {
+                is_header = false;
+                if (leaf_indices.empty())
+                {
+                    for (int i = 0; i < tokens.size(); ++i) {
+                        if (i == 0 || i == 1) {} // ignores description and ID cols
+                        sp_col_map[i] = tokens[i];
+                    }
+                }
             }
         }
-        
         // not header
         else {
             gene_family genfam; 
             
             for (int i = 0; i < tokens.size(); ++i) {
-                if (i == 0)
-                    genfam.set_desc(tokens[i]);
-                if (i == 1)
-                    genfam.set_id(tokens[i]);
-                else {
-                    std::string sp_name = sp_col_map[i];
-                    cout << sp_name << " " << tokens[i] << endl;
-                    genfam.set_species_size(sp_name, atoi(tokens[i].c_str()));
+                if (leaf_indices.empty())
+                {
+                    if (i == 0)
+                        genfam.set_desc(tokens[i]);
+                    if (i == 1)
+                        genfam.set_id(tokens[i]);
+                    else {
+                        std::string sp_name = sp_col_map[i];
+                        cout << sp_name << " " << tokens[i] << endl;
+                        genfam.set_species_size(sp_name, atoi(tokens[i].c_str()));
+                    }
+                }
+                else
+                {
+                    if (leaf_indices.find(i) != leaf_indices.end())
+                    {
+                        std::string sp_name = leaf_indices[i];
+                        cout << sp_name << " " << tokens[i] << endl;
+                        genfam.set_species_size(sp_name, atoi(tokens[i].c_str()));
+                    }
                 }
             }
             

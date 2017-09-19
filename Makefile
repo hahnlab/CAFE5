@@ -17,23 +17,42 @@ SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 rm = rm -f
 
-$(BINDIR)/$(TARGET): $(OBJECTS)
-	$(LINKER) $@ $(LFLAGS) $(OBJECTS)
+$(BINDIR)/$(TARGET): $(OBJECTS) $(OBJDIR)/main.o
+	$(LINKER) $@ $(LFLAGS) $(OBJECTS) $(OBJDIR)/main.o
 	@echo "Linking complete!"
 
 $(OBJECTS): $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 	@echo "Compiled "$<" successfully!"
 
+$(OBJDIR)/main.o: main.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+	@echo "Compiled "$<" successfully!"
+
+$(OBJDIR)/test.o: test.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+	@echo "Compiled "$<" successfully!"
+
 .PHONY: clean
 clean:
-	$(rm) $(OBJECTS)
+	$(rm) $(OBJECTS) $(OBJDIR)/main.o
 	@echo "Cleanup complete!"
 
 .PHONY: remove
 remove: clean
 	@$(rm) $(BINDIR)/$(TARGET)
 	@echo "Executable removed!"
+
+TESTDIR = $(BINDIR)
+TEST_TARGET = runtests
+TESTLIBS=-lCppUTest -lCppUTestExt
+$(TESTDIR)/$(TEST_TARGET): $(OBJECTS) $(OBJDIR)/test.o
+	$(LINKER) $@ $(LFLAGS) $(OBJECTS) $(OBJDIR)/test.o $(TESTLIBS)
+	@echo "Test linking complete!"
+
+.PHONY: test
+test: $(TESTDIR)/$(TEST_TARGET)
+
 
 # -- Notes for later, when I forget GNU make syntax: -- #
 

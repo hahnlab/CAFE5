@@ -9,12 +9,12 @@
 #include "core.h"
 
 //! Read user provided gene family data (whose path is stored in input_parameters instance)
-std::vector<gene_family> * execute::read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size) {
+std::vector<gene_family> * execute::read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size, clade *p_tree) {
     
     std::vector<gene_family> *p_gene_families = NULL;
     
     if (!my_input_parameters.input_file_path.empty()) {
-        p_gene_families = read_gene_families(my_input_parameters.input_file_path);
+        p_gene_families = read_gene_families(my_input_parameters.input_file_path, p_tree);
             
         // Iterating over gene families to get max gene family size
         for (std::vector<gene_family>::iterator it = p_gene_families->begin(); it != p_gene_families->end(); ++it) {
