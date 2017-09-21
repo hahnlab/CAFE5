@@ -16,7 +16,7 @@ protected:
 	clade *_p_tree;
 	int _max_family_size;
 	int _max_root_family_size;
-	std::vector<int> _rootdist_vec;
+	std::vector<int> _rootdist_vec; // distribution of relative values. probability can be found by dividing a single value by the total of all values
 	int _root_size; // will be drawn from _rootdist_vec by process itself
 
 	process(std::ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size,
@@ -35,7 +35,7 @@ public:
 		_p_gene_family = fam;
 	}
 
-	void prune();
+	std::vector<double> prune();    // returns likelihood of the tree for each family size
 };
 
 class simulation_process : public process {

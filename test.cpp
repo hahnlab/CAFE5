@@ -1,8 +1,13 @@
 #include "CppUTest/TestHarness.h"
 #include "CppUTest/CommandLineTestRunner.h"
 #include "src/io.h"
+#include "src/core.h"
 
 TEST_GROUP(GeneFamilies)
+{
+};
+
+TEST_GROUP(Inference)
 {
 };
 
@@ -34,6 +39,33 @@ TEST(GeneFamilies, read_gene_families_reads_simulation_files)
     LONGS_EQUAL(36, families->at(0).get_species_size("C"));
     LONGS_EQUAL(34, families->at(0).get_species_size("D"));
     delete families;
+    delete p_tree;
+}
+
+TEST(Inference, infer_processes)
+{
+    vector<gene_family> families;
+    gene_family fam;
+    fam.set_species_size("A", 2);
+    fam.set_species_size("B", 5);
+    fam.set_species_size("C", 6);
+    fam.set_species_size("D", 10);
+    families.push_back(fam);
+    base_core core;
+    probability_calculator calc;
+    single_lambda lambda(&calc, 0.01);
+    newick_parser parser(false);
+    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
+    clade *p_tree = parser.parse_newick();
+
+    core.set_gene_families(&families);
+    core.set_max_sizes(148, 122);
+    core.set_lambda(&lambda);
+    core.set_tree(p_tree);
+    core.start_inference_processes();
+    core.infer_processes();
+    core.get_likelihoods();
+    DOUBLES_EQUAL(0.05, likelihoods[1], 0.0001);
     delete p_tree;
 }
 

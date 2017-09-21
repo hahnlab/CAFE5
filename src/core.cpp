@@ -3,6 +3,7 @@
 #include <valarray>
 #include <fstream>
 #include <assert.h>
+#include <numeric>
 
 #include "clade.h"
 #include "core.h"
@@ -12,7 +13,7 @@
 
 void gamma_bundle::prune() {
     for (int i = 0; i < processes.size(); ++i)
-	processes[i]->prune();
+	    processes[i]->prune();
 }
 
 //! Simulation: gamma_core constructor when just alpha is provided.
@@ -202,6 +203,18 @@ void core::print_processes(std::ostream& ost) {
     }
 }
 
+float core::distribution_probability(int val)
+{
+    int sum = std::accumulate(_rootdist_vec.begin(), _rootdist_vec.end(), 0);
+    return float(val) / float(sum);
+}
+
+base_core::~base_core()
+{
+    for (size_t i = 0; i < processes.size(); ++i)
+        delete processes[i];
+}
+
 void base_core::start_inference_processes()
 {
     for (int i = 0; i < _p_gene_families->size(); ++i) {
@@ -216,17 +229,31 @@ void base_core::start_inference_processes()
 
 void base_core::infer_processes()
 {
+    if (_rootdist_vec.empty())
+    {
+        _rootdist_vec.resize(_max_family_size);
+        std::fill(_rootdist_vec.begin(), _rootdist_vec.end(), 1);
+    }
+
+    std::vector<double> results;
 	// prune all the families with the same lambda
     for (int i = 0; i < processes.size(); ++i) {
-        processes[i]->prune();
+        auto partial_likelihood = processes[i]->prune();
+        int count = 1;
+        for (std::vector<double>::iterator it = partial_likelihood.begin(); it != partial_likelihood.end(); ++it) {
+        	cout << "Likelihood " << count << ": Partial " << *it << ", Full " << *it*distribution_probability(i) << endl;
+            count = count + 1;
+        }
     }
+
+
 }
 
 //! Infer bundle
-void gamma_core::infer_processes() {
+std::vector<double> gamma_core::infer_processes() {
     for (int i = 0; i < _inference_bundles.size(); ++i) {
         cout << endl << "About to prune a gamma bundle." << endl;
-	_inference_bundles[i].prune();
+	    _inference_bundles[i].prune();
     }
 }
 

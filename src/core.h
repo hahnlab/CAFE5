@@ -36,6 +36,7 @@ protected:
     //! Simulations
     vector<simulation_process*> _sim_processes; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
     
+    float distribution_probability(int val);
 public:
     //! Basic constructor
     core(): _ost(cout), _p_lambda(NULL), _p_tree(NULL), _p_gene_families(NULL), _total_n_families_sim(1) {}
@@ -70,7 +71,7 @@ public:
     //! Inference methods
     virtual void start_inference_processes() = 0;
     
-    virtual void infer_processes() = 0;
+    virtual void infer_processes() = 0;  // return vector of likelihoods
     
     //! Printing methods
     void print_parameter_values();
@@ -80,9 +81,12 @@ public:
 
 class base_core : public core {
     std::vector<inference_process *> processes;
+    virtual simulation_process* create_simulation_process(int family_number);
+public:
     virtual void start_inference_processes();
     virtual void infer_processes();
-    virtual simulation_process* create_simulation_process(int family_number);
+
+    virtual ~base_core();
 };
 
 class gamma_core : public core {

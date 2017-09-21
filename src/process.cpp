@@ -57,25 +57,22 @@ void simulation_process::run_simulation() {
 }
 
 //! Prune process
-void inference_process::prune() {
+std::vector<double> inference_process::prune() {
 	single_lambda *sl = dynamic_cast<single_lambda*>(_lambda);	// we don't support multiple lambdas yet
 
 	cout << endl << "Max root family size is: " << _max_root_family_size << endl;
 	cout << "Max family size is: " << _max_family_size << endl;
 	cout << "Lambda multiplier is: " << _lambda_multiplier << endl;
 
-	likelihood_computer pruner(_max_root_family_size, _max_family_size, sl->multiply(_lambda_multiplier), _p_gene_family); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
+    single_lambda *multiplier = sl->multiply(_lambda_multiplier);
+	likelihood_computer pruner(_max_root_family_size, _max_family_size, multiplier, _p_gene_family); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
 
 	cout << "  About to prune process." << endl;
 	_p_tree->apply_reverse_level_order(pruner);
 
-	vector<double> partial_likelihood = pruner.get_likelihoods(_p_tree); // likelihood of the whole tree = multiplication of likelihood of all nodes
+    delete multiplier;
+	return pruner.get_likelihoods(_p_tree); // likelihood of the whole tree = multiplication of likelihood of all nodes
 
-//	int count = 1;
-//	for (std::vector<double>::iterator it = partial_likelihood.begin(); it != partial_likelihood.end(); ++it) {
-//		cout << "Likelihood " << count << ": " << *it << endl;
-//		count = count + 1;
-//	}
 }
 
 //! Printing process' simulation
