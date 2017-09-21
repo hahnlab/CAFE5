@@ -20,7 +20,7 @@ clade *read_tree(std::string tree_file_path, bool lambda_tree);
 
 map<int, int> *read_rootdist(std::string famdist_file_path);
 
-std::vector<gene_family> * read_gene_families(std::string input_file_path, clade *p_tree);
+std::vector<gene_family> * read_gene_families(std::istream& input_file, clade *p_tree);
 
 /* START: Printing functions for simulation engine */
 void print_simulation(std::vector<vector<trial *> >  &sim, std::ostream& ost);

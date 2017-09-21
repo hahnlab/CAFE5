@@ -14,7 +14,9 @@ std::vector<gene_family> * execute::read_gene_family_data(const input_parameters
     std::vector<gene_family> *p_gene_families = NULL;
     
     if (!my_input_parameters.input_file_path.empty()) {
-        p_gene_families = read_gene_families(my_input_parameters.input_file_path, p_tree);
+        ifstream input_file(my_input_parameters.input_file_path); 
+
+        p_gene_families = read_gene_families(input_file, p_tree);
             
         // Iterating over gene families to get max gene family size
         for (std::vector<gene_family>::iterator it = p_gene_families->begin(); it != p_gene_families->end(); ++it) {

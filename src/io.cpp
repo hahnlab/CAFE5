@@ -105,10 +105,10 @@ clade* read_tree(string tree_file_path, bool lambda_tree) {
 /*!
   This function is called by CAFExp's main function when "--infile"/"-i" is specified  
 */
-vector<gene_family> * read_gene_families(std::string input_file_path, clade *p_tree) {
+vector<gene_family> * read_gene_families(std::istream& input_file, clade *p_tree) {
     vector<gene_family> * p_gene_families = new std::vector<gene_family>;
     map<int, std::string> sp_col_map; // {col_idx: sp_name} 
-    ifstream input_file(input_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
+    //ifstream input_file(input_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
     std::string line;
     bool is_header = true;
     map<int, string> leaf_indices;
@@ -122,8 +122,12 @@ vector<gene_family> * read_gene_families(std::string input_file_path, clade *p_t
         if (is_header) {
             if (line[0] == '#')
             {
+                if (p_tree == NULL)
+                    throw std::invalid_argument("No matching tree provided for simulation");
                 string taxon_name = line.substr(1);
                 clade *p_descendant = p_tree->find_descendant(taxon_name);
+                if (p_descendant == NULL)
+                    throw std::runtime_error(taxon_name + " not located in tree");
                 if (p_descendant->is_leaf())
                 {
                     leaf_indices[index] = taxon_name;
