@@ -24,6 +24,10 @@ protected:
 		_ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree),
 		_max_family_size(max_family_size), _max_root_family_size(max_root_family_size),
 		_rootdist_vec(rootdist) {}
+public:
+    double get_lambda_multiplier() const {
+        return _lambda_multiplier;
+    }
 };
 
 class inference_process : public process {

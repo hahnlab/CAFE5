@@ -21,6 +21,13 @@ public:
     float compute(int val) const;
 };
 
+struct family_info_stash {
+    int family_id;
+    double lambda_multiplier;
+    double category_likelihood;
+    double family_likelihood;
+};
+
 
 class gamma_bundle {
 	std::vector<inference_process *> processes;
@@ -30,7 +37,7 @@ public:
 	}
     void clear();
 
-    std::vector<double> prune(const vector<double>& gamma_cat_probs, equilibrium_frequency *eq_freq);
+    std::vector<family_info_stash> prune(const vector<double>& gamma_cat_probs, equilibrium_frequency *eq_freq);
 };
 
 class core {
@@ -90,6 +97,9 @@ public:
     void print_parameter_values();
     
     void adjust_family(ostream& ost);
+
+    virtual std::string name() = 0;
+    virtual void print_results(std::ostream& ost) = 0;
 };
 
 class base_core : public core {
@@ -99,7 +109,13 @@ public:
     virtual void start_inference_processes();
     virtual double infer_processes();
 
+    virtual std::string name() {
+        return "Base";
+    }
     virtual ~base_core();
+
+    virtual void print_results(std::ostream& ost) {}
+
 };
 
 class gamma_core : public core {
@@ -148,6 +164,13 @@ public:
 
     double infer_processes();
 
+    virtual std::string name() {
+        return "Gamma";
+    }
+
+    double get_lambda_multiplier(int family_id);
+
+    virtual void print_results(std::ostream& ost);
 };
 #endif /* CORE_H */
 

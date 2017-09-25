@@ -96,8 +96,17 @@ lambda * execute::read_lambda(const input_parameters &my_input_parameters, proba
     return p_lambda;
 } 
 
+std::string filename(std::string base, std::string suffix)
+{
+    return base + (suffix.empty() ? "" : "_") + suffix + ".txt";
+}
+
 void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gene_families, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
 {
+    std::ofstream results(filename("results", my_input_parameters.output_prefix));
+
+    std::ofstream likelihoods(filename("family_lks", my_input_parameters.output_prefix));
+
     for (int i = 0; i < models.size(); ++i) {
         models[i]->set_gene_families(p_gene_families);
         
@@ -112,7 +121,16 @@ void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gen
         models[i]->start_inference_processes();
 
         cout << endl << "Inferring processes for model " << i << endl;
-        models[i]->infer_processes();
+        double result = models[i]->infer_processes();
+        results << "Model " << models[i]->name() << " Result: " << result << endl;
+
+        likelihoods << "#FamilyID\tGamma Cat Median\tLikelihood of Category\tLikelihood of Family" << endl;
+        for (size_t i = 0; i < p_gene_families->size(); ++i)
+        {
+            likelihoods << p_gene_families->at(i).id() << "\t";
+//            for (int k = 0; k<my_input_parameters.n_gamma_cats; ++k)
+//                p_model->_lambda_multipliers[k];
+        }
     }
 }
 
@@ -174,9 +192,7 @@ void execute::simulate(std::vector<core *>& models, const input_parameters &my_i
         // model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_bins, lambda_multipliers);
         models[i]->start_sim_processes();
         
-        ostringstream ost;
-        ost << "simulation" << (my_input_parameters.output_prefix.empty() ? "" : "_") << my_input_parameters.output_prefix << ".txt";
-        std::ofstream ofst(ost.str());
+        std::ofstream ofst(filename("simulation", my_input_parameters.output_prefix));
         models[i]->simulate_processes();
         models[i]->print_processes(ofst);
         //    for (trial::iterator it = _my_simulation->begin(); it != _my_simulation->end(); ++it) {

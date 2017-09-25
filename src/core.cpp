@@ -11,10 +11,11 @@
 #include "gamma.h"
 #include "process.h"
 
-std::vector<double> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, equilibrium_frequency *eq) {
+std::vector<family_info_stash> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, equilibrium_frequency *eq) {
     assert(_gamma_cat_probs.size() == processes.size());
 
-    std::vector<double> all_gamma_cats_likelihood(processes.size());
+    std::vector<family_info_stash> result;
+//    std::vector<double> all_gamma_cats_likelihood(processes.size());
 
     for (int k = 0; k < _gamma_cat_probs.size(); ++k)
     {
@@ -25,11 +26,18 @@ std::vector<double> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, 
             full[j] = partial_likelihood[j] * eq_freq;
             // cout << "Likelihood " << j+1 << ": Partial " << partial_likelihood[j] << ", eq freq: " << eq_freq << ", Full " << full[j] << endl;
         }
-        all_gamma_cats_likelihood[k] = accumulate(full.begin(), full.end(), 0.0) * _gamma_cat_probs[k];
-        cout << "Likelihood of gamma cat " << k << " = " << all_gamma_cats_likelihood[k] << std::endl;
+        //all_gamma_cats_likelihood[k] = accumulate(full.begin(), full.end(), 0.0) * _gamma_cat_probs[k];
+        //cout << "Likelihood of gamma cat " << k << " = " << all_gamma_cats_likelihood[k] << std::endl;
+
+        family_info_stash r;
+        r.category_likelihood = accumulate(full.begin(), full.end(), 0.0) * _gamma_cat_probs[k];
+        r.lambda_multiplier = processes[k]->get_lambda_multiplier();
+        result.push_back(r);
+        
     }
 
-    return all_gamma_cats_likelihood;
+
+    return result;
 }
 
 //! Simulation: gamma_core constructor when just alpha is provided.
@@ -186,7 +194,7 @@ void gamma_core::start_inference_processes() {
         
         cout << "Started inference bundle " << i+1 << endl;
 	
-        for (int j = 0; j < _gamma_cat_probs.size(); ++j) {
+        for (int j = 0; j < _lambda_multipliers.size(); ++j) {
 //            double lambda_bin = _gamma_cat_probs[j];
             inference_process *p_new_process = new inference_process(_ost, _p_lambda, _lambda_multipliers[j], _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
             bundle.add(p_new_process);
@@ -197,6 +205,10 @@ void gamma_core::start_inference_processes() {
 
 	    _inference_bundles.push_back(bundle);
     }
+}
+
+void gamma_core::print_results(std::ostream& ost)
+{
 }
 
 //! Run simulations in all processes, in series... (TODO: in parallel!)
@@ -283,10 +295,20 @@ double gamma_core::infer_processes() {
 
     equilibrium_frequency eq(_rootdist_vec);
     std::vector<double> all_bundles_likelihood(_inference_bundles.size());
+
     for (int i = 0; i < _inference_bundles.size(); ++i) {
         cout << endl << "About to prune a gamma bundle." << endl;
-        std::vector<double> all_gamma_cats_likelihood = _inference_bundles[i].prune(_gamma_cat_probs, &eq);
-        all_bundles_likelihood[i] = std::accumulate(all_gamma_cats_likelihood.begin(), all_gamma_cats_likelihood.end(), 0.0);
+        std::vector<family_info_stash> stash = _inference_bundles[i].prune(_gamma_cat_probs, &eq);
+
+        all_bundles_likelihood[i] = 0;
+        double family_likelihood = 0;
+        for (size_t k = 0; k < stash.size(); ++k)
+        {
+            stash[k].family_likelihood += stash[k].category_likelihood;
+            all_bundles_likelihood[i] = stash[k].family_likelihood;
+            stash[k].family_id = i;
+        }
+
         cout << "Likelihood of family " << i << " = " << all_bundles_likelihood[i] << std::endl;
     }
 
