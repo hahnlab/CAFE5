@@ -253,7 +253,7 @@ void get_gamma(std::vector<double> &v_freq, std::vector<double> &v_rate, double 
 	v_rate[i] = rate[i];
     }
  
-    delete freq;   
-    delete rate;
+    delete [] freq;   
+    delete [] rate;
 }
 

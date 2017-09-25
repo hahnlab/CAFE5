@@ -10,16 +10,26 @@ class process;
 class inference_process;
 class simulation_process;
 
+class equilibrium_frequency
+{
+    std::vector<int> _rootdist_vec; // in case the user wants to use a specific root size distribution for all simulations
+public:
+    equilibrium_frequency(std::vector<int> rootdist_vec) : _rootdist_vec(rootdist_vec)
+    {
+
+    }
+    float compute(int val) const;
+};
+
+
 class gamma_bundle {
 	std::vector<inference_process *> processes;
 public:
 	void add(inference_process *p) {
 		processes.push_back(p);
 	}
-
-	void prune();
+    std::vector<double> prune(const vector<double>& gamma_cat_probs, equilibrium_frequency *eq_freq);
 };
-
 
 class core {
 protected:
@@ -36,7 +46,8 @@ protected:
     //! Simulations
     vector<simulation_process*> _sim_processes; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
     
-    float distribution_probability(int val);
+    void initialize_rootdist_if_necessary();
+
 public:
     //! Basic constructor
     core(): _ost(cout), _p_lambda(NULL), _p_tree(NULL), _p_gene_families(NULL), _total_n_families_sim(1) {}
@@ -71,7 +82,7 @@ public:
     //! Inference methods
     virtual void start_inference_processes() = 0;
     
-    virtual void infer_processes() = 0;  // return vector of likelihoods
+    virtual double infer_processes() = 0;  // return vector of likelihoods
     
     //! Printing methods
     void print_parameter_values();
@@ -84,7 +95,7 @@ class base_core : public core {
     virtual simulation_process* create_simulation_process(int family_number);
 public:
     virtual void start_inference_processes();
-    virtual void infer_processes();
+    virtual double infer_processes();
 
     virtual ~base_core();
 };
@@ -99,11 +110,11 @@ private:
     vector<int> _gamma_cats; // each item is an index to a gamma category, from 0 to n_cat; vector must be of length = _total_n_families
     
     double _alpha;
-    
-    vector<gamma_bundle> _inference_bundles; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
-    
+
+
 public:
-    //! Basic constructor
+    vector<gamma_bundle> _inference_bundles; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
+                                             //! Basic constructor
     gamma_core() { _alpha = 0; };
     
     //! Simulation constructor
@@ -132,7 +143,8 @@ public:
     //! Inference methods
     void start_inference_processes();
 
-    void infer_processes();
+    double infer_processes();
+
 };
 #endif /* CORE_H */
 

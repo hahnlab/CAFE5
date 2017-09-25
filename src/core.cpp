@@ -11,9 +11,24 @@
 #include "gamma.h"
 #include "process.h"
 
-void gamma_bundle::prune() {
-    for (int i = 0; i < processes.size(); ++i)
-	    processes[i]->prune();
+std::vector<double> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, equilibrium_frequency *eq) {
+    assert(_gamma_cat_probs.size() == processes.size());
+
+    std::vector<double> all_gamma_cats_likelihood(processes.size());
+
+    for (int k = 0; k < _gamma_cat_probs.size(); ++k)
+    {
+        auto partial_likelihood = processes[k]->prune();
+        std::vector<double> full(partial_likelihood.size());
+        for (size_t j = 0; j < partial_likelihood.size(); ++j) {
+            double eq_freq = eq->compute(j);
+            full[j] = partial_likelihood[j] * eq_freq;
+            // cout << "Likelihood " << count << ": Partial " << partial_likelihood[j] << ", eq freq: " << eq_freq << ", Full " << full[j] << endl;
+        }
+        all_gamma_cats_likelihood[k] = accumulate(full.begin(), full.end(), 0.0) * _gamma_cat_probs[k];
+    }
+
+    return all_gamma_cats_likelihood;
 }
 
 //! Simulation: gamma_core constructor when just alpha is provided.
@@ -166,7 +181,7 @@ simulation_process* base_core::create_simulation_process(int family_number) {
 void gamma_core::start_inference_processes() {
 
     for (int i = 0; i < _p_gene_families->size(); ++i) {
-	gamma_bundle bundle;
+	    gamma_bundle bundle;
         
         cout << "Started inference bundle " << i+1 << endl;
 	
@@ -179,10 +194,9 @@ void gamma_core::start_inference_processes() {
             
 	}
 
-	_inference_bundles.push_back(bundle);
+	    _inference_bundles.push_back(bundle);
     }
 }
-
 
 //! Run simulations in all processes, in series... (TODO: in parallel!)
 void core::simulate_processes() {
@@ -203,10 +217,10 @@ void core::print_processes(std::ostream& ost) {
     }
 }
 
-float core::distribution_probability(int val)
+float equilibrium_frequency::compute(int val) const
 {
     int sum = std::accumulate(_rootdist_vec.begin(), _rootdist_vec.end(), 0);
-    return float(val) / float(sum);
+    return float(_rootdist_vec[val]) / float(sum);
 }
 
 base_core::~base_core()
@@ -227,34 +241,58 @@ void base_core::start_inference_processes()
     }
 }
 
-void base_core::infer_processes()
+void core::initialize_rootdist_if_necessary()
 {
     if (_rootdist_vec.empty())
     {
-        _rootdist_vec.resize(_max_family_size);
+        _rootdist_vec.resize(_max_root_family_size);
         std::fill(_rootdist_vec.begin(), _rootdist_vec.end(), 1);
     }
 
-    std::vector<double> results;
-	// prune all the families with the same lambda
+}
+
+double base_core::infer_processes()
+{
+    initialize_rootdist_if_necessary();
+    equilibrium_frequency eq(_rootdist_vec);
+    std::vector<double> all_families_likelihood(processes.size());
+    // prune all the families with the same lambda
     for (int i = 0; i < processes.size(); ++i) {
         auto partial_likelihood = processes[i]->prune();
-        int count = 1;
-        for (std::vector<double>::iterator it = partial_likelihood.begin(); it != partial_likelihood.end(); ++it) {
-        	cout << "Likelihood " << count << ": Partial " << *it << ", Full " << *it*distribution_probability(i) << endl;
-            count = count + 1;
+        std::vector<double> full(partial_likelihood.size());
+        for (size_t j = 0; j < partial_likelihood.size(); ++j) {
+            double eq_freq = eq.compute(j);
+            full[j] = partial_likelihood[j]*eq_freq;
+        	// cout << "Likelihood " << count << ": Partial " << partial_likelihood[j] << ", eq freq: " << eq_freq << ", Full " << full[j] << endl;
         }
+        all_families_likelihood[i] = accumulate(full.begin(), full.end(), 0.0);
     }
 
+    double multi = std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 1.0, std::multiplies<double>());
 
+    cout << "Final answer: " << multi << std::endl;
+
+    return multi;
 }
 
 //! Infer bundle
-std::vector<double> gamma_core::infer_processes() {
+double gamma_core::infer_processes() {
+
+    initialize_rootdist_if_necessary();
+
+    equilibrium_frequency eq(_rootdist_vec);
+    std::vector<double> all_bundles_likelihood(_inference_bundles.size());
     for (int i = 0; i < _inference_bundles.size(); ++i) {
         cout << endl << "About to prune a gamma bundle." << endl;
-	    _inference_bundles[i].prune();
+        std::vector<double> all_gamma_cats_likelihood = _inference_bundles[i].prune(_gamma_cat_probs, &eq);
+        all_bundles_likelihood[i] = std::accumulate(all_gamma_cats_likelihood.begin(), all_gamma_cats_likelihood.end(), 0.0);
     }
+
+    double multi = std::accumulate(all_bundles_likelihood.begin(), all_bundles_likelihood.end(), 1.0, std::multiplies<double>());
+
+    cout << "Final answer: " << multi << std::endl;
+
+    return multi;
 }
 
 //! Print processes' simulations
