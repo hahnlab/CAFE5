@@ -164,7 +164,7 @@ int cafexp(int argc, char *const argv[]) {
     //double lambda = 0.0017;
     /* END: Option variables for simulations */
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:k:e::s::g::", longopts, NULL)) != -1 ) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:k:a:e::s::g::", longopts, NULL)) != -1 ) {
     // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -202,6 +202,10 @@ int cafexp(int argc, char *const argv[]) {
                 my_input_parameters.n_gamma_cats = atoi(optarg);
                 cout << "You have specified " << my_input_parameters.n_gamma_cats << " gamma classes." << endl;
 		if (my_input_parameters.n_gamma_cats > 1)
+                break;
+            case 'a':
+                my_input_parameters.fixed_alpha = atof(optarg);
+                cout << "Specified alpha (-a): " << my_input_parameters.fixed_alpha << endl;
                 break;
             case 'n':
 		my_input_parameters.nsims = atoi(optarg);

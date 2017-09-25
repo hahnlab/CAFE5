@@ -42,6 +42,7 @@ public:
     bool do_log = false;
     std::string lambda_tree_file_path;
     int n_gamma_cats = 1;
+    double fixed_alpha = 0.0;
     
     //! Check calls
     void check_input();

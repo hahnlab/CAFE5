@@ -73,25 +73,27 @@ class ArgStash:
                 if 'n' in options_dict: config_file.write(options_dict['n'])
                 config_file.write('\ngammacatN = ')
                 if 'k' in options_dict: config_file.write(options_dict['k'])
-                config_file.write('\ngammacatMultiplier = 1,4')
-                config_file.write('\ngammacat = 0,0,0,0,0,1,1,1,1,1')
+                config_file.write('\ngammacatMultiplier = ')
+                config_file.write('\ngammacat = ')
 
                 par_dict = self.dictionize_lists(self.parameters_args, self.parameters_values)
                 config_file.write('\n\n[parameters]\nlambda = ')
                 if 'l' in par_dict and not self.instructions_list: config_file.write(par_dict['l'])
                 else: config_file.write(self.instructions_list[r][1])
                 config_file.write('\nalpha = ')
-                # if 'a' in parameters_dict: config_file.write(parameters_dict['a'])
+                if 'a' in par_dict: config_file.write(par_dict['a'])
 
                 output_dict = self.dictionize_lists(self.output_args, self.output_values)
                 config_file.write('\n\n[output]\noutput folder = ')
 
                 config_file.write('\noutput suffix = ')
+                # for multiple simulations with same parameter values
                 if self.n_runs > 1 and not self.instructions_list:
                     config_file.write(str(r+1))
-                else:
+                # for multiple simulations with instruction file
+                elif self.instructions_list:
                     config_file.write(self.instructions_list[r][3])
-                    # config_file.write('\noutput prefix = '+str(r+1))
+
             
             
     @staticmethod

@@ -103,7 +103,7 @@ void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gen
         
         gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
         if (p_model != NULL) {
-            p_model->initialize_with_alpha(my_input_parameters.n_gamma_cats, p_gene_families->size(), 0.5);
+            p_model->initialize_with_alpha(my_input_parameters.n_gamma_cats, p_gene_families->size(), my_input_parameters.fixed_alpha);
         }
 
         models[i]->set_max_sizes(max_family_size, max_root_family_size);

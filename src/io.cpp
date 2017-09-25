@@ -16,6 +16,7 @@ struct option longopts[] = {
   { "fixed_multiple_lambdas", required_argument, NULL, 'm' },
   { "lambda_tree", required_argument, NULL, 'y' },
   { "n_gamma_cats", required_argument, NULL, 'k' },
+  { "fixed_alpha", required_argument, NULL, 'a' },
   { "prefix", optional_argument, NULL, 'p' },
   { "estimate", optional_argument, NULL, 'e' },
   { "simulate", optional_argument, NULL, 's' },

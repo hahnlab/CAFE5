@@ -27,7 +27,10 @@ class Barista:
         # parameters
         self.a_lambda = self.config.get('parameters', 'lambda') # -l
         # self.alpha = self.config.get('parameters', 'alpha') # -a
-        
+
+        # output
+        self.output_suffix = self.config.get('output', 'output suffix') # -o
+
         # building command_line
         self.build_command_line()
         
@@ -50,12 +53,13 @@ class Barista:
         self.add_option('-f', self.root_dist_path)
         self.add_option('-k', self.gammacatN)
         self.add_option('-i', self.gene_families_path)
+        self.add_option('-o', self.output_suffix)
         
         if self.simulate:
             self.command_line += ['-s']
         
     def pour_me_one(self):
-        # print " ".join(self.command_line)
+        print " ".join(self.command_line)
         return subprocess.check_output(" ".join(self.command_line), shell=True)
         
 if __name__ == "__main__":
