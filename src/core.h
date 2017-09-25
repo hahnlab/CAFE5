@@ -28,6 +28,8 @@ public:
 	void add(inference_process *p) {
 		processes.push_back(p);
 	}
+    void clear();
+
     std::vector<double> prune(const vector<double>& gamma_cat_probs, equilibrium_frequency *eq_freq);
 };
 
@@ -111,10 +113,10 @@ private:
     
     double _alpha;
 
-
-public:
     vector<gamma_bundle> _inference_bundles; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
                                              //! Basic constructor
+
+public:
     gamma_core() { _alpha = 0; };
     
     //! Simulation constructor
@@ -123,6 +125,7 @@ public:
     //! Simulation constructor
     gamma_core(ostream & ost, lambda* p_lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec, vector<int>& cats, vector<double>&mul);
     
+    ~gamma_core();
     //! Gamma methods
     void adjust_n_gamma_cats(int n_gamma_cats);
     

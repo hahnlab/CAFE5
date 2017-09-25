@@ -23,9 +23,10 @@ std::vector<double> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, 
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
             double eq_freq = eq->compute(j);
             full[j] = partial_likelihood[j] * eq_freq;
-            // cout << "Likelihood " << count << ": Partial " << partial_likelihood[j] << ", eq freq: " << eq_freq << ", Full " << full[j] << endl;
+            // cout << "Likelihood " << j+1 << ": Partial " << partial_likelihood[j] << ", eq freq: " << eq_freq << ", Full " << full[j] << endl;
         }
         all_gamma_cats_likelihood[k] = accumulate(full.begin(), full.end(), 0.0) * _gamma_cat_probs[k];
+        cout << "Likelihood of gamma cat " << k << " = " << all_gamma_cats_likelihood[k] << std::endl;
     }
 
     return all_gamma_cats_likelihood;
@@ -286,6 +287,7 @@ double gamma_core::infer_processes() {
         cout << endl << "About to prune a gamma bundle." << endl;
         std::vector<double> all_gamma_cats_likelihood = _inference_bundles[i].prune(_gamma_cat_probs, &eq);
         all_bundles_likelihood[i] = std::accumulate(all_gamma_cats_likelihood.begin(), all_gamma_cats_likelihood.end(), 0.0);
+        cout << "Likelihood of family " << i << " = " << all_bundles_likelihood[i] << std::endl;
     }
 
     double multi = std::accumulate(all_bundles_likelihood.begin(), all_bundles_likelihood.end(), 1.0, std::multiplies<double>());
@@ -293,6 +295,13 @@ double gamma_core::infer_processes() {
     cout << "Final answer: " << multi << std::endl;
 
     return multi;
+}
+
+gamma_core::~gamma_core()
+{
+    for (size_t i = 0; i < _inference_bundles.size(); ++i)
+        _inference_bundles[i].clear();
+    _inference_bundles.clear();
 }
 
 //! Print processes' simulations
@@ -328,4 +337,13 @@ void core::print_parameter_values() {
         _p_tree->print_clade();
     }
     
+}
+
+void gamma_bundle::clear()
+{
+    for (size_t i = 0; i < processes.size(); ++i)
+    {
+        delete processes[i];
+    }
+    processes.clear();
 }
