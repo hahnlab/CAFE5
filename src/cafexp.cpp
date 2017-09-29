@@ -14,6 +14,7 @@
 #include "gamma.h"
 #include "fminsearch.h"
 #include "lambda.h"
+#include "gamma_core.h"
 
 /* Ask Ben */
 /*

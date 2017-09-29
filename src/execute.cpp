@@ -7,6 +7,7 @@
 #include "probability.h"
 #include "lambda.h"
 #include "core.h"
+#include "gamma_core.h"
 
 //! Read user provided gene family data (whose path is stored in input_parameters instance)
 std::vector<gene_family> * execute::read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size, clade *p_tree) {
@@ -125,12 +126,7 @@ void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gen
         results << "Model " << models[i]->name() << " Result: " << result << endl;
 
         likelihoods << "#FamilyID\tGamma Cat Median\tLikelihood of Category\tLikelihood of Family" << endl;
-        for (size_t i = 0; i < p_gene_families->size(); ++i)
-        {
-            likelihoods << p_gene_families->at(i).id() << "\t";
-//            for (int k = 0; k<my_input_parameters.n_gamma_cats; ++k)
-//                p_model->_lambda_multipliers[k];
-        }
+        models[i]->print_results(likelihoods);
     }
 }
 
