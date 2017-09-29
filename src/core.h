@@ -22,12 +22,17 @@ public:
 };
 
 struct family_info_stash {
+    family_info_stash() : family_id(0), lambda_multiplier(0.0), category_likelihood(0.0), family_likelihood(0.0), 
+        posterior_probability(0.0), significant(false) {}
     int family_id;
     double lambda_multiplier;
     double category_likelihood;
     double family_likelihood;
+    double posterior_probability;
+    bool significant;
 };
 
+std::ostream& operator<<(std::ostream& ost, const family_info_stash& r);
 
 class gamma_bundle {
 	std::vector<inference_process *> processes;

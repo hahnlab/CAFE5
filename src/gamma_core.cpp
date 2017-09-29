@@ -58,8 +58,8 @@ void gamma_core::print_results(std::ostream& ost)
     {
         for (size_t k = 0; k < _inference_bundles[i].results.size(); ++k)
         {
-            family_info_stash& r = _inference_bundles[i].results[k];
-            ost << r.family_id << "\t" << r.lambda_multiplier << "\t" << r.category_likelihood << "\t" << r.family_likelihood << endl;
+            std::ostream_iterator<family_info_stash> out_it(ost, "\n");
+            ost << _inference_bundles[i].results[k] << endl;
         }
     }
 }
@@ -162,10 +162,31 @@ double gamma_core::infer_processes() {
         double family_likelihood = 0;
         for (size_t k = 0; k < _inference_bundles[i].results.size(); ++k)
         {
-            _inference_bundles[i].results[k].family_likelihood += _inference_bundles[i].results[k].category_likelihood;
-            _inference_bundles[i].results[k].family_id = i;
+            family_likelihood += _inference_bundles[i].results[k].category_likelihood;
         }
-        all_bundles_likelihood[i] = _inference_bundles[i].results[0].family_likelihood;
+        for (size_t k = 0; k < _inference_bundles[i].results.size(); ++k)
+        {
+            _inference_bundles[i].results[k].family_id = i;
+            _inference_bundles[i].results[k].family_likelihood = family_likelihood;
+            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << std::endl;
+        }
+        std::vector<double> numerators(_inference_bundles[i].results.size());
+        for (size_t k = 0; k < _inference_bundles[i].results.size(); ++k)
+        {
+            family_info_stash& stash = _inference_bundles[i].results[k];
+            numerators[k] = stash.category_likelihood * _gamma_cat_probs[k];
+        }
+        double denominator = std::accumulate(numerators.begin(), numerators.end(), 0.0);
+        for (size_t k = 0; k < _inference_bundles[i].results.size(); ++k)
+        {
+            family_info_stash& stash = _inference_bundles[i].results[k];
+            double numerator = stash.category_likelihood * _gamma_cat_probs[k];
+            stash.posterior_probability = numerator/denominator;
+            stash.significant = stash.posterior_probability > 0.95;
+        }
+
+        all_bundles_likelihood[i] = family_likelihood;
+        cout << "Bundle " << i << " family likelihood = " << family_likelihood << std::endl;
 
         cout << "Likelihood of family " << i << " = " << all_bundles_likelihood[i] << std::endl;
     }

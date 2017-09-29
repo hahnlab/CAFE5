@@ -10,6 +10,13 @@
 #include "family_generator.h"
 #include "process.h"
 
+std::ostream& operator<<(std::ostream& ost, const family_info_stash& r)
+{
+    ost << r.family_id << "\t" << r.lambda_multiplier << "\t" << r.category_likelihood << "\t" << r.family_likelihood;
+    ost << "\t" << r.posterior_probability << "\t" << (r.significant ? "*" : "N/S");
+    return ost;
+}
+
 void gamma_bundle::prune(const vector<double>& _gamma_cat_probs, equilibrium_frequency *eq) {
     assert(_gamma_cat_probs.size() == processes.size());
 

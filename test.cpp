@@ -5,6 +5,7 @@
 #include "CppUTest/CommandLineTestRunner.h"
 #include "src/io.h"
 #include "src/core.h"
+#include "src/gamma_core.h"
 
 TEST_GROUP(GeneFamilies)
 {
@@ -126,6 +127,17 @@ TEST(Inference, gamma)
 
     delete families;
     delete p_tree;
+}
+
+TEST(Inference, stash_stream)
+{
+    family_info_stash stash = { 1, 2.5, 3.7, 4.9 };
+    stash.family_id = 1;
+
+    std::ostringstream ost;
+    ost << stash;
+    STRCMP_EQUAL("1\t2.5\t3.7\t4.9", ost.str().c_str());
+
 }
 
 int main(int ac, char** av)
