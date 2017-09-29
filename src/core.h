@@ -121,7 +121,7 @@ public:
     }
     virtual ~base_core();
 
-    virtual void print_results(std::ostream& ost) {}
+    virtual void print_results(std::ostream& ost);
 
 };
 

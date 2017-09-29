@@ -54,6 +54,8 @@ gamma_core::~gamma_core()
 
 void gamma_core::print_results(std::ostream& ost)
 {
+    ost << "#FamilyID\tGamma Cat Median\tLikelihood of Category\tLikelihood of Family\tPosterior Probability\tSignificant" << endl;
+
     for (size_t i = 0; i < _inference_bundles.size(); ++i)
     {
         for (size_t k = 0; k < _inference_bundles[i].results.size(); ++k)

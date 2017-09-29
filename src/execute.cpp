@@ -125,7 +125,6 @@ void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gen
         double result = models[i]->infer_processes();
         results << "Model " << models[i]->name() << " Result: " << result << endl;
 
-        likelihoods << "#FamilyID\tGamma Cat Median\tLikelihood of Category\tLikelihood of Family\tPosterior Probability\tSignificant" << endl;
         models[i]->print_results(likelihoods);
     }
 }

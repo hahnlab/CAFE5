@@ -162,6 +162,10 @@ double base_core::infer_processes()
     return multi;
 }
 
+void base_core::print_results(std::ostream& ost)
+{
+}
+
 //! Print processes' simulations
 void core::adjust_family(std::ostream& ost) {
     
