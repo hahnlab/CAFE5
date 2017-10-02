@@ -1,19 +1,35 @@
 #include "core.h"
 
+class gamma_bundle {
+    std::vector<inference_process *> processes;
+public:
+    gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers);
+
+    void clear();
+
+    std::vector<double> prune(const vector<double>& gamma_cat_probs, equilibrium_frequency *eq_freq);
+
+    double get_lambda_likelihood(int family_id);
+};
+
+
 class gamma_core : public core {
 private:
     //! Gamma
-    vector<double> _lambda_multipliers;
+    std::vector<double> _lambda_multipliers;
 
-    vector<double> _gamma_cat_probs; // each item is the probability of belonging to a given gamma category
+    std::vector<double> _gamma_cat_probs; // each item is the probability of belonging to a given gamma category
 
-    vector<int> _gamma_cats; // each item is an index to a gamma category, from 0 to n_cat; vector must be of length = _total_n_families
+    std::vector<int> _gamma_cats; // each item is an index to a gamma category, from 0 to n_cat; vector must be of length = _total_n_families
 
     double _alpha;
 
     vector<gamma_bundle> _inference_bundles; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
                                              //! Basic constructor
 
+    std::vector<family_info_stash> results;
+
+    std::vector<double> get_posterior_probabilities(std::vector<double> cat_likelihoods);
 public:
     gamma_core() { _alpha = 0; };
 

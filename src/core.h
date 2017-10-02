@@ -9,6 +9,7 @@ class clade; // core.cpp includes clade.h before including core.h
 class process;
 class inference_process;
 class simulation_process;
+class inference_process_factory;
 
 class equilibrium_frequency
 {
@@ -24,6 +25,9 @@ public:
 struct family_info_stash {
     family_info_stash() : family_id(0), lambda_multiplier(0.0), category_likelihood(0.0), family_likelihood(0.0), 
         posterior_probability(0.0), significant(false) {}
+    family_info_stash(int fam, double lam, double cat_lh, double fam_lh, double pp, bool signif) : 
+        family_id(fam), lambda_multiplier(lam), category_likelihood(cat_lh), family_likelihood(fam_lh),
+        posterior_probability(pp), significant(false) {}
     int family_id;
     double lambda_multiplier;
     double category_likelihood;
@@ -33,19 +37,6 @@ struct family_info_stash {
 };
 
 std::ostream& operator<<(std::ostream& ost, const family_info_stash& r);
-
-class gamma_bundle {
-	std::vector<inference_process *> processes;
-public:
-	void add(inference_process *p) {
-		processes.push_back(p);
-	}
-    void clear();
-
-    void prune(const vector<double>& gamma_cat_probs, equilibrium_frequency *eq_freq);
-
-    std::vector<family_info_stash> results;
-};
 
 class core {
 protected:

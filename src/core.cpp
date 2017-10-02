@@ -17,28 +17,6 @@ std::ostream& operator<<(std::ostream& ost, const family_info_stash& r)
     return ost;
 }
 
-void gamma_bundle::prune(const vector<double>& _gamma_cat_probs, equilibrium_frequency *eq) {
-    assert(_gamma_cat_probs.size() == processes.size());
-
-    for (int k = 0; k < _gamma_cat_probs.size(); ++k)
-    {
-        auto partial_likelihood = processes[k]->prune();
-        std::vector<double> full(partial_likelihood.size());
-        for (size_t j = 0; j < partial_likelihood.size(); ++j) {
-            double eq_freq = eq->compute(j);
-            full[j] = partial_likelihood[j] * eq_freq;
-            // cout << "Likelihood " << j+1 << ": Partial " << partial_likelihood[j] << ", eq freq: " << eq_freq << ", Full " << full[j] << endl;
-        }
-        //all_gamma_cats_likelihood[k] = accumulate(full.begin(), full.end(), 0.0) * _gamma_cat_probs[k];
-        //cout << "Likelihood of gamma cat " << k << " = " << all_gamma_cats_likelihood[k] << std::endl;
-
-        family_info_stash r;
-        r.category_likelihood = accumulate(full.begin(), full.end(), 0.0) * _gamma_cat_probs[k];
-        r.lambda_multiplier = processes[k]->get_lambda_multiplier();
-        results.push_back(r);        
-    }
-}
-
 //! Set pointer to lambda in core class
 void core::set_lambda(lambda *p_lambda) {
     _p_lambda = p_lambda;
@@ -199,13 +177,4 @@ void core::print_parameter_values() {
         _p_tree->print_clade();
     }
     
-}
-
-void gamma_bundle::clear()
-{
-    for (size_t i = 0; i < processes.size(); ++i)
-    {
-        delete processes[i];
-    }
-    processes.clear();
 }
