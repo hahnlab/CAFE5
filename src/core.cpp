@@ -116,8 +116,7 @@ void core::initialize_rootdist_if_necessary()
 
 }
 
-double base_core::infer_processes()
-{
+double base_core::infer_processes() {
     initialize_rootdist_if_necessary();
     equilibrium_frequency eq(_rootdist_vec);
     std::vector<double> all_families_likelihood(processes.size());
@@ -126,17 +125,26 @@ double base_core::infer_processes()
         cout << "Process " << i << endl;
         auto partial_likelihood = processes[i]->prune();
         std::vector<double> full(partial_likelihood.size());
+        
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
             double eq_freq = eq.compute(j);
-            full[j] = partial_likelihood[j]*eq_freq;
-        	// cout << "Likelihood " << count << ": Partial " << partial_likelihood[j] << ", eq freq: " << eq_freq << ", Full " << full[j] << endl;
+            // cout << "Eq. freq = " << eq_freq << ", partial lk = " << partial_likelihood[j] << endl;
+            
+            if (!isinf(std::log(partial_likelihood[j]*eq_freq)))
+                full[j] = std::log(partial_likelihood[j]*eq_freq);
+            else
+                full[j] = 0.0;         
+            // cout << "Full lk of size " << j << ": " << full[j] << endl;
         }
+        
         all_families_likelihood[i] = accumulate(full.begin(), full.end(), 0.0);
+        cout << "lnL of family " << i << ": " << all_families_likelihood[i] << endl;
     }
 
-    double multi = std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 1.0, std::multiplies<double>());
+    // double multi = std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 1.0, std::multiplies<double>());
+    double multi = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0);
 
-    cout << "Final answer: " << multi << std::endl;
+    cout << "lnL: " << multi << std::endl;
 
     return multi;
 }
