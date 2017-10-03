@@ -171,8 +171,8 @@ vector<vector<double> > probability_calculator::get_matrix(int size, int branch_
 */
 vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) 
 {
-	cout << "Matrix multiply " << matrix.size() << "x" << v.size() << " (submatrix " << s_min_family_size << ":" << s_max_family_size;
-	cout << " " << c_min_family_size << ":" << c_max_family_size << ")" << endl;
+	//cout << "Matrix multiply " << matrix.size() << "x" << v.size() << " (submatrix " << s_min_family_size << ":" << s_max_family_size;
+	//cout << " " << c_min_family_size << ":" << c_max_family_size << ")" << endl;
 
 	//assert(s_max_family_size - s_min_family_size == c_max_family_size - c_min_family_size);
 	assert(v.size() > c_max_family_size);

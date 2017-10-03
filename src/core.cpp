@@ -123,6 +123,7 @@ double base_core::infer_processes()
     std::vector<double> all_families_likelihood(processes.size());
     // prune all the families with the same lambda
     for (int i = 0; i < processes.size(); ++i) {
+        cout << "Process " << i << endl;
         auto partial_likelihood = processes[i]->prune();
         std::vector<double> full(partial_likelihood.size());
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
