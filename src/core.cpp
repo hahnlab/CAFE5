@@ -130,7 +130,8 @@ double base_core::infer_processes() {
             double eq_freq = eq.compute(j);
             // cout << "Eq. freq = " << eq_freq << ", partial lk = " << partial_likelihood[j] << endl;
             
-            if (!isinf(std::log(partial_likelihood[j]*eq_freq)))
+            double log_full_lk = std::log(partial_likelihood[j]*eq_freq);
+            if (!isinf(log_full_lk))
                 full[j] = std::log(partial_likelihood[j]*eq_freq);
             else
                 full[j] = 0.0;         
