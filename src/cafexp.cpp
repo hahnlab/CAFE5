@@ -154,11 +154,7 @@ int cafexp(int argc, char *const argv[]) {
     int max_root_family_size = -1;
     
     probability_calculator calculator;
-    /* END: Option variables for main() */
-  
-    /* START: Input variables for inference and simulation */
-    // std::vector<gene_family> gene_families;
-    /* END: Input variables for inference and simulation */
+    std::vector<gene_family> *p_gene_families = new std::vector<gene_family>;
   
     /* START: Option variables for simulations */
     map<int, int>* p_rootdist_map = NULL;
@@ -245,23 +241,28 @@ int cafexp(int argc, char *const argv[]) {
         clade *p_tree = my_executer.read_input_tree(my_input_parameters); // phylogenetic tree
 
         /* -i */
-        std::vector<gene_family> * p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size, p_tree); // max_family_size and max_root_family_size are passed as reference, and set by read_gene_family_data
-
+        if (!my_input_parameters.input_file_path.empty()) {
+            // read_gene_family_data populates (pointer to) vector of gene family instances
+            my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size, p_tree, p_gene_families);
+            // std::vector<gene_family> *p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size, p_tree); // max_family_size and max_root_family_size are int's passed as reference, and set by read_gene_family_data
+        }
+            
         /* -y */
         clade *p_lambda_tree = new clade();
         p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
-
 
         /* -l/-m */
         lambda *p_lambda = NULL;
         p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
 
         vector<core *> models = build_models(my_input_parameters, p_tree, p_lambda);
-        if (!my_input_parameters.simulate && !p_gene_families->empty()) {
-            my_executer.infer(models, p_gene_families, my_input_parameters, max_family_size, max_root_family_size);
+        cout << "Got here..." << endl;
+        
+        if (!p_gene_families->empty()) {
+            my_executer.infer(models, p_gene_families, my_input_parameters, max_family_size, max_root_family_size); // passing my_input_parameters as reference
         }
 
-        /* START: Estimating lambda(s) (-e) */
+        /* -e */
         if (my_input_parameters.estimate) {
             srand(10);
 
@@ -269,9 +270,8 @@ int cafexp(int argc, char *const argv[]) {
 
             return 0;
         }
-        /* END: Estimating lambda(s) */
 
-        /* START: Running simulations (-s) */
+        /* -s */
         if (my_input_parameters.simulate) {
             if (!my_input_parameters.nsims) {
                 throw runtime_error("In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting...");
@@ -294,9 +294,7 @@ int cafexp(int argc, char *const argv[]) {
             }
         }
 
-        /* END: Running simulations */
-
-        /* START: Printing log file(s) (-g) */
+        /* -g */
         if (my_input_parameters.do_log) {
 
             string prob_matrix_suffix = "_tr_prob_matrices.txt";

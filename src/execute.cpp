@@ -10,33 +10,24 @@
 #include "gamma_core.h"
 
 //! Read user provided gene family data (whose path is stored in input_parameters instance)
-std::vector<gene_family> * execute::read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size, clade *p_tree) {
+//std::vector<gene_family> * execute::read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size, clade *p_tree) {
+void execute::read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size, clade *p_tree, std::vector<gene_family> *p_gene_families) {
     
-    std::vector<gene_family> *p_gene_families = NULL;
-    
-    if (!my_input_parameters.input_file_path.empty()) {
-        ifstream input_file(my_input_parameters.input_file_path); 
-
-        p_gene_families = read_gene_families(input_file, p_tree);
+    ifstream input_file(my_input_parameters.input_file_path); 
+    read_gene_families(input_file, p_tree, p_gene_families);
             
-        // Iterating over gene families to get max gene family size
-        for (std::vector<gene_family>::iterator it = p_gene_families->begin(); it != p_gene_families->end(); ++it) {
-            int this_family_max_size = it->get_max_size();
+    // iterating over gene families to get max gene family size
+    for (std::vector<gene_family>::iterator it = p_gene_families->begin(); it != p_gene_families->end(); ++it) {
+        int this_family_max_size = it->get_max_size();
             
-            if (max_family_size < this_family_max_size)
-                max_family_size = this_family_max_size;
-        }
+        if (max_family_size < this_family_max_size)
+            max_family_size = this_family_max_size;
+    }
 
-        max_root_family_size = std::max(30, static_cast<int>(std::rint(max_family_size*1.25)));
-        max_family_size = max_family_size + std::max(50, max_family_size/5);
-        cout << "Max family size is: " << max_family_size << endl;
-        cout << "Max root family size is: " << max_root_family_size << endl;
-            
-        }
-
-    else { p_gene_families = new std::vector<gene_family>(); }
-    
-    return p_gene_families;
+    max_root_family_size = std::max(30, static_cast<int>(std::rint(max_family_size*1.25)));
+    max_family_size = max_family_size + std::max(50, max_family_size/5);
+    // cout << "Max family size is: " << max_family_size << endl;
+    // cout << "Max root family size is: " << max_root_family_size << endl;
 }
 
 //! Read user provided phylogenetic tree (whose path is stored in input_parameters instance)

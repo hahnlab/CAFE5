@@ -106,14 +106,13 @@ clade* read_tree(string tree_file_path, bool lambda_tree) {
 /*!
   This function is called by CAFExp's main function when "--infile"/"-i" is specified  
 */
-vector<gene_family> * read_gene_families(std::istream& input_file, clade *p_tree) {
-    vector<gene_family> * p_gene_families = new std::vector<gene_family>;
+void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gene_family> *p_gene_families) {
     map<int, std::string> sp_col_map; // {col_idx: sp_name} 
-    //ifstream input_file(input_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
     std::string line;
     bool is_header = true;
     map<int, string> leaf_indices;
     int index = 0;
+    
     while (getline(input_file, line)) {
         std::vector<std::string> tokens = tokenize_str(line, '\t');
         if (!leaf_indices.empty() && line[0] != '#')
@@ -180,7 +179,7 @@ vector<gene_family> * read_gene_families(std::istream& input_file, clade *p_tree
         }
     }
     
-    return p_gene_families;
+    // return p_gene_families;
 }
 
 //! Populate famdist_map with root family distribution read from famdist_file_path
