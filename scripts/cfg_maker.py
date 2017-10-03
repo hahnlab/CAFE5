@@ -81,7 +81,8 @@ class ArgStash:
                 if 'l' in par_dict and not self.instructions_list: config_file.write(par_dict['l'])
                 else: config_file.write(self.instructions_list[r][1])
                 config_file.write('\nalpha = ')
-                if 'a' in par_dict: config_file.write(par_dict['a'])
+                if 'a' in par_dict and not self.instructions_list: config_file.write(par_dict['a'])
+                elif self.instructions_list and self.instructions_list[r][2] != 'N/A': config_write(self.instructions_list[r][2])
 
                 output_dict = self.dictionize_lists(self.output_args, self.output_values)
                 config_file.write('\n\n[output]\noutput folder = ')
@@ -93,6 +94,9 @@ class ArgStash:
                 # for multiple simulations with instruction file
                 elif self.instructions_list:
                     config_file.write(self.instructions_list[r][3])
+                # for inference
+                elif self.n_runs == 1 and not self.instructions_list and 's' in output_dict:
+                    config_file.write(output_dict['s'])
 
             
             
@@ -112,18 +116,18 @@ class ArgStash:
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--cafexp-bin-path", action="store", dest="cafexp_path", default="./", type=str, help="path to CAFExp bin", required=True)
-    parser.add_argument("-ia", "--input-args", action="store", dest="input_args", default=None, type=str, help="arguments for input options, separated by comma", required=True)
-    parser.add_argument("-iv", "--input-values", action="store", dest="input_values", default=None, type=str, help="values for input section, separated by comma", required=True)
-    parser.add_argument("-oa", "--options-args", action="store", dest="options_args", default=None, type=str, help="arguments for options section, separated by comma", required=True)
-    parser.add_argument("-ov", "--options-values", action="store", dest="options_values", default=None, type=str, help="values for options section, separated by comma", required=True)
-    parser.add_argument("-pa", "--parameters-args", action="store", dest="parameters_args", default=None, type=str, help="arguments for parameters section, separated by comma", required=False)
-    parser.add_argument("-pv", "--parameters-values", action="store", dest="parameters_values", default=None, type=str, help="values for parameters section, separated by comma", required=False)
-    parser.add_argument("-oua", "--output-args", action="store", dest="output_args", default=None, type=str, help="arguments for output section, separated by comma", required=False)
-    parser.add_argument("-ouv", "--output-values", action="store", dest="output_values", default=None, type=str, help="values for output section, separated by comma", required=False)
-    parser.add_argument("-o", "--output-path", action="store", dest="output_path", default="./", type=str, help="path to write cfg files")
+    parser.add_argument("-c", "--cafexp-bin-path", action="store", dest="cafexp_path", default='./', type=str, help="path to CAFExp bin", required=True)
+    parser.add_argument("-ia", "--input-args", action="store", dest="input_args", default='', type=str, help="arguments for input options, separated by comma", required=True)
+    parser.add_argument("-iv", "--input-values", action="store", dest="input_values", default='', type=str, help="values for input section, separated by comma", required=True)
+    parser.add_argument("-oa", "--options-args", action="store", dest="options_args", default='', type=str, help="arguments for options section, separated by comma", required=False)
+    parser.add_argument("-ov", "--options-values", action="store", dest="options_values", default='', type=str, help="values for options section, separated by comma", required=False)
+    parser.add_argument("-pa", "--parameters-args", action="store", dest="parameters_args", default='', type=str, help="arguments for parameters section, separated by comma", required=False)
+    parser.add_argument("-pv", "--parameters-values", action="store", dest="parameters_values", default='', type=str, help="values for parameters section, separated by comma", required=False)
+    parser.add_argument("-oua", "--output-args", action="store", dest="output_args", default='', type=str, help="arguments for output section, separated by comma", required=False)
+    parser.add_argument("-ouv", "--output-values", action="store", dest="output_values", default='', type=str, help="values for output section, separated by comma", required=False)
+    parser.add_argument("-o", "--output-path", action="store", dest="output_path", default='./', type=str, help="path to write cfg files")
     parser.add_argument("-n", "--n-runs", action="store", dest="number_runs", default="1", type=str, help="number of runs (will go into output suffix, one per cfg file, 1:number_runs)")
-    parser.add_argument("-i", "--intructions-path", action="store", dest="instr_path", default=None, type=str, help="path to file with simulation instructions")
+    parser.add_argument("-i", "--intructions-path", action="store", dest="instr_path", default='', type=str, help="path to file with simulation instructions", required=False)
     
     args = parser.parse_args()
 
