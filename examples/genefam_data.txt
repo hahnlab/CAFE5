@@ -1,5 +1,0 @@
-Desc	Family ID	A	B	C	D
-(null)	1	5	10	2	6
-(null)	2	5	10	2	6
-(null)	3	5	10	2	6
-(null)	4	5	10	2	6
