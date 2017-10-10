@@ -7,15 +7,20 @@ class ArgStash:
 
     def __init__(self, my_args):
         # dealing with multiple simulation/inference runs (either through -n, or through -i)
+        print my_args
         self.n_runs = int()
         self.instructions_list = list()
-        if my_args.instr_path and my_args.number_runs != "1":
-            exit('You can only run many simulations with the same parameters, or specify a file with instructions. Exiting...\n')
-        elif my_args.instr_path:
-            self.instr_path = my_args.instr_path
-            self.read_instruction_file()
-        else:
-            self.n_runs = int(my_args.number_runs)
+
+        try:
+            if my_args.instr_path and my_args.number_runs != "1":
+                exit('You can only run many simulations with the same parameters, or specify a file with instructions. Exiting...\n')
+            elif my_args.instr_path:
+                self.instr_path = my_args.instr_path
+                self.read_instruction_file()
+            else:
+                self.n_runs = int(my_args.number_runs)
+        except:
+            exit('Either you did no specify the path to the instruction file (-i), or you did not specify the number of simulations (-n). Exiting...')
 
         # where to write .cfg files 
         self.output_path = './'
@@ -32,9 +37,9 @@ class ArgStash:
         self.parameters_values = self.tokenize_string(my_args.parameters_values)
         self.output_args, self.output_values = list(), list()
         
-        if args.output_args:
-            self.output_args = self.tokenize_string(args.output_args)
-            self.output_values = self.tokenize_string(args.output_values)
+        if my_args.output_args:
+            self.output_args = self.tokenize_string(my_args.output_args)
+            self.output_values = self.tokenize_string(my_args.output_values)
 
         # finally writing stuff
         self.cfg_writer()
