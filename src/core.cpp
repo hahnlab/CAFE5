@@ -128,24 +128,25 @@ double base_core::infer_processes() {
         
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
             double eq_freq = eq.compute(j);
-            // cout << "Eq. freq = " << eq_freq << ", partial lk = " << partial_likelihood[j] << endl;
+            cout << "log-eq_prob = " << std::log(eq_freq) << ", partial log-lk = " << std::log(partial_likelihood[j]) << endl;
             
-            double log_full_lk = std::log(partial_likelihood[j]*eq_freq);
-            if (!isinf(log_full_lk))
-                full[j] = std::log(partial_likelihood[j]*eq_freq);
-            else
-                full[j] = 0.0;         
+            double log_full_lk = std::log(partial_likelihood[j]) + std::log(eq_freq);
+            full[j] = log_full_lk;
+//            if (!isinf(log_full_lk))
+//                full[j] = std::log(partial_likelihood[j]*eq_freq);
+//            else
+//                full[j] = 0.0;         
             // cout << "Full lk of size " << j << ": " << full[j] << endl;
         }
         
-        all_families_likelihood[i] = accumulate(full.begin(), full.end(), 0.0);
+        all_families_likelihood[i] = accumulate(full.begin(), full.end(), 0.0); // sum over all sizes (Felsenstein's approach)
+//        all_families_likelihood[i] = *max_element(full.begin(), full.end()); // get max (CAFE's approach)
         cout << "lnL of family " << i << ": " << all_families_likelihood[i] << endl;
     }
 
-    // double multi = std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 1.0, std::multiplies<double>());
-    double multi = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0);
+    double multi = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families
 
-    cout << "lnL: " << multi << std::endl;
+    cout << "-lnL: " << multi << std::endl;
 
     return multi;
 }
