@@ -180,19 +180,19 @@ std::vector<double> gamma_core::get_posterior_probabilities(std::vector<double> 
 }
 
 //! Infer bundle
-double gamma_core::infer_processes() {
+double gamma_core::infer_processes(prior_distribution *prior) {
 
     using namespace std;
     initialize_rootdist_if_necessary();
 
-    equilibrium_frequency eq(_rootdist_vec);
+    prior->initialize(_rootdist_vec);
     vector<double> all_bundles_likelihood(_inference_bundles.size());
 
     for (int i = 0; i < _inference_bundles.size(); ++i) {
         cout << endl << "About to prune a gamma bundle." << endl;
         gamma_bundle& bundle = _inference_bundles[i];
 
-        vector<double> cat_likelihoods = bundle.prune(_gamma_cat_probs, &eq);
+        vector<double> cat_likelihoods = bundle.prune(_gamma_cat_probs, prior);
         double family_likelihood = accumulate(cat_likelihoods.begin(), cat_likelihoods.end(), 0.0);
 
         vector<double> posterior_probabilities = get_posterior_probabilities(cat_likelihoods);
@@ -232,7 +232,7 @@ void gamma_bundle::clear()
     processes.clear();
 }
 
-std::vector<double> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, equilibrium_frequency *eq) {
+std::vector<double> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, prior_distribution *eq) {
     assert(_gamma_cat_probs.size() == processes.size());
 
     std::vector<double> cat_likelihoods;

@@ -161,7 +161,7 @@ int cafexp(int argc, char *const argv[]) {
     //double lambda = 0.0017;
     /* END: Option variables for simulations */
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:k:a:e::s::g::", longopts, NULL)) != -1 ) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:k:a:e::s::g::p:", longopts, NULL)) != -1 ) {
     // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -191,6 +191,9 @@ int cafexp(int argc, char *const argv[]) {
                 break;
             case 'l':
 		my_input_parameters.fixed_lambda = atof(optarg);
+                break;
+            case 'p':
+        my_input_parameters.poisson_lambda = atof(optarg);
                 break;
             case 'm':
 		my_input_parameters.fixed_multiple_lambdas = optarg;

@@ -95,6 +95,13 @@ std::string filename(std::string base, std::string suffix)
 
 void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gene_families, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
 {
+    double pl = my_input_parameters.poisson_lambda;
+    prior_distribution *prior = NULL;
+    if (pl > 0)
+        prior = new poisson_frequency(pl);
+    else
+        prior = new equilibrium_frequency();
+
     std::ofstream results(filename("results", my_input_parameters.output_prefix));
 
     std::ofstream likelihoods(filename("family_lks", my_input_parameters.output_prefix));
@@ -113,11 +120,13 @@ void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gen
         models[i]->start_inference_processes();
 
         cout << endl << "Inferring processes for model " << i << endl;
-        double result = models[i]->infer_processes();
+        double result = models[i]->infer_processes(prior);
         results << "Model " << models[i]->name() << " Result: " << result << endl;
 
         models[i]->print_results(likelihoods);
     }
+
+    delete prior;
 }
 
 void execute::simulate(std::vector<core *>& models, const input_parameters &my_input_parameters)

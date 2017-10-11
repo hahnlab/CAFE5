@@ -9,6 +9,7 @@
 #include "core.h"
 #include "family_generator.h"
 #include "process.h"
+#include "poisson.h"
 
 std::ostream& operator<<(std::ostream& ost, const family_info_stash& r)
 {
@@ -82,12 +83,6 @@ void core::print_processes(std::ostream& ost) {
     }
 }
 
-float equilibrium_frequency::compute(int val) const
-{
-    int sum = std::accumulate(_rootdist_vec.begin(), _rootdist_vec.end(), 0);
-    return float(_rootdist_vec[val]) / float(sum);
-}
-
 base_core::~base_core()
 {
     for (size_t i = 0; i < processes.size(); ++i)
@@ -116,9 +111,10 @@ void core::initialize_rootdist_if_necessary()
 
 }
 
-double base_core::infer_processes() {
+double base_core::infer_processes(prior_distribution *prior) {
     initialize_rootdist_if_necessary();
-    equilibrium_frequency eq(_rootdist_vec);
+    prior->initialize(_rootdist_vec);
+
     std::vector<double> all_families_likelihood(processes.size());
     // prune all the families with the same lambda
     for (int i = 0; i < processes.size(); ++i) {
@@ -127,7 +123,7 @@ double base_core::infer_processes() {
         std::vector<double> full(partial_likelihood.size());
         
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
-            double eq_freq = eq.compute(j);
+            double eq_freq = prior->compute(j);
             cout << "log-eq_prob = " << std::log(eq_freq) << ", partial log-lk = " << std::log(partial_likelihood[j]) << endl;
             
             double log_full_lk = std::log(partial_likelihood[j]) + std::log(eq_freq);
@@ -188,4 +184,15 @@ void core::print_parameter_values() {
         _p_tree->print_clade();
     }
     
+}
+
+float equilibrium_frequency::compute(int val) const
+{
+    int sum = std::accumulate(_rootdist_vec.begin(), _rootdist_vec.end(), 0);
+    return float(_rootdist_vec[val]) / float(sum);
+}
+
+void poisson_frequency::initialize(std::vector<int> rootdist_vec)
+{
+    poisson = get_prior_rfsize_poisson_lambda(0, rootdist_vec.size(), _poisson_lambda);
 }
