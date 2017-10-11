@@ -42,7 +42,7 @@ def batch_cfg_maker(bin_path, input_file_path, tree_file_path, lambdas_list, alp
             new_config_file_name = 'config_file_' + str(idx+1)+'.txt'
             myarg_stash = ArgStash(myargs)
             os.system('mv config_file_1.cfg ' + new_config_file_name)
-            # os.system('python scripts/barista.py ' + new_config_file_name) # running CAFExp
+            os.system('python scripts/barista.py ' + new_config_file_name) # running CAFExp
     
 if __name__ == "__main__":
     # sys.argv[1]: bin path

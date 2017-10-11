@@ -122,7 +122,7 @@ void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gen
 
 void execute::simulate(std::vector<core *>& models, const input_parameters &my_input_parameters)
 {
-    //                cout << "Simulations will use the root family distribution specified with -f: " << my_input_parameters.rootdist << endl;
+    // cout << "Simulations will use the root family distribution specified with -f: " << my_input_parameters.rootdist << endl;
     std::map<int, int> *p_rootdist_map = read_rootdist(my_input_parameters.rootdist); // in map form
     vector<int> rootdist_vec;
 
@@ -130,8 +130,9 @@ void execute::simulate(std::vector<core *>& models, const input_parameters &my_i
         throw runtime_error("p_rootdist_map not specified. Exiting...");
 
     rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
+    
     rootdist_vec.clear();
-
+    cout << "Even if you provided a rootdist with -f, I just emptied the rootdist_vec in execute.cpp. So simulating from uniform with max size 100." << endl;
     cout << "I will simulate with this many models: " << models.size() << endl;
 
     for (int i = 0; i < models.size(); ++i) {

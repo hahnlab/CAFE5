@@ -40,9 +40,9 @@ simulation_process::simulation_process(std::ostream &ost, lambda* lambda, double
 		for (size_t i = 0; i < _rootdist_vec.size(); ++i)
 			_rootdist_vec[i] = i;
 	}
-	else
-	{
-		_max_family_size_sim = *std::max_element(_rootdist_vec.begin(), _rootdist_vec.end());
+	else {
+            cout << "Using provided root distribution." << endl;
+            _max_family_size_sim = *std::max_element(_rootdist_vec.begin(), _rootdist_vec.end());
 	}
 
 	_root_size = *select_randomly(_rootdist_vec.begin(), _rootdist_vec.end()); // getting a random root size from the provided (core's) root distribution

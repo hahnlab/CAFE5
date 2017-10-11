@@ -131,11 +131,11 @@ double base_core::infer_processes() {
             cout << "log-eq_prob = " << std::log(eq_freq) << ", partial log-lk = " << std::log(partial_likelihood[j]) << endl;
             
             double log_full_lk = std::log(partial_likelihood[j]) + std::log(eq_freq);
-            full[j] = log_full_lk;
-//            if (!isinf(log_full_lk))
-//                full[j] = std::log(partial_likelihood[j]*eq_freq);
-//            else
-//                full[j] = 0.0;         
+//            full[j] = log_full_lk;
+            if (!isinf(log_full_lk))
+                full[j] = std::log(partial_likelihood[j]) + std::log(eq_freq);
+            else
+                full[j] = 0.0;         
             // cout << "Full lk of size " << j << ": " << full[j] << endl;
         }
         
