@@ -140,8 +140,8 @@ void execute::simulate(std::vector<core *>& models, const input_parameters &my_i
 
     rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
     
-    rootdist_vec.clear();
-    cout << "Even if you provided a rootdist with -f, I just emptied the rootdist_vec in execute.cpp. So simulating from uniform with max size 100." << endl;
+    // rootdist_vec.clear();
+    // cout << "Even if you provided a rootdist with -f, I just emptied the rootdist_vec in execute.cpp. So simulating from uniform with max size 100." << endl;
     cout << "I will simulate with this many models: " << models.size() << endl;
 
     for (int i = 0; i < models.size(); ++i) {

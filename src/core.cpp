@@ -118,13 +118,13 @@ double base_core::infer_processes(prior_distribution *prior) {
     std::vector<double> all_families_likelihood(processes.size());
     // prune all the families with the same lambda
     for (int i = 0; i < processes.size(); ++i) {
-        cout << "Process " << i << endl;
+        std::cout << "Process " << i << std::endl;
         auto partial_likelihood = processes[i]->prune();
         std::vector<double> full(partial_likelihood.size());
         
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
             double eq_freq = prior->compute(j);
-            cout << "log-eq_prob = " << std::log(eq_freq) << ", partial log-lk = " << std::log(partial_likelihood[j]) << endl;
+            std::cout << "log-eq_prob = " << std::log(eq_freq) << ", partial log-lk = " << std::log(partial_likelihood[j]) << std::endl;
             
             double log_full_lk = std::log(partial_likelihood[j]) + std::log(eq_freq);
 //            full[j] = log_full_lk;
@@ -137,12 +137,12 @@ double base_core::infer_processes(prior_distribution *prior) {
         
         all_families_likelihood[i] = accumulate(full.begin(), full.end(), 0.0); // sum over all sizes (Felsenstein's approach)
 //        all_families_likelihood[i] = *max_element(full.begin(), full.end()); // get max (CAFE's approach)
-        cout << "lnL of family " << i << ": " << all_families_likelihood[i] << endl;
+        std::cout << "lnL of family " << i << ": " << all_families_likelihood[i] << std::endl;
     }
 
     double multi = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families
 
-    cout << "-lnL: " << multi << std::endl;
+    std::cout << "-lnL: " << multi << std::endl;
 
     return multi;
 }
