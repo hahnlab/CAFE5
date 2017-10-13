@@ -27,7 +27,7 @@ itr select_randomly(itr start, itr end) {
 //using namespace std;
 
 simulation_process::simulation_process(std::ostream &ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size,
-	int max_root_family_size, std::vector<int> rootdist) : process(ost, lambda, lambda_multiplier, p_tree,
+	int max_root_family_size, std::vector<int> rootdist, int family_number) : process(ost, lambda, lambda_multiplier, p_tree,
 		max_family_size, max_root_family_size, rootdist) {
 
 	// generating uniform root distribution when no distribution is provided 
@@ -39,13 +39,20 @@ simulation_process::simulation_process(std::ostream &ost, lambda* lambda, double
 
 		for (size_t i = 0; i < _rootdist_vec.size(); ++i)
 			_rootdist_vec[i] = i;
-	}
+    
+        _root_size = *select_randomly(_rootdist_vec.begin(), _rootdist_vec.end()); // getting a random root size from the provided (core's) root distribution
+    }
 	else {
-            cout << "Using provided root distribution." << endl;
+#if 0
+            cout << "Using provided root distribution ";
+            for (auto i : _rootdist_vec)
+                cout << i << " ";
+            cout << endl;
+#endif
             _max_family_size_sim = *std::max_element(_rootdist_vec.begin(), _rootdist_vec.end());
-	}
+            _root_size = _rootdist_vec[family_number];
+    }
 
-	_root_size = *select_randomly(_rootdist_vec.begin(), _rootdist_vec.end()); // getting a random root size from the provided (core's) root distribution
 	cout << "_root_size is " << _root_size << endl;
 }
 

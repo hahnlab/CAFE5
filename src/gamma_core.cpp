@@ -162,7 +162,7 @@ void gamma_core::start_inference_processes() {
 //! Populate _processes (vector of processes)
 simulation_process* gamma_core::create_simulation_process(int family_number) {
     double lambda_bin = _gamma_cats[family_number];
-    return new simulation_process(_ost, _p_lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
+    return new simulation_process(_ost, _p_lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, family_number); // if a single _lambda_multiplier, how do we do it?
 }
 
 std::vector<double> gamma_core::get_posterior_probabilities(std::vector<double> cat_likelihoods)

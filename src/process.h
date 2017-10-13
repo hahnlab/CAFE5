@@ -47,7 +47,7 @@ class simulation_process : public process {
 	int _max_family_size_sim;
 public:
 	simulation_process(std::ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size,
-		int max_root_family_size, std::vector<int> rootdist);
+		int max_root_family_size, std::vector<int> rootdist, int family_number);
 
 
 	void run_simulation();
