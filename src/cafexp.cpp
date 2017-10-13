@@ -193,7 +193,7 @@ int cafexp(int argc, char *const argv[]) {
 		my_input_parameters.fixed_lambda = atof(optarg);
                 break;
             case 'p':
-        my_input_parameters.poisson_lambda = atof(optarg);
+                my_input_parameters.poisson_lambda = atof(optarg);
                 break;
             case 'm':
 		my_input_parameters.fixed_multiple_lambdas = optarg;
