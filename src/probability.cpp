@@ -81,10 +81,15 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
   //std::cout << "Lambda: " << lambda << ", branch_length: " << branch_length;
   double alpha = lambda*branch_length / (1 + lambda*branch_length);
   double coeff = 1 - 2 * alpha;
-  
+
+  double result = 0;
+  if (coeff > 0 && coeff != 1)  // if coeff < 0 branch is saturated (some of the characters may have changed and then changed again)
+  {
+      result = birthdeath_rate_with_log_alpha(parent_size, size, log(alpha), coeff);
+  }
+      
   //printf("Birthdeath rate for 1, 0 (alpha=%f, coeff=%f), : %f\n", alpha, coeff, birthdeath_rate_with_log_alpha(1, 0, log(alpha), coeff));
 
-  double result = birthdeath_rate_with_log_alpha(parent_size, size, log(alpha), coeff);
 
 //  if (result < .000000000000000001)
 //  {
