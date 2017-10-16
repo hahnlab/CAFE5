@@ -57,7 +57,7 @@ class ArgStash:
     
     def cfg_writer(self):
         for r in xrange(self.n_runs):
-            with open(self.output_path + 'config_file_' + str(r+1) + '.cfg', 'w') as config_file:
+            with open(self.output_path + 'config_file_' + str(r) + '.cfg', 'w') as config_file:
                 config_file.write('[CAFExp folder]\ncafexp = ' + self.cafexp_path)
                 
                 config_file.write('\n\n[input files]\ngene families = ')
@@ -88,6 +88,8 @@ class ArgStash:
                 config_file.write('\nalpha = ')
                 if 'a' in par_dict and not self.instructions_list: config_file.write(par_dict['a'])
                 elif self.instructions_list and self.instructions_list[r][2] != 'N/A': config_write(self.instructions_list[r][2])
+                config_file.write('\npoisson = ')
+                if 'p' in par_dict: config_file.write(par_dict['p'])
 
                 output_dict = self.dictionize_lists(self.output_args, self.output_values)
                 config_file.write('\n\n[output]\noutput folder = ')
@@ -101,9 +103,7 @@ class ArgStash:
                     config_file.write(self.instructions_list[r][3])
                 # for inference
                 elif self.n_runs == 1 and not self.instructions_list and 's' in output_dict:
-                    config_file.write(output_dict['s'])
-
-            
+                    config_file.write(output_dict['s'])    
             
     @staticmethod
     def tokenize_string(a_string):

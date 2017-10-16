@@ -26,6 +26,7 @@ class Barista:
 
         # parameters
         self.a_lambda = self.config.get('parameters', 'lambda') # -l
+        self.a_poisson_lambda = self.config.get('parameters', 'poisson') # -p
         # self.alpha = self.config.get('parameters', 'alpha') # -a
 
         # output
@@ -48,6 +49,7 @@ class Barista:
         self.command_line.append(os.path.join(self.binary_path, 'cafexp'))
 
         self.add_option('-l', self.a_lambda)
+        self.add_option('-p', self.a_poisson_lambda)
         self.add_option('-t', self.tree_path)
         self.add_option('-n', self.simulationsN)
         self.add_option('-f', self.root_dist_path)
