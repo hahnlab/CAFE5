@@ -27,8 +27,6 @@ private:
     vector<gamma_bundle> _inference_bundles; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
                                              //! Basic constructor
 
-    std::vector<family_info_stash> results;
-
     std::vector<double> get_posterior_probabilities(std::vector<double> cat_likelihoods);
 public:
     gamma_core() { _alpha = 0; };

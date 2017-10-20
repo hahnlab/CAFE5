@@ -80,6 +80,7 @@ protected:
     
     void initialize_rootdist_if_necessary();
 
+    std::vector<family_info_stash> results;
 public:
     //! Basic constructor
     core(): _ost(cout), _p_lambda(NULL), _p_tree(NULL), _p_gene_families(NULL), _total_n_families_sim(1) {}

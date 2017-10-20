@@ -115,6 +115,7 @@ double base_core::infer_processes(prior_distribution *prior) {
     initialize_rootdist_if_necessary();
     prior->initialize(_rootdist_vec);
 
+    results.clear();
     std::vector<double> all_families_likelihood(processes.size());
     // prune all the families with the same lambda
     for (int i = 0; i < processes.size(); ++i) {
@@ -125,7 +126,9 @@ double base_core::infer_processes(prior_distribution *prior) {
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
             double eq_freq = prior->compute(j);
             std::cout << "log-eq_prob = " << std::log(eq_freq) << ", partial log-lk = " << std::log(partial_likelihood[j]) << std::endl;
-            
+
+            results.push_back(family_info_stash(i, 0.0, 0.0, partial_likelihood[j], eq_freq, eq_freq > 0.95));
+
             double log_full_lk = std::log(partial_likelihood[j]) + std::log(eq_freq);
             full[j] = log_full_lk;
 //            if (!isinf(log_full_lk))
@@ -149,6 +152,12 @@ double base_core::infer_processes(prior_distribution *prior) {
 
 void base_core::print_results(std::ostream& ost)
 {
+    ost << "#FamilyID\tLikelihood of Family\tPosterior Probability\tSignificant" << endl;
+    for (const auto& r : results)
+    {
+        ost << r.family_id << "\t" << r.family_likelihood;
+        ost << "\t" << r.posterior_probability << "\t" << (r.significant ? "*" : "N/S");
+    }
 }
 
 //! Print processes' simulations
