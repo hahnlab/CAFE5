@@ -1,0 +1,8 @@
+l	-lnL	eqfreq
+0.0001	264979	Poisson
+0.00075	200126	Poisson
+0.0009	199790	Poisson
+0.001	200097	Poisson
+0.0011	200692	Poisson
+0.0025	217339	Poisson
+0.1	276417	Poisson
