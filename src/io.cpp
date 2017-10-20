@@ -41,6 +41,11 @@ void input_parameters::check_input() {
     if (!input_file_path.empty() && simulate) {
         throw runtime_error("You cannot simulate and try to infer simultaneously. Exiting...");
     }
+
+    if (fixed_alpha != 0.0 && n_gamma_cats == 1) {
+        throw runtime_error("You have to specify both alpha and # of gamma categories to infer parameter values. Exiting...");
+
+    }
 }
 
 /* START: Reading in gene family data */

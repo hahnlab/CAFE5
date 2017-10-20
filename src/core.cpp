@@ -122,24 +122,22 @@ double base_core::infer_processes(prior_distribution *prior) {
         std::cout << "Process " << i << std::endl;
         auto partial_likelihood = processes[i]->prune();
         std::vector<double> full(partial_likelihood.size());
-        
+
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
             double eq_freq = prior->compute(j);
             std::cout << "log-eq_prob = " << std::log(eq_freq) << ", partial log-lk = " << std::log(partial_likelihood[j]) << std::endl;
 
-            results.push_back(family_info_stash(i, 0.0, 0.0, partial_likelihood[j], eq_freq, eq_freq > 0.95));
-
             double log_full_lk = std::log(partial_likelihood[j]) + std::log(eq_freq);
             full[j] = log_full_lk;
-//            if (!isinf(log_full_lk))
-                full[j] = std::log(partial_likelihood[j]) + std::log(eq_freq);
-//            else
-//                full[j] = 0.0;         
-            // cout << "Full lk of size " << j << ": " << full[j] << endl;
+
+            full[j] = std::log(partial_likelihood[j]) + std::log(eq_freq);
         }
         
-//        all_families_likelihood[i] = accumulate(full.begin(), full.end(), 0.0); // sum over all sizes (Felsenstein's approach)
+        //        all_families_likelihood[i] = accumulate(full.begin(), full.end(), 0.0); // sum over all sizes (Felsenstein's approach)
         all_families_likelihood[i] = *max_element(full.begin(), full.end()); // get max (CAFE's approach)
+
+        results.push_back(family_info_stash(i, 0.0, 0.0, 0.0, all_families_likelihood[i], false));
+
         std::cout << "lnL of family " << i << ": " << all_families_likelihood[i] << std::endl;
     }
 
@@ -152,11 +150,10 @@ double base_core::infer_processes(prior_distribution *prior) {
 
 void base_core::print_results(std::ostream& ost)
 {
-    ost << "#FamilyID\tLikelihood of Family\tPosterior Probability\tSignificant" << endl;
+    ost << "#FamilyID\tLikelihood of Family" << endl;
     for (const auto& r : results)
     {
-        ost << r.family_id << "\t" << r.family_likelihood;
-        ost << "\t" << r.posterior_probability << "\t" << (r.significant ? "*" : "N/S");
+        ost << r.family_id << "\t" << r.posterior_probability << endl;
     }
 }
 
