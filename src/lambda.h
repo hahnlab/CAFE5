@@ -6,6 +6,8 @@
 class clade;
 class probability_calculator;
 class gene_family;
+class prior_distribution;
+class core;
 
 /* START: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
@@ -80,6 +82,6 @@ struct lambda_search_params
 
 
 std::vector<double> get_posterior(std::vector<gene_family> gene_families, int max_family_size, int max_root_family_size, double lambda, clade *p_tree);
-double find_best_lambda(lambda_search_params *params);
+double find_best_lambda(core *p_model, prior_distribution *p_distribution);
 
 #endif

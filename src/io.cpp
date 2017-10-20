@@ -27,11 +27,6 @@ struct option longopts[] = {
 };
 
 void input_parameters::check_input() {
-    //! The user cannot specify both -e and -l
-    if (estimate && fixed_lambda > 0.0) {
-        throw runtime_error("You cannot both estimate (-e) and fix the lambda(s) value(s) (-l). Exiting...");
-    }
-        
     //! The user cannot specify both -l and -y
     if (fixed_lambda > 0.0 && !fixed_multiple_lambdas.empty()) {
         throw runtime_error("You cannot fix one lambda value (-l) and many lambda values (-m). Exiting...");

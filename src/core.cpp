@@ -91,6 +91,7 @@ base_core::~base_core()
 
 void base_core::start_inference_processes()
 {
+    processes.clear();
     for (int i = 0; i < _p_gene_families->size(); ++i) {
 
         cout << "Started inference process " << i + 1 << endl;
@@ -125,7 +126,7 @@ double base_core::infer_processes(prior_distribution *prior) {
 
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
             double eq_freq = prior->compute(j);
-            std::cout << "log-eq_prob = " << std::log(eq_freq) << ", partial log-lk = " << std::log(partial_likelihood[j]) << std::endl;
+//            std::cout << "log-eq_prob = " << std::log(eq_freq) << ", partial log-lk = " << std::log(partial_likelihood[j]) << std::endl;
 
             double log_full_lk = std::log(partial_likelihood[j]) + std::log(eq_freq);
             full[j] = log_full_lk;
@@ -141,11 +142,11 @@ double base_core::infer_processes(prior_distribution *prior) {
         std::cout << "lnL of family " << i << ": " << all_families_likelihood[i] << std::endl;
     }
 
-    double multi = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families
+    double final_likelihood = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families
 
-    std::cout << "-lnL: " << multi << std::endl;
+    std::cout << "-lnL: " << final_likelihood << std::endl;
 
-    return multi;
+    return final_likelihood;
 }
 
 void base_core::print_results(std::ostream& ost)
