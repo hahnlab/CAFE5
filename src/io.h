@@ -32,7 +32,6 @@ struct input_parameters {
 public:	
     std::string input_file_path;
     std::string output_prefix;
-    bool estimate = false;
     std::string tree_file_path;
     double fixed_lambda = 0.0;
     bool simulate = false;

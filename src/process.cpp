@@ -65,13 +65,11 @@ void simulation_process::run_simulation() {
 
 //! Prune process
 std::vector<double> inference_process::prune() {
-	single_lambda *sl = dynamic_cast<single_lambda*>(_lambda);	// we don't support multiple lambdas yet
-
 	cout << endl << "Max root family size is: " << _max_root_family_size << endl;
 	cout << "Max family size is: " << _max_family_size << endl;
 	cout << "Lambda multiplier is: " << _lambda_multiplier << endl;
 
-    single_lambda *multiplier = sl->multiply(_lambda_multiplier);
+    lambda *multiplier = _lambda->multiply(_lambda_multiplier);
 	likelihood_computer pruner(_max_root_family_size, _max_family_size, multiplier, _p_gene_family); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
 
 	cout << "  About to prune process." << endl;

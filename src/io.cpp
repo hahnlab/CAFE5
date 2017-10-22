@@ -27,11 +27,6 @@ struct option longopts[] = {
 };
 
 void input_parameters::check_input() {
-    //! The user cannot specify both -e and -l
-    if (estimate && fixed_lambda > 0.0) {
-        throw runtime_error("You cannot both estimate (-e) and fix the lambda(s) value(s) (-l). Exiting...");
-    }
-        
     //! The user cannot specify both -l and -y
     if (fixed_lambda > 0.0 && !fixed_multiple_lambdas.empty()) {
         throw runtime_error("You cannot fix one lambda value (-l) and many lambda values (-m). Exiting...");
@@ -40,6 +35,11 @@ void input_parameters::check_input() {
     //! The user cannot specify both -i and -s
     if (!input_file_path.empty() && simulate) {
         throw runtime_error("You cannot simulate and try to infer simultaneously. Exiting...");
+    }
+
+    if (fixed_alpha != 0.0 && n_gamma_cats == 1) {
+        throw runtime_error("You have to specify both alpha and # of gamma categories to infer parameter values. Exiting...");
+
     }
 }
 

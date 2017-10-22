@@ -6,6 +6,7 @@
 #include "fminsearch.h"
 #include "utils.h"
 #include "probability.h"
+#include "core.h"
 
 using namespace std;
 
@@ -31,27 +32,34 @@ std::vector<double> multiple_lambda::calculate_child_factor(clade *child, std::v
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
 /// score of a lambda is the -log likelihood of the most likely resulting family size
-double calculate_lambda_score(double* plambda, void* args)
+double calculate_lambda_score(double* p_lambda, void* args)
 {
-	lambda_search_params *param = (lambda_search_params *)args;
+    std::pair<core *, prior_distribution *>* vals = (std::pair<core *, prior_distribution *>*)args;
 
-	cout << "Max family size: " << param->max_family_size << ", lambda: " << *plambda << endl;
-	vector<double> posterior = get_posterior(param->families, param->max_family_size, param->max_root_family_size, *plambda, param->ptree);
-	return -log(*max_element(posterior.begin(), posterior.end()));
+    core *core = vals->first;
+    prior_distribution* dist = vals->second;
+    probability_calculator calculator;
+
+    single_lambda lambda(&calculator, *p_lambda);
+    core->set_lambda(&lambda);
+    core->start_inference_processes();
+
+    return core->infer_processes(dist);
 }
 
 
-double find_best_lambda(lambda_search_params *params)
+double find_best_lambda(core * p_model, prior_distribution *p_distribution)
 {
 	double max_branch_length = 1.0;
-	params->initial_lambda = 1.0 / max_branch_length * unifrnd();
-	cout << "init lambda = " << params->initial_lambda;
+	// params->initial_lambda = 1.0 / max_branch_length * unifrnd();
+	// cout << "init lambda = " << params->initial_lambda;
 	int lambda_len = 1;
 	FMinSearch* pfm;
-	pfm = fminsearch_new_with_eq(calculate_lambda_score, lambda_len, params);
+    std::pair<core *, prior_distribution *> args(p_model, p_distribution);
+	pfm = fminsearch_new_with_eq(calculate_lambda_score, lambda_len, &args);
 	pfm->tolx = 1e-6;
 	pfm->tolf = 1e-6;
-	double result = params->initial_lambda;
+	double result = 1.0 / max_branch_length * unifrnd();    // initialize a guess at the result
 	fminsearch_min(pfm, &result);
 	double *re = fminsearch_get_minX(pfm);
 	return *re;

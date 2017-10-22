@@ -119,7 +119,8 @@ void call_viterbi(int max_family_size, int max_root_family_size, int number_of_s
 	}
 }
 
-std::vector<core *> build_models(const input_parameters& my_input_parameters, clade *p_tree, lambda *p_lambda)
+std::vector<core *> build_models(const input_parameters& my_input_parameters, clade *p_tree, lambda *p_lambda, 
+    std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size)
 {
     std::vector<core *> models;
     if (!my_input_parameters.input_file_path.empty())
@@ -139,6 +140,12 @@ std::vector<core *> build_models(const input_parameters& my_input_parameters, cl
     {
         models[i]->set_tree(p_tree);
         models[i]->set_lambda(p_lambda);
+        models[i]->set_gene_families(p_gene_families);
+        gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
+        if (p_model != NULL) {
+            p_model->initialize_with_alpha(my_input_parameters.n_gamma_cats, p_gene_families->size(), my_input_parameters.fixed_alpha);
+        }
+        models[i]->set_max_sizes(max_family_size, max_root_family_size);
     }
     return models;
 }
@@ -154,14 +161,14 @@ int cafexp(int argc, char *const argv[]) {
     int max_root_family_size = -1;
     
     probability_calculator calculator;
-    std::vector<gene_family> *p_gene_families = new std::vector<gene_family>;
+    std::vector<gene_family> gene_families;
   
     /* START: Option variables for simulations */
     map<int, int>* p_rootdist_map = NULL;
     //double lambda = 0.0017;
     /* END: Option variables for simulations */
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:k:a:e::s::g::p:", longopts, NULL)) != -1 ) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:k:a:s::g::p:", longopts, NULL)) != -1 ) {
     // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -176,9 +183,6 @@ int cafexp(int argc, char *const argv[]) {
                 break;
             case 'o':
                 my_input_parameters.output_prefix = optarg;
-                break;
-            case 'e':
-		my_input_parameters.estimate = true;
                 break;
             case 't':
 		my_input_parameters.tree_file_path = optarg;
@@ -246,7 +250,7 @@ int cafexp(int argc, char *const argv[]) {
         /* -i */
         if (!my_input_parameters.input_file_path.empty()) {
             // read_gene_family_data populates (pointer to) vector of gene family instances
-            my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size, p_tree, p_gene_families);
+            my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size, p_tree, &gene_families);
             // std::vector<gene_family> *p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size, p_tree); // max_family_size and max_root_family_size are int's passed as reference, and set by read_gene_family_data
         }
             
@@ -255,24 +259,26 @@ int cafexp(int argc, char *const argv[]) {
         p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
 
         /* -l/-m */
-        lambda *p_lambda = NULL;
-        p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
+        lambda *p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
 
-        vector<core *> models = build_models(my_input_parameters, p_tree, p_lambda);
-        cout << "Got here..." << endl;
-        
-        if (!p_gene_families->empty()) {
-            my_executer.infer(models, p_gene_families, my_input_parameters, max_family_size, max_root_family_size); // passing my_input_parameters as reference
+        vector<core *> models = build_models(my_input_parameters, p_tree, p_lambda, &gene_families, max_family_size, max_root_family_size);
+        if (p_lambda)
+        {
+            cout << "Got here..." << endl;
+
+            if (!gene_families.empty()) {
+                my_executer.compute(models, &gene_families, my_input_parameters, max_family_size, max_root_family_size); // passing my_input_parameters as reference
+            }
         }
-
-        /* -e */
-        if (my_input_parameters.estimate) {
+        else {
             srand(10);
 
-            p_lambda = my_executer.estimate_lambda(my_input_parameters, p_tree, p_lambda_tree, p_gene_families, max_family_size, max_root_family_size, calculator);
-
-            return 0;
+            for (core* p_model : models) {
+                p_lambda = my_executer.estimate_lambda(p_model, my_input_parameters, p_tree, p_lambda_tree, &gene_families, max_family_size, max_root_family_size, calculator);
+            }
         }
+
+
 
         /* -s */
         if (my_input_parameters.simulate) {

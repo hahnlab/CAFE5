@@ -93,7 +93,7 @@ std::string filename(std::string base, std::string suffix)
     return base + (suffix.empty() ? "" : "_") + suffix + ".txt";
 }
 
-void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gene_families, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
+void execute::compute(std::vector<core *>& models, std::vector<gene_family> *p_gene_families, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
 {
     double pl = my_input_parameters.poisson_lambda;
     prior_distribution *prior = NULL;
@@ -107,15 +107,6 @@ void execute::infer(std::vector<core *>& models, std::vector<gene_family> *p_gen
     std::ofstream likelihoods(filename("family_lks", my_input_parameters.output_prefix));
 
     for (int i = 0; i < models.size(); ++i) {
-        models[i]->set_gene_families(p_gene_families);
-        
-        gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
-        if (p_model != NULL) {
-            p_model->initialize_with_alpha(my_input_parameters.n_gamma_cats, p_gene_families->size(), my_input_parameters.fixed_alpha);
-        }
-
-        models[i]->set_max_sizes(max_family_size, max_root_family_size);
-
         cout << endl << "Starting inference processes for model " << i << endl;
         models[i]->start_inference_processes();
 
@@ -201,21 +192,24 @@ void execute::simulate(std::vector<core *>& models, const input_parameters &my_i
     }
 }
 
-lambda * execute::estimate_lambda(const input_parameters &my_input_parameters, clade *p_tree, clade *p_lambda_tree, 
+lambda * execute::estimate_lambda(core *p_model, const input_parameters &my_input_parameters, clade *p_tree, clade *p_lambda_tree,
     std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size, probability_calculator& calculator)
 {
-    if (my_input_parameters.input_file_path.empty()) {
-        throw runtime_error("In order to estimate the lambda(s) value(s) (-e), you must specify an input file path (gene family data) with -i. Exiting...");
-    }
-
     if (p_lambda_tree != NULL)
     {
     }
 
+    double pl = my_input_parameters.poisson_lambda;
+    prior_distribution *prior = NULL;
+    if (pl > 0)
+        prior = new poisson_frequency(pl);
+    else
+        prior = new equilibrium_frequency();
+
 
     p_tree->init_gene_family_sizes(*p_gene_families);
     lambda_search_params params(p_tree, *p_gene_families, max_family_size, max_root_family_size);
-    single_lambda* p_single_lambda = new single_lambda(&calculator, find_best_lambda(&params));
+    single_lambda* p_single_lambda = new single_lambda(&calculator, find_best_lambda(p_model, prior));
     cout << "Best lambda match is " << setw(15) << setprecision(14) << p_single_lambda->get_single_lambda() << endl;
 
     return p_single_lambda;
