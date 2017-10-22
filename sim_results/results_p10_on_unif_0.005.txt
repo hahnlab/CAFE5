@@ -1,0 +1,8 @@
+l	-lnL	eqfreq
+0.001	2.03023e+07	Poisson
+0.0025	1.51774e+07	Poisson
+0.004	1.33774e+07	Poisson
+0.005	1.27357e+07	Poisson
+0.006	1.23118e+07	Poisson
+0.0075	1.19113e+07	Poisson
+0.01	1.1575e+07	Poisson

@@ -1,3 +1,5 @@
+library(ggplot2)
+
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   library(grid)
 
@@ -36,14 +38,27 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 
 ###
 
-path.cafexp <- "~/Documents/IU/hahn_lab_stuff/CAFExp/"
+## path.cafexp <- "~/Documents/IU/hahn_lab_stuff/CAFExp/sim_results_max/"
+path.cafexp <- "~/Documents/IU/hahn_lab_stuff/CAFExp/sim_results/"
 
 ## max.001 <- read.table(paste0(path.cafexp, "results_0.001_p10_max.txt"), header=TRUE)
-max.001 <- read.table(paste0(path.cafexp, "results_0.001_unif_max.txt"), header=TRUE)
+## max.001 <- read.table(paste0(path.cafexp, "results_0.001_p10.txt"), header=TRUE)
+
+## max.001 <- read.table(paste0(path.cafexp, "results_0.001_unif_max.txt"), header=TRUE)
+max.001 <- read.table(paste0(path.cafexp, "results_0.001_unif.txt"), header=TRUE)
+
 ## max.005 <- read.table(paste0(path.cafexp, "results_0.005_p10_max.txt"), header=TRUE)
-max.005 <- read.table(paste0(path.cafexp, "results_0.005_unif_max.txt"), header=TRUE)
+## max.005 <- read.table(paste0(path.cafexp, "results_0.005_p10.txt"), header=TRUE)
+
+## max.005 <- read.table(paste0(path.cafexp, "results_0.005_unif_max.txt"), header=TRUE)
+max.005 <- read.table(paste0(path.cafexp, "results_0.005_unif.txt"), header=TRUE)
+
 ## max.01 <- read.table(paste0(path.cafexp, "results_0.01_p10_max.txt"), header=TRUE)
-max.01 <- read.table(paste0(path.cafexp, "results_0.01_unif_max.txt"), header=TRUE)
+## max.01 <- read.table(paste0(path.cafexp, "results_0.01_p10.txt"), header=TRUE)
+
+## max.01 <- read.table(paste0(path.cafexp, "results_0.01_unif_max.txt"), header=TRUE)
+max.01 <- read.table(paste0(path.cafexp, "results_0.01_unif.txt"), header=TRUE)
+
 names(max.001)[2] <- "nlnL"
 names(max.005)[2] <- "nlnL"
 names(max.01)[2] <- "nlnL"
@@ -61,7 +76,7 @@ max.001.plot <- ggplot(max.001, aes(x=l, y=nlnL, colour=as.factor(eqfreq))) +
     axis.text.x = element_text(color="black", size=12),
     axis.text.y = element_text(color="black", size=12),
     legend.key = element_blank()
-  ) + labs(colour="Root equibilibrium\ndistribution") + scale_colour_brewer(palette="Dark2")
+  ) + labs(colour="Root equibilibrium\ndistribution") + scale_colour_manual(values=c("black", "gray"))
 max.001.plot
 
 max.005.plot <- ggplot(max.005, aes(x=l, y=nlnL, colour=as.factor(eqfreq))) +
@@ -77,7 +92,7 @@ max.005.plot <- ggplot(max.005, aes(x=l, y=nlnL, colour=as.factor(eqfreq))) +
     axis.text.x = element_text(color="black", size=12),
     axis.text.y = element_text(color="black", size=12),
     legend.key = element_blank()
-  ) + labs(colour="Root equibilibrium\ndistribution") + scale_colour_brewer(palette="Dark2")
+  ) + labs(colour="Root equibilibrium\ndistribution") + scale_colour_manual(values=c("black", "gray"))
 max.005.plot
 
 max.01.plot <- ggplot(max.01, aes(x=l, y=nlnL, colour=as.factor(eqfreq))) +
@@ -93,11 +108,14 @@ max.01.plot <- ggplot(max.01, aes(x=l, y=nlnL, colour=as.factor(eqfreq))) +
     axis.text.x = element_text(color="black", size=12),
     axis.text.y = element_text(color="black", size=12),
     legend.key = element_blank()
-  ) + labs(colour="Root equibilibrium\ndistribution") + scale_colour_brewer(palette="Dark2")
+  ) + labs(colour="Root equibilibrium\ndistribution") + scale_colour_manual(values=c("black", "gray"))
 max.01.plot
 
 ## pdf(paste0(path.cafexp, "lk_surf_0.001_0.005_0.01_p10_max.pdf"), width=10, height=7.5)
-pdf(paste0(path.cafexp, "lk_surf_0.001_0.005_0.01_unif_max.pdf"), width=10, height=7.5)
+## pdf(paste0(path.cafexp, "lk_surf_0.001_0.005_0.01_p10.pdf"), width=10, height=7.5)
+
+## pdf(paste0(path.cafexp, "lk_surf_0.001_0.005_0.01_unif_max.pdf"), width=10, height=7.5)
+pdf(paste0(path.cafexp, "lk_surf_0.001_0.005_0.01_unif.pdf"), width=10, height=7.5)
 multiplot(max.001.plot, max.005.plot, max.01.plot, cols=1)
 dev.off()
 
