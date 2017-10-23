@@ -216,7 +216,7 @@ double core::initialize_lambda_guess()
 {
     max_branch_length_finder finder;
     _p_tree->apply_prefix_order(finder);
-    return finder.result();
+    return 1.0 / finder.result() * unifrnd();
 }
 
 float equilibrium_frequency::compute(int val) const

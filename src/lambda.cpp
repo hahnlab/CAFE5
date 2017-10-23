@@ -50,16 +50,13 @@ double calculate_lambda_score(double* p_lambda, void* args)
 
 double find_best_lambda(core * p_model, prior_distribution *p_distribution)
 {
-	double max_branch_length = p_model->initialize_lambda_guess();
-	// params->initial_lambda = 1.0 / max_branch_length * unifrnd();
-	// cout << "init lambda = " << params->initial_lambda;
 	int lambda_len = 1;
 	FMinSearch* pfm;
     std::pair<core *, prior_distribution *> args(p_model, p_distribution);
 	pfm = fminsearch_new_with_eq(calculate_lambda_score, lambda_len, &args);
 	pfm->tolx = 1e-6;
 	pfm->tolf = 1e-6;
-	double result = 1.0 / max_branch_length * unifrnd();    // initialize a guess at the result
+	double result = p_model->initialize_lambda_guess();
 	fminsearch_min(pfm, &result);
 	double *re = fminsearch_get_minX(pfm);
 	return *re;
