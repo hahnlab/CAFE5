@@ -193,6 +193,32 @@ void core::print_parameter_values() {
     
 }
 
+class max_branch_length_finder
+{
+    double _result;
+public:
+    max_branch_length_finder() : _result(0.0)
+    {
+
+    }
+    void operator()(clade *c)
+    {
+        if (c->get_branch_length() > _result)
+            _result = c->get_branch_length();
+    }
+    double result() const {
+        return _result;
+    }
+};
+
+
+double core::initialize_lambda_guess()
+{
+    max_branch_length_finder finder;
+    _p_tree->apply_prefix_order(finder);
+    return finder.result();
+}
+
 float equilibrium_frequency::compute(int val) const
 {
     int sum = std::accumulate(_rootdist_vec.begin(), _rootdist_vec.end(), 0);

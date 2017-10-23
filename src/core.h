@@ -52,7 +52,7 @@ struct family_info_stash {
         posterior_probability(0.0), significant(false) {}
     family_info_stash(int fam, double lam, double cat_lh, double fam_lh, double pp, bool signif) : 
         family_id(fam), lambda_multiplier(lam), category_likelihood(cat_lh), family_likelihood(fam_lh),
-        posterior_probability(pp), significant(false) {}
+        posterior_probability(pp), significant(signif) {}
     int family_id;
     double lambda_multiplier;
     double category_likelihood;
@@ -124,6 +124,8 @@ public:
 
     virtual std::string name() = 0;
     virtual void print_results(std::ostream& ost) = 0;
+
+    double initialize_lambda_guess();
 };
 
 class base_core : public core {

@@ -34,6 +34,7 @@ std::vector<double> multiple_lambda::calculate_child_factor(clade *child, std::v
 /// score of a lambda is the -log likelihood of the most likely resulting family size
 double calculate_lambda_score(double* p_lambda, void* args)
 {
+    cout << "Attempting lambda: " << *p_lambda << std::endl;
     std::pair<core *, prior_distribution *>* vals = (std::pair<core *, prior_distribution *>*)args;
 
     core *core = vals->first;
@@ -47,10 +48,9 @@ double calculate_lambda_score(double* p_lambda, void* args)
     return core->infer_processes(dist);
 }
 
-
 double find_best_lambda(core * p_model, prior_distribution *p_distribution)
 {
-	double max_branch_length = 1.0;
+	double max_branch_length = p_model->initialize_lambda_guess();
 	// params->initial_lambda = 1.0 / max_branch_length * unifrnd();
 	// cout << "init lambda = " << params->initial_lambda;
 	int lambda_len = 1;

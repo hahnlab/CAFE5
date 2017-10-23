@@ -160,7 +160,7 @@ void execute::simulate(std::vector<core *>& models, const input_parameters &my_i
 
         gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
         if (p_model != NULL) {
-            bool has_alpha = false;
+            bool has_alpha = true;
             if (has_alpha)
             {
                 p_model->initialize_with_alpha(my_input_parameters.n_gamma_cats, my_input_parameters.nsims, 0.5);
@@ -208,7 +208,6 @@ lambda * execute::estimate_lambda(core *p_model, const input_parameters &my_inpu
 
 
     p_tree->init_gene_family_sizes(*p_gene_families);
-    lambda_search_params params(p_tree, *p_gene_families, max_family_size, max_root_family_size);
     single_lambda* p_single_lambda = new single_lambda(&calculator, find_best_lambda(p_model, prior));
     cout << "Best lambda match is " << setw(15) << setprecision(14) << p_single_lambda->get_single_lambda() << endl;
 

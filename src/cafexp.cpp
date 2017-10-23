@@ -125,8 +125,9 @@ std::vector<core *> build_models(const input_parameters& my_input_parameters, cl
     std::vector<core *> models;
     if (!my_input_parameters.input_file_path.empty())
     {
-        models.push_back(new base_core());
-        if (my_input_parameters.n_gamma_cats > 1)
+        if (p_lambda == NULL)
+            models.push_back(new base_core());
+        if (p_lambda != NULL && my_input_parameters.n_gamma_cats > 1)
             models.push_back(new gamma_core());
     }
     else if (my_input_parameters.simulate)
@@ -255,8 +256,7 @@ int cafexp(int argc, char *const argv[]) {
         }
             
         /* -y */
-        clade *p_lambda_tree = new clade();
-        p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
+        clade *p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
 
         /* -l/-m */
         lambda *p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
@@ -282,7 +282,7 @@ int cafexp(int argc, char *const argv[]) {
 
         /* -s */
         if (my_input_parameters.simulate) {
-            if (!my_input_parameters.nsims) {
+            if (!my_input_parameters.nsims && my_input_parameters.rootdist.empty()) {
                 throw runtime_error("In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting...");
             }
 
