@@ -7,6 +7,7 @@ struct input_parameters;
 class lambda;
 class probability_calculator;
 class core;
+class root_equilibrium_distribution;
 
 class execute {
 public:
@@ -23,11 +24,11 @@ public:
     //! Read in single or multiple lambda (-l or -m)
     lambda * read_lambda(const input_parameters &my_input_parameters, probability_calculator &my_calculator, clade *p_lambda_tree);
 
-    void compute(std::vector<core *>& models, std::vector<gene_family> *p_gene_families, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size);
+    void compute(std::vector<core *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size);
 
     void simulate(std::vector<core *>& models, const input_parameters &my_input_parameters);
 
-    lambda * estimate_lambda(core * p_model, const input_parameters &my_input_parameters, clade *p_tree, clade *p_lambda_tree,
+    lambda * estimate_lambda(core * p_model, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
         std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size, probability_calculator& calculator);
 };
 #endif /* EXECUTE_H */

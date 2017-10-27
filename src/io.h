@@ -42,6 +42,8 @@ public:
     std::string lambda_tree_file_path;
     int n_gamma_cats = 1;
     double fixed_alpha = 0.0;
+
+    bool use_uniform_eq_freq = true;
     double poisson_lambda = 0.0;
 
     //! Check calls

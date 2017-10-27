@@ -10,42 +10,7 @@ class process;
 class inference_process;
 class simulation_process;
 class inference_process_factory;
-
-class prior_distribution
-{
-public:
-    virtual float compute(int val) const = 0;
-    virtual void initialize(std::vector<int> rootdist_vec) = 0;
-};
-
-class equilibrium_frequency : public prior_distribution
-{
-    std::vector<int> _rootdist_vec; // in case the user wants to use a specific root size distribution for all simulations
-public:
-    virtual void initialize(std::vector<int> rootdist_vec)
-    {
-        _rootdist_vec = rootdist_vec;
-    }
-
-    virtual float compute(int val) const;
-};
-
-class poisson_frequency : public prior_distribution
-{
-    std::vector<double> poisson;
-    double _poisson_lambda;
-public:
-    poisson_frequency(double poisson_lambda) : _poisson_lambda(poisson_lambda)
-    {
-    }
-    virtual void initialize(std::vector<int> rootdist_vec);
-
-    virtual float compute(int val) const
-    {
-        return poisson[val];
-    }
-
-};
+class root_equilibrium_distribution;
 
 struct family_info_stash {
     family_info_stash() : family_id(0), lambda_multiplier(0.0), category_likelihood(0.0), family_likelihood(0.0), 
@@ -115,7 +80,7 @@ public:
     //! Inference methods
     virtual void start_inference_processes() = 0;
     
-    virtual double infer_processes(prior_distribution *prior) = 0;  // return vector of likelihoods
+    virtual double infer_processes(root_equilibrium_distribution *prior) = 0;  // return vector of likelihoods
     
     //! Printing methods
     void print_parameter_values();
@@ -133,7 +98,7 @@ class base_core : public core {
     virtual simulation_process* create_simulation_process(int family_number);
 public:
     virtual void start_inference_processes();
-    virtual double infer_processes(prior_distribution *prior);
+    virtual double infer_processes(root_equilibrium_distribution *prior);
 
     virtual std::string name() {
         return "Base";

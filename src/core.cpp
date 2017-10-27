@@ -10,6 +10,7 @@
 #include "family_generator.h"
 #include "process.h"
 #include "poisson.h"
+#include "root_equilibrium_distribution.h"
 
 std::ostream& operator<<(std::ostream& ost, const family_info_stash& r)
 {
@@ -113,7 +114,7 @@ void core::initialize_rootdist_if_necessary()
 
 }
 
-double base_core::infer_processes(prior_distribution *prior) {
+double base_core::infer_processes(root_equilibrium_distribution *prior) {
 #ifdef VERBOSE
     const bool write = true;
 #else
@@ -229,13 +230,3 @@ double core::initialize_lambda_guess()
     return 1.0 / finder.result() * unifrnd();
 }
 
-float equilibrium_frequency::compute(int val) const
-{
-    int sum = std::accumulate(_rootdist_vec.begin(), _rootdist_vec.end(), 0);
-    return float(_rootdist_vec[val]) / float(sum);
-}
-
-void poisson_frequency::initialize(std::vector<int> rootdist_vec)
-{
-    poisson = get_prior_rfsize_poisson_lambda(0, rootdist_vec.size(), _poisson_lambda);
-}

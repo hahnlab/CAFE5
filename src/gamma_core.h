@@ -7,7 +7,7 @@ public:
 
     void clear();
 
-    std::vector<double> prune(const vector<double>& gamma_cat_probs, prior_distribution *eq_freq);
+    std::vector<double> prune(const vector<double>& gamma_cat_probs, root_equilibrium_distribution *eq_freq);
 
     double get_lambda_likelihood(int family_id);
 };
@@ -58,13 +58,11 @@ public:
     //! Inference methods
     void start_inference_processes();
 
-    double infer_processes(prior_distribution *prior);
+    double infer_processes(root_equilibrium_distribution *prior);
 
     virtual std::string name() {
         return "Gamma";
     }
-
-    double get_lambda_multiplier(int family_id);
 
     virtual void print_results(std::ostream& ost);
 };

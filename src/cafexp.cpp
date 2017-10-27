@@ -15,6 +15,7 @@
 #include "fminsearch.h"
 #include "lambda.h"
 #include "gamma_core.h"
+#include "root_equilibrium_distribution.h"
 
 /* Ask Ben */
 /*
@@ -169,7 +170,7 @@ int cafexp(int argc, char *const argv[]) {
     //double lambda = 0.0017;
     /* END: Option variables for simulations */
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:k:a:s::g::p:", longopts, NULL)) != -1 ) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:k:a:s::g::p::", longopts, NULL)) != -1 ) {
     // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -198,7 +199,9 @@ int cafexp(int argc, char *const argv[]) {
 		my_input_parameters.fixed_lambda = atof(optarg);
                 break;
             case 'p':
-                my_input_parameters.poisson_lambda = atof(optarg);
+                my_input_parameters.use_uniform_eq_freq = false;
+                if (optarg != NULL)
+                    my_input_parameters.poisson_lambda = atof(optarg);
                 break;
             case 'm':
 		my_input_parameters.fixed_multiple_lambdas = optarg;
@@ -261,25 +264,29 @@ int cafexp(int argc, char *const argv[]) {
         /* -l/-m */
         lambda *p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
 
+        root_equilibrium_distribution* p_prior = root_eq_dist_factory(my_input_parameters, p_tree, &gene_families);
+
         vector<core *> models = build_models(my_input_parameters, p_tree, p_lambda, &gene_families, max_family_size, max_root_family_size);
         if (p_lambda)
         {
             cout << "Got here..." << endl;
 
             if (!gene_families.empty()) {
-                my_executer.compute(models, &gene_families, my_input_parameters, max_family_size, max_root_family_size); // passing my_input_parameters as reference
+                my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size); // passing my_input_parameters as reference
             }
         }
         else {
             srand(10);
 
             for (core* p_model : models) {
-                p_lambda = my_executer.estimate_lambda(p_model, my_input_parameters, p_tree, p_lambda_tree, &gene_families, max_family_size, max_root_family_size, calculator);
+                p_lambda = my_executer.estimate_lambda(p_model, my_input_parameters, p_prior, p_tree, p_lambda_tree, &gene_families, max_family_size, max_root_family_size, calculator);
                 p_model->set_lambda(p_lambda);
             }
             // now that we've computed lambdas, compute new values and store them to the usual files
-            my_executer.compute(models, &gene_families, my_input_parameters, max_family_size, max_root_family_size); 
+            my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size); 
         }
+
+        delete p_prior;
 
 
 

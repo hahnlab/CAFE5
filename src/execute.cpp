@@ -8,6 +8,7 @@
 #include "lambda.h"
 #include "core.h"
 #include "gamma_core.h"
+#include "root_equilibrium_distribution.h"
 
 //! Read user provided gene family data (whose path is stored in input_parameters instance)
 //std::vector<gene_family> * execute::read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size, clade *p_tree) {
@@ -93,15 +94,8 @@ std::string filename(std::string base, std::string suffix)
     return base + (suffix.empty() ? "" : "_") + suffix + ".txt";
 }
 
-void execute::compute(std::vector<core *>& models, std::vector<gene_family> *p_gene_families, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
+void execute::compute(std::vector<core *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
 {
-    double pl = my_input_parameters.poisson_lambda;
-    prior_distribution *prior = NULL;
-    if (pl > 0)
-        prior = new poisson_frequency(pl);
-    else
-        prior = new equilibrium_frequency();
-
     std::ofstream results(filename("results", my_input_parameters.output_prefix));
 
     std::ofstream likelihoods(filename("family_lks", my_input_parameters.output_prefix));
@@ -111,13 +105,11 @@ void execute::compute(std::vector<core *>& models, std::vector<gene_family> *p_g
         models[i]->start_inference_processes();
 
         cout << endl << "Inferring processes for model " << i << endl;
-        double result = models[i]->infer_processes(prior);
+        double result = models[i]->infer_processes(p_prior);
         results << "Model " << models[i]->name() << " Result: " << result << endl;
 
         models[i]->print_results(likelihoods);
     }
-
-    delete prior;
 }
 
 void execute::simulate(std::vector<core *>& models, const input_parameters &my_input_parameters)
@@ -192,23 +184,15 @@ void execute::simulate(std::vector<core *>& models, const input_parameters &my_i
     }
 }
 
-lambda * execute::estimate_lambda(core *p_model, const input_parameters &my_input_parameters, clade *p_tree, clade *p_lambda_tree,
+lambda * execute::estimate_lambda(core *p_model, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
     std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size, probability_calculator& calculator)
 {
     if (p_lambda_tree != NULL)
     {
     }
 
-    double pl = my_input_parameters.poisson_lambda;
-    prior_distribution *prior = NULL;
-    if (pl > 0)
-        prior = new poisson_frequency(pl);
-    else
-        prior = new equilibrium_frequency();
-
-
     p_tree->init_gene_family_sizes(*p_gene_families);
-    single_lambda* p_single_lambda = new single_lambda(&calculator, find_best_lambda(p_model, prior));
+    single_lambda* p_single_lambda = new single_lambda(&calculator, find_best_lambda(p_model, p_prior));
     cout << "Best lambda match is " << setw(15) << setprecision(14) << p_single_lambda->get_single_lambda() << endl;
 
     return p_single_lambda;

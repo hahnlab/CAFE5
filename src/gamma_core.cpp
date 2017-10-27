@@ -4,6 +4,7 @@
 #include "gamma_core.h"
 #include "gamma.h"
 #include "process.h"
+#include "root_equilibrium_distribution.h"
 
 class inference_process_factory
 {
@@ -180,7 +181,7 @@ std::vector<double> gamma_core::get_posterior_probabilities(std::vector<double> 
 }
 
 //! Infer bundle
-double gamma_core::infer_processes(prior_distribution *prior) {
+double gamma_core::infer_processes(root_equilibrium_distribution *prior) {
 
     using namespace std;
     initialize_rootdist_if_necessary();
@@ -232,7 +233,7 @@ void gamma_bundle::clear()
     processes.clear();
 }
 
-std::vector<double> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, prior_distribution *eq) {
+std::vector<double> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, root_equilibrium_distribution *eq) {
     assert(_gamma_cat_probs.size() == processes.size());
 
     std::vector<double> cat_likelihoods;
