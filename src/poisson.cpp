@@ -9,28 +9,6 @@
 
 using namespace std;
 
-
-class leaf_size_gatherer {
-  vector<gene_family> _gene_families;
-
-public:
-  leaf_size_gatherer(vector<gene_family> gene_families) : _gene_families(gene_families)
-  {
-
-  }
-  void operator()(clade *node) {
-    if (node->is_leaf())
-		for (int i = 0; i < _gene_families.size(); ++i) {
-			int family_size = node->get_gene_family_size(_gene_families[i].id());
-			if (family_size > 0) { // ignore the zero counts (we condition that root family size is at least one)
-                            sizes.push_back(family_size-1); // we - 1 b/c we are using a "shifted" Poisson prior; Mira said this produces a better fit (as a result of us disallowing the root to have size 0)
-			}
-                }
-  }
-  
-  vector<int> sizes;
-};
-
 /***********************************************************************
 * Poisson Distribution
 ***********************************************************************/
@@ -45,6 +23,7 @@ double lnLPoisson(double* plambda, void* data)
   double score = 0;
   double lambda = plambda[0];
   std::vector<int> *p_leaf_family_sizes = (std::vector<int> *)data;
+  printf("p_leaf_family_size count = %d\n", p_leaf_family_sizes->size());
   for (i = 0; i<p_leaf_family_sizes->size(); i++) {
     int x = p_leaf_family_sizes->at(i);
     double ll = poisspdf((double)x, lambda);
@@ -53,7 +32,7 @@ double lnLPoisson(double* plambda, void* data)
     }
     score += log(ll);
   }
-  //printf("lambda: %f (Poisson) & Score: %f\n", lambda, score);	
+  printf("lambda: %f (Poisson) & Score: %f\n", lambda, score);	
   return -score;
 }
 
@@ -71,15 +50,19 @@ vector<double> get_prior_rfsize_poisson_lambda(int min_family_size, int max_fami
   return prior_rfsize;
 }
 
-vector<double> find_poisson_lambda(clade* tree, vector<gene_family> gene_families)
+vector<double> find_poisson_lambda(vector<gene_family> gene_families)
 {
-  // get all leaf sizes
-  leaf_size_gatherer loader(gene_families);
-  tree->apply_prefix_order(loader);
+    vector<int> sizes;
+    for (auto &fam : gene_families)
+    {
+        for (auto species : fam.get_species())
+            if (fam.get_species_size(species) > 0)
+                sizes.push_back(fam.get_species_size(species) - 1);
+    }
 
   FMinSearch* pfm;
   vector<double> result(1);
-  pfm = fminsearch_new_with_eq(lnLPoisson, result.size(), &loader.sizes);
+  pfm = fminsearch_new_with_eq(lnLPoisson, result.size(), &sizes);
   pfm->tolx = 1e-6;
   pfm->tolf = 1e-6;
 

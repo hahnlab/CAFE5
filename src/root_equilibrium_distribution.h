@@ -31,7 +31,7 @@ class poisson_distribution : public root_equilibrium_distribution
     std::vector<double> poisson;
     double _poisson_lambda;
 public:
-    poisson_distribution(clade *p_tree, std::vector<gene_family> *p_gene_families);
+    poisson_distribution(std::vector<gene_family> *p_gene_families);
 
     poisson_distribution(double poisson_lambda) : _poisson_lambda(poisson_lambda)
     {
@@ -45,5 +45,5 @@ public:
 
 };
 
-root_equilibrium_distribution* root_eq_dist_factory(const input_parameters& my_input_parameters, clade *p_tree, std::vector<gene_family> *p_gene_families);
+root_equilibrium_distribution* root_eq_dist_factory(const input_parameters& my_input_parameters, std::vector<gene_family> *p_gene_families);
 #endif

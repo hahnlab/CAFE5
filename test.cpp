@@ -77,19 +77,19 @@ TEST(Inference, infer_processes)
     core.set_lambda(&lambda);
     core.set_tree(p_tree);
     core.start_inference_processes();
-    equilibrium_frequency frq;
+    uniform_distribution frq;
     double multi = core.infer_processes(&frq);
     //core.get_likelihoods();
     DOUBLES_EQUAL(13428.5, multi, 0.1);
     delete p_tree;
 }
 
-TEST(Inference, equilibrium_frequency)
+TEST(Inference, uniform_distribution)
 {
     base_core core;
     std::vector<int> rd(10);
     std::fill(rd.begin(), rd.end(), 1);
-    equilibrium_frequency ef;
+    uniform_distribution ef;
     ef.initialize(rd);
     core.set_rootdist_vec(rd);
     DOUBLES_EQUAL(.1, ef.compute(5), 0.0001);
@@ -136,7 +136,7 @@ TEST(Inference, gamma)
     core.set_max_sizes(148, 122);
 
     core.start_inference_processes();
-    equilibrium_frequency frq;
+    uniform_distribution frq;
     double actual = core.infer_processes(&frq);
     DOUBLES_EQUAL(-56.3469, std::log(actual), .0001);
 

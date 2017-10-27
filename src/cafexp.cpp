@@ -52,7 +52,7 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
 
   srand(10);
 
-  vector<double> root_poisson_lambda = find_poisson_lambda(p_tree, gene_families);
+  vector<double> root_poisson_lambda = find_poisson_lambda(gene_families);
 
   vector<double> prior_rfsize = get_prior_rfsize_poisson_lambda(0, max_family_size, root_poisson_lambda[0]);
   //for (int i = 0; i < prior_rfsize.size(); ++i)
@@ -264,7 +264,7 @@ int cafexp(int argc, char *const argv[]) {
         /* -l/-m */
         lambda *p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
 
-        root_equilibrium_distribution* p_prior = root_eq_dist_factory(my_input_parameters, p_tree, &gene_families);
+        root_equilibrium_distribution* p_prior = root_eq_dist_factory(my_input_parameters, &gene_families);
 
         vector<core *> models = build_models(my_input_parameters, p_tree, p_lambda, &gene_families, max_family_size, max_root_family_size);
         if (p_lambda)
