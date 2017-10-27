@@ -4,7 +4,7 @@ CC = g++
 # DEBUG=true
 
 ifdef DEBUG
-  CFLAGS = -std=c++11 -g -I. -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
+  CFLAGS = -std=c++11 -g -I. -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -DVERBOSE
   LINKER = g++ -std=c++11 -o
 else
   CFLAGS = -std=c++11 -I. -O3
