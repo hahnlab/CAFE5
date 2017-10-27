@@ -275,7 +275,10 @@ int cafexp(int argc, char *const argv[]) {
 
             for (core* p_model : models) {
                 p_lambda = my_executer.estimate_lambda(p_model, my_input_parameters, p_tree, p_lambda_tree, &gene_families, max_family_size, max_root_family_size, calculator);
+                p_model->set_lambda(p_lambda);
             }
+            // now that we've computed lambdas, compute new values and store them to the usual files
+            my_executer.compute(models, &gene_families, my_input_parameters, max_family_size, max_root_family_size); 
         }
 
 
