@@ -5,15 +5,13 @@
 #include "poisson.h"
 #include "io.h"
 
-using namespace std;
-
 float uniform_distribution::compute(int val) const
 {
     int sum = std::accumulate(_rootdist_vec.begin(), _rootdist_vec.end(), 0);
     return float(_rootdist_vec[val]) / float(sum);
 }
 
-poisson_distribution::poisson_distribution(std::vector<gene_family> *p_gene_families)
+::poisson_distribution::poisson_distribution(std::vector<gene_family> *p_gene_families)
 {
     srand(10);
     vector<double> root_poisson_lambda = find_poisson_lambda(*p_gene_families);
@@ -21,7 +19,7 @@ poisson_distribution::poisson_distribution(std::vector<gene_family> *p_gene_fami
     cout << "Estimated poisson lambda: " << _poisson_lambda << std::endl;
 }
 
-void poisson_distribution::initialize(std::vector<int> rootdist_vec)
+void ::poisson_distribution::initialize(std::vector<int> rootdist_vec)
 {
     poisson = get_prior_rfsize_poisson_lambda(0, rootdist_vec.size(), _poisson_lambda);
 }
@@ -37,9 +35,9 @@ root_equilibrium_distribution* root_eq_dist_factory(const input_parameters& my_i
     {
         double pl = my_input_parameters.poisson_lambda;
         if (pl > 0)
-            p_prior = new poisson_distribution(pl);
+            p_prior = new ::poisson_distribution(pl);
         else
-            p_prior = new poisson_distribution(p_gene_families);
+            p_prior = new ::poisson_distribution(p_gene_families);
     }
 
     return p_prior;
