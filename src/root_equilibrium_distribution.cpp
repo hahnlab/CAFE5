@@ -5,6 +5,7 @@
 #include "poisson.h"
 #include "io.h"
 
+
 float uniform_distribution::compute(int val) const
 {
     int sum = std::accumulate(_rootdist_vec.begin(), _rootdist_vec.end(), 0);
@@ -13,7 +14,6 @@ float uniform_distribution::compute(int val) const
 
 ::poisson_distribution::poisson_distribution(std::vector<gene_family> *p_gene_families)
 {
-    srand(10);
     vector<double> root_poisson_lambda = find_poisson_lambda(*p_gene_families);
     _poisson_lambda = root_poisson_lambda[0];
     cout << "Estimated poisson lambda: " << _poisson_lambda << std::endl;

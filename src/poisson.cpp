@@ -23,7 +23,6 @@ double lnLPoisson(double* plambda, void* data)
   double score = 0;
   double lambda = plambda[0];
   std::vector<int> *p_leaf_family_sizes = (std::vector<int> *)data;
-  printf("p_leaf_family_size count = %lu\n", p_leaf_family_sizes->size());
   for (i = 0; i<p_leaf_family_sizes->size(); i++) {
     int x = p_leaf_family_sizes->at(i);
     double ll = poisspdf((double)x, lambda);
@@ -32,7 +31,7 @@ double lnLPoisson(double* plambda, void* data)
     }
     score += log(ll);
   }
-  printf("lambda: %f (Poisson) & Score: %f\n", lambda, score);	
+
   return -score;
 }
 
@@ -71,7 +70,8 @@ vector<double> find_poisson_lambda(vector<gene_family> gene_families)
   fminsearch_min(pfm, &my_random);
 
   result[0] = fminsearch_get_minX(pfm)[0];
-  cout << "Score: " << *pfm->fv << endl;
+  cout << "Empirical Prior Estimation Result : (" << pfm->iters << " iterations)" << endl;
+  cout << "Poisson lambda: " << result[0] << " &  Score: " << *pfm->fv << endl;
 
   return result;
 }

@@ -227,6 +227,8 @@ double core::initialize_lambda_guess()
 {
     max_branch_length_finder finder;
     _p_tree->apply_prefix_order(finder);
-    return 1.0 / finder.result() * unifrnd();
+    double result = 1.0 / finder.result() * unifrnd();
+    cout << "Initial lambda: " << result << std::endl;
+    return result;
 }
 

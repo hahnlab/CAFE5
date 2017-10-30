@@ -50,8 +50,6 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
 {
   vector<double> posterior(max_family_size);
 
-  srand(10);
-
   vector<double> root_poisson_lambda = find_poisson_lambda(gene_families);
 
   vector<double> prior_rfsize = get_prior_rfsize_poisson_lambda(0, max_family_size, root_poisson_lambda[0]);
@@ -156,6 +154,8 @@ int cafexp(int argc, char *const argv[]) {
     /* START: Option variables for main() */
     int args; // getopt_long returns int or char
     int prev_arg;
+
+    srand(10);
     
     input_parameters my_input_parameters;
     
@@ -276,7 +276,6 @@ int cafexp(int argc, char *const argv[]) {
             }
         }
         else {
-            srand(10);
 
             for (core* p_model : models) {
                 p_lambda = my_executer.estimate_lambda(p_model, my_input_parameters, p_prior, p_tree, p_lambda_tree, &gene_families, max_family_size, max_root_family_size, calculator);

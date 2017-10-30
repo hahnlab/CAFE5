@@ -1,6 +1,8 @@
 #include <vector>
 #include <map>
 #include <cmath>
+#include <iomanip>
+
 #include "lambda.h"
 #include "clade.h"
 #include "fminsearch.h"
@@ -34,7 +36,7 @@ std::vector<double> multiple_lambda::calculate_child_factor(clade *child, std::v
 /// score of a lambda is the -log likelihood of the most likely resulting family size
 double calculate_lambda_score(double* p_lambda, void* args)
 {
-    cout << "Attempting lambda: " << *p_lambda << std::endl;
+    cout << "Attempting lambda: " << std::setw(15) << std::setprecision(14) << *p_lambda << std::endl;
     std::pair<core *, root_equilibrium_distribution *>* vals = (std::pair<core *, root_equilibrium_distribution *>*)args;
 
     core *core = vals->first;
