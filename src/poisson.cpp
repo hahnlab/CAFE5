@@ -23,7 +23,7 @@ double lnLPoisson(double* plambda, void* data)
   double score = 0;
   double lambda = plambda[0];
   std::vector<int> *p_leaf_family_sizes = (std::vector<int> *)data;
-  printf("p_leaf_family_size count = %d\n", p_leaf_family_sizes->size());
+  printf("p_leaf_family_size count = %lu\n", p_leaf_family_sizes->size());
   for (i = 0; i<p_leaf_family_sizes->size(); i++) {
     int x = p_leaf_family_sizes->at(i);
     double ll = poisspdf((double)x, lambda);
