@@ -19,22 +19,26 @@ struct option longopts[] = {
   { "fixed_alpha", required_argument, NULL, 'a' },
   { "rootdist", required_argument, NULL, 'f'},
   { "poisson", optional_argument, NULL, 'p' },
-  { "estimate", optional_argument, NULL, 'e' },
   { "simulate", optional_argument, NULL, 's' },
-  { "nsims", optional_argument, NULL, 'n' },
+//  { "nsims", optional_argument, NULL, 'n' },
   { "log", optional_argument, NULL, 'g'},
   { 0, 0, 0, 0 }
 };
 
 void input_parameters::check_input() {
-    //! The user cannot specify both -l and -y
+    //! Options -l and -m cannot both specified.
     if (fixed_lambda > 0.0 && !fixed_multiple_lambdas.empty()) {
-        throw runtime_error("You cannot fix one lambda value (-l) and many lambda values (-m). Exiting...");
+        throw runtime_error("Options -l and -m are mutually exclusive. Exiting...");
     }
 
-    //! The user cannot specify both -i and -s
-    if (!input_file_path.empty() && simulate) {
-        throw runtime_error("You cannot simulate and try to infer simultaneously. Exiting...");
+    //! The number of simulated families is specified either through -s, or through -f. Cannot be both. 
+    if (nsims > 0 && !rootdist.empty()) {
+        throw runtime_error("Option -s cannot be provided an argument if -f is specified. Exiting...");
+    }
+    
+    //! Options -i and -f cannot be both specified. Either one or the other is used to specify the root eq freq distr'n.
+    if (!input_file_path.empty() && !rootdist.empty()) {
+        throw runtime_error("Options -i and -f are mutually exclusive. Exiting...");
     }
 
     if (fixed_alpha != 0.0 && n_gamma_cats == 1) {

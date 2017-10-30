@@ -17,34 +17,7 @@
 #include "gamma_core.h"
 #include "root_equilibrium_distribution.h"
 
-/* Ask Ben */
-/*
-1) How does using pair_type bla works?
-2) If I remove the declar'n of max_value from utils.h (but leave the def'n in utils.cpp), cafexp does not compile
-*/
-
 using namespace std;
-
-//vector<gene_family> initialize_sample_families()
-//{
-//  vector<gene_family> gene_families;
-//
-//  gene_families.push_back(gene_family("ENS01"));
-//  gene_families.push_back(gene_family("ENS02"));
-//  gene_families.push_back(gene_family("ENS03"));
-//  gene_families.push_back(gene_family("ENS04"));
-//
-//  for (int i = 0; i < gene_families.size(); ++i)
-//  {
-//    gene_families[i].set_species_size("A", 5);
-//    gene_families[i].set_species_size("B", 10);
-//    gene_families[i].set_species_size("C", 2);
-//    gene_families[i].set_species_size("D", 6);
-//  }
-//
-//  return gene_families;
-//
-//}
 
 vector<double> get_posterior(vector<gene_family> gene_families, int max_family_size, int max_root_family_size, double lambda, clade *p_tree)
 {
@@ -122,31 +95,38 @@ std::vector<core *> build_models(const input_parameters& my_input_parameters, cl
     std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size)
 {
     std::vector<core *> models;
-    if (!my_input_parameters.input_file_path.empty())
-    {
-        if (p_lambda == NULL)
-            models.push_back(new base_core());
-        if (p_lambda != NULL && my_input_parameters.n_gamma_cats > 1)
-            models.push_back(new gamma_core());
-    }
-    else if (my_input_parameters.simulate)
-    {
-        if (my_input_parameters.n_gamma_cats > 1)
-            models.push_back(new gamma_core());
-        else
-            models.push_back(new base_core());
-    }
-    for (size_t i = 0; i < models.size(); ++i)
-    {
-        models[i]->set_tree(p_tree);
-        models[i]->set_lambda(p_lambda);
-        models[i]->set_gene_families(p_gene_families);
-        gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
-        if (p_model != NULL) {
-            p_model->initialize_with_alpha(my_input_parameters.n_gamma_cats, p_gene_families->size(), my_input_parameters.fixed_alpha);
+    
+    /* If estimating or computing (-i; or -i + -l) and not simulating */
+    if (my_input_parameters.nsims == 0 && !my_input_parameters.input_file_path.empty()) {
+        
+        /* Base core is always used (in both computation and estimation) */
+        models.push_back(new base_core(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size));
+        
+        /* Gamma core is only used in estimation */
+        if (p_lambda == NULL && my_input_parameters.n_gamma_cats > 1) {
+            models.push_back(new gamma_core(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha));
         }
-        models[i]->set_max_sizes(max_family_size, max_root_family_size);
     }
+    
+    /* If simulating (-s) */
+    else if (my_input_parameters.nsims > 0 || !my_input_parameters.rootdist.empty()) {
+        
+        // Either use base core or gamma core when simulating
+        if (my_input_parameters.n_gamma_cats > 1) { models.push_back(new gamma_core(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha)); }
+        else { models.push_back(new base_core(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size)); }
+    }
+    
+//    for (size_t i = 0; i < models.size(); ++i)
+//    {
+//        models[i]->set_tree(p_tree);
+//        models[i]->set_lambda(p_lambda);
+//        models[i]->set_gene_families(p_gene_families);
+//        gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
+//        if (p_model != NULL) {
+//            p_model->initialize_with_alpha(my_input_parameters.n_gamma_cats, p_gene_families->size(), my_input_parameters.fixed_alpha);
+//        }
+//        models[i]->set_max_sizes(max_family_size, max_root_family_size);
+//    }
     return models;
 }
 
@@ -154,21 +134,13 @@ int cafexp(int argc, char *const argv[]) {
     /* START: Option variables for main() */
     int args; // getopt_long returns int or char
     int prev_arg;
-
     srand(10);
-    
+    int max_family_size = -1; // needed for defining matrix size
+    int max_root_family_size = -1; // needed for defining matrix size
     input_parameters my_input_parameters;
-    
-    int max_family_size = -1; // largest gene family size among all gene families
-    int max_root_family_size = -1;
-    
-    probability_calculator calculator;
     std::vector<gene_family> gene_families;
-  
-    /* START: Option variables for simulations */
-    map<int, int>* p_rootdist_map = NULL;
-    //double lambda = 0.0017;
-    /* END: Option variables for simulations */
+    probability_calculator calculator; // for computing lks
+    map<int, int>* p_rootdist_map = NULL; // for sims
 
     while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:k:a:s::g::p::", longopts, NULL)) != -1 ) {
     // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
@@ -193,31 +165,29 @@ int cafexp(int argc, char *const argv[]) {
 		my_input_parameters.lambda_tree_file_path = optarg;
                 break;
             case 's':
-		my_input_parameters.simulate = true;
+                // Number of fams simulated defaults to 0 if -f is not provided
+                if (optarg != NULL) { my_input_parameters.nsims = atoi(optarg); }
                 break;
             case 'l':
 		my_input_parameters.fixed_lambda = atof(optarg);
                 break;
             case 'p':
-                my_input_parameters.use_uniform_eq_freq = false;
-                if (optarg != NULL)
-                    my_input_parameters.poisson_lambda = atof(optarg);
+                my_input_parameters.use_uniform_eq_freq = false; // If the user types '-p', the root eq freq dist will not be a uniform
+                // If the user provides an argument to -p, then we do not estimate it
+                if (optarg != NULL) { my_input_parameters.poisson_lambda = atof(optarg); }
                 break;
             case 'm':
 		my_input_parameters.fixed_multiple_lambdas = optarg;
                 break;
             case 'k':
-                my_input_parameters.n_gamma_cats = atoi(optarg);
-                cout << "You have specified " << my_input_parameters.n_gamma_cats << " gamma classes." << endl;
-		if (my_input_parameters.n_gamma_cats > 1)
+                if (optarg != NULL) { my_input_parameters.n_gamma_cats = atoi(optarg); }
                 break;
             case 'a':
                 my_input_parameters.fixed_alpha = atof(optarg);
-                cout << "Specified alpha (-a): " << my_input_parameters.fixed_alpha << endl;
                 break;
-            case 'n':
-		my_input_parameters.nsims = atoi(optarg);
-                break;
+//            case 'n':
+//		my_input_parameters.nsims = atoi(optarg);
+//                break;
             case 'f':
 		my_input_parameters.rootdist = optarg;
                 break;
@@ -290,24 +260,15 @@ int cafexp(int argc, char *const argv[]) {
 
 
         /* -s */
-        if (my_input_parameters.simulate) {
-            if (!my_input_parameters.nsims && my_input_parameters.rootdist.empty()) {
-                throw runtime_error("In order to perform simulations (-s), you must specify the number of simulation runs with -n. Exiting...");
+        if (my_input_parameters.nsims != 0 || !my_input_parameters.rootdist.empty()) {
+            /* -s is provided an argument (-f is not), using -i to obtain root eq freq distr'n */
+            if (my_input_parameters.nsims != 0) {
+                // place holder for estimating poisson lambda if -p, or using uniform as root eq freq distr'n
             }
 
-            else { cout << endl << "Performing " << my_input_parameters.nsims << " simulation batches." << endl; }
-
-            if (my_input_parameters.input_file_path.empty() && my_input_parameters.rootdist.empty()) {
-                throw runtime_error("In order to perform simulations (s), you must either specify an input file from which the root family size is estimated with -i, or specify a root family distribution with -f. Exiting...");
-            }
-
-            /* -i is provided, -f is not */
-            else if (my_input_parameters.rootdist.empty() && !my_input_parameters.input_file_path.empty()) {
-                cout << endl << "Simulations will use the equilibrium root family size estimated from data provided with -i:" << my_input_parameters.input_file_path << endl;
-            }
-
-            /* -f is provided (-f has precedence over -i if both are provided) */
-            else {
+            /* -f is provided (-s does not have an argument), not using -i*/
+            else if (!my_input_parameters.rootdist.empty()) {
+                cout << "Using -f, not using -i, nsims = " << my_input_parameters.nsims << endl;
                 my_executer.simulate(models, my_input_parameters);
             }
         }

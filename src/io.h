@@ -33,18 +33,17 @@ public:
     std::string input_file_path;
     std::string output_prefix;
     std::string tree_file_path;
-    double fixed_lambda = 0.0;
-    bool simulate = false;
+    std::string lambda_tree_file_path;
     std::string fixed_multiple_lambdas;
     std::string rootdist;
-    int nsims = 0;
-    bool do_log = false;
-    std::string lambda_tree_file_path;
-    int n_gamma_cats = 1;
+    double fixed_lambda = 0.0;
     double fixed_alpha = 0.0;
-
-    bool use_uniform_eq_freq = true;
     double poisson_lambda = 0.0;
+    int nsims = 0;
+    int n_gamma_cats = 1;
+//    bool simulate = false;
+    bool do_log = false;
+    bool use_uniform_eq_freq = true;
 
     //! Check calls
     void check_input();

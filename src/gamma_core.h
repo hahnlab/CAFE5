@@ -29,12 +29,19 @@ private:
 
     std::vector<double> get_posterior_probabilities(std::vector<double> cat_likelihoods);
 public:
+    
+    //! Basic constructor
     gamma_core() { _alpha = 0; };
 
-    //! Simulation constructor
+    //! Computation or estimation constructor
+    gamma_core(lambda* p_lambda, clade *p_tree, vector<gene_family> *p_gene_families, int max_family_size, int max_root_family_size, int n_gamma_cats, double fixed_alpha): 
+    core(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size) {
+        this->initialize_with_alpha(n_gamma_cats, p_gene_families->size(), fixed_alpha);
+    }
+    
+    //! Simulation constructors
     gamma_core(ostream & ost, lambda* p_lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec, int n_gamma_cats, double alpha);
-
-    //! Simulation constructor
+    
     gamma_core(ostream & ost, lambda* p_lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec, vector<int>& cats, vector<double>&mul);
 
     ~gamma_core();
