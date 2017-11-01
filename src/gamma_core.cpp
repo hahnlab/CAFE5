@@ -38,6 +38,13 @@ public:
     }
 };
 
+gamma_core::gamma_core(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
+    int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map) :
+    core(p_lambda, p_tree, NULL, max_family_size, max_root_family_size) {
+    _rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
+    this->initialize_with_alpha(n_gamma_cats, _rootdist_vec.size(), fixed_alpha);
+    _total_n_families_sim = _rootdist_vec.size();
+}
 
 //! Simulation: gamma_core constructor when just alpha is provided.
 gamma_core::gamma_core(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
@@ -111,7 +118,7 @@ void gamma_core::initialize_without_alpha(int n_gamma_cats, int n_families, vect
     //    set_alpha(alpha, n_families);
 
     set_lambda_multipliers(lambda_multipliers);
-    set_gamma_cats(gamma_cats);
+    _gamma_cats = gamma_cats;
 }
 
 //! Resize all gamma-related vectors according to provided number (integer) of gamma categories
@@ -145,10 +152,6 @@ void gamma_core::set_lambda_multipliers(std::vector<double> lambda_multipliers) 
     _lambda_multipliers = lambda_multipliers;
 }
 
-//! Set lambda bins (each int is a vector pointing to a gamma category)
-void gamma_core::set_gamma_cats(std::vector<int> gamma_cats) {
-    _gamma_cats = gamma_cats;
-}
 
 void gamma_core::start_inference_processes() {
 

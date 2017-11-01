@@ -104,15 +104,21 @@ std::vector<core *> build_models(const input_parameters& my_input_parameters, cl
         
         /* Gamma core is only used in estimation */
         if (p_lambda == NULL && my_input_parameters.n_gamma_cats > 1) {
-            models.push_back(new gamma_core(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha));
+            models.push_back(new gamma_core(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, 
+                my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, NULL));
         }
     }
     
     /* If simulating (-s) */
     else if (my_input_parameters.nsims > 0 || !my_input_parameters.rootdist.empty()) {
         
+        /* -f */
+        std::map<int, int> *p_rootdist_map = read_rootdist(my_input_parameters.rootdist); // in map form
+
         // Either use base core or gamma core when simulating
-        if (my_input_parameters.n_gamma_cats > 1) { models.push_back(new gamma_core(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha)); }
+        if (my_input_parameters.n_gamma_cats > 1) { models.push_back(new gamma_core(p_lambda, p_tree, NULL, 
+            max_family_size, max_root_family_size, my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha,
+            p_rootdist_map)); }
         else { models.push_back(new base_core(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size)); }
     }
     

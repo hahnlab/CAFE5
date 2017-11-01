@@ -115,14 +115,6 @@ void execute::compute(std::vector<core *>& models, std::vector<gene_family> *p_g
 void execute::simulate(std::vector<core *>& models, const input_parameters &my_input_parameters)
 {
     // cout << "Simulations will use the root family distribution specified with -f: " << my_input_parameters.rootdist << endl;
-    std::map<int, int> *p_rootdist_map = read_rootdist(my_input_parameters.rootdist); // in map form
-    vector<int> rootdist_vec;
-
-    if (!p_rootdist_map)
-        throw runtime_error("p_rootdist_map not specified. Exiting...");
-
-    rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
-    
     // rootdist_vec.clear();
     // cout << "Even if you provided a rootdist with -f, I just emptied the rootdist_vec in execute.cpp. So simulating from uniform with max size 100." << endl;
     cout << "I will simulate with this many models: " << models.size() << endl;
@@ -131,7 +123,7 @@ void execute::simulate(std::vector<core *>& models, const input_parameters &my_i
 
         cout << "Simulating for model " << i << endl;
 
-        models[i]->set_rootdist_vec(rootdist_vec);
+        // models[i]->set_rootdist_vec(rootdist_vec);
 
         cout << "I just set the root distribution." << endl;
 
@@ -146,10 +138,14 @@ void execute::simulate(std::vector<core *>& models, const input_parameters &my_i
         //print_simulation(simulation, cout);
 
         // lambda_multipliers and lambda_bins will not be harcoded in the future
-        models[i]->set_total_n_families_sim(my_input_parameters.nsims);
+        if (my_input_parameters.rootdist.empty())
+            models[i]->set_total_n_families_sim(my_input_parameters.nsims);
+//        else
+//            models[i]->set_total_n_families_sim(rootdist_vec.size());
 
         cout << "I just set number of families to simulate." << endl;
 
+#if 0
         gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
         if (p_model != NULL) {
             bool has_alpha = true;
@@ -165,7 +161,7 @@ void execute::simulate(std::vector<core *>& models, const input_parameters &my_i
                     lambda_multipliers, gamma_cats);
             }
         }
-
+#endif
         // core core_model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, n_cat, alpha);
 
         // model(cout, p_lambda, p_tree, max_family_size, total_n_families, rootdist_vec, lambda_bins, lambda_multipliers);
