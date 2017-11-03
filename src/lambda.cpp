@@ -36,7 +36,6 @@ std::vector<double> multiple_lambda::calculate_child_factor(clade *child, std::v
 /// score of a lambda is the -log likelihood of the most likely resulting family size
 double calculate_lambda_score(double* p_lambda, void* args)
 {
-    cout << "Attempting lambda: " << std::setw(15) << std::setprecision(14) << *p_lambda << std::endl;
     std::pair<model *, root_equilibrium_distribution *>* vals = (std::pair<model *, root_equilibrium_distribution *>*)args;
 
     model *core = vals->first;
@@ -50,13 +49,18 @@ double calculate_lambda_score(double* p_lambda, void* args)
 
 double find_best_lambda(model * p_model, root_equilibrium_distribution *p_distribution)
 {
-    auto result = p_model->initial_guesses();
+    auto initial = p_model->initial_guesses();
 	FMinSearch* pfm;
     std::pair<model *, root_equilibrium_distribution *> args(p_model, p_distribution);
-	pfm = fminsearch_new_with_eq(calculate_lambda_score, result.size(), &args);
+	pfm = fminsearch_new_with_eq(calculate_lambda_score, initial.size(), &args);
 	pfm->tolx = 1e-6;
 	pfm->tolf = 1e-6;
-	fminsearch_min(pfm, &result[0]);
+	fminsearch_min(pfm, &initial[0]);
 	double *re = fminsearch_get_minX(pfm);
-	return *re;
+    cout << "Best match" << (initial.size() == 1 ? " is: " : "es are: ") << setw(15) << setprecision(14);
+    for (size_t i = 0; i<initial.size(); ++i)
+        cout << re[i] << ',';
+    cout << endl;
+
+    return *re;
 }

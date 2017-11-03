@@ -1,5 +1,4 @@
 #include <cmath>
-#include <iomanip>
 
 #include "utils.h"
 #include "io.h"
@@ -189,7 +188,6 @@ lambda * execute::estimate_lambda(model *p_model, const input_parameters &my_inp
 
     p_tree->init_gene_family_sizes(*p_gene_families);
     single_lambda* p_single_lambda = new single_lambda(&calculator, find_best_lambda(p_model, p_prior));
-    cout << "Best lambda match is " << setw(15) << setprecision(14) << p_single_lambda->get_single_lambda() << endl;
 
     return p_single_lambda;
 }

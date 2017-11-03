@@ -1,5 +1,6 @@
 #include <cmath>
 #include <numeric>
+#include <iomanip>
 
 #include "base_model.h"
 #include "process.h"
@@ -97,8 +98,9 @@ std::vector<double> base_model::initial_guesses()
 
 void base_model::set_current_guesses(double *guesses)
 {
-    probability_calculator calculator;
-    single_lambda lambda(&calculator, guesses[0]);
-    set_lambda(&lambda);
+    cout << "Attempting lambda: " << std::setw(15) << std::setprecision(14) << guesses[0] << std::endl;
+    probability_calculator*  calculator = new probability_calculator();
+    single_lambda* lambda = new single_lambda(calculator, guesses[0]);
+    set_lambda(lambda);
 }
 

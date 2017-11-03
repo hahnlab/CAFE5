@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <numeric>
+#include <iomanip>
 
 #include "gamma_core.h"
 #include "gamma.h"
@@ -144,9 +145,9 @@ void gamma_model::set_alpha(double alpha, int n_families) {
     _gamma_cats = *cats;
     delete cats;
 
-    for (std::vector<double>::iterator it = _gamma_cat_probs.begin(); it != _gamma_cat_probs.end(); ++it) {
-        cout << "Gamma cat prob is : " << *it << endl;
-    }
+//    for (std::vector<double>::iterator it = _gamma_cat_probs.begin(); it != _gamma_cat_probs.end(); ++it) {
+//        cout << "Gamma cat prob is : " << *it << endl;
+//    }
 }
 
 //! Set lambda multipliers for each gamma category
@@ -196,7 +197,7 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     vector<double> all_bundles_likelihood(_inference_bundles.size());
 
     for (int i = 0; i < _inference_bundles.size(); ++i) {
-        cout << endl << "About to prune a gamma bundle." << endl;
+//        cout << endl << "About to prune a gamma bundle." << endl;
         gamma_bundle& bundle = _inference_bundles[i];
 
         vector<double> cat_likelihoods = bundle.prune(_gamma_cat_probs, prior);
@@ -208,18 +209,18 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
         {            
             results.push_back(family_info_stash(i, bundle.get_lambda_likelihood(k), cat_likelihoods[k], 
                 family_likelihood, posterior_probabilities[k], posterior_probabilities[k] > 0.95));
-            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
+//            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
         }
 
         all_bundles_likelihood[i] = family_likelihood;
-        cout << "Bundle " << i << " family likelihood = " << family_likelihood << endl;
+//        cout << "Bundle " << i << " family likelihood = " << family_likelihood << endl;
 
-        cout << "Likelihood of family " << i << " = " << all_bundles_likelihood[i] << endl;
+//        cout << "Likelihood of family " << i << " = " << all_bundles_likelihood[i] << endl;
     }
 
     double multi = accumulate(all_bundles_likelihood.begin(), all_bundles_likelihood.end(), 1.0, multiplies<double>());
 
-    cout << "Final answer: " << multi << endl;
+//    cout << "Final answer: " << multi << endl;
 
     return multi;
 }
@@ -236,9 +237,10 @@ std::vector<double> gamma_model::initial_guesses()
 
 void gamma_model::set_current_guesses(double *guesses)
 {
-    probability_calculator calculator;
-    single_lambda lambda(&calculator, guesses[0]);
-    set_lambda(&lambda);
+    cout << "Attempting lambda: " << std::setw(15) << std::setprecision(14) << guesses[0] << ", alpha: " << guesses[1] << std::endl;
+    probability_calculator*  calculator = new probability_calculator();
+    single_lambda* lambda = new single_lambda(calculator, guesses[0]);
+    set_lambda(lambda);
 
     double alpha = guesses[1];
     set_alpha(alpha, _p_gene_families->size());
