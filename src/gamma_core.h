@@ -63,6 +63,10 @@ public:
 
     double infer_processes(root_equilibrium_distribution *prior);
 
+    std::vector<double> initial_guesses();
+
+    void set_current_guesses(double * guesses);
+
     virtual std::string name() {
         return "Gamma";
     }

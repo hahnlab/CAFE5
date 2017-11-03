@@ -16,6 +16,7 @@
 #include "lambda.h"
 #include "gamma_core.h"
 #include "root_equilibrium_distribution.h"
+#include "base_model.h"
 
 using namespace std;
 

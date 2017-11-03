@@ -32,7 +32,7 @@ void input_parameters::check_input() {
     }
 
     //! Options -l and -i have to be both specified.
-    if (fixed_lambda > 0.0 && !input_file_path.empty()) {
+    if (fixed_lambda > 0.0 && input_file_path.empty()) {
         throw runtime_error("Options -l and -i must both be provided an argument. Exiting...");
     }
     

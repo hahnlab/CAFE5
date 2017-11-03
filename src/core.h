@@ -26,6 +26,21 @@ struct family_info_stash {
     bool significant;
 };
 
+class max_branch_length_finder
+{
+    double _result;
+public:
+    max_branch_length_finder() : _result(0.0)
+    {
+
+    }
+    void operator()(clade *c);
+
+    double result() const {
+        return _result;
+    }
+};
+
 std::ostream& operator<<(std::ostream& ost, const family_info_stash& r);
 
 class model {
@@ -91,27 +106,8 @@ public:
     virtual std::string name() = 0;
     virtual void print_results(std::ostream& ost) = 0;
 
-    double initialize_lambda_guess();
-};
-
-class base_model : public model {
-    std::vector<inference_process *> processes;
-    virtual simulation_process* create_simulation_process(int family_number);
-public:
-    //! Computation or estimation constructor
-    base_model(lambda* p_lambda, clade *p_tree, vector<gene_family> *p_gene_families, int max_family_size, int max_root_family_size): 
-    model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size) {}
-    
-    virtual void start_inference_processes();
-    virtual double infer_processes(root_equilibrium_distribution *prior);
-
-    virtual std::string name() {
-        return "Base";
-    }
-    virtual ~base_model();
-
-    virtual void print_results(std::ostream& ost);
-
+    virtual std::vector<double> initial_guesses() = 0;
+    virtual void set_current_guesses(double *guesses) = 0;
 };
 
 std::vector<model *> build_models(const input_parameters& my_input_parameters, clade *p_tree, lambda *p_lambda, std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size);

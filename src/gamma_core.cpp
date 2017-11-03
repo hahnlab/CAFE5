@@ -40,8 +40,10 @@ public:
 
 gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
     int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map) :
-    model(p_lambda, p_tree, NULL, max_family_size, max_root_family_size) {
-    _rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
+    model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size) {
+    if (p_rootdist_map != NULL)
+        _rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
+    
     this->initialize_with_alpha(n_gamma_cats, _rootdist_vec.size(), fixed_alpha);
     _total_n_families_sim = _rootdist_vec.size();
 }
@@ -155,6 +157,7 @@ void gamma_model::set_lambda_multipliers(std::vector<double> lambda_multipliers)
 
 void gamma_model::start_inference_processes() {
 
+    _inference_bundles.clear();
     inference_process_factory factory(_ost, _p_lambda, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec);
     for (auto i = _p_gene_families->begin(); i != _p_gene_families->end(); ++i)
     {
@@ -221,6 +224,26 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     return multi;
 }
 
+std::vector<double> gamma_model::initial_guesses()
+{
+    max_branch_length_finder finder;
+    _p_tree->apply_prefix_order(finder);
+    double result = 1.0 / finder.result() * unifrnd();
+    cout << "Initial lambda: " << result << std::endl;
+    double alpha = unifrnd();
+    return std::vector<double>{result, alpha};
+}
+
+void gamma_model::set_current_guesses(double *guesses)
+{
+    probability_calculator calculator;
+    single_lambda lambda(&calculator, guesses[0]);
+    set_lambda(&lambda);
+
+    double alpha = guesses[1];
+    set_alpha(alpha, _p_gene_families->size());
+}
+
 gamma_bundle::gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers)
 {
     std::transform(lambda_multipliers.begin(), lambda_multipliers.end(), std::back_inserter(processes), factory);
@@ -263,3 +286,4 @@ double gamma_bundle::get_lambda_likelihood(int family_id)
 {
     return processes[family_id]->get_lambda_multiplier();
 }
+

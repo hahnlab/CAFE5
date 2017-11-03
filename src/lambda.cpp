@@ -41,10 +41,8 @@ double calculate_lambda_score(double* p_lambda, void* args)
 
     model *core = vals->first;
     root_equilibrium_distribution* dist = vals->second;
-    probability_calculator calculator;
 
-    single_lambda lambda(&calculator, *p_lambda);
-    core->set_lambda(&lambda);
+    core->set_current_guesses(p_lambda);
     core->start_inference_processes();
 
     return core->infer_processes(dist);
@@ -52,14 +50,13 @@ double calculate_lambda_score(double* p_lambda, void* args)
 
 double find_best_lambda(model * p_model, root_equilibrium_distribution *p_distribution)
 {
-	int lambda_len = 1;
+    auto result = p_model->initial_guesses();
 	FMinSearch* pfm;
     std::pair<model *, root_equilibrium_distribution *> args(p_model, p_distribution);
-	pfm = fminsearch_new_with_eq(calculate_lambda_score, lambda_len, &args);
+	pfm = fminsearch_new_with_eq(calculate_lambda_score, result.size(), &args);
 	pfm->tolx = 1e-6;
 	pfm->tolf = 1e-6;
-	double result = p_model->initialize_lambda_guess();
-	fminsearch_min(pfm, &result);
+	fminsearch_min(pfm, &result[0]);
 	double *re = fminsearch_get_minX(pfm);
 	return *re;
 }
