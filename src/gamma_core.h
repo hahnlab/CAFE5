@@ -13,7 +13,7 @@ public:
 };
 
 
-class gamma_core : public core {
+class gamma_model : public model {
 private:
     //! Gamma
     std::vector<double> _lambda_multipliers;
@@ -31,18 +31,18 @@ private:
 public:
     
     //! Basic constructor
-    gamma_core() { _alpha = 0; };
+    gamma_model() { _alpha = 0; };
 
     //! Computation or estimation constructor
-    gamma_core(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
+    gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
         int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map);
     
     //! Simulation constructors
-    gamma_core(ostream & ost, lambda* p_lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec, int n_gamma_cats, double alpha);
+    gamma_model(ostream & ost, lambda* p_lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec, int n_gamma_cats, double alpha);
     
-    gamma_core(ostream & ost, lambda* p_lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec, vector<int>& cats, vector<double>&mul);
+    gamma_model(ostream & ost, lambda* p_lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec, vector<int>& cats, vector<double>&mul);
 
-    ~gamma_core();
+    ~gamma_model();
     //! Gamma methods
     void adjust_n_gamma_cats(int n_gamma_cats);
 

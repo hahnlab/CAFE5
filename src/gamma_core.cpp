@@ -38,17 +38,17 @@ public:
     }
 };
 
-gamma_core::gamma_core(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
+gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
     int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map) :
-    core(p_lambda, p_tree, NULL, max_family_size, max_root_family_size) {
+    model(p_lambda, p_tree, NULL, max_family_size, max_root_family_size) {
     _rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
     this->initialize_with_alpha(n_gamma_cats, _rootdist_vec.size(), fixed_alpha);
     _total_n_families_sim = _rootdist_vec.size();
 }
 
-//! Simulation: gamma_core constructor when just alpha is provided.
-gamma_core::gamma_core(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
-    int n_gamma_cats, double alpha) : core(ost, lambda, p_tree, max_family_size, total_n_families, rootdist_vec),
+//! Simulation: gamma_model constructor when just alpha is provided.
+gamma_model::gamma_model(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
+    int n_gamma_cats, double alpha) : model(ost, lambda, p_tree, max_family_size, total_n_families, rootdist_vec),
     _gamma_cat_probs(n_gamma_cats), _lambda_multipliers(n_gamma_cats) {
 
     if (!rootdist_vec.empty()) {
@@ -81,19 +81,19 @@ gamma_core::gamma_core(ostream & ost, lambda* lambda, clade *p_tree, int max_fam
 
 }
 
-//! Simulation: core constructor when alpha is not provided and membership is provided directly, in addition to the lambda multipliers (something the user decides to use)
-gamma_core::gamma_core(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
-    vector<int>& cats, vector<double>&mul) : core(ost, lambda, p_tree, max_family_size, total_n_families, rootdist_vec),
+//! Simulation: model constructor when alpha is not provided and membership is provided directly, in addition to the lambda multipliers (something the user decides to use)
+gamma_model::gamma_model(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
+    vector<int>& cats, vector<double>&mul) : model(ost, lambda, p_tree, max_family_size, total_n_families, rootdist_vec),
     _gamma_cats(cats), _lambda_multipliers(mul) {}
 
-gamma_core::~gamma_core()
+gamma_model::~gamma_model()
 {
     for (size_t i = 0; i < _inference_bundles.size(); ++i)
         _inference_bundles[i].clear();
     _inference_bundles.clear();
 }
 
-void gamma_core::print_results(std::ostream& ost)
+void gamma_model::print_results(std::ostream& ost)
 {
     ost << "#FamilyID\tGamma Cat Median\tLikelihood of Category\tLikelihood of Family\tPosterior Probability\tSignificant" << endl;
 
@@ -102,14 +102,14 @@ void gamma_core::print_results(std::ostream& ost)
 }
 
 
-void gamma_core::initialize_with_alpha(int n_gamma_cats, int n_families, double alpha)
+void gamma_model::initialize_with_alpha(int n_gamma_cats, int n_families, double alpha)
 {
     adjust_n_gamma_cats(n_gamma_cats);
     adjust_family_gamma_membership(n_families);
     set_alpha(alpha, n_families);
 }
 
-void gamma_core::initialize_without_alpha(int n_gamma_cats, int n_families, vector<double> lambda_multipliers, std::vector<int> gamma_cats)
+void gamma_model::initialize_without_alpha(int n_gamma_cats, int n_families, vector<double> lambda_multipliers, std::vector<int> gamma_cats)
 {
     assert(lambda_multipliers.size() == n_gamma_cats);
     assert(gamma_cats.size() == n_families);
@@ -122,18 +122,18 @@ void gamma_core::initialize_without_alpha(int n_gamma_cats, int n_families, vect
 }
 
 //! Resize all gamma-related vectors according to provided number (integer) of gamma categories
-void gamma_core::adjust_n_gamma_cats(int n_gamma_cats) {
+void gamma_model::adjust_n_gamma_cats(int n_gamma_cats) {
     _gamma_cat_probs.resize(n_gamma_cats);
     _lambda_multipliers.resize(n_gamma_cats);
 }
 
 //! Resize gamma_cats vector that assigns gamma class membership of families to be inferred/simulated
-void gamma_core::adjust_family_gamma_membership(int n_families) {
+void gamma_model::adjust_family_gamma_membership(int n_families) {
     _gamma_cats.resize(n_families);
 }
 
 //! Set alpha for gamma distribution
-void gamma_core::set_alpha(double alpha, int n_families) {
+void gamma_model::set_alpha(double alpha, int n_families) {
     _alpha = alpha;
     if (_gamma_cats.size() > 1)
         get_gamma(_gamma_cat_probs, _lambda_multipliers, alpha); // passing vectors by reference
@@ -148,12 +148,12 @@ void gamma_core::set_alpha(double alpha, int n_families) {
 }
 
 //! Set lambda multipliers for each gamma category
-void gamma_core::set_lambda_multipliers(std::vector<double> lambda_multipliers) {
+void gamma_model::set_lambda_multipliers(std::vector<double> lambda_multipliers) {
     _lambda_multipliers = lambda_multipliers;
 }
 
 
-void gamma_core::start_inference_processes() {
+void gamma_model::start_inference_processes() {
 
     inference_process_factory factory(_ost, _p_lambda, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec);
     for (auto i = _p_gene_families->begin(); i != _p_gene_families->end(); ++i)
@@ -164,12 +164,12 @@ void gamma_core::start_inference_processes() {
 }
 
 //! Populate _processes (vector of processes)
-simulation_process* gamma_core::create_simulation_process(int family_number) {
+simulation_process* gamma_model::create_simulation_process(int family_number) {
     double lambda_bin = _gamma_cats[family_number];
     return new simulation_process(_ost, _p_lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, family_number); // if a single _lambda_multiplier, how do we do it?
 }
 
-std::vector<double> gamma_core::get_posterior_probabilities(std::vector<double> cat_likelihoods)
+std::vector<double> gamma_model::get_posterior_probabilities(std::vector<double> cat_likelihoods)
 {
     size_t process_count = cat_likelihoods.size();
 
@@ -184,7 +184,7 @@ std::vector<double> gamma_core::get_posterior_probabilities(std::vector<double> 
 }
 
 //! Infer bundle
-double gamma_core::infer_processes(root_equilibrium_distribution *prior) {
+double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
 
     using namespace std;
     initialize_rootdist_if_necessary();

@@ -37,9 +37,9 @@ std::vector<double> multiple_lambda::calculate_child_factor(clade *child, std::v
 double calculate_lambda_score(double* p_lambda, void* args)
 {
     cout << "Attempting lambda: " << std::setw(15) << std::setprecision(14) << *p_lambda << std::endl;
-    std::pair<core *, root_equilibrium_distribution *>* vals = (std::pair<core *, root_equilibrium_distribution *>*)args;
+    std::pair<model *, root_equilibrium_distribution *>* vals = (std::pair<model *, root_equilibrium_distribution *>*)args;
 
-    core *core = vals->first;
+    model *core = vals->first;
     root_equilibrium_distribution* dist = vals->second;
     probability_calculator calculator;
 
@@ -50,11 +50,11 @@ double calculate_lambda_score(double* p_lambda, void* args)
     return core->infer_processes(dist);
 }
 
-double find_best_lambda(core * p_model, root_equilibrium_distribution *p_distribution)
+double find_best_lambda(model * p_model, root_equilibrium_distribution *p_distribution)
 {
 	int lambda_len = 1;
 	FMinSearch* pfm;
-    std::pair<core *, root_equilibrium_distribution *> args(p_model, p_distribution);
+    std::pair<model *, root_equilibrium_distribution *> args(p_model, p_distribution);
 	pfm = fminsearch_new_with_eq(calculate_lambda_score, lambda_len, &args);
 	pfm->tolx = 1e-6;
 	pfm->tolf = 1e-6;

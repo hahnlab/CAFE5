@@ -94,7 +94,7 @@ std::string filename(std::string base, std::string suffix)
     return base + (suffix.empty() ? "" : "_") + suffix + ".txt";
 }
 
-void execute::compute(std::vector<core *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
+void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
 {
     std::ofstream results(filename("results", my_input_parameters.output_prefix));
 
@@ -112,7 +112,7 @@ void execute::compute(std::vector<core *>& models, std::vector<gene_family> *p_g
     }
 }
 
-void execute::simulate(std::vector<core *>& models, const input_parameters &my_input_parameters)
+void execute::simulate(std::vector<model *>& models, const input_parameters &my_input_parameters)
 {
     // cout << "Simulations will use the root family distribution specified with -f: " << my_input_parameters.rootdist << endl;
     // rootdist_vec.clear();
@@ -146,7 +146,7 @@ void execute::simulate(std::vector<core *>& models, const input_parameters &my_i
         cout << "I just set number of families to simulate." << endl;
 
 #if 0
-        gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
+        gamma_model* p_model = dynamic_cast<gamma_model *>(models[i]);
         if (p_model != NULL) {
             bool has_alpha = true;
             if (has_alpha)
@@ -180,7 +180,7 @@ void execute::simulate(std::vector<core *>& models, const input_parameters &my_i
     }
 }
 
-lambda * execute::estimate_lambda(core *p_model, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
+lambda * execute::estimate_lambda(model *p_model, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
     std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size, probability_calculator& calculator)
 {
     if (p_lambda_tree != NULL)

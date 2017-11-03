@@ -31,6 +31,11 @@ void input_parameters::check_input() {
         throw runtime_error("Options -l and -m are mutually exclusive. Exiting...");
     }
 
+    //! Options -l and -i have to be both specified.
+    if (fixed_lambda > 0.0 && !input_file_path.empty()) {
+        throw runtime_error("Options -l and -i must both be provided an argument. Exiting...");
+    }
+    
     //! The number of simulated families is specified either through -s, or through -f. Cannot be both. 
     if (nsims > 0 && !rootdist.empty()) {
         throw runtime_error("Option -s cannot be provided an argument if -f is specified. Exiting...");

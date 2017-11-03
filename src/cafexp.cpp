@@ -91,20 +91,20 @@ void call_viterbi(int max_family_size, int max_root_family_size, int number_of_s
 	}
 }
 
-std::vector<core *> build_models(const input_parameters& my_input_parameters, clade *p_tree, lambda *p_lambda, 
+std::vector<model *> build_models(const input_parameters& my_input_parameters, clade *p_tree, lambda *p_lambda, 
     std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size)
 {
-    std::vector<core *> models;
+    std::vector<model *> models;
     
     /* If estimating or computing (-i; or -i + -l) and not simulating */
     if (my_input_parameters.nsims == 0 && !my_input_parameters.input_file_path.empty()) {
         
         /* Base core is always used (in both computation and estimation) */
-        models.push_back(new base_core(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size));
+        models.push_back(new base_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size));
         
         /* Gamma core is only used in estimation */
         if (p_lambda == NULL && my_input_parameters.n_gamma_cats > 1) {
-            models.push_back(new gamma_core(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, 
+            models.push_back(new gamma_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, 
                 my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, NULL));
         }
     }
@@ -116,23 +116,12 @@ std::vector<core *> build_models(const input_parameters& my_input_parameters, cl
         std::map<int, int> *p_rootdist_map = read_rootdist(my_input_parameters.rootdist); // in map form
 
         // Either use base core or gamma core when simulating
-        if (my_input_parameters.n_gamma_cats > 1) { models.push_back(new gamma_core(p_lambda, p_tree, NULL, 
+        if (my_input_parameters.n_gamma_cats > 1) { models.push_back(new gamma_model(p_lambda, p_tree, NULL, 
             max_family_size, max_root_family_size, my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha,
             p_rootdist_map)); }
-        else { models.push_back(new base_core(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size)); }
+        else { models.push_back(new base_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size)); }
     }
-    
-//    for (size_t i = 0; i < models.size(); ++i)
-//    {
-//        models[i]->set_tree(p_tree);
-//        models[i]->set_lambda(p_lambda);
-//        models[i]->set_gene_families(p_gene_families);
-//        gamma_core* p_model = dynamic_cast<gamma_core *>(models[i]);
-//        if (p_model != NULL) {
-//            p_model->initialize_with_alpha(my_input_parameters.n_gamma_cats, p_gene_families->size(), my_input_parameters.fixed_alpha);
-//        }
-//        models[i]->set_max_sizes(max_family_size, max_root_family_size);
-//    }
+
     return models;
 }
 
@@ -209,16 +198,6 @@ int cafexp(int argc, char *const argv[]) {
                 return EXIT_FAILURE; //abort ();
           }
       }
-
-//
-//    std::vector<double> lambdas = { 0.0, 0.46881494730996, 0.68825840825707 };
-//    std::map<clade *, int> lambda_index_map;
-//    std::map<std::string, int> node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
-//  
-//    lambda_index_map[p_tree] = 0;
-//
-//    multiple_lambda lambda2(node_name_to_lambda_index, lambdas);
-//
  
     execute my_executer;
     try {
@@ -237,42 +216,44 @@ int cafexp(int argc, char *const argv[]) {
         /* -y */
         clade *p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
 
-        /* -l/-m */
+        /* -l/-m (in the absence of -l, estimate) */
         lambda *p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
 
         root_equilibrium_distribution* p_prior = root_eq_dist_factory(my_input_parameters, &gene_families);
-
-        vector<core *> models = build_models(my_input_parameters, p_tree, p_lambda, &gene_families, max_family_size, max_root_family_size);
-        if (p_lambda)
-        {
-            cout << "Got here..." << endl;
-
-            if (!gene_families.empty()) {
+        
+        // When computing or simulating, only base or gamma model is used. When estimating, base and gamma model are used (to do: compare base and gamma w/ LRT)
+        // Build model takes care of -f
+        vector<model *> models = build_models(my_input_parameters, p_tree, p_lambda, &gene_families, max_family_size, max_root_family_size);
+        
+        // -f cannot have been specified
+        if (my_input_parameters.rootdist.empty()) {
+        
+            // If lambda was fixed, compute!
+            if (p_lambda) {            
                 my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size); // passing my_input_parameters as reference
             }
-        }
-        else {
-
-            for (core* p_model : models) {
-                p_lambda = my_executer.estimate_lambda(p_model, my_input_parameters, p_prior, p_tree, p_lambda_tree, &gene_families, max_family_size, max_root_family_size, calculator);
-                p_model->set_lambda(p_lambda);
-            }
-            // now that we've computed lambdas, compute new values and store them to the usual files
+        
+            // If lambda was not fixed, estimate!
+            else {
+                for (model* p_model : models) {
+                    p_lambda = my_executer.estimate_lambda(p_model, my_input_parameters, p_prior, p_tree, p_lambda_tree, &gene_families, max_family_size, max_root_family_size, calculator);
+                    p_model->set_lambda(p_lambda);
+                }
+            
+            // Printing: take estimated values, re-compute them for printing purposes
             my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size); 
+            }
         }
-
         delete p_prior;
-
-
 
         /* -s */
         if (my_input_parameters.nsims != 0 || !my_input_parameters.rootdist.empty()) {
-            /* -s is provided an argument (-f is not), using -i to obtain root eq freq distr'n */
+            // -s is provided an argument (-f is not), using -i to obtain root eq freq distr'n
             if (my_input_parameters.nsims != 0) {
                 // place holder for estimating poisson lambda if -p, or using uniform as root eq freq distr'n
             }
 
-            /* -f is provided (-s does not have an argument), not using -i*/
+            // -f is provided (-s does not have an argument), not using -i
             else if (!my_input_parameters.rootdist.empty()) {
                 cout << "Using -f, not using -i, nsims = " << my_input_parameters.nsims << endl;
                 my_executer.simulate(models, my_input_parameters);

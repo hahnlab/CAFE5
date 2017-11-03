@@ -28,7 +28,7 @@ struct family_info_stash {
 
 std::ostream& operator<<(std::ostream& ost, const family_info_stash& r);
 
-class core {
+class model {
 protected:
     std::ostream & _ost; 
     lambda *_p_lambda; // TODO: multiple lambdas for different branches
@@ -48,11 +48,11 @@ protected:
     std::vector<family_info_stash> results;
 public:
     //! Basic constructor
-    core(): _ost(cout), _p_lambda(NULL), _p_tree(NULL), _p_gene_families(NULL), _total_n_families_sim(1) {}
+    model(): _ost(cout), _p_lambda(NULL), _p_tree(NULL), _p_gene_families(NULL), _total_n_families_sim(1) {}
     
-    core(ostream & ost, lambda* p_lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec): _ost(ost), _p_lambda(p_lambda), _p_tree(p_tree), _max_family_size(max_family_size), _total_n_families_sim(total_n_families), _rootdist_vec(rootdist_vec) {}
+    model(ostream & ost, lambda* p_lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec): _ost(ost), _p_lambda(p_lambda), _p_tree(p_tree), _max_family_size(max_family_size), _total_n_families_sim(total_n_families), _rootdist_vec(rootdist_vec) {}
     
-    core(lambda* p_lambda, clade *p_tree, vector<gene_family> *p_gene_families, int max_family_size, int max_root_family_size): _ost(cout), _p_lambda(p_lambda), _p_tree(p_tree), _p_gene_families(p_gene_families), _max_family_size(max_family_size), _max_root_family_size(max_root_family_size) {}
+    model(lambda* p_lambda, clade *p_tree, vector<gene_family> *p_gene_families, int max_family_size, int max_root_family_size): _ost(cout), _p_lambda(p_lambda), _p_tree(p_tree), _p_gene_families(p_gene_families), _max_family_size(max_family_size), _max_root_family_size(max_root_family_size) {}
     
     //void estimate_processes(); 
     
@@ -94,13 +94,13 @@ public:
     double initialize_lambda_guess();
 };
 
-class base_core : public core {
+class base_model : public model {
     std::vector<inference_process *> processes;
     virtual simulation_process* create_simulation_process(int family_number);
 public:
     //! Computation or estimation constructor
-    base_core(lambda* p_lambda, clade *p_tree, vector<gene_family> *p_gene_families, int max_family_size, int max_root_family_size): 
-    core(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size) {}
+    base_model(lambda* p_lambda, clade *p_tree, vector<gene_family> *p_gene_families, int max_family_size, int max_root_family_size): 
+    model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size) {}
     
     virtual void start_inference_processes();
     virtual double infer_processes(root_equilibrium_distribution *prior);
@@ -108,7 +108,7 @@ public:
     virtual std::string name() {
         return "Base";
     }
-    virtual ~base_core();
+    virtual ~base_model();
 
     virtual void print_results(std::ostream& ost);
 

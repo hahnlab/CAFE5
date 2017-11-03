@@ -20,37 +20,37 @@ std::ostream& operator<<(std::ostream& ost, const family_info_stash& r)
 }
 
 //! Set pointer to lambda in core class
-void core::set_lambda(lambda *p_lambda) {
+void model::set_lambda(lambda *p_lambda) {
     _p_lambda = p_lambda;
 }
 
 //! Set pointer to lambda in core class
-void core::set_tree(clade *p_tree) {
+void model::set_tree(clade *p_tree) {
     _p_tree = p_tree;
 }
 
 //! Set pointer to vector of gene family class instances
-void core::set_gene_families(std::vector<gene_family> *p_gene_families) {
+void model::set_gene_families(std::vector<gene_family> *p_gene_families) {
     _p_gene_families = p_gene_families;
 }
 
 //! Set max family sizes and max root family sizes for INFERENCE
-void core::set_max_sizes(int max_family_size, int max_root_family_size) {
+void model::set_max_sizes(int max_family_size, int max_root_family_size) {
     _max_family_size = max_family_size;
     _max_root_family_size = max_root_family_size;
 }
 
 //! Set root distribution vector
-void core::set_rootdist_vec(std::vector<int> rootdist_vec) {
+void model::set_rootdist_vec(std::vector<int> rootdist_vec) {
     _rootdist_vec = rootdist_vec;
 }
 
 //! Set total number of families to simulate
-void core::set_total_n_families_sim(int total_n_families_sim) {
+void model::set_total_n_families_sim(int total_n_families_sim) {
     _total_n_families_sim = total_n_families_sim;
 }
 
-void core::start_sim_processes() {
+void model::start_sim_processes() {
 
     for (int i = 0; i < _total_n_families_sim; ++i) {
         _sim_processes.push_back(create_simulation_process(i));
@@ -59,20 +59,20 @@ void core::start_sim_processes() {
     // cout << _sim_processes.size() << " processes have been started." << endl;
 }
 
-simulation_process* base_core::create_simulation_process(int family_number) {
+simulation_process* base_model::create_simulation_process(int family_number) {
     return new simulation_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, family_number); // if a single _lambda_multiplier, how do we do it?
 }
 
 
 
 //! Run simulations in all processes, in series... (TODO: in parallel!)
-void core::simulate_processes() {
+void model::simulate_processes() {
     for (int i = 0; i < _total_n_families_sim; ++i) {
         _sim_processes[i]->run_simulation();
     }
 }
 
-void core::print_processes(std::ostream& ost) {
+void model::print_processes(std::ostream& ost) {
 
     trial *sim = _sim_processes[0]->get_simulation();
     for (trial::iterator it = sim->begin(); it != sim->end(); ++it) {
@@ -84,13 +84,13 @@ void core::print_processes(std::ostream& ost) {
     }
 }
 
-base_core::~base_core()
+base_model::~base_model()
 {
     for (size_t i = 0; i < processes.size(); ++i)
         delete processes[i];
 }
 
-void base_core::start_inference_processes()
+void base_model::start_inference_processes()
 {
     processes.clear();
     for (int i = 0; i < _p_gene_families->size(); ++i) {
@@ -104,7 +104,7 @@ void base_core::start_inference_processes()
     }
 }
 
-void core::initialize_rootdist_if_necessary()
+void model::initialize_rootdist_if_necessary()
 {
     if (_rootdist_vec.empty())
     {
@@ -114,7 +114,7 @@ void core::initialize_rootdist_if_necessary()
 
 }
 
-double base_core::infer_processes(root_equilibrium_distribution *prior) {
+double base_model::infer_processes(root_equilibrium_distribution *prior) {
 #ifdef VERBOSE
     const bool write = true;
 #else
@@ -160,7 +160,7 @@ double base_core::infer_processes(root_equilibrium_distribution *prior) {
     return final_likelihood;
 }
 
-void base_core::print_results(std::ostream& ost)
+void base_model::print_results(std::ostream& ost)
 {
     ost << "#FamilyID\tLikelihood of Family" << endl;
     for (const auto& r : results)
@@ -170,7 +170,7 @@ void base_core::print_results(std::ostream& ost)
 }
 
 //! Print processes' simulations
-void core::adjust_family(std::ostream& ost) {
+void model::adjust_family(std::ostream& ost) {
     
     // Printing header
     for (trial::iterator it = _sim_processes[0]->get_simulation()->begin(); it != _sim_processes[0]->get_simulation()->end(); ++it) {
@@ -183,7 +183,7 @@ void core::adjust_family(std::ostream& ost) {
 }
 
 /* TODO: later this will become a member of the core class, which is the wrapper of the process class*/
-void core::print_parameter_values() {
+void model::print_parameter_values() {
     
     cout << endl << "You have set the following parameter values:" << endl;
     
@@ -223,7 +223,7 @@ public:
 };
 
 
-double core::initialize_lambda_guess()
+double model::initialize_lambda_guess()
 {
     max_branch_length_finder finder;
     _p_tree->apply_prefix_order(finder);
