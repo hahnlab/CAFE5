@@ -114,5 +114,6 @@ public:
 
 };
 
+std::vector<model *> build_models(const input_parameters& my_input_parameters, clade *p_tree, lambda *p_lambda, std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size);
 #endif /* CORE_H */
 
