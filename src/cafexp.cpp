@@ -175,9 +175,8 @@ int cafexp(int argc, char *const argv[]) {
 
         /* -i */
         if (!my_input_parameters.input_file_path.empty()) {
-            // read_gene_family_data populates (pointer to) vector of gene family instances
+            // Populates (pointer to) vector of gene family instances, max_family_size and max_root_family_size (last two passed by reference)
             my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size, p_tree, &gene_families);
-            // std::vector<gene_family> *p_gene_families = my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size, p_tree); // max_family_size and max_root_family_size are int's passed as reference, and set by read_gene_family_data
         }
             
         /* -y */

@@ -26,8 +26,6 @@ void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gen
 void print_simulation(std::vector<vector<trial *> >  &sim, std::ostream& ost);
 /* END: Printing functions for simulation engine*/
 
-/* START: Reading in gene family data */
-
 struct input_parameters {
 public:	
     std::string input_file_path;
@@ -49,18 +47,19 @@ public:
     void check_input();
 };
 
+/* START: Reading in gene family data */
 class gene_family {
 private:
   std::string _id; //!< Gene family ID
   std::string _desc; //!< Gene family description
-  int _max_family_size; //!< Gene family max size
+  int _max_family_size; //!< Gene family max size (largest observed gene count)
   int _parsed_max_family_size; //!< Gene family max as in CAFE (used for setting matrices dimensions)
   std::map<std::string, int> _species_size_map; //!< Map that stores each species gene family count: {sp1_name:count1, ...}
 
 public:
-  gene_family() { find_max_size(); } //!< Constructor
+  gene_family() { find_max_size(); } //!< Constructor for read user-provided input (sets _max_family_size and _parsed_max_family_size for this family)
   
-  gene_family(trial *a_trial);
+  gene_family(trial *a_trial); //!< Constructor for simulations (trial is a typedef for a map = {clade *: int}
   
   void set_desc(std::string desc) { _desc = desc; }
   
@@ -72,7 +71,7 @@ public:
 
   std::vector<std::string> get_species() const;
 
-  //! Find max gene family size
+  //! Find and set _max_family_size and _parsed_max_family_size for this family
   void find_max_size();
   
   //! Getting max gene family size
@@ -86,7 +85,5 @@ public:
   //! Mainly for debugging: In case one want to grab the gene count for a given species
   int get_species_size(std::string species) const;
 };
-
-
 /* END: Reading in gene family data */
 #endif
