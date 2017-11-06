@@ -55,6 +55,7 @@ double find_best_lambda(model * p_model, root_equilibrium_distribution *p_distri
 	pfm = fminsearch_new_with_eq(calculate_lambda_score, initial.size(), &args);
 	pfm->tolx = 1e-6;
 	pfm->tolf = 1e-6;
+    pfm->maxiters = 25;
 	fminsearch_min(pfm, &initial[0]);
 	double *re = fminsearch_get_minX(pfm);
     cout << "Best match" << (initial.size() == 1 ? " is: " : "es are: ") << setw(15) << setprecision(14);

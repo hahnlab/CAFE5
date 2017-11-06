@@ -8,8 +8,8 @@ class base_model : public model {
     virtual simulation_process* create_simulation_process(int family_number);
 public:
     //! Computation or estimation constructor
-    base_model(lambda* p_lambda, clade *p_tree, vector<gene_family> *p_gene_families, int max_family_size, int max_root_family_size) :
-        model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size) {}
+    base_model(lambda* p_lambda, clade *p_tree, vector<gene_family> *p_gene_families,
+        int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map);
 
     virtual void start_inference_processes();
     virtual double infer_processes(root_equilibrium_distribution *prior);

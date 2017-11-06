@@ -6,6 +6,17 @@
 #include "process.h"
 #include "root_equilibrium_distribution.h"
 
+base_model::base_model(lambda* p_lambda, clade *p_tree, vector<gene_family> *p_gene_families,
+    int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map) :
+    model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size)
+{
+    if (p_rootdist_map != NULL)
+    {
+        _rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
+        _total_n_families_sim = _rootdist_vec.size();
+    }
+}
+
 base_model::~base_model()
 {
     for (size_t i = 0; i < processes.size(); ++i)
@@ -36,6 +47,9 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
 #else
     const bool write = false;
 #endif
+    single_lambda *sl = dynamic_cast<single_lambda*>(_p_lambda);
+    if (sl && sl->get_single_lambda() < 0)
+        return INFINITY;
 
     initialize_rootdist_if_necessary();
     prior->initialize(_rootdist_vec);
