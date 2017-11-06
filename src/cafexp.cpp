@@ -100,6 +100,8 @@ int cafexp(int argc, char *const argv[]) {
     int max_family_size = -1; // needed for defining matrix size
     int max_root_family_size = -1; // needed for defining matrix size
     input_parameters my_input_parameters;
+    
+    clade *p_tree = new clade();
     std::vector<gene_family> gene_families;
     probability_calculator calculator; // for computing lks
     map<int, int>* p_rootdist_map = NULL; // for sims
@@ -171,7 +173,8 @@ int cafexp(int argc, char *const argv[]) {
         my_input_parameters.check_input(); // seeing if options are not mutually exclusive              
 
         /* -t */
-        clade *p_tree = my_executer.read_input_tree(my_input_parameters); // phylogenetic tree
+        // clade *p_tree = my_executer.read_input_tree(my_input_parameters); // phylogenetic tree
+        my_executer.read_input_tree(my_input_parameters, p_tree); // phylogenetic tree
 
         /* -i */
         if (!my_input_parameters.input_file_path.empty()) {

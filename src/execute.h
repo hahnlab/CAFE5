@@ -16,7 +16,8 @@ public:
     void read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size, clade *p_tree, std::vector<gene_family> *p_gene_families);
     
     //! Read in phylogenetic tree data (-t)
-    clade * read_input_tree(const input_parameters &my_input_parameters);
+//    clade * read_input_tree(const input_parameters &my_input_parameters);
+    void read_input_tree(const input_parameters &my_input_parameters, clade *p_tree);
 
     //! Read in lambda tree (-y)
     clade * read_lambda_tree(const input_parameters &my_input_parameters);

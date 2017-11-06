@@ -31,11 +31,12 @@ void execute::read_gene_family_data(const input_parameters &my_input_parameters,
 }
 
 //! Read user provided phylogenetic tree (whose path is stored in input_parameters instance)
-clade * execute::read_input_tree(const input_parameters &my_input_parameters) {
-    clade *p_tree = new clade();
+//clade * execute::read_input_tree(const input_parameters &my_input_parameters, clade *p_tree) {
+void execute::read_input_tree(const input_parameters &my_input_parameters, clade *p_tree) {
+//    clade *p_tree = new clade();
     p_tree = read_tree(my_input_parameters.tree_file_path, false);
-    
-    return p_tree;
+//    
+//    return p_tree;
 }
 
 //! Read user provided lambda tree (lambda structure)
