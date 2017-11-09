@@ -1,4 +1,5 @@
 #include <cmath>
+#include <set>
 
 #include "utils.h"
 #include "io.h"
@@ -179,16 +180,33 @@ void execute::simulate(std::vector<model *>& models, const input_parameters &my_
         // core_model.print_parameter_values();
     }
 }
+class lambda_counter
+{
+public:
+    std::set<int> unique_lambdas;
+    void operator()(clade *p_node)
+    {
+        unique_lambdas.insert(p_node->get_lambda_index());
+    }
+};
 
-lambda * execute::estimate_lambda(model *p_model, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
+void execute::estimate_lambda(model *p_model, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
     std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size, probability_calculator& calculator)
 {
+    lambda *p_lambda = NULL;
     if (p_lambda_tree != NULL)
     {
+        lambda_counter counter;
+        p_lambda_tree->apply_prefix_order(counter);
+        auto node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
+        p_lambda = new multiple_lambda(&calculator, node_name_to_lambda_index, std::vector<double>(counter.unique_lambdas.size()));
+    }
+    else
+    {
+        p_lambda = new single_lambda(&calculator, 0.0);
     }
 
+    p_model->set_lambda(p_lambda);
     p_tree->init_gene_family_sizes(*p_gene_families);
-    single_lambda* p_single_lambda = new single_lambda(&calculator, find_best_lambda(p_model, p_prior));
-
-    return p_single_lambda;
+    p_model->set_current_guesses(find_best_lambda(p_model, p_prior));
 }

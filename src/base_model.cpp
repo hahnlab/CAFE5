@@ -105,16 +105,26 @@ std::vector<double> base_model::initial_guesses()
 {
     max_branch_length_finder finder;
     _p_tree->apply_prefix_order(finder);
-    double result = 1.0 / finder.result() * unifrnd();
-    cout << "Initial lambda: " << result << std::endl;
-    return std::vector<double>{result};
+    std::vector<double> result(_p_lambda->count());
+    for (auto& i : result)
+    {
+        i = 1.0 / finder.result() * unifrnd();
+    }
+    if (result.size() == 1)
+        cout << "Initial lambda: " << result[0] << endl;
+    else
+    {
+        cout << "Initial lambdas: ";
+        for (auto& i : result)
+        {
+            cout << i << ' ';
+        }
+        cout << endl;
+    }
+    return result;
 }
 
 void base_model::set_current_guesses(double *guesses)
 {
-    cout << "Attempting lambda: " << std::setw(15) << std::setprecision(14) << guesses[0] << std::endl;
-    probability_calculator*  calculator = new probability_calculator();
-    single_lambda* lambda = new single_lambda(calculator, guesses[0]);
-    set_lambda(lambda);
+    _p_lambda->update(guesses);
 }
-

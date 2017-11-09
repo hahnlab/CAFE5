@@ -31,6 +31,11 @@ std::vector<double> multiple_lambda::calculate_child_factor(clade *child, std::v
 	return matrix_multiply(matrix, probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
 }
 
+void multiple_lambda::update(double* values)
+{
+    std::copy(values, values + _lambdas.size(), _lambdas.begin());
+}
+
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
 /// score of a lambda is the -log likelihood of the most likely resulting family size
@@ -47,7 +52,7 @@ double calculate_lambda_score(double* p_lambda, void* args)
     return core->infer_processes(dist);
 }
 
-double find_best_lambda(model * p_model, root_equilibrium_distribution *p_distribution)
+double* find_best_lambda(model * p_model, root_equilibrium_distribution *p_distribution)
 {
     auto initial = p_model->initial_guesses();
 	FMinSearch* pfm;
@@ -63,5 +68,5 @@ double find_best_lambda(model * p_model, root_equilibrium_distribution *p_distri
         cout << re[i] << ',';
     cout << endl;
 
-    return *re;
+    return re;
 }

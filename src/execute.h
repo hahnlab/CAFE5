@@ -29,7 +29,7 @@ public:
 
     void simulate(std::vector<model *>& models, const input_parameters &my_input_parameters);
 
-    lambda * estimate_lambda(model * p_model, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
+    void estimate_lambda(model * p_model, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
         std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size, probability_calculator& calculator);
 };
 #endif /* EXECUTE_H */

@@ -178,7 +178,7 @@ int cafexp(int argc, char *const argv[]) {
 
         /* -i */
         if (!my_input_parameters.input_file_path.empty()) {
-            // Populates (pointer to) vector of gene family instances, max_family_size and max_root_family_size (last two passed by reference)
+            // Populates (pointer to) vectorr of gene family instances, max_family_size and max_root_family_size (last two passed by reference)
             my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size, p_tree, &gene_families);
         }
             
@@ -205,8 +205,7 @@ int cafexp(int argc, char *const argv[]) {
             // If lambda was not fixed, estimate!
             else {
                 for (model* p_model : models) {
-                    p_lambda = my_executer.estimate_lambda(p_model, my_input_parameters, p_prior, p_tree, p_lambda_tree, &gene_families, max_family_size, max_root_family_size, calculator);
-                    p_model->set_lambda(p_lambda);
+                    my_executer.estimate_lambda(p_model, my_input_parameters, p_prior, p_tree, p_lambda_tree, &gene_families, max_family_size, max_root_family_size, calculator);
                 }
             
             // Printing: take estimated values, re-compute them for printing purposes

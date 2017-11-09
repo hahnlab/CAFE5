@@ -25,6 +25,8 @@ public:
 	}
     virtual std::vector<double> calculate_child_factor(clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) = 0; //!< Pure virtual function (= 0 is the 'pure specifier' and indicates this function MUST be overridden by a derived class' method)
     virtual lambda *multiply(double factor) = 0;
+    virtual void update(double* values) = 0;
+    virtual int count() const = 0;
 };
 
 //! (lambda) Derived class 1: one lambda for whole tree
@@ -41,6 +43,11 @@ public:
 	{
 		return new single_lambda(_p_calc, _lambda * factor);
 	}
+    virtual void update(double* values) { _lambda = *values; }
+
+    virtual int count() const {
+        return 1;
+    }
 };
 
 //! (lambda) Derived class 2: multiple lambdas
@@ -62,11 +69,15 @@ public:
 
         return new multiple_lambda(_p_calc, _node_name_to_lambda_index, npi);
     }
+    virtual void update(double* values);    
+    virtual int count() const {
+        return _lambdas.size();
+    }
 };
 
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
 std::vector<double> get_posterior(std::vector<gene_family> gene_families, int max_family_size, int max_root_family_size, double lambda, clade *p_tree);
-double find_best_lambda(model *p_model, root_equilibrium_distribution *p_distribution);
+double* find_best_lambda(model *p_model, root_equilibrium_distribution *p_distribution);
 
 #endif
