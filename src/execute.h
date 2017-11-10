@@ -17,7 +17,7 @@ public:
     
     //! Read in phylogenetic tree data (-t)
 //    clade * read_input_tree(const input_parameters &my_input_parameters);
-    void read_input_tree(const input_parameters &my_input_parameters, clade *p_tree);
+    clade * read_input_tree(const input_parameters &my_input_parameters);
 
     //! Read in lambda tree (-y)
     clade * read_lambda_tree(const input_parameters &my_input_parameters);

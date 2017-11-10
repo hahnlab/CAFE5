@@ -32,54 +32,33 @@ void execute::read_gene_family_data(const input_parameters &my_input_parameters,
 }
 
 //! Read user provided phylogenetic tree (whose path is stored in input_parameters instance)
-//clade * execute::read_input_tree(const input_parameters &my_input_parameters, clade *p_tree) {
-void execute::read_input_tree(const input_parameters &my_input_parameters, clade *p_tree) {
-//    clade *p_tree = new clade();
-    p_tree = read_tree(my_input_parameters.tree_file_path, false);
-//    
-//    return p_tree;
+clade * execute::read_input_tree(const input_parameters &my_input_parameters) {    
+    return read_tree(my_input_parameters.tree_file_path, false);
 }
 
 //! Read user provided lambda tree (lambda structure)
 clade * execute::read_lambda_tree(const input_parameters &my_input_parameters) {
-    clade * p_lambda_tree = NULL; // not new clade() because read_tree() below also allocates memory (so this would leak memory)
-    
-    if (!my_input_parameters.lambda_tree_file_path.empty()) {
-        p_lambda_tree = read_tree(my_input_parameters.lambda_tree_file_path, true);
-        // node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
-        // p_lambda_tree->print_clade();
-        }
-    
-    return p_lambda_tree;
+        return read_tree(my_input_parameters.lambda_tree_file_path, true);
 }
 
 //! Read user provided single or multiple lambdas
-lambda * execute::read_lambda(const input_parameters &my_input_parameters, probability_calculator &my_calculator, clade * p_lambda_tree) {
+lambda * execute::read_lambda(const input_parameters &my_input_parameters, probability_calculator &my_calculator, clade *p_lambda_tree) {
       
     lambda *p_lambda = NULL; // lambda is an abstract class, and so we can only instantiate it as single_lambda or multiple lambda -- therefore initializing it to NULL
         
     // -l
     if (my_input_parameters.fixed_lambda > 0.0) {
-        cout << "Specified lambda (-l): " << my_input_parameters.fixed_lambda << endl;
         p_lambda = new single_lambda(&my_calculator, my_input_parameters.fixed_lambda);
-            // vector<double> posterior = get_posterior((*p_gene_families), max_family_size, fixed_lambda, p_tree);
-            // double map = log(*max_element(posterior.begin(), posterior.end()));
-            // cout << "Posterior values found - max log posterior is " << map << endl;
-			// call_viterbi(max_family_size, max_root_family_size, 15, p_lambda, *p_gene_families, p_tree);
-        }
+        // call_viterbi(max_family_size, max_root_family_size, 15, p_lambda, *p_gene_families, p_tree);
+    }
     
     // -m
     if (!my_input_parameters.fixed_multiple_lambdas.empty()) {       
-        if (p_lambda_tree == NULL) {
-            throw runtime_error("You must specify a lambda tree (-y) if you fix multiple lambda values (-m). Exiting..."); 
-        }
-        
-        map<std::string, int> node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map(); // allows matching lambda values (when -m) to clades in lambda tree
-
+        map<std::string, int> node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map(); // allows matching different lambda values to nodes in lambda tree
         vector<string> lambdastrings = tokenize_str(my_input_parameters.fixed_multiple_lambdas, ',');
 	vector<double> lambdas(lambdastrings.size());
 
-        // transform is like R's apply (lambdas takes the outputs)
+        // transform is like R's apply (vector lambdas takes the outputs, here we are making doubles from strings
         transform(lambdastrings.begin(), lambdastrings.end(), lambdas.begin(),
                 [](string const& val) { return stod(val); } // this is the equivalent of a Python's lambda function
                 );

@@ -101,7 +101,8 @@ int cafexp(int argc, char *const argv[]) {
     int max_root_family_size = -1; // needed for defining matrix size
     input_parameters my_input_parameters;
     
-    clade *p_tree = new clade();
+    clade *p_tree = NULL; // instead of new clade(), o.w. mem leak
+    clade *p_lambda_tree = NULL; 
     std::vector<gene_family> gene_families;
     probability_calculator calculator; // for computing lks
     map<int, int>* p_rootdist_map = NULL; // for sims
@@ -173,8 +174,9 @@ int cafexp(int argc, char *const argv[]) {
         my_input_parameters.check_input(); // seeing if options are not mutually exclusive              
 
         /* -t */
-        // clade *p_tree = my_executer.read_input_tree(my_input_parameters); // phylogenetic tree
-        my_executer.read_input_tree(my_input_parameters, p_tree); // phylogenetic tree
+        if (!my_input_parameters.tree_file_path.empty()) {
+            p_tree = my_executer.read_input_tree(my_input_parameters); // populates p_tree (pointer to phylogenetic tree)
+        }
 
         /* -i */
         if (!my_input_parameters.input_file_path.empty()) {
@@ -183,7 +185,9 @@ int cafexp(int argc, char *const argv[]) {
         }
             
         /* -y */
-        clade *p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
+        if (!my_input_parameters.lambda_tree_file_path.empty()) {
+            clade *p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
+        }
 
         /* -l/-m (in the absence of -l, estimate) */
         lambda *p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);

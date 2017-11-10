@@ -31,6 +31,11 @@ void input_parameters::check_input() {
         throw runtime_error("Options -l and -m are mutually exclusive. Exiting...");
     }
 
+    //! Option -m requires a lambda tree (-y)
+    if (!fixed_multiple_lambdas.empty() && lambda_tree_file_path.empty()) {
+        throw runtime_error("You must specify a lambda tree (-y) if you fix multiple lambda values (-m). Exiting...");
+    }
+    
     //! Options -l and -i have to be both specified (if estimating and not simulating).
     if (fixed_lambda > 0.0 && input_file_path.empty() && nsims != 0) {
         throw runtime_error("Options -l and -i must both be provided an argument. Exiting...");
