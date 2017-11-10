@@ -110,17 +110,8 @@ std::vector<double> base_model::initial_guesses()
     {
         i = 1.0 / finder.result() * unifrnd();
     }
-    if (result.size() == 1)
-        cout << "Initial lambda: " << result[0] << endl;
-    else
-    {
-        cout << "Initial lambdas: ";
-        for (auto& i : result)
-        {
-            cout << i << ' ';
-        }
-        cout << endl;
-    }
+    cout << "Initial lambda: " << *_p_lambda << std::endl;
+
     return result;
 }
 

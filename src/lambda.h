@@ -27,6 +27,7 @@ public:
     virtual lambda *multiply(double factor) = 0;
     virtual void update(double* values) = 0;
     virtual int count() const = 0;
+    virtual std::string to_string() = 0;
 };
 
 //! (lambda) Derived class 1: one lambda for whole tree
@@ -48,6 +49,7 @@ public:
     virtual int count() const {
         return 1;
     }
+    virtual std::string to_string();
 };
 
 //! (lambda) Derived class 2: multiple lambdas
@@ -73,11 +75,19 @@ public:
     virtual int count() const {
         return _lambdas.size();
     }
+    virtual std::string to_string();
+
 };
 
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
 std::vector<double> get_posterior(std::vector<gene_family> gene_families, int max_family_size, int max_root_family_size, double lambda, clade *p_tree);
 double* find_best_lambda(model *p_model, root_equilibrium_distribution *p_distribution);
+
+inline std::ostream& operator<<(std::ostream& ost, lambda& lambda)
+{
+    ost << lambda.to_string();
+    return ost;
+}
 
 #endif

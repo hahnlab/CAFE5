@@ -21,6 +21,13 @@ std::vector<double> single_lambda::calculate_child_factor(clade *child, std::vec
 	return matrix_multiply(matrix, probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
 }
 
+std::string single_lambda::to_string()
+{
+    ostringstream ost;
+    ost << setw(15) << setprecision(14) << _lambda;
+    return ost.str();
+}
+
 std::vector<double> multiple_lambda::calculate_child_factor(clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size)
 {
 	std::string nodename = child->get_taxon_name();
@@ -34,6 +41,18 @@ std::vector<double> multiple_lambda::calculate_child_factor(clade *child, std::v
 void multiple_lambda::update(double* values)
 {
     std::copy(values, values + _lambdas.size(), _lambdas.begin());
+}
+
+std::string multiple_lambda::to_string()
+{
+    ostringstream ost;
+    ost << setw(15) << setprecision(14);
+    for (size_t i = 0; i < _lambdas.size(); ++i)
+    {
+        ost << _lambdas[i];
+        if (i != _lambdas.size() - 1) ost << ", ";
+    }
+    return ost.str();
 }
 
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */

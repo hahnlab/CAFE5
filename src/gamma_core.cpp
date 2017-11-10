@@ -230,20 +230,26 @@ std::vector<double> gamma_model::initial_guesses()
     max_branch_length_finder finder;
     _p_tree->apply_prefix_order(finder);
     double result = 1.0 / finder.result() * unifrnd();
+    std::vector<double> lambdas(_p_lambda->count());
+    for (auto& i : lambdas)
+    {
+        i = 1.0 / finder.result() * unifrnd();
+    }
+
     cout << "Initial lambda: " << result << std::endl;
     double alpha = unifrnd();
-    return std::vector<double>{result, alpha};
+    lambdas.push_back(alpha);
+    return lambdas;
 }
 
 void gamma_model::set_current_guesses(double *guesses)
 {
-    cout << "Attempting lambda: " << std::setw(15) << std::setprecision(14) << guesses[0] << ", alpha: " << guesses[1] << std::endl;
-    probability_calculator*  calculator = new probability_calculator();
-    single_lambda* lambda = new single_lambda(calculator, guesses[0]);
-    set_lambda(lambda);
+    _p_lambda->update(guesses);
 
-    double alpha = guesses[1];
+    double alpha = guesses[_p_lambda->count()];
     set_alpha(alpha, _p_gene_families->size());
+
+    cout << "Attempting lambda: " << *_p_lambda << ", alpha: " << alpha << std::endl;
 }
 
 gamma_bundle::gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers)
