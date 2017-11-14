@@ -47,9 +47,11 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
 #else
     const bool write = false;
 #endif
-    single_lambda *sl = dynamic_cast<single_lambda*>(_p_lambda);
-    if (sl && sl->get_single_lambda() < 0)
-        return INFINITY;
+    if (!_p_lambda->is_valid())
+    {
+        std::cout << "-lnL: " << log(0) << std::endl;
+        return -log(0);
+    }
 
     initialize_rootdist_if_necessary();
     prior->initialize(_rootdist_vec);
@@ -110,12 +112,12 @@ std::vector<double> base_model::initial_guesses()
     {
         i = 1.0 / finder.result() * unifrnd();
     }
-    cout << "Initial lambda: " << *_p_lambda << std::endl;
-
     return result;
 }
 
 void base_model::set_current_guesses(double *guesses)
 {
     _p_lambda->update(guesses);
+    cout << "Lambda: " << *_p_lambda << std::endl;
+
 }
