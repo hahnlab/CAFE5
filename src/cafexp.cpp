@@ -186,7 +186,7 @@ int cafexp(int argc, char *const argv[]) {
             
         /* -y */
         if (!my_input_parameters.lambda_tree_file_path.empty()) {
-            clade *p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
+            p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
         }
 
         /* -l/-m (in the absence of -l, estimate) */

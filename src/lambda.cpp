@@ -55,6 +55,15 @@ std::string multiple_lambda::to_string()
     return ost.str();
 }
 
+bool multiple_lambda::is_valid()
+{
+    return std::none_of(_lambdas.begin(), _lambdas.end(), [](double d) { return d < 0; });
+}
+
+double multiple_lambda::get_value_for_clade(clade *c) {
+    return _lambdas[c->get_lambda_index()];
+}
+
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
 /// score of a lambda is the -log likelihood of the most likely resulting family size

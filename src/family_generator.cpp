@@ -20,13 +20,13 @@ class random_familysize_setter {
 private:
     trial *_p_tth_trial;
     int _max_family_size; //!< We simulate from 0 to _max_family_size-1
-    double _lambda;
+    lambda *_p_lambda;
     probability_calculator* _calculator; //!< Does the birth-death model computations
 
 public:
     //! Constructor
-    random_familysize_setter(trial *p_tth_trial, int max_family_size, double lambda, probability_calculator* p_calc) :
-        _p_tth_trial(p_tth_trial), _max_family_size(max_family_size), _lambda(lambda), _calculator(p_calc) {
+    random_familysize_setter(trial *p_tth_trial, int max_family_size, lambda * p_lambda, probability_calculator* p_calc) :
+        _p_tth_trial(p_tth_trial), _max_family_size(max_family_size), _p_lambda(p_lambda), _calculator(p_calc) {
     }
 
     //! Operator () overload.
@@ -50,9 +50,11 @@ void random_familysize_setter::operator()(clade *node) {
     int parent_family_size = (*_p_tth_trial)[node->get_parent()];
     int c = 0; // c is the family size we will go to
 
+    double lambda = _p_lambda->get_value_for_clade(node);
+
     if (parent_family_size > 0) {
         for (; c < _max_family_size - 1; c++) { // Ben: why -1
-            double prob = _calculator->get_from_parent_fam_size_to_c(_lambda, node->get_branch_length(), parent_family_size, c, NULL);
+            double prob = _calculator->get_from_parent_fam_size_to_c(lambda, node->get_branch_length(), parent_family_size, c, NULL);
             cumul += prob;
 
             if (cumul >= rnd) {
@@ -70,11 +72,11 @@ void random_familysize_setter::operator()(clade *node) {
   Given a root gene family size, a lambda, simulates gene family counts for all nodes in the tree just once.
   Returns a trial, key = pointer to node, value = gene family size
 */
-trial * simulate_family_from_root_size(clade *tree, int root_family_size, int max_family_size, double lambda) {
+trial * simulate_family_from_root_size(clade *tree, int root_family_size, int max_family_size, lambda * p_lambda) {
 
     probability_calculator calc;
     trial *result = new trial;
-    random_familysize_setter rfs(result, max_family_size, lambda, &calc);
+    random_familysize_setter rfs(result, max_family_size, p_lambda, &calc);
     (*result)[tree] = root_family_size;
     tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
     
@@ -92,10 +94,11 @@ vector<trial *> simulate_families_from_root_size(clade *tree, int num_trials, in
 
     probability_calculator calc;
     vector<trial *> result;
-    
+    single_lambda lam(&calc, lambda);
+
     for (int t = 0; t < num_trials; ++t) {
         trial *p_tth_trial = new trial;
-        random_familysize_setter rfs(p_tth_trial, max_family_size, lambda, &calc);
+        random_familysize_setter rfs(p_tth_trial, max_family_size, &lam, &calc);
         (*p_tth_trial)[tree] = root_family_size;
         tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
         //tree->apply_to_descendants(rfs); // setting the family size (random) of the descendants

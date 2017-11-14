@@ -58,9 +58,8 @@ simulation_process::simulation_process(std::ostream &ost, lambda* lambda, double
 
 //! Run process' simulation
 void simulation_process::run_simulation() {
-	single_lambda *sl = dynamic_cast<single_lambda*>(_lambda);	// we don't support multiple lambdas yet
-	double lambda_m = sl->get_single_lambda() * _lambda_multiplier;
-	_my_simulation = simulate_family_from_root_size(_p_tree, _root_size, _max_family_size_sim, lambda_m);
+    lambda *multiplier = _lambda->multiply(_lambda_multiplier);
+	_my_simulation = simulate_family_from_root_size(_p_tree, _root_size, _max_family_size_sim, multiplier);
 }
 
 //! Prune process

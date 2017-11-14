@@ -28,6 +28,8 @@ public:
     virtual void update(double* values) = 0;
     virtual int count() const = 0;
     virtual std::string to_string() = 0;
+    virtual double get_value_for_clade(clade *c) = 0;
+    virtual bool is_valid() = 0;
 };
 
 //! (lambda) Derived class 1: one lambda for whole tree
@@ -50,6 +52,12 @@ public:
         return 1;
     }
     virtual std::string to_string();
+    virtual double get_value_for_clade(clade *c) {
+        return _lambda;
+    }
+    virtual bool is_valid() {
+        return _lambda > 0;
+    }
 };
 
 //! (lambda) Derived class 2: multiple lambdas
@@ -76,7 +84,8 @@ public:
         return _lambdas.size();
     }
     virtual std::string to_string();
-
+    virtual double get_value_for_clade(clade *c);
+    virtual bool is_valid();
 };
 
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
