@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <numeric>
 #include <iomanip>
+#include <cmath>
 
 #include "gamma_core.h"
 #include "gamma.h"
@@ -212,17 +213,17 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
 //            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
         }
 
-        all_bundles_likelihood[i] = family_likelihood;
+        all_bundles_likelihood[i] = std::log(family_likelihood);
 //        cout << "Bundle " << i << " family likelihood = " << family_likelihood << endl;
 
 //        cout << "Likelihood of family " << i << " = " << all_bundles_likelihood[i] << endl;
     }
 
-    double multi = accumulate(all_bundles_likelihood.begin(), all_bundles_likelihood.end(), 1.0, multiplies<double>());
+    double final_likelihood = -accumulate(all_bundles_likelihood.begin(), all_bundles_likelihood.end(), 0.0);
 
-//    cout << "Final answer: " << multi << endl;
+    std::cout << "-lnL: " << final_likelihood << std::endl;
 
-    return multi;
+    return final_likelihood;
 }
 
 std::vector<double> gamma_model::initial_guesses()

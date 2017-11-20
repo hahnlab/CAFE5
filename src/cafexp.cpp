@@ -17,6 +17,7 @@
 #include "gamma_core.h"
 #include "root_equilibrium_distribution.h"
 #include "base_model.h"
+#include "chisquare.h"
 
 using namespace std;
 
@@ -59,6 +60,8 @@ double pvalue(double v, vector<double>& conddist)
 	int idx = std::upper_bound(conddist.begin(), conddist.end(), v) - conddist.begin();
 	return  idx / (double)conddist.size();
 }
+
+
 
 void call_viterbi(int max_family_size, int max_root_family_size, int number_of_simulations, lambda *p_lambda, vector<gene_family>& families, clade* p_tree)
 {
@@ -107,7 +110,7 @@ int cafexp(int argc, char *const argv[]) {
     probability_calculator calculator; // for computing lks
     map<int, int>* p_rootdist_map = NULL; // for sims
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:k:a:s::g::p::", longopts, NULL)) != -1 ) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:k:a:s::g::p::r:", longopts, NULL)) != -1 ) {
     // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -156,6 +159,9 @@ int cafexp(int argc, char *const argv[]) {
             case 'f':
 		my_input_parameters.rootdist = optarg;
                 break;
+            case 'r':
+                my_input_parameters.chisquare_compare = optarg;
+                break;
             case 'g':
 		my_input_parameters.do_log = true;
                 break;
@@ -164,7 +170,7 @@ int cafexp(int argc, char *const argv[]) {
                         argv[0], optopt);
                 break;
             default: // '?' is parsed (
-                cout << "Exiting..." << endl;
+                cout << "Unrecognized parameter: '" << args << "' Exiting..." << endl;
                 return EXIT_FAILURE; //abort ();
           }
       }
@@ -172,6 +178,23 @@ int cafexp(int argc, char *const argv[]) {
     execute my_executer;
     try {
         my_input_parameters.check_input(); // seeing if options are not mutually exclusive              
+
+        /* -r */
+        if (!my_input_parameters.chisquare_compare.empty()) {
+            vector<string> chistrings = tokenize_str(my_input_parameters.chisquare_compare, ',');
+            vector<double> chis(chistrings.size());
+
+            // transform is like R's apply (vector lambdas takes the outputs, here we are making doubles from strings
+            transform(chistrings.begin(), chistrings.end(), chis.begin(),
+                [](string const& val) { return stod(val); } // this is the equivalent of a Python's lambda function
+            );
+
+            double degrees_of_freedom = chis[2];
+            cout << "PValue = " << 1.0 - chi2cdf(2*(chis[1] - chis[0]), degrees_of_freedom) << std::endl;
+
+            return 0;
+
+        }
 
         /* -t */
         if (!my_input_parameters.tree_file_path.empty()) {

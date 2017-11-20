@@ -9,6 +9,12 @@
 #include "core.h"
 #include "gamma_core.h"
 #include "root_equilibrium_distribution.h"
+#include "chisquare.h"
+
+double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
+24.01409824083091, -1.231739572450155, 1.208650973866179e-3,
+-5.395239384953e-6 };
+
 
 //! Read user provided gene family data (whose path is stored in input_parameters instance)
 void execute::read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size, clade *p_tree, std::vector<gene_family> *p_gene_families) {
@@ -80,6 +86,7 @@ void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_
 
     std::ofstream likelihoods(filename("family_lks", my_input_parameters.output_prefix));
 
+    std::vector<double> model_likelihoods(models.size());
     for (int i = 0; i < models.size(); ++i) {
         cout << endl << "Starting inference processes for model " << i << endl;
         models[i]->start_inference_processes();
@@ -89,6 +96,13 @@ void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_
         results << "Model " << models[i]->name() << " Result: " << result << endl;
 
         models[i]->print_results(likelihoods);
+
+        model_likelihoods[i] = result;
+    }
+
+    if (model_likelihoods.size() == 2)
+    {
+        cout << "PValue = " << (1.0 - chi2cdf(2 * (model_likelihoods[1] - model_likelihoods[0]), 1.0));
     }
 }
 

@@ -33,6 +33,7 @@ public:
     std::string tree_file_path;
     std::string lambda_tree_file_path;
     std::string fixed_multiple_lambdas;
+    std::string chisquare_compare;
     std::string rootdist;
     double fixed_lambda = 0.0;
     double fixed_alpha = 0.0;

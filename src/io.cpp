@@ -20,7 +20,8 @@ struct option longopts[] = {
   { "rootdist", required_argument, NULL, 'f'},
   { "poisson", optional_argument, NULL, 'p' },
   { "simulate", optional_argument, NULL, 's' },
-//  { "nsims", optional_argument, NULL, 'n' },
+  { "chisquare_compare", required_argument, NULL, 'r' },
+  //  { "nsims", optional_argument, NULL, 'n' },
   { "log", optional_argument, NULL, 'g'},
   { 0, 0, 0, 0 }
 };
