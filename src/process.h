@@ -1,3 +1,6 @@
+#ifndef PROCESS_H
+#define PROCESS_H
+
 #include <iosfwd>
 #include <vector>
 #include <map>
@@ -5,6 +8,9 @@
 class lambda;
 class clade;
 class gene_family;
+class probability_calculator;
+class root_equilibrium_distribution;
+class child_multiplier;
 
 typedef std::map<clade *, int> trial;
 
@@ -56,3 +62,5 @@ public:
 
 	trial * get_simulation();
 };
+
+#endif

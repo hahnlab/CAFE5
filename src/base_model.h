@@ -3,6 +3,8 @@
 
 #include "core.h"
 
+class reconstruction_process;
+
 class base_model : public model {
     std::vector<inference_process *> processes;
     virtual simulation_process* create_simulation_process(int family_number);
@@ -23,6 +25,9 @@ public:
 
     virtual std::vector<double> initial_guesses();
     void set_current_guesses(double * guesses);
+
+    virtual void reconstruct_ancestral_states(probability_calculator *p_calc, root_equilibrium_distribution* p_prior);
+    reconstruction_process* create_reconstruction_process(int family_number, probability_calculator *p_calc, root_equilibrium_distribution* p_prior);
 };
 
 #endif

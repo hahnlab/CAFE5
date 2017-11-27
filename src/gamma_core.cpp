@@ -253,6 +253,11 @@ void gamma_model::set_current_guesses(double *guesses)
     cout << "Attempting lambda: " << *_p_lambda << ", alpha: " << alpha << std::endl;
 }
 
+void gamma_model::reconstruct_ancestral_states(probability_calculator *, root_equilibrium_distribution*)
+{
+    cout << "Reconstruction of ancestral states (gamma model) not implemented yet" << endl;
+}
+
 gamma_bundle::gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers)
 {
     std::transform(lambda_multipliers.begin(), lambda_multipliers.end(), std::back_inserter(processes), factory);

@@ -4,6 +4,8 @@
 
 #include "base_model.h"
 #include "process.h"
+#include "reconstruction_process.h"
+
 #include "root_equilibrium_distribution.h"
 
 base_model::base_model(lambda* p_lambda, clade *p_tree, vector<gene_family> *p_gene_families,
@@ -25,6 +27,11 @@ base_model::~base_model()
 
 simulation_process* base_model::create_simulation_process(int family_number) {
     return new simulation_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, family_number); // if a single _lambda_multiplier, how do we do it?
+}
+
+reconstruction_process* base_model::create_reconstruction_process(int family_number, probability_calculator *p_calc, root_equilibrium_distribution* p_prior) {
+    return new reconstruction_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, 
+        &_p_gene_families->at(family_number), p_calc, p_prior);
 }
 
 void base_model::start_inference_processes()
@@ -120,4 +127,21 @@ void base_model::set_current_guesses(double *guesses)
     _p_lambda->update(guesses);
     cout << "Lambda: " << *_p_lambda << std::endl;
 
+}
+
+void base_model::reconstruct_ancestral_states(probability_calculator *p_calc, root_equilibrium_distribution* p_prior)
+{
+    cout << "Starting reconstruction processes for base model" << endl;
+
+    vector<reconstruction_process*> rec_processes;
+    for (int i = 0; i < _p_gene_families->size(); ++i)
+    {
+        rec_processes.push_back(create_reconstruction_process(i, p_calc, p_prior));
+    }
+    cout << "Reconstructing processes for base model" << endl;
+    for (auto p : rec_processes)
+    {
+        p->reconstruct();
+    }
+    cout << "Done!" << endl;
 }

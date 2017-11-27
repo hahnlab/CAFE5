@@ -4,13 +4,8 @@
 #include "clade.h"
 #include "probability.h"
 
-class clade; // core.cpp includes clade.h before including core.h
-
-class process;
-class inference_process;
 class simulation_process;
-class inference_process_factory;
-class root_equilibrium_distribution;
+class inference_process;
 
 struct family_info_stash {
     family_info_stash() : family_id(0), lambda_multiplier(0.0), category_likelihood(0.0), family_likelihood(0.0), 
@@ -108,6 +103,8 @@ public:
 
     virtual std::vector<double> initial_guesses() = 0;
     virtual void set_current_guesses(double *guesses) = 0;
+
+    virtual void reconstruct_ancestral_states(probability_calculator *p_calc, root_equilibrium_distribution* p_prior) = 0;
 };
 
 std::vector<model *> build_models(const input_parameters& my_input_parameters, clade *p_tree, lambda *p_lambda, std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size);

@@ -1,5 +1,7 @@
 #include "core.h"
 
+class inference_process_factory;
+
 class gamma_bundle {
     std::vector<inference_process *> processes;
 public:
@@ -72,4 +74,6 @@ public:
     }
 
     virtual void print_results(std::ostream& ost);
+
+    virtual void reconstruct_ancestral_states(probability_calculator *, root_equilibrium_distribution* p_prior);
 };

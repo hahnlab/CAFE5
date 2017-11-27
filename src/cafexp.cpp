@@ -238,6 +238,11 @@ int cafexp(int argc, char *const argv[]) {
             // Printing: take estimated values, re-compute them for printing purposes
             my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size); 
             }
+
+            for (model* p_model : models) {
+                p_model->reconstruct_ancestral_states(&calculator, p_prior);
+            }
+
         }
         delete p_prior;
 
