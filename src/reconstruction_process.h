@@ -23,6 +23,7 @@ public:
         probability_calculator *calc,
         root_equilibrium_distribution* p_prior);
 
+    void print_reconstruction(std::ostream & ost);
 
     void operator()(clade *c);
 };

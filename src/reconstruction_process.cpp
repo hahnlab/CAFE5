@@ -20,15 +20,9 @@ class child_multiplier
     double value;
     int _j;
 public:
-    child_multiplier(std::map<clade *, std::vector<double> >& L) : _L(L)
+    child_multiplier(std::map<clade *, std::vector<double> >& L, int j) : _L(L), _j(j)
     {
         value = 1.0;
-        _j = 0;
-    }
-
-    void set_index(int j)
-    {
-        _j = j;
     }
 
     void operator()(clade *c)
@@ -62,16 +56,17 @@ void reconstruction_process::reconstruct_leaf_node(clade * c, lambda * _lambda)
     {
         L[i] = _p_calc->get_from_parent_fam_size_to_c(sl->get_single_lambda(), branch_length, i, observed_count, NULL);
     }
+
 }
 
 void reconstruction_process::reconstruct_root_node(clade * c)
 {
     auto& L = all_node_Ls[c];
-    int C = -1;
+    auto& C = all_node_Cs[c];
 
     L.resize(_max_root_family_size + 1);
-
-    child_multiplier cr(all_node_Ls);
+    // At the root, we pick a single reconstructed state (step 4 of Pupko)
+    C.resize(1);
 
     // i is the parent, j is the child
     for (size_t i = 1; i < L.size(); ++i)
@@ -80,20 +75,20 @@ void reconstruction_process::reconstruct_root_node(clade * c)
 
         for (size_t j = 1; j < L.size(); ++j)
         {
-            cr.set_index(j);
+            child_multiplier cr(all_node_Ls, j);
             c->apply_to_descendants(cr);
             double val = cr.result() * _p_prior->compute(j);
             if (val > max_val)
             {
                 max_val = val;
-                C = j;
+                C[0] = j;
             }
         }
 
         L[i] = max_val;
     }
 
-    cout << "C for tree is " << C << std::endl;
+    cout << "C for tree is " << C[0] << std::endl;
 }
 
 void reconstruction_process::reconstruct_internal_node(clade * c, lambda * _lambda)
@@ -103,43 +98,32 @@ void reconstruction_process::reconstruct_internal_node(clade * c, lambda * _lamb
     C.resize(_max_family_size + 1);
     L.resize(_max_family_size + 1);
 
-    double branch_length = c->get_parent()->get_branch_length();
+    double branch_length = c->get_branch_length();
 
     single_lambda * sl = dynamic_cast<single_lambda *>(_lambda);
 
     L.resize(_max_family_size + 1);
-
-    child_multiplier cr(all_node_Ls);
 
     // i is the parent, j is the child
     for (size_t i = 0; i < L.size(); ++i)
     {
         size_t max_j;
         double max_val = -1;
-        if (c->is_root())
+        for (size_t j = 0; j < L.size(); ++j)
         {
-            reconstruct_root_node(c);
-        }
-        else
-        {
-            for (size_t j = 0; j < L.size(); ++j)
+            child_multiplier cr(all_node_Ls, j);
+            c->apply_to_descendants(cr);
+            double val = cr.result() *_p_calc->get_from_parent_fam_size_to_c(sl->get_single_lambda(), branch_length, i, j, NULL);
+            if (val > max_val)
             {
-                cr.set_index(j);
-                c->apply_to_descendants(cr);
-                double val = cr.result() *_p_calc->get_from_parent_fam_size_to_c(sl->get_single_lambda(), branch_length, i, j, NULL);
-                if (val > max_val)
-                {
-                    max_j = j;
-                    max_val = val;
-                }
+                max_j = j;
+                max_val = val;
             }
-
         }
 
         L[i] = max_val;
         C[i] = max_j;
     }
-
 }
 
 
@@ -168,9 +152,39 @@ void reconstruction_process::operator()(clade *c)
     }
 }
 
+class backtracker
+{
+    std::map<clade *, std::vector<int> >& _all_node_Cs;
+    std::map<clade *, int> reconstructed_states;
+public:
+    backtracker(std::map<clade *, std::vector<int> >& all_node_Cs, clade *root) : _all_node_Cs(all_node_Cs)
+    {
+        reconstructed_states[root] = _all_node_Cs[root][0];
+    }
+
+    void operator()(clade *child)
+    {
+        if (!child->is_leaf())
+        {
+            auto& C = _all_node_Cs[child];
+            int parent_c = reconstructed_states[child->get_parent()];
+            reconstructed_states[child] = C[parent_c];
+            child->apply_to_descendants(*this);
+        }
+    }
+};
+
 void reconstruction_process::reconstruct()
 {
     // Pupko's joint reconstruction algorithm
     _p_tree->apply_reverse_level_order(*this);
+
+    backtracker b(all_node_Cs, _p_tree);
+    _p_tree->apply_to_descendants(b);
+}
+
+void reconstruction_process::print_reconstruction(std::ostream & ost)
+{
+    ost << "Here is a reconstruction!" << endl;
 }
 

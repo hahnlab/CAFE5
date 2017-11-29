@@ -203,3 +203,13 @@ void execute::estimate_lambda(model *p_model, const input_parameters &my_input_p
     p_tree->init_gene_family_sizes(*p_gene_families);
     p_model->set_current_guesses(find_best_lambda(p_model, p_prior));
 }
+
+void execute::reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, probability_calculator& calculator)
+{
+    std::ofstream ofst(filename("reconstruction", my_input_parameters.output_prefix));
+
+    for (model* p_model : models) {
+        p_model->reconstruct_ancestral_states(&calculator, p_prior);
+        p_model->print_reconstructed_states(ofst);
+    }
+}

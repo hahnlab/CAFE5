@@ -239,9 +239,7 @@ int cafexp(int argc, char *const argv[]) {
             my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size); 
             }
 
-            for (model* p_model : models) {
-                p_model->reconstruct_ancestral_states(&calculator, p_prior);
-            }
+            my_executer.reconstruct(models, my_input_parameters, p_prior, calculator);
 
         }
         delete p_prior;

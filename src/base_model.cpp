@@ -132,16 +132,17 @@ void base_model::set_current_guesses(double *guesses)
 void base_model::reconstruct_ancestral_states(probability_calculator *p_calc, root_equilibrium_distribution* p_prior)
 {
     cout << "Starting reconstruction processes for base model" << endl;
+    _rec_processes.clear();
 
-    vector<reconstruction_process*> rec_processes;
     for (int i = 0; i < _p_gene_families->size(); ++i)
     {
-        rec_processes.push_back(create_reconstruction_process(i, p_calc, p_prior));
+        _rec_processes.push_back(create_reconstruction_process(i, p_calc, p_prior));
     }
     cout << "Reconstructing processes for base model" << endl;
-    for (auto p : rec_processes)
+    for (auto p : _rec_processes)
     {
         p->reconstruct();
     }
+
     cout << "Done!" << endl;
 }

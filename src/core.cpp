@@ -13,6 +13,7 @@
 #include "process.h"
 #include "poisson.h"
 #include "root_equilibrium_distribution.h"
+#include "reconstruction_process.h"
 
 std::vector<model *> build_models(const input_parameters& my_input_parameters, clade *p_tree, lambda *p_lambda, std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size) {
     std::vector<model *> models;
@@ -109,6 +110,15 @@ void model::print_processes(std::ostream& ost) {
 
     for (int i = 0; i < _total_n_families_sim; ++i) {
         _sim_processes[i]->print_simulation(ost);
+    }
+}
+
+void model::print_reconstructed_states(std::ostream& ost) {
+    auto& rec = _rec_processes[0];
+    // rec.print_header();
+
+    for (int i = 0; i < _rec_processes.size(); ++i) {
+        _rec_processes[i]->print_reconstruction(ost);
     }
 }
 
