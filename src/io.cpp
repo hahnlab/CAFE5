@@ -203,6 +203,11 @@ void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gen
                         genfam.set_species_size(sp_name, atoi(tokens[i].c_str()));
                         // cout << "Species " << sp_name << " has " << tokens[i] << "gene members." << endl;
                     }
+                    else
+                    {
+                        if (i == tokens.size() - 1)
+                            genfam.set_id(tokens[i]);
+                    }
                 }
             }
             

@@ -58,7 +58,7 @@ public:
 
 	void run_simulation();
 
-	void print_simulation(std::ostream & ost);
+	void print_simulation(std::ostream & ost, int index);
 
 	trial * get_simulation();
 };

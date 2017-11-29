@@ -155,9 +155,11 @@ void reconstruction_process::operator()(clade *c)
 class backtracker
 {
     std::map<clade *, std::vector<int> >& _all_node_Cs;
-    std::map<clade *, int> reconstructed_states;
+    std::map<clade *, int>& reconstructed_states;
 public:
-    backtracker(std::map<clade *, std::vector<int> >& all_node_Cs, clade *root) : _all_node_Cs(all_node_Cs)
+    backtracker(std::map<clade *, int>& rc, std::map<clade *, std::vector<int> >& all_node_Cs, clade *root) : 
+        _all_node_Cs(all_node_Cs),
+        reconstructed_states(rc)
     {
         reconstructed_states[root] = _all_node_Cs[root][0];
     }
@@ -179,12 +181,25 @@ void reconstruction_process::reconstruct()
     // Pupko's joint reconstruction algorithm
     _p_tree->apply_reverse_level_order(*this);
 
-    backtracker b(all_node_Cs, _p_tree);
+    backtracker b(reconstructed_states, all_node_Cs, _p_tree);
     _p_tree->apply_to_descendants(b);
 }
 
-void reconstruction_process::print_reconstruction(std::ostream & ost)
+std::vector<clade *> reconstruction_process::get_taxa()
 {
-    ost << "Here is a reconstruction!" << endl;
+    vector<clade *> result;
+    for (auto& c : reconstructed_states)
+        result.push_back(c.first);
+
+    return result;
+}
+
+void reconstruction_process::print_reconstruction(std::ostream & ost, std::vector<clade *>& order)
+{
+    ost << _gene_family->id() << '\t';
+    for (auto taxon : order)
+        ost << reconstructed_states[taxon] << '\t';
+
+    ost << endl;
 }
 

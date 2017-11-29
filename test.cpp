@@ -6,6 +6,8 @@
 #include "src/io.h"
 #include "src/core.h"
 #include "src/gamma_core.h"
+#include "src/root_equilibrium_distribution.h"
+#include "src/base_model.h"
 
 TEST_GROUP(GeneFamilies)
 {
@@ -15,6 +17,9 @@ TEST_GROUP(Inference)
 {
 };
 
+TEST_GROUP(Simulation)
+{
+};
 
 TEST(GeneFamilies, read_gene_families_reads_cafe_files)
 {
@@ -65,39 +70,35 @@ TEST(Inference, infer_processes)
     fam4.set_species_size("A", 6);
     fam4.set_species_size("B", 3);
     families.push_back(fam4);
-    base_core core;
     probability_calculator calc;
     single_lambda lambda(&calc, 0.01);
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:1);";
     clade *p_tree = parser.parse_newick();
 
-    core.set_gene_families(&families);
-    core.set_max_sizes(56, 30);
-    core.set_lambda(&lambda);
-    core.set_tree(p_tree);
+    base_model core(&lambda, p_tree, &families, 56, 30, NULL);
     core.start_inference_processes();
+
+
     uniform_distribution frq;
     double multi = core.infer_processes(&frq);
     //core.get_likelihoods();
-    DOUBLES_EQUAL(13428.5, multi, 0.1);
+    DOUBLES_EQUAL(41.7504, multi, 0.001);
     delete p_tree;
 }
 
 TEST(Inference, uniform_distribution)
 {
-    base_core core;
     std::vector<int> rd(10);
     std::fill(rd.begin(), rd.end(), 1);
     uniform_distribution ef;
     ef.initialize(rd);
-    core.set_rootdist_vec(rd);
     DOUBLES_EQUAL(.1, ef.compute(5), 0.0001);
 }
 
 TEST(Inference, gamma_set_alpha)
 {
-    gamma_core core;
+    gamma_model core;
     core.adjust_n_gamma_cats(5);
     core.set_alpha(0.5, 3);
 }
@@ -109,7 +110,7 @@ TEST(Inference, gamma_adjust_family_gamma_membership)
     std::vector<gene_family> families;
     read_gene_families(ist, NULL, &families);
 
-    gamma_core core;
+    gamma_model core;
     core.adjust_family_gamma_membership(5);
 }
 
@@ -128,7 +129,7 @@ TEST(Inference, gamma)
 
     std::vector<int> rootdist;
 //    gamma_core core(cout, &lambda, p_tree, 122, 4, rootdist, 2, 0.5);
-    gamma_core core;
+    gamma_model core;
     core.set_gene_families(&families);
     core.set_lambda(&lambda);
     core.set_tree(p_tree);
@@ -138,7 +139,7 @@ TEST(Inference, gamma)
     core.start_inference_processes();
     uniform_distribution frq;
     double actual = core.infer_processes(&frq);
-    DOUBLES_EQUAL(-56.3469, std::log(actual), .0001);
+    DOUBLES_EQUAL(56.3469, actual, .0001);
 
     delete p_tree;
 }
@@ -155,6 +156,16 @@ TEST(Inference, stash_stream)
     ost << stash;
     STRCMP_EQUAL("1\t2.5\t0\t3.7\t4.9\tN/S", ost.str().c_str());
 
+}
+
+TEST(Simulation, gamma_cats)
+{
+    std::vector<gene_family> families;
+    std::ostringstream ost;
+    vector<int> rootdist_vec;
+
+    gamma_model core(ost, NULL, NULL, 10, 0, rootdist_vec, 0, 0.5);
+    core.start_sim_processes();
 }
 
 int main(int ac, char** av)

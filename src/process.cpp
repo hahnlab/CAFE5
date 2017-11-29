@@ -85,14 +85,14 @@ std::vector<double> inference_process::prune() {
 }
 
 //! Printing process' simulation
-void simulation_process::print_simulation(std::ostream & ost) {
+void simulation_process::print_simulation(std::ostream & ost, int index) {
 
     // Printing gene counts
 	for (trial::iterator it = _my_simulation->begin(); it != _my_simulation->end(); ++it) {
 		ost << it->second << "\t";
 	}
 
-	ost << _lambda_multiplier << endl;
+	ost << _lambda_multiplier << '\t' << index << endl;
 }
 
 //! Return simulation

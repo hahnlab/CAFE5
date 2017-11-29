@@ -13,6 +13,8 @@ class reconstruction_process : public process {
     void reconstruct_root_node(clade * c);
     std::map<clade *, std::vector<int> > all_node_Cs;
     std::map<clade *, std::vector<double> > all_node_Ls;
+
+    std::map<clade *, int> reconstructed_states;
 public:
     void reconstruct();
 
@@ -23,7 +25,8 @@ public:
         probability_calculator *calc,
         root_equilibrium_distribution* p_prior);
 
-    void print_reconstruction(std::ostream & ost);
+    std::vector<clade *> get_taxa();
+    void print_reconstruction(std::ostream & ost, std::vector<clade *>& order);
 
     void operator()(clade *c);
 };

@@ -109,16 +109,19 @@ void model::print_processes(std::ostream& ost) {
     }
 
     for (int i = 0; i < _total_n_families_sim; ++i) {
-        _sim_processes[i]->print_simulation(ost);
+        _sim_processes[i]->print_simulation(ost, i);
     }
 }
 
 void model::print_reconstructed_states(std::ostream& ost) {
-    auto& rec = _rec_processes[0];
-    // rec.print_header();
+    auto rec = _rec_processes[0];
+    auto order = rec->get_taxa();
+    for (auto& it : order) {
+        ost << "#" << it->get_taxon_name() << "\n";
+    }
 
     for (int i = 0; i < _rec_processes.size(); ++i) {
-        _rec_processes[i]->print_reconstruction(ost);
+        _rec_processes[i]->print_reconstruction(ost, order);
     }
 }
 
@@ -141,7 +144,7 @@ void model::adjust_family(std::ostream& ost) {
     }
     
     for (int i = 0; i < _total_n_families_sim; ++i) {
-        _sim_processes[i]->print_simulation(cout);
+        _sim_processes[i]->print_simulation(cout, i);
     }
 }
 
