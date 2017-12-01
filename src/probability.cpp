@@ -100,6 +100,12 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 
 /* END: Birth-death model components ----------------------- */
 
+probability_calculator::~probability_calculator()
+{
+    for (auto m : _matrix_cache)
+        delete m.second;
+}
+
 /* START: Likelihood computation ---------------------- */
 //! Calls BD formulas, but checks/populates cache
 double probability_calculator::get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size, double *value) {
@@ -143,30 +149,61 @@ void probability_calculator::print_cache(std::ostream &ost, int max_size) const 
     }
 }
 
-//! Compute transition probability matrix for all gene family sizes from 0 to size-1 (=_max_root_family_size-1)
-vector<vector<double> > probability_calculator::get_matrix(int size, int branch_length, double lambda) {
+#define MATRIX_CACHING
 
-	vector<vector<double> > result(size);
-	result[0].resize(size);
-	
-	double zero_val = 1.0;
-	result[0][0] = get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0, &zero_val); // here we set the probability of 0 remaining 0 to 1 (if you lose the gene family, you do not regain it)
-	zero_val = 0.0;
-	for (int i = 0; i < result[0].size(); ++i)
-	{
-		result[0][i] = get_from_parent_fam_size_to_c(lambda, branch_length, 0, i, &zero_val);
-	}
-	for (int s = 1; s < size; s++) {
-        result[s].resize(size);
-    
+//! Compute transition probability matrix for all gene family sizes from 0 to size-1 (=_max_root_family_size-1)
+matrix probability_calculator::get_matrix(int size, int branch_length, double lambda) {
+#ifdef MATRIX_CACHING
+    matrix result(size);
+    result.at(0).resize(size);
+
+    double zero_val = 1.0;
+    result.at(0)[0] = get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0, &zero_val); // here we set the probability of 0 remaining 0 to 1 (if you lose the gene family, you do not regain it)
+    zero_val = 0.0;
+    for (int i = 0; i < result[0].size(); ++i)
+    {
+        result.at(0)[0] = get_from_parent_fam_size_to_c(lambda, branch_length, 0, i, &zero_val);
+    }
+    for (int s = 1; s < size; s++) {
+        result.at(s).resize(size);
+
         for (int c = 0; c < size; c++) {
             // result[s][c] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, s, c);
-			result[s][c] = get_from_parent_fam_size_to_c(lambda, branch_length, s, c, NULL);
-			// cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
+            result.at(s)[c] = get_from_parent_fam_size_to_c(lambda, branch_length, s, c, NULL);
+            // cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
         }
-    }
     
+    }
+
     return result;
+#else
+    matrix_cache_key key(size, lambda, branch_length);
+    if (_matrix_cache.find(key) == _matrix_cache.end())
+    {
+        matrix* result = new matrix(size);
+        result->at(0).resize(size);
+
+        double zero_val = 1.0;
+        result->at(0)[0] = get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0, &zero_val); // here we set the probability of 0 remaining 0 to 1 (if you lose the gene family, you do not regain it)
+        zero_val = 0.0;
+        for (int i = 0; i < result[0].size(); ++i)
+        {
+            result->at(0)[0] = get_from_parent_fam_size_to_c(lambda, branch_length, 0, i, &zero_val);
+        }
+        for (int s = 1; s < size; s++) {
+            result->at(s).resize(size);
+
+            for (int c = 0; c < size; c++) {
+                // result[s][c] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, s, c);
+                result->at(s)[c] = get_from_parent_fam_size_to_c(lambda, branch_length, s, c, NULL);
+                // cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
+            }
+        }
+
+        _matrix_cache[key] = result;
+    }
+    return *_matrix_cache[key];
+#endif
 }
 
 //! Take in a matrix and a vector, compute product, return it
@@ -174,7 +211,7 @@ vector<vector<double> > probability_calculator::get_matrix(int size, int branch_
   This function returns a likelihood vector by multiplying an initial likelihood vector and a transition probability matrix.
   A minimum and maximum on the parent's and child's family sizes is provided. Because the root is forced to be >=1, for example, s_min_family_size for the root could be set to 1.
 */
-vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) 
+vector<double> matrix_multiply(const matrix& matrix, const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) 
 {
 	//cout << "Matrix multiply " << matrix.size() << "x" << v.size() << " (submatrix " << s_min_family_size << ":" << s_max_family_size;
 	//cout << " " << c_min_family_size << ":" << c_max_family_size << ")" << endl;

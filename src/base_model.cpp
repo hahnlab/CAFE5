@@ -94,7 +94,7 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
 
     double final_likelihood = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families
 
-    std::cout << "-lnL: " << final_likelihood << std::endl;
+    std::cout << "Score (-lnL): " << setw(15) << setprecision(14) << final_likelihood << std::endl;
 
     return final_likelihood;
 }

@@ -20,6 +20,8 @@ double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 void execute::read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size, clade *p_tree, std::vector<gene_family> *p_gene_families) {
     
     ifstream input_file(my_input_parameters.input_file_path); 
+    if (!input_file.is_open())
+        throw std::runtime_error("Failed to open " + my_input_parameters.input_file_path);
     read_gene_families(input_file, p_tree, p_gene_families); // in io.cpp/io.h
             
     // Iterating over gene families to get max gene family size

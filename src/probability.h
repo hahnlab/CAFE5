@@ -48,6 +48,8 @@ public:
 
 };
 
+typedef vector<vector< double> > matrix;
+
 /* END: Likelihood computation ---------------------- */
 
 /* START: Probability calculator for inference and simulation ------ */
@@ -82,6 +84,20 @@ public:
     }
 };
 
+class matrix_cache_key {
+    double _lambda;
+    double _branch_length;
+    size_t _size;
+public:
+    matrix_cache_key(int size, double some_lambda, double some_branch_length) : 
+        _size(size), 
+        _lambda(some_lambda), 
+        _branch_length(some_branch_length) { }
+    bool operator<(const matrix_cache_key &o) const {
+        return std::tie(_size, _branch_length, _lambda) < std::tie(o._size, o._branch_length, o._lambda);
+    }
+};
+
 //! Computation of the probabilities of moving from a family size (parent) to another (child)
 /*!
   Contains a map (_cache) that serves as a hash table to store precalculated values.
@@ -90,14 +106,18 @@ public:
 class probability_calculator {
 private:
     std::map<cache_key, std::map<std::tuple<int, int>, double> > _cache; //!< nested map that stores transition probabilities for a given lambda and branch_length (outer), then for a given parent and child size (inner)
+
+    std::map<matrix_cache_key, matrix*> _matrix_cache; //!< nested map that stores transition probabilities for a given lambda and branch_length (outer), then for a given parent and child size (inner)
 public:
     double get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size, double *value);
-	std::vector<std::vector<double> > get_matrix(int size, int branch_length, double lambda);
+	matrix get_matrix(int size, int branch_length, double lambda);
 
     void print_cache(std::ostream &ost, int max_size) const;
+
+    ~probability_calculator();
 };
 
-vector<double> matrix_multiply(const vector<vector<double> >& matrix, const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size);
+vector<double> matrix_multiply(const matrix& matrix, const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size);
 
 /* END: Probability calculator for simulator -------- */
 

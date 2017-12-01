@@ -21,6 +21,10 @@ TEST_GROUP(Simulation)
 {
 };
 
+TEST_GROUP(Probability)
+{
+};
+
 TEST(GeneFamilies, read_gene_families_reads_cafe_files)
 {
     std::string str = "Desc\tFamily ID\tA\tB\tC\tD\n\t (null)1\t5\t10\t2\t6\n\t (null)2\t5\t10\t2\t6\n\t (null)3\t5\t10\t2\t6\n\t (null)4\t5\t10\t2\t6";
@@ -166,6 +170,71 @@ TEST(Simulation, gamma_cats)
 
     gamma_model core(ost, NULL, NULL, 10, 0, rootdist_vec, 0, 0.5);
     core.start_sim_processes();
+}
+
+TEST(Probability, probability_of_some_values)
+{
+    probability_calculator calc;
+    double lambda = 0.05;
+    double branch_length = 5;
+    DOUBLES_EQUAL(0.0152237, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 5, 9, NULL), 0.00001);
+
+    DOUBLES_EQUAL(0.17573, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 9, NULL), 0.00001);
+
+    DOUBLES_EQUAL(0.182728, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 10, NULL), 0.00001);
+
+    branch_length = 1;
+    DOUBLES_EQUAL(0.465565, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 10, NULL), 0.00001);
+}
+
+TEST(Probability, probability_can_be_forced)
+{
+    probability_calculator calc;
+    double lambda = 0.05;
+    double branch_length = 5;
+
+    double force = 0.1;
+    DOUBLES_EQUAL(0.1, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 5, 9, &force), 0.00001);
+
+    // forced value is remembered after being set
+    DOUBLES_EQUAL(0.1, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 5, 9, NULL), 0.00001);
+}
+
+bool operator==(matrix& m1, matrix& m2)
+{
+    if (m1.size() != m2.size())
+        return false;
+
+    for (int i = 0; i < m1.size(); ++i)
+    {
+        if (m1[i].size() != m2[i].size())
+            return false;
+
+        for (int j = 0; j < m1.size(); ++j)
+            if (abs(m1[i][j] - m2[i][j]) > 0.00001)
+                return false;
+    }
+
+    return true;
+}
+
+TEST(Probability, probability_of_matrix)
+{
+    probability_calculator calc;
+    double lambda = 0.05;
+    double branch_length = 5;
+    matrix actual = calc.get_matrix(5, branch_length, lambda);
+    matrix expected = { 
+    {0,0,0,0,0},
+    { 0.2,0.64,0.128,0.0256,0.00512 },
+    { 0.04,0.256,0.4608,0.17408,0.0512 },
+    { 0.008,0.0768,0.26112,0.36352,0.187392 },
+    { 0.0016,0.02048,0.1024,0.249856,0.305562 } };
+    CHECK(actual == expected);
+
+    // a second call should get the same results as the first
+    actual = calc.get_matrix(5, branch_length, lambda);
+    CHECK(actual == expected);
 }
 
 int main(int ac, char** av)
