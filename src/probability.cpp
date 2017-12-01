@@ -153,7 +153,7 @@ void probability_calculator::print_cache(std::ostream &ost, int max_size) const 
 
 //! Compute transition probability matrix for all gene family sizes from 0 to size-1 (=_max_root_family_size-1)
 matrix probability_calculator::get_matrix(int size, int branch_length, double lambda) {
-#ifdef MATRIX_CACHING
+#ifndef MATRIX_CACHING
     matrix result(size);
     result.at(0).resize(size);
 
