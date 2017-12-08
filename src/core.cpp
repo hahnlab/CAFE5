@@ -103,6 +103,11 @@ void model::simulate_processes() {
 
 void model::print_processes(std::ostream& ost) {
 
+    if (_sim_processes.empty())
+    {
+        cerr << "No simulations created" << endl;
+        return;
+    }
     trial *sim = _sim_processes[0]->get_simulation();
     for (trial::iterator it = sim->begin(); it != sim->end(); ++it) {
           ost << "#" << it->first->get_taxon_name() << "\n";

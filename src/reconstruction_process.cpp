@@ -88,7 +88,7 @@ void reconstruction_process::reconstruct_root_node(clade * c)
         L[i] = max_val;
     }
 
-    cout << "C for tree is " << C[0] << std::endl;
+//    cout << "C for tree is " << C[0] << std::endl;
 }
 
 void reconstruction_process::reconstruct_internal_node(clade * c, lambda * _lambda)
@@ -203,25 +203,25 @@ void reconstruction_process::print_reconstruction(std::ostream & ost, std::vecto
     ost << endl;
 }
 
-#if 0
-std::vector<std::map<clade *, double>> reconstruction_process::get_weighted_averages(std::vector<reconstruction_process *> m, const vector<double>& _gamma_cat_probs)
+std::map<clade *, double> reconstruction_process::get_weighted_averages(std::vector<reconstruction_process *> m, const vector<double>& _gamma_cat_probs)
 {
     vector<clade *> nodes;
     for (auto& i : m[0]->reconstructed_states)
         nodes.push_back(i.first);
 
-    std::vector<std::map<clade *, double>> result;
+    std::map<clade *, double> result;
     for (auto node : nodes)
     {
-        for (int i = 0; i<_gamma_cat_probs.size(); ++i)
+        double val = 0.0;
+        for (size_t i = 0; i<_gamma_cat_probs.size(); ++i)
         {
-            result[i][node] = double(m[i]->reconstructed_states[node]);
+            val += _gamma_cat_probs[i] * double(m[i]->reconstructed_states[node]);
         }
+        result[node] = val;
     }
 
     return result;
 }
-#endif
 
 std::string reconstruction_process::get_family_id() const
 {

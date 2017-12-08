@@ -139,7 +139,7 @@ void execute::simulate(std::vector<model *>& models, const input_parameters &my_
 //        else
 //            models[i]->set_total_n_families_sim(rootdist_vec.size());
 
-        cout << "I just set number of families to simulate." << endl;
+        cerr << "Simulating " << my_input_parameters.nsims << " families" << endl;
 
 #if 0
         gamma_model* p_model = dynamic_cast<gamma_model *>(models[i]);
@@ -209,9 +209,8 @@ void execute::estimate_lambda(model *p_model, const input_parameters &my_input_p
 
 void execute::reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, probability_calculator& calculator)
 {
-    std::ofstream ofst(filename("reconstruction", my_input_parameters.output_prefix));
-
     for (model* p_model : models) {
+        std::ofstream ofst(filename(p_model->name() + "_asr", my_input_parameters.output_prefix));
         p_model->reconstruct_ancestral_states(&calculator, p_prior);
         p_model->print_reconstructed_states(ofst);
     }

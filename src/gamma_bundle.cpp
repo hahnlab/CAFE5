@@ -2,6 +2,7 @@
 #include <cassert>
 #include <iostream>
 #include <numeric>
+#include <functional>
 
 #include "gamma_bundle.h"
 #include "reconstruction_process.h"
@@ -70,20 +71,27 @@ void gamma_bundle::reconstruct(const vector<double>& _gamma_cat_probs)
         _rec_processes[k]->reconstruct();
         // multiply every reconstruction by gamma_cat_prob
     }
-    //    auto result = reconstruction_process::get_weighted_averages(_rec_processes, _gamma_cat_probs);
+    reconstruction = reconstruction_process::get_weighted_averages(_rec_processes, _gamma_cat_probs);
 
 }
 
 void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<clade *> order)
 {
     ost << _rec_processes[0]->get_family_id() << '\t';
+    std::function<std::string()> f;
     for (auto proc : _rec_processes)
     {
         auto s = proc->get_reconstructed_states();
+        f = [&]() {f = []() { return "-"; }; return ""; };;
         for (auto taxon : order)
-            ost << s[taxon] << '-';
+            ost << f() << s[taxon];
         ost << '\t';
     }
+
+    f = [&]() {f = []() { return "-"; }; return ""; };
+    for (auto taxon : order)
+        ost << f() << reconstruction[taxon];
+
     ost << endl;
 }
 

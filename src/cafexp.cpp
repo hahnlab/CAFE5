@@ -170,7 +170,7 @@ int cafexp(int argc, char *const argv[]) {
                         argv[0], optopt);
                 break;
             default: // '?' is parsed (
-                cout << "Unrecognized parameter: '" << args << "' Exiting..." << endl;
+                cout << "Unrecognized parameter: '" << (char)args << "' Exiting..." << endl;
                 return EXIT_FAILURE; //abort ();
           }
       }
@@ -221,6 +221,9 @@ int cafexp(int argc, char *const argv[]) {
         // Build model takes care of -f
         vector<model *> models = build_models(my_input_parameters, p_tree, p_lambda, &gene_families, max_family_size, max_root_family_size);
         
+        if (models.empty())
+            throw std::runtime_error("Not enough information to specify a model");
+
         // -f cannot have been specified
         if (my_input_parameters.rootdist.empty()) {
         

@@ -11,6 +11,7 @@ class gene_family;
 
 #include <vector>
 #include <iosfwd>
+#include <map>
 
 class inference_process_factory
 {
@@ -40,6 +41,9 @@ public:
 class gamma_bundle {
     std::vector<inference_process *> _inf_processes;
     std::vector<reconstruction_process *> _rec_processes;
+
+    std::map<clade *, double> reconstruction;
+
 public:
     gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers);
 

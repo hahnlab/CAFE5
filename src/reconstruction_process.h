@@ -41,8 +41,8 @@ public:
     }
     void operator()(clade *c);
 
-//    static std::map<clade *, double> get_weighted_averages(std::vector<reconstruction_process *> m,
-//        const std::vector<double>& _gamma_cat_probs);
+    static std::map<clade *, double> get_weighted_averages(std::vector<reconstruction_process *> m,
+        const std::vector<double>& _gamma_cat_probs);
 
     std::string get_family_id() const;
 };

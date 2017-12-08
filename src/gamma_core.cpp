@@ -234,7 +234,14 @@ void gamma_model::reconstruct_ancestral_states(probability_calculator *calc, roo
 
 void gamma_model::print_reconstructed_states(std::ostream& ost)
 {
-    cerr << "gamma_model::print_reconstructed_states\n";
+    std::function<std::string()> f = [&]() {f = []() { return "\t"; }; return ""; };
+
+    ost << "&Lambda multipliers: ";
+    for (auto& i : _lambda_multipliers)
+    {
+        ost << f() << i;
+    }
+    ost << endl;
 
     auto rec = _family_bundles[0];
     auto order = rec.get_taxa();
