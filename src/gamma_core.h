@@ -1,28 +1,7 @@
 #include "core.h"
+#include "gamma_bundle.h"
 
 class inference_process_factory;
-
-class gamma_bundle {
-    std::vector<inference_process *> _inf_processes;
-    std::vector<reconstruction_process *> _rec_processes;
-public:
-    gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers);
-
-    void clear();
-
-    std::vector<double> prune(const vector<double>& gamma_cat_probs, root_equilibrium_distribution *eq_freq);
-
-    void reconstruct(const vector<double>& _gamma_cat_probs);
-
-    double get_lambda_likelihood(int family_id);
-
-    void set_values(probability_calculator *, root_equilibrium_distribution*);
-
-    void print_reconstruction(std::ostream& ost, std::vector<clade *> order);
-
-    std::vector<clade *> get_taxa();
-};
-
 
 class gamma_model : public model {
 private:

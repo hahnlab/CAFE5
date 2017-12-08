@@ -1,0 +1,61 @@
+#ifndef GAMMA_BUNDLE_H
+#define GAMMA_BUNDLE_H
+
+class inference_process;
+class reconstruction_process;
+class root_equilibrium_distribution;
+class probability_calculator;
+class lambda;
+class clade;
+class gene_family;
+
+#include <vector>
+#include <iosfwd>
+
+class inference_process_factory
+{
+    std::ostream & _ost;
+    lambda* _lambda;
+    double _lambda_multiplier;
+    clade *_p_tree;
+    int _max_family_size;
+    int _max_root_family_size;
+    std::vector<int> _rootdist_vec; // distribution of relative values. probability can be found by dividing a single value by the total of all values
+    int _root_size; // will be drawn from _rootdist_vec by process itself
+    gene_family *_family;
+public:
+
+    inference_process_factory(std::ostream & ost, lambda* lambda, clade *p_tree, int max_family_size,
+        int max_root_family_size, std::vector<int> rootdist);
+
+    void set_gene_family(gene_family *family) {
+        _family = family;
+    }
+
+    inference_process* operator()(double lambda_multiplier);
+
+    reconstruction_process* create_reconstruction_process();
+};
+
+class gamma_bundle {
+    std::vector<inference_process *> _inf_processes;
+    std::vector<reconstruction_process *> _rec_processes;
+public:
+    gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers);
+
+    void clear();
+
+    std::vector<double> prune(const std::vector<double>& gamma_cat_probs, root_equilibrium_distribution *eq_freq);
+
+    void reconstruct(const std::vector<double>& _gamma_cat_probs);
+
+    double get_lambda_likelihood(int family_id);
+
+    void set_values(probability_calculator *, root_equilibrium_distribution*);
+
+    void print_reconstruction(std::ostream& ost, std::vector<clade *> order);
+
+    std::vector<clade *> get_taxa();
+};
+
+#endif
