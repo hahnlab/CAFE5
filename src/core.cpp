@@ -113,18 +113,6 @@ void model::print_processes(std::ostream& ost) {
     }
 }
 
-void model::print_reconstructed_states(std::ostream& ost) {
-    auto rec = _rec_processes[0];
-    auto order = rec->get_taxa();
-    for (auto& it : order) {
-        ost << "#" << it->get_taxon_name() << "\n";
-    }
-
-    for (int i = 0; i < _rec_processes.size(); ++i) {
-        _rec_processes[i]->print_reconstruction(ost, order);
-    }
-}
-
 void model::initialize_rootdist_if_necessary()
 {
     if (_rootdist_vec.empty())
@@ -169,6 +157,43 @@ void model::print_parameter_values() {
     }
     
 }
+
+class depth_finder
+{
+    std::map<clade *, double>& _depths;
+    double _depth;
+public:
+    depth_finder(std::map<clade *, double>& depths, double depth) : _depths(depths), _depth(depth) {}
+    void operator()(clade *c)
+    {
+        _depths[c] = _depth + c->get_branch_length();
+        depth_finder dp(_depths, _depth + c->get_branch_length());
+        c->apply_to_descendants(dp);
+    }
+};
+
+void model::print_node_depths(std::ostream& ost)
+{
+    std::map<clade *, double> depths;
+    depth_finder dp(depths, 0);
+    dp(_p_tree);
+    
+    double max_depth = 0;
+    for (auto& x : depths)
+    {
+        if (x.second > max_depth)
+            max_depth = x.second;
+    }
+
+    for (auto& x : depths)
+    {
+        if (!x.first->is_leaf())
+        {
+            ost << x.first->get_taxon_name() << "\t" << (max_depth - x.second) << endl;
+        }
+    }
+}
+
 
 void max_branch_length_finder::operator()(clade *c)
 {

@@ -195,6 +195,7 @@ void execute::estimate_lambda(model *p_model, const input_parameters &my_input_p
         p_lambda_tree->apply_prefix_order(counter);
         auto node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
         p_lambda = new multiple_lambda(&calculator, node_name_to_lambda_index, std::vector<double>(counter.unique_lambdas.size()));
+        cout << "Searching for " << counter.unique_lambdas.size() << " lambdas" << endl;
     }
     else
     {
@@ -214,4 +215,7 @@ void execute::reconstruct(std::vector<model *>& models, const input_parameters &
         p_model->reconstruct_ancestral_states(&calculator, p_prior);
         p_model->print_reconstructed_states(ofst);
     }
+
+    std::ofstream dfst(filename("depth", my_input_parameters.output_prefix));
+    models[0]->print_node_depths(dfst);
 }

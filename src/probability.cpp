@@ -181,21 +181,18 @@ matrix probability_calculator::get_matrix(int size, int branch_length, double la
     if (_matrix_cache.find(key) == _matrix_cache.end())
     {
         matrix* result = new matrix(size);
-        result->at(0).resize(size);
 
         double zero_val = 1.0;
-        result->at(0)[0] = get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0, &zero_val); // here we set the probability of 0 remaining 0 to 1 (if you lose the gene family, you do not regain it)
+        result->set(0, 0, get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0, &zero_val)); // here we set the probability of 0 remaining 0 to 1 (if you lose the gene family, you do not regain it)
         zero_val = 0.0;
         for (int i = 0; i < result[0].size(); ++i)
         {
-            result->at(0)[0] = get_from_parent_fam_size_to_c(lambda, branch_length, 0, i, &zero_val);
+            result->set(0,0,get_from_parent_fam_size_to_c(lambda, branch_length, 0, i, &zero_val));
         }
         for (int s = 1; s < size; s++) {
-            result->at(s).resize(size);
-
             for (int c = 0; c < size; c++) {
                 // result[s][c] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, s, c);
-                result->at(s)[c] = get_from_parent_fam_size_to_c(lambda, branch_length, s, c, NULL);
+                result->set(s, c, get_from_parent_fam_size_to_c(lambda, branch_length, s, c, NULL));
                 // cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
             }
         }
@@ -225,7 +222,7 @@ vector<double> matrix_multiply(const matrix& matrix, const vector<double>& v, in
         result[s] = 0;
     
         for (int c = c_min_family_size; c < c_max_family_size; c++) {
-            result[s- s_min_family_size] += matrix[s][c - c_min_family_size] * v[c - c_min_family_size];
+            result[s- s_min_family_size] += matrix.get(s, c - c_min_family_size) * v[c - c_min_family_size];
         }
     }
 

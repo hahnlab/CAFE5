@@ -3,7 +3,8 @@
 class inference_process_factory;
 
 class gamma_bundle {
-    std::vector<inference_process *> processes;
+    std::vector<inference_process *> _inf_processes;
+    std::vector<reconstruction_process *> _rec_processes;
 public:
     gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers);
 
@@ -11,7 +12,15 @@ public:
 
     std::vector<double> prune(const vector<double>& gamma_cat_probs, root_equilibrium_distribution *eq_freq);
 
+    void reconstruct(const vector<double>& _gamma_cat_probs);
+
     double get_lambda_likelihood(int family_id);
+
+    void set_values(probability_calculator *, root_equilibrium_distribution*);
+
+    void print_reconstruction(std::ostream& ost, std::vector<clade *> order);
+
+    std::vector<clade *> get_taxa();
 };
 
 
@@ -26,7 +35,7 @@ private:
 
     double _alpha;
 
-    vector<gamma_bundle> _inference_bundles; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
+    vector<gamma_bundle> _family_bundles; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
                                              //! Basic constructor
 
     std::vector<double> get_posterior_probabilities(std::vector<double> cat_likelihoods);
@@ -76,4 +85,6 @@ public:
     virtual void print_results(std::ostream& ost);
 
     virtual void reconstruct_ancestral_states(probability_calculator *, root_equilibrium_distribution* p_prior);
+    void print_reconstructed_states(std::ostream& ost);
+
 };

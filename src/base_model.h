@@ -28,6 +28,7 @@ public:
 
     virtual void reconstruct_ancestral_states(probability_calculator *p_calc, root_equilibrium_distribution* p_prior);
     reconstruction_process* create_reconstruction_process(int family_number, probability_calculator *p_calc, root_equilibrium_distribution* p_prior);
-};
+    void print_reconstructed_states(std::ostream& ost);
+   };
 
 #endif

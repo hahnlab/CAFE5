@@ -1,6 +1,7 @@
 #ifndef PROBABILITY_H_A2E01F6E_6A7D_44FB_A9C0_6512F15FF939
 #define PROBABILITY_H_A2E01F6E_6A7D_44FB_A9C0_6512F15FF939
 
+#include <assert.h>
 #include <vector>
 #include <tuple>
 #include <iostream>
@@ -48,7 +49,32 @@ public:
 
 };
 
-typedef vector<vector< double> > matrix;
+//typedef vector<vector< double> > matrix;
+class matrix
+{
+    vector<double> values;
+    int _size;
+public:
+    matrix(int sz) : _size(sz)
+    {
+        values.resize(_size*_size);
+    }
+    void set(int x, int y, double val)
+    {
+        assert(x < _size);
+        assert(y < _size);
+        values[x*_size + y] = val;
+    }
+    double get(int x, int y) const
+    {
+        assert(x < _size);
+        assert(y < _size);
+        return values[x*_size + y];
+    }
+    int size() const {
+        return _size;
+    }
+};
 
 /* END: Likelihood computation ---------------------- */
 

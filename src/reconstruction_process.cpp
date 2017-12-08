@@ -104,6 +104,8 @@ void reconstruction_process::reconstruct_internal_node(clade * c, lambda * _lamb
 
     L.resize(_max_family_size + 1);
 
+    auto matrix = _p_calc->get_matrix(L.size(), branch_length, sl->get_single_lambda());
+
     // i is the parent, j is the child
     for (size_t i = 0; i < L.size(); ++i)
     {
@@ -113,7 +115,7 @@ void reconstruction_process::reconstruct_internal_node(clade * c, lambda * _lamb
         {
             child_multiplier cr(all_node_Ls, j);
             c->apply_to_descendants(cr);
-            double val = cr.result() *_p_calc->get_from_parent_fam_size_to_c(sl->get_single_lambda(), branch_length, i, j, NULL);
+            double val = cr.result() * matrix.get(i,j);
             if (val > max_val)
             {
                 max_j = j;
@@ -130,9 +132,7 @@ void reconstruction_process::reconstruct_internal_node(clade * c, lambda * _lamb
 void reconstruction_process::operator()(clade *c)
 {
     // all_node_Cs and all_node_Ls are hashtables where the keys are nodes and values are vectors of doubles
-
-
-    single_lambda * sl = dynamic_cast<single_lambda *>(_lambda);
+    single_lambda * sl = dynamic_cast<single_lambda *>(_lambda->multiply(_lambda_multiplier));
     if (!sl)
     {
         throw std::runtime_error("Cannot reconstruct with multiple lambdas yet");
@@ -203,3 +203,27 @@ void reconstruction_process::print_reconstruction(std::ostream & ost, std::vecto
     ost << endl;
 }
 
+#if 0
+std::vector<std::map<clade *, double>> reconstruction_process::get_weighted_averages(std::vector<reconstruction_process *> m, const vector<double>& _gamma_cat_probs)
+{
+    vector<clade *> nodes;
+    for (auto& i : m[0]->reconstructed_states)
+        nodes.push_back(i.first);
+
+    std::vector<std::map<clade *, double>> result;
+    for (auto node : nodes)
+    {
+        for (int i = 0; i<_gamma_cat_probs.size(); ++i)
+        {
+            result[i][node] = double(m[i]->reconstructed_states[node]);
+        }
+    }
+
+    return result;
+}
+#endif
+
+std::string reconstruction_process::get_family_id() const
+{
+    return _gene_family->id();
+}

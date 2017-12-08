@@ -7,6 +7,7 @@
 #include "gamma.h"
 #include "process.h"
 #include "root_equilibrium_distribution.h"
+#include "reconstruction_process.h"
 
 class inference_process_factory
 {
@@ -37,6 +38,12 @@ public:
     inference_process* operator()(double lambda_multiplier)
     {
         return new inference_process(_ost, _lambda, lambda_multiplier, _p_tree, _max_family_size, _max_root_family_size, _family, _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
+    }
+
+    reconstruction_process* create_reconstruction_process()
+    {
+        return new reconstruction_process(_ost, _lambda, _lambda_multiplier, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, _family,
+            NULL, NULL);
     }
 };
 
@@ -92,9 +99,9 @@ gamma_model::gamma_model(ostream & ost, lambda* lambda, clade *p_tree, int max_f
 
 gamma_model::~gamma_model()
 {
-    for (size_t i = 0; i < _inference_bundles.size(); ++i)
-        _inference_bundles[i].clear();
-    _inference_bundles.clear();
+    for (size_t i = 0; i < _family_bundles.size(); ++i)
+        _family_bundles[i].clear();
+    _family_bundles.clear();
 }
 
 void gamma_model::print_results(std::ostream& ost)
@@ -159,12 +166,12 @@ void gamma_model::set_lambda_multipliers(std::vector<double> lambda_multipliers)
 
 void gamma_model::start_inference_processes() {
 
-    _inference_bundles.clear();
+    _family_bundles.clear();
     inference_process_factory factory(_ost, _p_lambda, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec);
     for (auto i = _p_gene_families->begin(); i != _p_gene_families->end(); ++i)
     {
         factory.set_gene_family(&(*i));
-        _inference_bundles.push_back(gamma_bundle(factory, _lambda_multipliers));
+        _family_bundles.push_back(gamma_bundle(factory, _lambda_multipliers));
     }
 }
 
@@ -195,11 +202,11 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     initialize_rootdist_if_necessary();
 
     prior->initialize(_rootdist_vec);
-    vector<double> all_bundles_likelihood(_inference_bundles.size());
+    vector<double> all_bundles_likelihood(_family_bundles.size());
 
-    for (int i = 0; i < _inference_bundles.size(); ++i) {
+    for (int i = 0; i < _family_bundles.size(); ++i) {
 //        cout << endl << "About to prune a gamma bundle." << endl;
-        gamma_bundle& bundle = _inference_bundles[i];
+        gamma_bundle& bundle = _family_bundles[i];
 
         vector<double> cat_likelihoods = bundle.prune(_gamma_cat_probs, prior);
         double family_likelihood = accumulate(cat_likelihoods.begin(), cat_likelihoods.end(), 0.0);
@@ -253,34 +260,71 @@ void gamma_model::set_current_guesses(double *guesses)
     cout << "Attempting lambda: " << *_p_lambda << ", alpha: " << alpha << std::endl;
 }
 
-void gamma_model::reconstruct_ancestral_states(probability_calculator *, root_equilibrium_distribution*)
+void gamma_model::reconstruct_ancestral_states(probability_calculator *calc, root_equilibrium_distribution*prior)
 {
-    cout << "Reconstruction of ancestral states (gamma model) not implemented yet" << endl;
+    for (auto& bundle : _family_bundles)
+    {
+        bundle.set_values(calc, prior);
+        bundle.reconstruct(_gamma_cat_probs);
+    }
 }
+
+void gamma_model::print_reconstructed_states(std::ostream& ost)
+{
+    cerr << "gamma_model::print_reconstructed_states\n";
+
+    auto rec = _family_bundles[0];
+    auto order = rec.get_taxa();
+    for (auto& it : order) {
+        ost << "#" << it->get_taxon_name() << "\n";
+    }
+
+    for (auto& bundle : _family_bundles)
+    {
+        bundle.print_reconstruction(ost, order);
+    }
+}
+
 
 gamma_bundle::gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers)
 {
-    std::transform(lambda_multipliers.begin(), lambda_multipliers.end(), std::back_inserter(processes), factory);
+    std::transform(lambda_multipliers.begin(), lambda_multipliers.end(), std::back_inserter(_inf_processes), factory);
+    for (auto p : _inf_processes)
+    {
+        _rec_processes.push_back(factory.create_reconstruction_process());
+    }
 }
 
+std::vector<clade *> gamma_bundle::get_taxa()
+{
+    return _rec_processes[0]->get_taxa();
+}
 
 void gamma_bundle::clear()
 {
-    for (size_t i = 0; i < processes.size(); ++i)
+    for (size_t i = 0; i < _inf_processes.size(); ++i)
     {
-        delete processes[i];
+        delete _inf_processes[i];
     }
-    processes.clear();
+    _inf_processes.clear();
+}
+
+void gamma_bundle::set_values(probability_calculator *calc, root_equilibrium_distribution*prior)
+{
+    for (auto rec : _rec_processes)
+    {
+        rec->set_values(calc, prior);
+    }
 }
 
 std::vector<double> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, root_equilibrium_distribution *eq) {
-    assert(_gamma_cat_probs.size() == processes.size());
+    assert(_gamma_cat_probs.size() == _inf_processes.size());
 
     std::vector<double> cat_likelihoods;
 
     for (int k = 0; k < _gamma_cat_probs.size(); ++k)
     {
-        auto partial_likelihood = processes[k]->prune();
+        auto partial_likelihood = _inf_processes[k]->prune();
         std::vector<double> full(partial_likelihood.size());
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
             double eq_freq = eq->compute(j);
@@ -296,8 +340,32 @@ std::vector<double> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, 
     return cat_likelihoods;
 }
 
+void gamma_bundle::reconstruct(const vector<double>& _gamma_cat_probs)
+{
+    for (int k = 0; k < _gamma_cat_probs.size(); ++k)
+    {
+        _rec_processes[k]->reconstruct();
+        // multiply every reconstruction by gamma_cat_prob
+    }
+//    auto result = reconstruction_process::get_weighted_averages(_rec_processes, _gamma_cat_probs);
+
+}
+
+void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<clade *> order)
+{
+    ost << _rec_processes[0]->get_family_id()  << '\t';
+    for (auto proc : _rec_processes)
+    {
+        auto s = proc->get_reconstructed_states();
+        for (auto taxon : order)
+            ost << s[taxon] << '-';
+        ost << '\t';
+    }
+    ost << endl;
+}
+
 double gamma_bundle::get_lambda_likelihood(int family_id)
 {
-    return processes[family_id]->get_lambda_multiplier();
+    return _inf_processes[family_id]->get_lambda_multiplier();
 }
 

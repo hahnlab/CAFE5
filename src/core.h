@@ -107,7 +107,9 @@ public:
     virtual void set_current_guesses(double *guesses) = 0;
 
     virtual void reconstruct_ancestral_states(probability_calculator *p_calc, root_equilibrium_distribution* p_prior) = 0;
-    void print_reconstructed_states(std::ostream& ost);
+    virtual void print_reconstructed_states(std::ostream& ost) = 0;
+
+    void print_node_depths(std::ostream& ost);
 };
 
 std::vector<model *> build_models(const input_parameters& my_input_parameters, clade *p_tree, lambda *p_lambda, std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size);

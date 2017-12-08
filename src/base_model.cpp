@@ -146,3 +146,16 @@ void base_model::reconstruct_ancestral_states(probability_calculator *p_calc, ro
 
     cout << "Done!" << endl;
 }
+
+void base_model::print_reconstructed_states(std::ostream& ost) {
+    auto rec = _rec_processes[0];
+    auto order = rec->get_taxa();
+    for (auto& it : order) {
+        ost << "#" << it->get_taxon_name() << "\n";
+    }
+
+    for (int i = 0; i < _rec_processes.size(); ++i) {
+        _rec_processes[i]->print_reconstruction(ost, order);
+    }
+}
+
