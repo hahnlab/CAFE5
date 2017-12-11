@@ -117,7 +117,7 @@ void execute::simulate(std::vector<model *>& models, const input_parameters &my_
 
     for (int i = 0; i < models.size(); ++i) {
 
-        cout << "Simulating for model " << i << endl;
+        cout << "Simulating for model " << models[i]->name() << endl;
 
         // models[i]->set_rootdist_vec(rootdist_vec);
 

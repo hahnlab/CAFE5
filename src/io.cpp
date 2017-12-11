@@ -226,6 +226,8 @@ map<int, int>* read_rootdist(string rootdist_file_path) {
 
     map<int, int> *p_rootdist_map = new map<int, int>();
     ifstream rootdist_file(rootdist_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
+    if (!rootdist_file.is_open())
+        throw std::runtime_error("Failed to open file '" + rootdist_file_path + "'");
     string line;
     while (getline(rootdist_file, line)) {
         istringstream ist(line);
