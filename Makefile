@@ -1,16 +1,8 @@
 # compilers and flags
 CC = g++
 
-DEBUG=true
-
-ifdef DEBUG
-  CFLAGS = -std=c++11 -g -I. -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -DVERBOSE
-  LINKER = g++ -std=c++11 -o
-else
-  CFLAGS = -std=c++11 -I. -O3
-  LINKER = g++ -std=c++11 -O3 -o
-endif
-
+CFLAGS = -std=c++11 -I. -O3
+LINKER = g++ -std=c++11 -O3 -o
 LFLAGS = -I.
 
 # directories
@@ -51,6 +43,26 @@ clean:
 remove: clean
 	@$(rm) $(BINDIR)/$(TARGET)
 	@echo "Executable removed!"
+
+#
+# Debug build settings
+#
+DBGDIR = debug
+DBG_OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(DBGDIR)/%.o)
+DBG_CFLAGS = -std=c++11 -g -I. -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -DVERBOSE
+DBG_LINKER = g++ -std=c++11 -o
+
+$(DBG_OBJECTS): $(DBGDIR)/%.o: $(SRCDIR)/%.cpp
+	$(CC) $(DBG_CFLAGS) -c $< -o $@
+
+$(DBGDIR)/main.o: main.cpp
+	$(CC) $(DBG_CFLAGS) -c $< -o $@
+
+$(DBGDIR)/$(TARGET): $(DBG_OBJECTS) $(DBGDIR)/main.o
+	$(DBG_LINKER) $@ $(LFLAGS) $(DBG_OBJECTS) $(DBGDIR)/main.o
+
+.PHONY: debug
+debug: $(DBGDIR)/$(TARGET)
 
 TESTDIR = $(BINDIR)
 TEST_TARGET = runtests
