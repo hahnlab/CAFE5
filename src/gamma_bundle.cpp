@@ -15,7 +15,7 @@ gamma_bundle::gamma_bundle(inference_process_factory& factory, std::vector<doubl
     std::transform(lambda_multipliers.begin(), lambda_multipliers.end(), std::back_inserter(_inf_processes), factory);
     for (auto p : _inf_processes)
     {
-        _rec_processes.push_back(factory.create_reconstruction_process());
+        _rec_processes.push_back(factory.create_reconstruction_process(p->get_lambda_multiplier()));
     }
 }
 
@@ -49,16 +49,24 @@ std::vector<double> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, 
     for (int k = 0; k < _gamma_cat_probs.size(); ++k)
     {
         auto partial_likelihood = _inf_processes[k]->prune();
+        bool good = false;
+        for (double d : partial_likelihood)
+        {
+            if (d != 0)
+                good = true;
+        }
+        if (!good)
+        {
+            throw std::runtime_error("saturation");
+        }
         std::vector<double> full(partial_likelihood.size());
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
             double eq_freq = eq->compute(j);
             full[j] = partial_likelihood[j] * eq_freq;
-            // cout << "Likelihood " << j+1 << ": Partial " << partial_likelihood[j] << ", eq freq: " << eq_freq << ", Full " << full[j] << endl;
         }
-        //all_gamma_cats_likelihood[k] = accumulate(full.begin(), full.end(), 0.0) * _gamma_cat_probs[k];
-        //cout << "Likelihood of gamma cat " << k << " = " << all_gamma_cats_likelihood[k] << std::endl;
 
-        cat_likelihoods.push_back(accumulate(full.begin(), full.end(), 0.0) * _gamma_cat_probs[k]);
+//        cat_likelihoods.push_back(accumulate(full.begin(), full.end(), 0.0) * _gamma_cat_probs[k]); // sum over all sizes (Felsenstein's approach)
+        cat_likelihoods.push_back(*max_element(full.begin(), full.end()) * _gamma_cat_probs[k]); // get max (CAFE's approach)
     }
 
     return cat_likelihoods;
@@ -114,8 +122,8 @@ inference_process* inference_process_factory::operator()(double lambda_multiplie
     return new inference_process(_ost, _lambda, lambda_multiplier, _p_tree, _max_family_size, _max_root_family_size, _family, _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
 }
 
-reconstruction_process* inference_process_factory::create_reconstruction_process()
+reconstruction_process* inference_process_factory::create_reconstruction_process(double lambda_multiplier)
 {
-    return new reconstruction_process(_ost, _lambda, _lambda_multiplier, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, _family,
+    return new reconstruction_process(_ost, _lambda, lambda_multiplier, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, _family,
         NULL, NULL);
 }

@@ -39,6 +39,7 @@ gamma_model::gamma_model(ostream & ost, lambda* lambda, clade *p_tree, int max_f
         auto cats = weighted_cat_draw(total_n_families, _gamma_cat_probs);
         _gamma_cats = *cats;
         delete cats;
+
     }
 
     for (auto i = _gamma_cat_probs.begin(); i != _gamma_cat_probs.end(); ++i) {
@@ -78,8 +79,9 @@ void gamma_model::print_results(std::ostream& ost)
 
 void gamma_model::initialize_with_alpha(int n_gamma_cats, int n_families, double alpha)
 {
-    adjust_n_gamma_cats(n_gamma_cats);
-    adjust_family_gamma_membership(n_families);
+    _gamma_cat_probs.resize(n_gamma_cats);
+    _lambda_multipliers.resize(n_gamma_cats);
+    _gamma_cats.resize(n_families);
     set_alpha(alpha, n_families);
 }
 
@@ -95,30 +97,25 @@ void gamma_model::initialize_without_alpha(int n_gamma_cats, int n_families, vec
     _gamma_cats = gamma_cats;
 }
 
-//! Resize all gamma-related vectors according to provided number (integer) of gamma categories
-void gamma_model::adjust_n_gamma_cats(int n_gamma_cats) {
-    _gamma_cat_probs.resize(n_gamma_cats);
-    _lambda_multipliers.resize(n_gamma_cats);
-}
-
-//! Resize gamma_cats vector that assigns gamma class membership of families to be inferred/simulated
-void gamma_model::adjust_family_gamma_membership(int n_families) {
-    _gamma_cats.resize(n_families);
-}
-
 //! Set alpha for gamma distribution
 void gamma_model::set_alpha(double alpha, int n_families) {
+
     _alpha = alpha;
-    if (_gamma_cats.size() > 1)
+    if (_gamma_cat_probs.size() > 1)
         get_gamma(_gamma_cat_probs, _lambda_multipliers, alpha); // passing vectors by reference
 
     vector<int>* cats = weighted_cat_draw(n_families, _gamma_cat_probs);
     _gamma_cats = *cats;
     delete cats;
 
-//    for (std::vector<double>::iterator it = _gamma_cat_probs.begin(); it != _gamma_cat_probs.end(); ++it) {
-//        cout << "Gamma cat prob is : " << *it << endl;
-//    }
+    cout << "Gamma cat probs are: ";
+    for (double d : _gamma_cat_probs)
+        cout << d << ",";
+    cout << endl;
+
+    //for (double i : _gamma_cats) {
+    //    cout << "Gamma cat prob is : " << i << endl;
+    //}
 }
 
 //! Set lambda multipliers for each gamma category
@@ -161,6 +158,17 @@ std::vector<double> gamma_model::get_posterior_probabilities(std::vector<double>
 //! Infer bundle
 double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
 
+    if (!_p_lambda->is_valid())
+    {
+        std::cout << "-lnL: " << log(0) << std::endl;
+        return -log(0);
+    }
+    if (_alpha < 0)
+    {
+        std::cout << "-lnL: " << log(0) << std::endl;
+        return -log(0);
+    }
+
     using namespace std;
     initialize_rootdist_if_necessary();
 
@@ -171,22 +179,31 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
 //        cout << endl << "About to prune a gamma bundle." << endl;
         gamma_bundle& bundle = _family_bundles[i];
 
-        vector<double> cat_likelihoods = bundle.prune(_gamma_cat_probs, prior);
-        double family_likelihood = accumulate(cat_likelihoods.begin(), cat_likelihoods.end(), 0.0);
+        try
+        {
+            vector<double> cat_likelihoods = bundle.prune(_gamma_cat_probs, prior);
 
-        vector<double> posterior_probabilities = get_posterior_probabilities(cat_likelihoods);
+            double family_likelihood = accumulate(cat_likelihoods.begin(), cat_likelihoods.end(), 0.0);
 
-        for (size_t k = 0; k < cat_likelihoods.size(); ++k)
-        {            
-            results.push_back(family_info_stash(i, bundle.get_lambda_likelihood(k), cat_likelihoods[k], 
-                family_likelihood, posterior_probabilities[k], posterior_probabilities[k] > 0.95));
-//            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
+            vector<double> posterior_probabilities = get_posterior_probabilities(cat_likelihoods);
+
+            for (size_t k = 0; k < cat_likelihoods.size(); ++k)
+            {            
+                results.push_back(family_info_stash(i, bundle.get_lambda_likelihood(k), cat_likelihoods[k], 
+                    family_likelihood, posterior_probabilities[k], posterior_probabilities[k] > 0.95));
+    //            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
+            }
+
+            all_bundles_likelihood[i] = std::log(family_likelihood);
+    //        cout << "Bundle " << i << " family likelihood = " << family_likelihood << endl;
+
+    //        cout << "Likelihood of family " << i << " = " << all_bundles_likelihood[i] << endl;
         }
-
-        all_bundles_likelihood[i] = std::log(family_likelihood);
-//        cout << "Bundle " << i << " family likelihood = " << family_likelihood << endl;
-
-//        cout << "Likelihood of family " << i << " = " << all_bundles_likelihood[i] << endl;
+        catch (runtime_error& ex)
+        {
+            // we got here because one of the gamma categories was saturated - reject this 
+            return -log(0);
+        }
     }
 
     double final_likelihood = -accumulate(all_bundles_likelihood.begin(), all_bundles_likelihood.end(), 0.0);

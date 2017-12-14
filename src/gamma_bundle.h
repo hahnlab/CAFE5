@@ -17,7 +17,6 @@ class inference_process_factory
 {
     std::ostream & _ost;
     lambda* _lambda;
-    double _lambda_multiplier;
     clade *_p_tree;
     int _max_family_size;
     int _max_root_family_size;
@@ -35,7 +34,7 @@ public:
 
     inference_process* operator()(double lambda_multiplier);
 
-    reconstruction_process* create_reconstruction_process();
+    reconstruction_process* create_reconstruction_process(double lambda_multiplier);
 };
 
 class gamma_bundle {

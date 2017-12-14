@@ -74,6 +74,7 @@ public:
     int size() const {
         return _size;
     }
+    bool is_zero() const;
 };
 
 /* END: Likelihood computation ---------------------- */

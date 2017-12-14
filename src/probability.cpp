@@ -98,6 +98,10 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
   return result;
 }
 
+bool matrix::is_zero() const
+{
+    return *max_element(values.begin(), values.end()) == 0;
+}
 /* END: Birth-death model components ----------------------- */
 
 probability_calculator::~probability_calculator()

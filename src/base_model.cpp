@@ -38,11 +38,6 @@ void base_model::start_inference_processes()
 {
     processes.clear();
     for (int i = 0; i < _p_gene_families->size(); ++i) {
-#ifdef VERBOSE
-        cout << "Started inference process " << i + 1 << endl;
-#endif
-
-        //            double lambda_bin = _gamma_cat_probs[j];
         inference_process *p_new_process = new inference_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
         processes.push_back(p_new_process);
     }
@@ -67,8 +62,6 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
     std::vector<double> all_families_likelihood(processes.size());
     // prune all the families with the same lambda
     for (int i = 0; i < processes.size(); ++i) {
-        if (write)
-            std::cout << "Process " << i << std::endl;
 
         auto partial_likelihood = processes[i]->prune();
         std::vector<double> full(partial_likelihood.size());
@@ -87,9 +80,6 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
         all_families_likelihood[i] = *max_element(full.begin(), full.end()); // get max (CAFE's approach)
 
         results.push_back(family_info_stash(i, 0.0, 0.0, 0.0, all_families_likelihood[i], false));
-
-        if (write)
-            std::cout << "lnL of family " << i << ": " << all_families_likelihood[i] << std::endl;
     }
 
     double final_likelihood = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families

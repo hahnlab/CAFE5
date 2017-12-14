@@ -62,7 +62,7 @@ double pvalue(double v, vector<double>& conddist)
 }
 
 
-
+// find_fast_families under base model through simulations (if we reject gamma)
 void call_viterbi(int max_family_size, int max_root_family_size, int number_of_simulations, lambda *p_lambda, vector<gene_family>& families, clade* p_tree)
 {
 	double lambda_val = dynamic_cast<single_lambda *>(p_lambda)->get_single_lambda();

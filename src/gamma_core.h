@@ -34,9 +34,7 @@ public:
 
     ~gamma_model();
     //! Gamma methods
-    void adjust_n_gamma_cats(int n_gamma_cats);
-
-    void adjust_family_gamma_membership(int n_families);
+//    void adjust_n_gamma_cats(int n_gamma_cats);
 
     //! Setters
     void set_alpha(double alpha, int n_families);
