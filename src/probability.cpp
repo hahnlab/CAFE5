@@ -182,6 +182,7 @@ matrix probability_calculator::get_matrix(int size, int branch_length, double la
     return result;
 #else
     matrix_cache_key key(size, lambda, branch_length);
+#pragma omp critical
     if (_matrix_cache.find(key) == _matrix_cache.end())
     {
         matrix* result = new matrix(size);

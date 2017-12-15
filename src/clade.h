@@ -41,8 +41,6 @@ class clade {
 
    vector<clade*> _descendants; // same as above
 
-   vector<clade*>::iterator _desc_it, _desc_end; // iterator (and its end check) for descendants
-
    map<string, int> _gene_family_sizes; // key is id of gene family, value is size at this node
 
    /* methods */
@@ -136,10 +134,10 @@ class clade {
        q.pop();
        stack.push(current);
 
-       for (_desc_it = current->_descendants.begin(); _desc_it != current->_descendants.end(); ++_desc_it)
+       for (auto i : current->_descendants)
        {
          /* Enqueue child */
-         q.push(*_desc_it);
+         q.push(i);
        }
      }
 

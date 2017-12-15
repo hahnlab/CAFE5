@@ -6,8 +6,8 @@
 /* Recursive destructor */
 clade::~clade() {
 
-  for (_desc_it = _descendants.begin(), _desc_end = _descendants.end(); _desc_it != _desc_end; _desc_it++) {
-    delete *_desc_it; // desc_it is a pointer, *desc_it is a clade; this statement calls the destructor and makes it recursive
+  for (auto i : _descendants) {
+    delete i; // recursively delete all descendants
   }
 }
 
@@ -51,8 +51,8 @@ vector<clade*> clade::find_internal_nodes() {
   else {
     internal_nodes.push_back(this);
 
-    for (_desc_it = _descendants.begin(), _desc_end = _descendants.end(); _desc_it != _desc_end; _desc_it++) {
-      vector<clade*> descendant = (*_desc_it)->find_internal_nodes(); // recursion
+    for (auto i : _descendants) {
+      auto descendant = i->find_internal_nodes(); // recursion
       if (!descendant.empty()) { internal_nodes.insert(internal_nodes.end(), descendant.begin(), descendant.end()); }
     }
 
@@ -116,8 +116,8 @@ void clade::_name_interior_clade() {
 void clade::print_immediate_descendants() {
 
   cout << "Me: " << _taxon_name << " | Descendants: ";
-  for (_desc_it = _descendants.begin(), _desc_end = _descendants.end(); _desc_it != _desc_end; _desc_it++) {
-    cout << (*_desc_it)->_taxon_name << " ";
+  for (auto i : _descendants) {
+    cout << i->_taxon_name << " ";
   }
   
   cout << endl;
@@ -140,8 +140,8 @@ void clade::print_clade() {
   /* Base case: it is a leaf */
   if (_descendants.empty()) { return; }
   
-  for (_desc_it = _descendants.begin(), _desc_end = _descendants.end(); _desc_it != _desc_end ; _desc_it++) {
-    (*_desc_it)->print_clade();
+  for (auto i : _descendants) {
+    i->print_clade();
   }
 }
 
