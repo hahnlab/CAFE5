@@ -19,29 +19,18 @@ private:
 
     std::vector<double> get_posterior_probabilities(std::vector<double> cat_likelihoods);
 public:
-    
-    //! Basic constructor
-    gamma_model() { _alpha = 0; };
 
     //! Computation or estimation constructor
     gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
         int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map);
-    
-    //! Simulation constructors
-    gamma_model(ostream & ost, lambda* p_lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec, int n_gamma_cats, double alpha);
-    
-    gamma_model(ostream & ost, lambda* p_lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec, vector<int>& cats, vector<double>&mul);
 
     ~gamma_model();
     //! Gamma methods
-//    void adjust_n_gamma_cats(int n_gamma_cats);
 
     //! Setters
     void set_alpha(double alpha, int n_families);
-    void initialize_with_alpha(int n_gamma_cats, int n_families, double alpha);
-    void initialize_without_alpha(int n_gamma_cats, int n_families, vector<double> lambda_multipliers, std::vector<int> gamma_cats);
 
-    void set_lambda_multipliers(std::vector<double> lambda_multipliers);
+    void write_probabilities(std::ostream& ost);
 
     //! Simulation methods
     virtual simulation_process* create_simulation_process(int family_number);

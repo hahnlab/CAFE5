@@ -26,8 +26,10 @@ std::vector<model *> build_models(const input_parameters& my_input_parameters, c
         
         /* Gamma core is only used in estimation */
         if (p_lambda == NULL && my_input_parameters.n_gamma_cats > 1) {
-            models.push_back(new gamma_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, 
-                my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, NULL));
+            auto model = new gamma_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size,
+                my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, NULL);
+            model->write_probabilities(cout);
+            models.push_back(model);
         }
     }
     

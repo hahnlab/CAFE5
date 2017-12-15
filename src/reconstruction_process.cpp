@@ -20,6 +20,7 @@ class child_multiplier
     double value;
     int _j;
 public:
+    bool write = false;
     child_multiplier(std::map<clade *, std::vector<double> >& L, int j) : _L(L), _j(j)
     {
         value = 1.0;
@@ -28,6 +29,8 @@ public:
     void operator()(clade *c)
     {
         value *= _L[c][_j];
+        if (write)
+            cout << "Child factor " << c->get_taxon_name() << " = " << _L[c][_j] << endl;
     }
 
     double result() const {
@@ -42,7 +45,7 @@ void reconstruction_process::reconstruct_leaf_node(clade * c, lambda * _lambda)
     C.resize(_max_family_size + 1);
     L.resize(_max_family_size + 1);
 
-    double branch_length = c->get_parent()->get_branch_length();
+    double branch_length = c->get_branch_length();
 
     single_lambda * sl = dynamic_cast<single_lambda *>(_lambda);
 
@@ -56,7 +59,6 @@ void reconstruction_process::reconstruct_leaf_node(clade * c, lambda * _lambda)
     {
         L[i] = _p_calc->get_from_parent_fam_size_to_c(sl->get_single_lambda(), branch_length, i, observed_count, NULL);
     }
-
 }
 
 void reconstruction_process::reconstruct_root_node(clade * c)
@@ -88,7 +90,11 @@ void reconstruction_process::reconstruct_root_node(clade * c)
         L[i] = max_val;
     }
 
-//    cout << "C for tree is " << C[0] << std::endl;
+    
+    if (*max_element(L.begin(), L.end()) == 0.0)
+    {
+        cerr << "WARNING: failed to calculate L value at root" << endl;
+    }
 }
 
 void reconstruction_process::reconstruct_internal_node(clade * c, lambda * _lambda)
@@ -106,6 +112,8 @@ void reconstruction_process::reconstruct_internal_node(clade * c, lambda * _lamb
 
     auto matrix = _p_calc->get_matrix(L.size(), branch_length, sl->get_single_lambda());
 
+    if (matrix.is_zero())
+        throw runtime_error("Zero matrix found");
     // i is the parent, j is the child
     for (size_t i = 0; i < L.size(); ++i)
     {

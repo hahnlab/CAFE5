@@ -16,50 +16,13 @@ gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_famil
     if (p_rootdist_map != NULL)
         _rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
     
-    this->initialize_with_alpha(n_gamma_cats, _rootdist_vec.size(), fixed_alpha);
+    _gamma_cat_probs.resize(n_gamma_cats);
+    _lambda_multipliers.resize(n_gamma_cats);
+    _gamma_cats.resize(_rootdist_vec.size());
+    set_alpha(fixed_alpha, _rootdist_vec.size());
+
     _total_n_families_sim = _rootdist_vec.size();
 }
-
-//! Simulation: gamma_model constructor when just alpha is provided.
-gamma_model::gamma_model(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
-    int n_gamma_cats, double alpha) : model(ost, lambda, p_tree, max_family_size, total_n_families, rootdist_vec),
-    _gamma_cat_probs(n_gamma_cats), _lambda_multipliers(n_gamma_cats) {
-
-    if (!rootdist_vec.empty()) {
-        _rootdist_bins.push_back(rootdist_vec); // just 1st element
-    }
-
-    else {
-        _rootdist_vec = uniform_dist(total_n_families, 1, max_family_size); // the user did not specify one... using uniform from 1 to max_family_size!
-        _rootdist_bins.push_back(_rootdist_vec); // just 1st element (but we could specify different root dists for each lambda bin)
-    }
-
-    if (n_gamma_cats > 1) {
-        get_gamma(_gamma_cat_probs, _lambda_multipliers, alpha); // passing vectors by reference
-        auto cats = weighted_cat_draw(total_n_families, _gamma_cat_probs);
-        _gamma_cats = *cats;
-        delete cats;
-
-    }
-
-    for (auto i = _gamma_cat_probs.begin(); i != _gamma_cat_probs.end(); ++i) {
-        cout << "Should be all the same probability: " << *i << endl;
-    }
-
-    for (auto i = _lambda_multipliers.begin(); i != _lambda_multipliers.end(); ++i) {
-        cout << "Lambda multiplier (rho) is: " << *i << endl;
-    }
-
-    for (auto i = _gamma_cats.begin(); i != _gamma_cats.end(); ++i) {
-        cout << "Gamma category is: " << *i << endl;
-    }
-
-}
-
-//! Simulation: model constructor when alpha is not provided and membership is provided directly, in addition to the lambda multipliers (something the user decides to use)
-gamma_model::gamma_model(ostream & ost, lambda* lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec,
-    vector<int>& cats, vector<double>&mul) : model(ost, lambda, p_tree, max_family_size, total_n_families, rootdist_vec),
-    _gamma_cats(cats), _lambda_multipliers(mul) {}
 
 gamma_model::~gamma_model()
 {
@@ -76,27 +39,6 @@ void gamma_model::print_results(std::ostream& ost)
     std::copy(results.begin(), results.end(), out_it);
 }
 
-
-void gamma_model::initialize_with_alpha(int n_gamma_cats, int n_families, double alpha)
-{
-    _gamma_cat_probs.resize(n_gamma_cats);
-    _lambda_multipliers.resize(n_gamma_cats);
-    _gamma_cats.resize(n_families);
-    set_alpha(alpha, n_families);
-}
-
-void gamma_model::initialize_without_alpha(int n_gamma_cats, int n_families, vector<double> lambda_multipliers, std::vector<int> gamma_cats)
-{
-    assert(lambda_multipliers.size() == n_gamma_cats);
-    assert(gamma_cats.size() == n_families);
-    //    adjust_n_gamma_cats(n_gamma_cats);
-    //    adjust_family_gamma_membership(n_families);
-    //    set_alpha(alpha, n_families);
-
-    set_lambda_multipliers(lambda_multipliers);
-    _gamma_cats = gamma_cats;
-}
-
 //! Set alpha for gamma distribution
 void gamma_model::set_alpha(double alpha, int n_families) {
 
@@ -107,22 +49,20 @@ void gamma_model::set_alpha(double alpha, int n_families) {
     vector<int>* cats = weighted_cat_draw(n_families, _gamma_cat_probs);
     _gamma_cats = *cats;
     delete cats;
+}
 
-    cout << "Gamma cat probs are: ";
+void gamma_model::write_probabilities(ostream& ost)
+{
+    ost << "Gamma cat probs are: ";
     for (double d : _gamma_cat_probs)
-        cout << d << ",";
-    cout << endl;
+        ost << d << ",";
+    ost << endl;
 
-    //for (double i : _gamma_cats) {
-    //    cout << "Gamma cat prob is : " << i << endl;
-    //}
+    ost << "Lambda multipliers are: ";
+    for (double d : _lambda_multipliers)
+        ost << d << ",";
+    ost << endl;
 }
-
-//! Set lambda multipliers for each gamma category
-void gamma_model::set_lambda_multipliers(std::vector<double> lambda_multipliers) {
-    _lambda_multipliers = lambda_multipliers;
-}
-
 
 void gamma_model::start_inference_processes() {
 
@@ -138,6 +78,19 @@ void gamma_model::start_inference_processes() {
 //! Populate _processes (vector of processes)
 simulation_process* gamma_model::create_simulation_process(int family_number) {
     double lambda_bin = _gamma_cats[family_number];
+
+    single_lambda *sl = dynamic_cast<single_lambda *>(_p_lambda);
+    if (sl)
+    {
+        max_branch_length_finder maxbranch;
+        _p_tree->apply_prefix_order(maxbranch);
+        if (maxbranch.result() * _lambda_multipliers[lambda_bin] * sl->get_single_lambda() > 1.0)
+        {
+            cerr << "WARNING: Probable saturation (branch length " << maxbranch.result();
+            cerr << " lambda " << sl->get_single_lambda() << " multiplier " << _lambda_multipliers[lambda_bin] << endl;
+        }
+    }
+
     return new simulation_process(_ost, _p_lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, family_number); // if a single _lambda_multiplier, how do we do it?
 }
 
@@ -215,17 +168,20 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
 
 std::vector<double> gamma_model::initial_guesses()
 {
+    double alpha = unifrnd();
+
+    std::vector<double> x(_gamma_cat_probs.size());
+    std::vector<double> y(_lambda_multipliers.size());
+    get_gamma(x, y, alpha); // passing vectors by reference
+
+    double largest_multiplier = *max_element(y.begin(), y.end());
     max_branch_length_finder finder;
     _p_tree->apply_prefix_order(finder);
-    double result = 1.0 / finder.result() * unifrnd();
+    //double result = 1.0 / finder.result() * unifrnd();
     std::vector<double> lambdas(_p_lambda->count());
-    for (auto& i : lambdas)
-    {
-        i = 1.0 / finder.result() * unifrnd();
-    }
+    const double longest_branch = finder.result();
+    generate(lambdas.begin(), lambdas.end(), [longest_branch, largest_multiplier] { return 1.0 / (longest_branch*largest_multiplier) * unifrnd(); });
 
-    cout << "Initial lambda: " << result << std::endl;
-    double alpha = unifrnd();
     lambdas.push_back(alpha);
     return lambdas;
 }

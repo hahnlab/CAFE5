@@ -6,6 +6,7 @@
 #include "lambda.h"
 #include "clade.h"
 #include "probability.h"
+#include "core.h"
 
 /* START: Drawing random root size from uniform */
 template<typename itr, typename random_generator>
@@ -53,7 +54,6 @@ simulation_process::simulation_process(std::ostream &ost, lambda* lambda, double
             _root_size = _rootdist_vec[family_number];
     }
 
-	cout << "_root_size is " << _root_size << endl;
 }
 
 //! Run process' simulation
