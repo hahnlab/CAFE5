@@ -128,8 +128,9 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     prior->initialize(_rootdist_vec);
     vector<double> all_bundles_likelihood(_family_bundles.size());
 
+    bool success = true;
+#pragma omp parallel for 
     for (int i = 0; i < _family_bundles.size(); ++i) {
-//        cout << endl << "About to prune a gamma bundle." << endl;
         gamma_bundle& bundle = _family_bundles[i];
 
         try
@@ -140,24 +141,28 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
 
             vector<double> posterior_probabilities = get_posterior_probabilities(cat_likelihoods);
 
-            for (size_t k = 0; k < cat_likelihoods.size(); ++k)
-            {            
-                results.push_back(family_info_stash(i, bundle.get_lambda_likelihood(k), cat_likelihoods[k], 
-                    family_likelihood, posterior_probabilities[k], posterior_probabilities[k] > 0.95));
-    //            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
+#pragma omp critical
+            {
+                for (size_t k = 0; k < cat_likelihoods.size(); ++k)
+                {
+                    results.push_back(family_info_stash(i, bundle.get_lambda_likelihood(k), cat_likelihoods[k],
+                        family_likelihood, posterior_probabilities[k], posterior_probabilities[k] > 0.95));
+                    //            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
+                }
+
+                all_bundles_likelihood[i] = std::log(family_likelihood);
             }
-
-            all_bundles_likelihood[i] = std::log(family_likelihood);
-    //        cout << "Bundle " << i << " family likelihood = " << family_likelihood << endl;
-
-    //        cout << "Likelihood of family " << i << " = " << all_bundles_likelihood[i] << endl;
         }
         catch (runtime_error& ex)
         {
             // we got here because one of the gamma categories was saturated - reject this 
-            return -log(0);
+#pragma omp_critical
+            success = false;
         }
     }
+
+    if (!success)
+        return -log(0);
 
     double final_likelihood = -accumulate(all_bundles_likelihood.begin(), all_bundles_likelihood.end(), 0.0);
 

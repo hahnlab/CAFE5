@@ -1,8 +1,8 @@
 # compilers and flags
 CC = g++
 
-CFLAGS = -std=c++11 -I. -O3
-LINKER = g++ -std=c++11 -O3 -o
+CFLAGS = -std=c++11 -I. -O3 @OPENMP_CXXFLAGS@
+LINKER = g++ -std=c++11 -O3 @OPENMP_CXXFLAGS@ -o
 LFLAGS = -I.
 
 # directories
@@ -49,8 +49,8 @@ remove: clean
 #
 DBGDIR = debug
 DBG_OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(DBGDIR)/%.o)
-DBG_CFLAGS = -std=c++11 -g -I. -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -DVERBOSE
-DBG_LINKER = g++ -std=c++11 -o
+DBG_CFLAGS = -std=c++11 @OPENMP_CXXFLAGS@ -g -I. -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -DVERBOSE
+DBG_LINKER = g++ -std=c++11 @OPENMP_CXXFLAGS@ -o
 
 $(DBG_OBJECTS): $(DBGDIR)/%.o: $(SRCDIR)/%.cpp
 	$(CC) $(DBG_CFLAGS) -c $< -o $@
