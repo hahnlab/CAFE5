@@ -64,11 +64,18 @@ $(DBGDIR)/$(TARGET): $(DBG_OBJECTS) $(DBGDIR)/main.o
 .PHONY: debug
 debug: $(DBGDIR)/$(TARGET)
 
-TESTDIR = $(BINDIR)
+TESTDIR = test
 TEST_TARGET = runtests
+TEST_OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(TESTDIR)/%.o)
+$(TEST_OBJECTS): $(TESTDIR)/%.o: $(SRCDIR)/%.cpp
+	$(CC) $(DBG_CFLAGS) -c $< -o $@
+
+$(TESTDIR)/test.o: test.cpp
+	$(CC) $(DBG_CFLAGS) -c $< -o $@
+
 TESTLIBS=-lCppUTest -lCppUTestExt
-$(TESTDIR)/$(TEST_TARGET): $(OBJECTS) $(OBJDIR)/test.o
-	$(LINKER) $@ $(LFLAGS) $(OBJECTS) $(OBJDIR)/test.o $(TESTLIBS)
+$(TESTDIR)/$(TEST_TARGET): $(TEST_OBJECTS) $(TESTDIR)/test.o
+	$(LINKER) $@ $(LFLAGS) $(TEST_OBJECTS) $(TESTDIR)/test.o $(TESTLIBS)
 	@echo "Test linking complete!"
 
 .PHONY: test
