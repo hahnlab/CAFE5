@@ -45,5 +45,10 @@ public:
         const std::vector<double>& _gamma_cat_probs);
 
     std::string get_family_id() const;
+
+    std::vector<double> get_L(clade *c) const
+    {
+        return all_node_Ls.at(c);
+    }
 };
 #endif

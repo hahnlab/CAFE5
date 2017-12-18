@@ -203,6 +203,7 @@ void gamma_model::set_current_guesses(double *guesses)
 
 void gamma_model::reconstruct_ancestral_states(probability_calculator *calc, root_equilibrium_distribution*prior)
 {
+    cout << "Reconstructing ancestral states using lambda = " << *_p_lambda << ", alpha = " << _alpha << endl;
     for (auto& bundle : _family_bundles)
     {
         bundle.set_values(calc, prior);

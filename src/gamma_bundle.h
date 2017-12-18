@@ -37,6 +37,8 @@ public:
     reconstruction_process* create_reconstruction_process(double lambda_multiplier);
 };
 
+//! One gamma bundle per family
+//! Should reconstruct values for all gamma category probabilities
 class gamma_bundle {
     std::vector<inference_process *> _inf_processes;
     std::vector<reconstruction_process *> _rec_processes;

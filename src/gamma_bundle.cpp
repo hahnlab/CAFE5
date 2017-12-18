@@ -3,6 +3,7 @@
 #include <iostream>
 #include <numeric>
 #include <functional>
+#include <cmath>
 
 #include "gamma_bundle.h"
 #include "reconstruction_process.h"
@@ -77,10 +78,10 @@ void gamma_bundle::reconstruct(const vector<double>& _gamma_cat_probs)
     for (int k = 0; k < _gamma_cat_probs.size(); ++k)
     {
         _rec_processes[k]->reconstruct();
-        // multiply every reconstruction by gamma_cat_prob
     }
-    reconstruction = reconstruction_process::get_weighted_averages(_rec_processes, _gamma_cat_probs);
 
+    // multiply every reconstruction by gamma_cat_prob
+    reconstruction = reconstruction_process::get_weighted_averages(_rec_processes, _gamma_cat_probs);
 }
 
 void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<clade *> order)
@@ -98,7 +99,7 @@ void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<clade *> 
 
     f = [&]() {f = []() { return "-"; }; return ""; };
     for (auto taxon : order)
-        ost << f() << reconstruction[taxon];
+        ost << f() << std::round(reconstruction[taxon]);
 
     ost << endl;
 }

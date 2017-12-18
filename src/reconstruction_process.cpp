@@ -148,7 +148,7 @@ void reconstruction_process::operator()(clade *c)
 
     if (c->is_leaf())
     {
-        reconstruct_leaf_node(c, _lambda);
+        reconstruct_leaf_node(c, sl);
     }
     else if (c->is_root())
     {
@@ -156,8 +156,9 @@ void reconstruction_process::operator()(clade *c)
     }
     else
     {
-        reconstruct_internal_node(c, _lambda);
+        reconstruct_internal_node(c, sl);
     }
+    delete sl;
 }
 
 class backtracker

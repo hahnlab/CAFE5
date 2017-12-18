@@ -8,6 +8,7 @@
 #include "src/gamma_core.h"
 #include "src/root_equilibrium_distribution.h"
 #include "src/base_model.h"
+#include "src/reconstruction_process.h"
 
 TEST_GROUP(GeneFamilies)
 {
@@ -248,6 +249,28 @@ TEST(Inference, initial_guesses)
     DOUBLES_EQUAL(0.8401, guesses[1], 0.0001);
 
     delete p_tree;
+}
+
+TEST(Inference, reconstruction_process)
+{
+    vector<int> rootdist;
+    single_lambda lambda(NULL, 0.05);
+    gene_family fam;
+    fam.set_species_size("Mouse", 3);
+
+    clade leaf("Mouse",7);
+
+    probability_calculator calc;
+   reconstruction_process process(cout, &lambda, 2.0, NULL, 3, 0, rootdist, &fam, &calc, NULL);
+   process(&leaf);
+   auto L = process.get_L(&leaf);
+
+   // L holds the probability of the leaf moving from size 3 to size n
+   LONGS_EQUAL(4, L.size());
+   DOUBLES_EQUAL(0.0, L[0], 0.0001);
+   DOUBLES_EQUAL(0.0586679, L[1], 0.0001);
+   DOUBLES_EQUAL(0.146916, L[2], 0.0001);
+   DOUBLES_EQUAL(0.193072, L[3], 0.0001);
 }
 
 int main(int ac, char** av)
