@@ -23,12 +23,15 @@ private:
     int _max_root_family_size;
 	int _max_parsed_family_size;
 	lambda* _lambda;
+    probability_calculator& _calc;
     
 public:
-    likelihood_computer(int max_root_family_size, int max_parsed_family_size, lambda* lambda, gene_family *family) : 
+    likelihood_computer(int max_root_family_size, int max_parsed_family_size, lambda* lambda, gene_family *family,
+        probability_calculator& calc) : 
 		_max_root_family_size(max_root_family_size),
 		_max_parsed_family_size(max_parsed_family_size),
-		_lambda(lambda) {
+		_lambda(lambda),
+        _calc(calc) {
         _family = family;
     }
   
@@ -49,7 +52,6 @@ public:
 
 };
 
-//typedef vector<vector< double> > matrix;
 class matrix
 {
     vector<double> values;
@@ -125,6 +127,8 @@ public:
     }
 };
 
+class readwritelock;
+
 //! Computation of the probabilities of moving from a family size (parent) to another (child)
 /*!
   Contains a map (_cache) that serves as a hash table to store precalculated values.
@@ -132,15 +136,15 @@ public:
 */
 class probability_calculator {
 private:
-    std::map<cache_key, std::map<std::tuple<int, int>, double> > _cache; //!< nested map that stores transition probabilities for a given lambda and branch_length (outer), then for a given parent and child size (inner)
-
     std::map<matrix_cache_key, matrix*> _matrix_cache; //!< nested map that stores transition probabilities for a given lambda and branch_length (outer), then for a given parent and child size (inner)
 public:
-    double get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size, double *value);
+    double get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size);
 	matrix get_matrix(int size, int branch_length, double lambda);
 
-    void print_cache(std::ostream &ost, int max_size) const;
+    readwritelock *rw_lock = NULL;
 
+    void thread_cache();
+    void unthread_cache();
     ~probability_calculator();
 };
 

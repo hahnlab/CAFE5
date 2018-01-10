@@ -45,7 +45,7 @@ public:
 		_p_gene_family = fam;
 	}
 
-	std::vector<double> prune();    // returns likelihood of the tree for each family size
+	std::vector<double> prune(probability_calculator& calc);    // returns likelihood of the tree for each family size
 };
 
 class simulation_process : public process {

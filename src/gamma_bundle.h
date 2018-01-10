@@ -50,7 +50,8 @@ public:
 
     void clear();
 
-    std::vector<double> prune(const std::vector<double>& gamma_cat_probs, root_equilibrium_distribution *eq_freq);
+    std::vector<double> prune(const std::vector<double>& gamma_cat_probs, root_equilibrium_distribution *eq_freq,
+        probability_calculator& calc);
 
     void reconstruct(const std::vector<double>& _gamma_cat_probs);
 

@@ -23,9 +23,9 @@ public:
     clade * read_lambda_tree(const input_parameters &my_input_parameters);
 
     //! Read in single or multiple lambda (-l or -m)
-    lambda * read_lambda(const input_parameters &my_input_parameters, probability_calculator &my_calculator, clade *p_lambda_tree);
+    lambda * read_lambda(const input_parameters &my_input_parameters, clade *p_lambda_tree);
 
-    void compute(std::vector<model *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size);
+    void compute(std::vector<model *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size, probability_calculator& calc);
 
     void simulate(std::vector<model *>& models, const input_parameters &my_input_parameters);
 

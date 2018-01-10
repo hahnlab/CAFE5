@@ -14,7 +14,7 @@ public:
         int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map);
 
     virtual void start_inference_processes();
-    virtual double infer_processes(root_equilibrium_distribution *prior);
+    virtual double infer_processes(probability_calculator& calc, root_equilibrium_distribution *prior);
 
     virtual std::string name() {
         return "Base";

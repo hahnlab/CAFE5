@@ -43,7 +43,7 @@ void base_model::start_inference_processes()
     }
 }
 
-double base_model::infer_processes(root_equilibrium_distribution *prior) {
+double base_model::infer_processes(probability_calculator& calc, root_equilibrium_distribution *prior) {
 #ifdef VERBOSE
     const bool write = true;
 #else
@@ -63,7 +63,7 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
     // prune all the families with the same lambda
     for (int i = 0; i < processes.size(); ++i) {
 
-        auto partial_likelihood = processes[i]->prune();
+        auto partial_likelihood = processes[i]->prune(calc);
         std::vector<double> full(partial_likelihood.size());
 
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
@@ -102,12 +102,12 @@ void base_model::print_results(std::ostream& ost)
 
 std::vector<double> base_model::initial_guesses()
 {
-    max_branch_length_finder finder;
+    branch_length_finder finder;
     _p_tree->apply_prefix_order(finder);
     std::vector<double> result(_p_lambda->count());
     for (auto& i : result)
     {
-        i = 1.0 / finder.result() * unifrnd();
+        i = 1.0 / finder.longest() * unifrnd();
     }
     return result;
 }

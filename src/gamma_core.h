@@ -38,7 +38,7 @@ public:
     //! Inference methods
     void start_inference_processes();
 
-    double infer_processes(root_equilibrium_distribution *prior);
+    double infer_processes(probability_calculator& calc, root_equilibrium_distribution *prior);
 
     std::vector<double> initial_guesses();
 

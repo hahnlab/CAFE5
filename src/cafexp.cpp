@@ -32,8 +32,8 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
   //  cout << "prior_rfsize " << i << "=" << prior_rfsize[i] << endl;
 
   probability_calculator calc;
-  single_lambda lam(&calc, lambda);
-  likelihood_computer pruner(max_root_family_size, max_family_size, &lam, &gene_families[0]);
+  single_lambda lam(lambda);
+  likelihood_computer pruner(max_root_family_size, max_family_size, &lam, &gene_families[0], calc);
 
   p_tree->apply_reverse_level_order(pruner);
   //cout << "Pruner complete" << endl;
@@ -67,13 +67,14 @@ void call_viterbi(int max_family_size, int max_root_family_size, int number_of_s
 {
 	double lambda_val = dynamic_cast<single_lambda *>(p_lambda)->get_single_lambda();
 	auto cd = get_conditional_distribution_matrix(p_tree, max_root_family_size, max_family_size, number_of_simulations, lambda_val);
+    probability_calculator calc;
 
 	for (int i = 0; i < families.size(); ++i)
 	{
 		int max = families[i].get_max_size();
 		max_root_family_size = rint(max*1.25);
 
-		likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &families[i]);
+		likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &families[i], calc);
 		p_tree->apply_reverse_level_order(pruner);
 		auto lh = pruner.get_likelihoods(p_tree);
 		std::cout << "likelihoods = ";
@@ -213,7 +214,7 @@ int cafexp(int argc, char *const argv[]) {
         }
 
         /* -l/-m (in the absence of -l, estimate) */
-        lambda *p_lambda = my_executer.read_lambda(my_input_parameters, calculator, p_lambda_tree);
+        lambda *p_lambda = my_executer.read_lambda(my_input_parameters, p_lambda_tree);
 
         root_equilibrium_distribution* p_prior = root_eq_dist_factory(my_input_parameters, &gene_families);
         
@@ -229,7 +230,7 @@ int cafexp(int argc, char *const argv[]) {
         
             // If lambda was fixed, compute!
             if (p_lambda) {            
-                my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size); // passing my_input_parameters as reference
+                my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size, calculator); // passing my_input_parameters as reference
             }
         
             // If lambda was not fixed, estimate!
@@ -239,7 +240,7 @@ int cafexp(int argc, char *const argv[]) {
                 }
             
             // Printing: take estimated values, re-compute them for printing purposes
-            my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size); 
+            my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size, calculator); 
             }
 
             my_executer.reconstruct(models, my_input_parameters, p_prior, calculator);
@@ -267,7 +268,6 @@ int cafexp(int argc, char *const argv[]) {
             string prob_matrix_suffix = "_tr_prob_matrices.txt";
             string prob_matrix_file_name = my_input_parameters.output_prefix + prob_matrix_suffix;
             std::ofstream ofst(my_input_parameters.output_prefix + prob_matrix_suffix);
-            calculator.print_cache(ofst, max_family_size);
         }
         /* END: Printing log file(s) */
 

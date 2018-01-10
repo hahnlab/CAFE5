@@ -42,14 +42,15 @@ void gamma_bundle::set_values(probability_calculator *calc, root_equilibrium_dis
     }
 }
 
-std::vector<double> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, root_equilibrium_distribution *eq) {
+std::vector<double> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, root_equilibrium_distribution *eq,
+    probability_calculator& calc) {
     assert(_gamma_cat_probs.size() == _inf_processes.size());
 
     std::vector<double> cat_likelihoods;
 
     for (int k = 0; k < _gamma_cat_probs.size(); ++k)
     {
-        auto partial_likelihood = _inf_processes[k]->prune();
+        auto partial_likelihood = _inf_processes[k]->prune(calc);
         bool good = false;
         for (double d : partial_likelihood)
         {

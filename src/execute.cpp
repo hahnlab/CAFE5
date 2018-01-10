@@ -50,13 +50,13 @@ clade * execute::read_lambda_tree(const input_parameters &my_input_parameters) {
 }
 
 //! Read user provided single or multiple lambdas
-lambda * execute::read_lambda(const input_parameters &my_input_parameters, probability_calculator &my_calculator, clade *p_lambda_tree) {
+lambda * execute::read_lambda(const input_parameters &my_input_parameters, clade *p_lambda_tree) {
       
     lambda *p_lambda = NULL; // lambda is an abstract class, and so we can only instantiate it as single_lambda or multiple lambda -- therefore initializing it to NULL
         
     // -l
     if (my_input_parameters.fixed_lambda > 0.0) {
-        p_lambda = new single_lambda(&my_calculator, my_input_parameters.fixed_lambda);
+        p_lambda = new single_lambda(my_input_parameters.fixed_lambda);
         // call_viterbi(max_family_size, max_root_family_size, 15, p_lambda, *p_gene_families, p_tree);
     }
     
@@ -71,7 +71,7 @@ lambda * execute::read_lambda(const input_parameters &my_input_parameters, proba
                 [](string const& val) { return stod(val); } // this is the equivalent of a Python's lambda function
                 );
         
-        p_lambda = new multiple_lambda(&my_calculator, node_name_to_lambda_index, lambdas);
+        p_lambda = new multiple_lambda(node_name_to_lambda_index, lambdas);
     }
     
     return p_lambda;
@@ -82,7 +82,7 @@ std::string filename(std::string base, std::string suffix)
     return base + (suffix.empty() ? "" : "_") + suffix + ".txt";
 }
 
-void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
+void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size, probability_calculator& calc)
 {
     std::ofstream results(filename("results", my_input_parameters.output_prefix));
 
@@ -94,7 +94,7 @@ void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_
         models[i]->start_inference_processes();
 
         cout << endl << "Inferring processes for model " << i << endl;
-        double result = models[i]->infer_processes(p_prior);
+        double result = models[i]->infer_processes(calc, p_prior);
         results << "Model " << models[i]->name() << " Result: " << result << endl;
 
         models[i]->print_results(likelihoods);
@@ -194,17 +194,17 @@ void execute::estimate_lambda(model *p_model, const input_parameters &my_input_p
         lambda_counter counter;
         p_lambda_tree->apply_prefix_order(counter);
         auto node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
-        p_lambda = new multiple_lambda(&calculator, node_name_to_lambda_index, std::vector<double>(counter.unique_lambdas.size()));
+        p_lambda = new multiple_lambda(node_name_to_lambda_index, std::vector<double>(counter.unique_lambdas.size()));
         cout << "Searching for " << counter.unique_lambdas.size() << " lambdas" << endl;
     }
     else
     {
-        p_lambda = new single_lambda(&calculator, 0.0);
+        p_lambda = new single_lambda(0.0);
     }
 
     p_model->set_lambda(p_lambda);
     p_tree->init_gene_family_sizes(*p_gene_families);
-    p_model->set_current_guesses(find_best_lambda(p_model, p_prior));
+    p_model->set_current_guesses(find_best_lambda(p_model, p_prior, &calculator));
 }
 
 void execute::reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, probability_calculator& calculator)

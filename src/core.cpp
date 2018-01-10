@@ -202,8 +202,12 @@ void model::print_node_depths(std::ostream& ost)
 }
 
 
-void max_branch_length_finder::operator()(clade *c)
+void branch_length_finder::operator()(clade *c)
 {
-    if (c->get_branch_length() > _result)
-        _result = c->get_branch_length();
+    _result.insert(c->get_branch_length());
+}
+
+double branch_length_finder::longest() const
+{
+    return *max_element(_result.begin(), _result.end());
 }

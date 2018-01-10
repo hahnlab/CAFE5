@@ -1,6 +1,8 @@
 #ifndef CORE_H
 #define CORE_H
 
+#include <set>
+
 #include "clade.h"
 #include "probability.h"
 
@@ -22,19 +24,18 @@ struct family_info_stash {
     bool significant;
 };
 
-class max_branch_length_finder
+class branch_length_finder
 {
-    double _result;
+    std::set<double> _result;
 public:
-    max_branch_length_finder() : _result(0.0)
-    {
-
-    }
     void operator()(clade *c);
 
-    double result() const {
+    std::set<double> result() const
+    {
         return _result;
     }
+
+    double longest() const;
 };
 
 std::ostream& operator<<(std::ostream& ost, const family_info_stash& r);
@@ -93,7 +94,7 @@ public:
     //! Inference methods
     virtual void start_inference_processes() = 0;
     
-    virtual double infer_processes(root_equilibrium_distribution *prior) = 0;  // return vector of likelihoods
+    virtual double infer_processes(probability_calculator& calc, root_equilibrium_distribution *prior) = 0;  // return vector of likelihoods
     
     //! Printing methods
     void print_parameter_values();

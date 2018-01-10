@@ -57,7 +57,7 @@ void reconstruction_process::reconstruct_leaf_node(clade * c, lambda * _lambda)
     // i will be the parent size
     for (size_t i = 1; i < L.size(); ++i)
     {
-        L[i] = _p_calc->get_from_parent_fam_size_to_c(sl->get_single_lambda(), branch_length, i, observed_count, NULL);
+        L[i] = _p_calc->get_from_parent_fam_size_to_c(sl->get_single_lambda(), branch_length, i, observed_count);
     }
 }
 

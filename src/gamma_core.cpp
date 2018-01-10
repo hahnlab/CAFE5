@@ -82,11 +82,11 @@ simulation_process* gamma_model::create_simulation_process(int family_number) {
     single_lambda *sl = dynamic_cast<single_lambda *>(_p_lambda);
     if (sl)
     {
-        max_branch_length_finder maxbranch;
-        _p_tree->apply_prefix_order(maxbranch);
-        if (maxbranch.result() * _lambda_multipliers[lambda_bin] * sl->get_single_lambda() > 1.0)
+        branch_length_finder lengths;
+        _p_tree->apply_prefix_order(lengths);
+        if (lengths.longest() * _lambda_multipliers[lambda_bin] * sl->get_single_lambda() > 1.0)
         {
-            cerr << "WARNING: Probable saturation (branch length " << maxbranch.result();
+            cerr << "WARNING: Probable saturation (branch length " << lengths.longest();
             cerr << " lambda " << sl->get_single_lambda() << " multiplier " << _lambda_multipliers[lambda_bin] << endl;
         }
     }
@@ -109,7 +109,7 @@ std::vector<double> gamma_model::get_posterior_probabilities(std::vector<double>
 }
 
 //! Infer bundle
-double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
+double gamma_model::infer_processes(probability_calculator& calc, root_equilibrium_distribution *prior) {
 
     if (!_p_lambda->is_valid())
     {
@@ -129,29 +129,44 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     vector<double> all_bundles_likelihood(_family_bundles.size());
 
     bool success = true;
-#pragma omp parallel for 
+    calc.thread_cache();
+    branch_length_finder lengths;
+    _p_tree->apply_prefix_order(lengths);
+    //_lambda_multipliers
+    auto sl = dynamic_cast<single_lambda *>(_p_lambda);
+    if (sl)
+    {
+        double lambda = sl->get_single_lambda();
+        for (auto branch_length : lengths.result())
+        {
+            for (auto multiplier : _lambda_multipliers)
+            {
+                calc.get_matrix(_max_family_size+1, branch_length, lambda * multiplier);
+            }
+        }
+    }
+
+    vector<vector<family_info_stash>> pruning_results(_family_bundles.size());
+#pragma omp parallel for
     for (int i = 0; i < _family_bundles.size(); ++i) {
         gamma_bundle& bundle = _family_bundles[i];
 
         try
         {
-            vector<double> cat_likelihoods = bundle.prune(_gamma_cat_probs, prior);
+            vector<double> cat_likelihoods = bundle.prune(_gamma_cat_probs, prior, calc);
 
             double family_likelihood = accumulate(cat_likelihoods.begin(), cat_likelihoods.end(), 0.0);
 
             vector<double> posterior_probabilities = get_posterior_probabilities(cat_likelihoods);
 
-#pragma omp critical
+            pruning_results[i].resize(cat_likelihoods.size());
+            for (size_t k = 0; k < cat_likelihoods.size(); ++k)
             {
-                for (size_t k = 0; k < cat_likelihoods.size(); ++k)
-                {
-                    results.push_back(family_info_stash(i, bundle.get_lambda_likelihood(k), cat_likelihoods[k],
-                        family_likelihood, posterior_probabilities[k], posterior_probabilities[k] > 0.95));
-                    //            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
-                }
-
-                all_bundles_likelihood[i] = std::log(family_likelihood);
+                pruning_results[i][k] = family_info_stash(i, bundle.get_lambda_likelihood(k), cat_likelihoods[k],
+                    family_likelihood, posterior_probabilities[k], posterior_probabilities[k] > 0.95);
+                //            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
             }
+            all_bundles_likelihood[i] = std::log(family_likelihood);
         }
         catch (runtime_error& ex)
         {
@@ -160,10 +175,17 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
             success = false;
         }
     }
-
+    calc.unthread_cache();
     if (!success)
         return -log(0);
 
+    for (auto& stashes : pruning_results)
+    {
+        for (auto& stash : stashes)
+        {
+            results.push_back(stash);
+        }
+    }
     double final_likelihood = -accumulate(all_bundles_likelihood.begin(), all_bundles_likelihood.end(), 0.0);
 
     std::cout << "-lnL: " << final_likelihood << std::endl;
@@ -180,11 +202,11 @@ std::vector<double> gamma_model::initial_guesses()
     get_gamma(x, y, alpha); // passing vectors by reference
 
     double largest_multiplier = *max_element(y.begin(), y.end());
-    max_branch_length_finder finder;
+    branch_length_finder finder;
     _p_tree->apply_prefix_order(finder);
     //double result = 1.0 / finder.result() * unifrnd();
     std::vector<double> lambdas(_p_lambda->count());
-    const double longest_branch = finder.result();
+    const double longest_branch = finder.longest();
     generate(lambdas.begin(), lambdas.end(), [longest_branch, largest_multiplier] { return 1.0 / (longest_branch*largest_multiplier) * unifrnd(); });
 
     lambdas.push_back(alpha);

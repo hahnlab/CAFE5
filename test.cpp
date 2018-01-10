@@ -16,6 +16,10 @@ TEST_GROUP(GeneFamilies)
 
 TEST_GROUP(Inference)
 {
+    void setup()
+    {
+        srand(10);
+    }
 };
 
 TEST_GROUP(Simulation)
@@ -76,7 +80,7 @@ TEST(Inference, infer_processes)
     fam4.set_species_size("B", 3);
     families.push_back(fam4);
     probability_calculator calc;
-    single_lambda lambda(&calc, 0.01);
+    single_lambda lambda(0.01);
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:1);";
     clade *p_tree = parser.parse_newick();
@@ -86,7 +90,7 @@ TEST(Inference, infer_processes)
 
 
     uniform_distribution frq;
-    double multi = core.infer_processes(&frq);
+    double multi = core.infer_processes(calc, &frq);
     //core.get_likelihoods();
     DOUBLES_EQUAL(41.7504, multi, 0.001);
     delete p_tree;
@@ -125,7 +129,7 @@ TEST(Inference, gamma)
     read_gene_families(ist, NULL, &families);
 
     probability_calculator calc;
-    single_lambda lambda(&calc, 0.5);
+    single_lambda lambda(0.5);
     newick_parser parser(false);
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
     clade *p_tree = parser.parse_newick();
@@ -139,7 +143,7 @@ TEST(Inference, gamma)
 
     core.start_inference_processes();
     uniform_distribution frq;
-    double actual = core.infer_processes(&frq);
+    double actual = core.infer_processes(calc, &frq);
     // DOUBLES_EQUAL(56.3469, actual, .0001);
 
     delete p_tree;
@@ -174,27 +178,14 @@ TEST(Probability, probability_of_some_values)
     probability_calculator calc;
     double lambda = 0.05;
     double branch_length = 5;
-    DOUBLES_EQUAL(0.0152237, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 5, 9, NULL), 0.00001);
+    DOUBLES_EQUAL(0.0152237, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 5, 9), 0.00001);
 
-    DOUBLES_EQUAL(0.17573, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 9, NULL), 0.00001);
+    DOUBLES_EQUAL(0.17573, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 9), 0.00001);
 
-    DOUBLES_EQUAL(0.182728, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 10, NULL), 0.00001);
+    DOUBLES_EQUAL(0.182728, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 10), 0.00001);
 
     branch_length = 1;
-    DOUBLES_EQUAL(0.465565, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 10, NULL), 0.00001);
-}
-
-TEST(Probability, probability_can_be_forced)
-{
-    probability_calculator calc;
-    double lambda = 0.05;
-    double branch_length = 5;
-
-    double force = 0.1;
-    DOUBLES_EQUAL(0.1, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 5, 9, &force), 0.00001);
-
-    // forced value is remembered after being set
-    DOUBLES_EQUAL(0.1, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 5, 9, NULL), 0.00001);
+    DOUBLES_EQUAL(0.465565, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 10), 0.00001);
 }
 
 bool operator==(matrix& m1, matrix& m2)
@@ -235,26 +226,55 @@ TEST(Probability, probability_of_matrix)
     CHECK(actual == expected);
 }
 
-TEST(Inference, initial_guesses)
+TEST(Inference, gamma_model_initial_guesses)
 {
     newick_parser parser(false);
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
     clade *p_tree = parser.parse_newick();
-    single_lambda sl(NULL, 0.05);
+    single_lambda sl(0.05);
 
     gamma_model model(&sl, p_tree, NULL, 0, 5, 4, 0.7, NULL);
     auto guesses = model.initial_guesses();
     LONGS_EQUAL(2, guesses.size());
-    DOUBLES_EQUAL(0.1574, guesses[0], 0.0001);
-    DOUBLES_EQUAL(0.8401, guesses[1], 0.0001);
+    DOUBLES_EQUAL(0.218321, guesses[0], 0.0001);
+    DOUBLES_EQUAL(0.565811, guesses[1], 0.0001);
+
+   delete p_tree;
+}
+
+TEST(Inference, base_model_initial_guesses)
+{
+    newick_parser parser(false);
+    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
+    clade *p_tree = parser.parse_newick();
+    single_lambda sl(0.05);
+
+    base_model model(&sl, p_tree, NULL, 0, 5, NULL);
+    auto guesses = model.initial_guesses();
+    LONGS_EQUAL(1, guesses.size());
+    DOUBLES_EQUAL(0.565811, guesses[0], 0.0001);
 
     delete p_tree;
+}
+
+TEST(Inference, branch_length_finder)
+{
+    branch_length_finder finder;
+    newick_parser parser(false);
+    parser.newick_string = "((A:1,B:3):7,(C:11,D:17):23);";
+    clade *p_tree = parser.parse_newick();
+    p_tree->apply_prefix_order(finder);
+    LONGS_EQUAL(finder.longest(), 23);
+    auto expected = set<double>{ 0, 1, 3, 7, 11, 17, 23 };
+    CHECK(finder.result() == expected);
+    delete p_tree;
+
 }
 
 TEST(Inference, reconstruction_process)
 {
     vector<int> rootdist;
-    single_lambda lambda(NULL, 0.05);
+    single_lambda lambda(0.05);
     gene_family fam;
     fam.set_species_size("Mouse", 3);
 

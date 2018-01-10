@@ -3,6 +3,7 @@
 #include <iostream>
 #include <random>
 #include <cassert>
+#include <omp.h>
 
 #include "utils.h" // for gene_family class
 #include "clade.h"
@@ -104,53 +105,98 @@ bool matrix::is_zero() const
 }
 /* END: Birth-death model components ----------------------- */
 
+#ifdef _OPENMP
+class readwritelock
+{
+    std::vector<omp_lock_t> readlocks;
+    omp_lock_t writelock;
+public:
+    readwritelock() : readlocks(omp_get_max_threads())
+    {
+        for (auto& i : readlocks)
+            omp_init_lock(&i);
+        omp_init_lock(&writelock);
+        cout << "Built " << readlocks.size() << " locks\n";
+    }
+    ~readwritelock()
+    {
+        for (auto& i : readlocks)
+            omp_destroy_lock(&i);
+        omp_destroy_lock(&writelock);
+    }
+    void lock_for_read()
+    {
+        omp_set_lock(&readlocks[omp_get_thread_num()]);
+    }
+    void unlock_for_read()
+    {
+        omp_unset_lock(&readlocks[omp_get_thread_num()]);
+    }
+    void lock_for_write()
+    {
+        int thread_count = omp_get_num_threads();
+        omp_set_lock(&writelock);
+        int locks_acquired = 0; // assume we already have our own thread locked
+        while (locks_acquired < thread_count) 
+        {
+            for (auto& i : readlocks)
+            {
+                if (omp_test_lock(&i))
+                {
+                    locks_acquired++;
+                }
+            }
+        }
+    }
+    void unlock_for_write()
+    {
+        for (auto& i : readlocks)
+        {
+            omp_unset_lock(&i);
+        }
+        omp_unset_lock(&writelock);
+    }
+};
+#else
+class readwritelock
+{
+public:
+    readwritelock() {}
+
+    void lock_for_read() {}
+    void unlock_for_read() {}
+    void lock_for_write() {}
+    void unlock_for_write() {}
+};
+#endif
+
 probability_calculator::~probability_calculator()
 {
     for (auto m : _matrix_cache)
         delete m.second;
+    delete rw_lock;
+}
+
+void probability_calculator::thread_cache()
+{
+    rw_lock = new readwritelock();
+}
+
+void probability_calculator::unthread_cache()
+{
+    delete rw_lock;
+    rw_lock = NULL;
 }
 
 /* START: Likelihood computation ---------------------- */
 //! Calls BD formulas, but checks/populates cache
-double probability_calculator::get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size, double *value) {
-        // key k = { lambda, branch_length, parent_size, size };
-	cache_key lambda_br_length_key = cache_key(lambda, branch_length);
-	std::tuple<int, int> parent_child_size_key = std::make_tuple(parent_size, child_size);
-	if (_cache.find(lambda_br_length_key) == _cache.end()) { // if lambda and branch length not in _cache
-		_cache[lambda_br_length_key] = std::map<std::tuple<int, int>, double>();
-	}
+double probability_calculator::get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size) {
+    // The probability of 0 remaining 0 is 1
+    // The probability of 0 going to any other count is 0 (if you lose the gene family, you do not regain it)
+    if (parent_size == 0.0)
+        return child_size == 0.0 ? 1.0 : 0.0;
 
-	// populate inner map containing transition probabilities if those are not already there
-	if (_cache[lambda_br_length_key].find(parent_child_size_key) == _cache[lambda_br_length_key].end()) {
-		double actual_value = value == NULL ? the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, parent_size, child_size) : *value;
-		_cache[lambda_br_length_key][parent_child_size_key] = actual_value;
-	}
-
-	return _cache[lambda_br_length_key][parent_child_size_key];
-}
-
-//! Prints cache (still working on it)
-void probability_calculator::print_cache(std::ostream &ost, int max_size) const {
-    for (std::map<cache_key, std::map<std::tuple<int, int>, double> >::const_iterator key_value = _cache.begin(); key_value != _cache.end(); ++key_value) {
-        double lambda = key_value->first.get_lambda();
-        double branch_length = key_value->first.get_branch_length();
-		ost << "lambda: " << lambda << " branch length: " << branch_length << endl;
-
-		for (int i = 0; i <= max_size; ++i)
-		{
-			ost << i << " ";
-			for (int j = 0; j <= max_size; ++j)
-			{
-				auto key = std::make_tuple(i, j);
-				double tr_prob = std::nan("");
-				if (key_value->second.find(key) != key_value->second.end())
-					tr_prob = key_value->second.at(key);
-				ost << tr_prob << " ";
-			}
-			ost << endl;
-		}
-
-    }
+    return the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, parent_size, child_size);
 }
 
 #define MATRIX_CACHING
@@ -181,30 +227,38 @@ matrix probability_calculator::get_matrix(int size, int branch_length, double la
 
     return result;
 #else
-    matrix_cache_key key(size, lambda, branch_length);
-#pragma omp critical
-    if (_matrix_cache.find(key) == _matrix_cache.end())
-    {
-        matrix* result = new matrix(size);
+    // cout << "Matrix request " << size << "," << branch_length << "," << lambda << endl;
 
-        double zero_val = 1.0;
-        result->set(0, 0, get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0, &zero_val)); // here we set the probability of 0 remaining 0 to 1 (if you lose the gene family, you do not regain it)
-        zero_val = 0.0;
+    matrix *result = NULL;
+    matrix_cache_key key(size, lambda, branch_length);
+    if (rw_lock) rw_lock->lock_for_read();
+    if (_matrix_cache.find(key) != _matrix_cache.end())
+    {
+        result = _matrix_cache[key];
+    }
+    if (rw_lock) rw_lock->unlock_for_read();
+    if (result == NULL)
+    {
+        result = new matrix(size);
+
+        result->set(0, 0, get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0)); 
         for (int i = 0; i < result[0].size(); ++i)
         {
-            result->set(0,0,get_from_parent_fam_size_to_c(lambda, branch_length, 0, i, &zero_val));
+            result->set(0,0,get_from_parent_fam_size_to_c(lambda, branch_length, 0, i));
         }
         for (int s = 1; s < size; s++) {
             for (int c = 0; c < size; c++) {
                 // result[s][c] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, s, c);
-                result->set(s, c, get_from_parent_fam_size_to_c(lambda, branch_length, s, c, NULL));
+                result->set(s, c, get_from_parent_fam_size_to_c(lambda, branch_length, s, c));
                 // cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
             }
         }
 
+        if (rw_lock) rw_lock->lock_for_write(); 
         _matrix_cache[key] = result;
+        if (rw_lock) rw_lock->unlock_for_write();
     }
-    return *_matrix_cache[key];
+    return *result;
 #endif
 }
 
@@ -256,14 +310,16 @@ private:
 	int s_max_family_size; //!< parent max size (this is an index)
 	int c_min_family_size; //!< child min size (this is an index)
 	int c_max_family_size; //!< child max size (this is an index)
+    probability_calculator& _calc;
 
 public:
     //! Constructor.
     /*!
       Used once per internal node by likelihood_computer().
     */
-	child_calculator(int probabilities_vec_size, lambda* lambda, map<clade *, vector<double> >& probabilities, int s_min, int s_max, int c_min, int c_max) : _probabilities_vec_size(probabilities_vec_size), _lambda(lambda), _probabilities(probabilities),
-		s_min_family_size(s_min), s_max_family_size(s_max), c_min_family_size(c_min), c_max_family_size(c_max) {}
+	child_calculator(int probabilities_vec_size, lambda* lambda, probability_calculator& calc, map<clade *, vector<double> >& probabilities, int s_min, int s_max, int c_min, int c_max) : _probabilities_vec_size(probabilities_vec_size), _lambda(lambda), _probabilities(probabilities),
+		s_min_family_size(s_min), s_max_family_size(s_max), c_min_family_size(c_min), c_max_family_size(c_max),
+        _calc(calc) {}
 	
     int num_factors() { return _factors.size(); }
   
@@ -276,7 +332,7 @@ public:
     void operator()(clade * child) {
 		_factors[child].resize(_probabilities_vec_size);
 		// cout << "Child factor size is " << _probabilities_vec_size << endl;
-		_factors[child] = _lambda->calculate_child_factor(child, _probabilities[child],
+		_factors[child] = _lambda->calculate_child_factor(_calc, child, _probabilities[child],
 			s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
 
     // p(node=c,child|s) = p(node=c|s)p(child|node=c) integrated over all c
@@ -319,14 +375,14 @@ void likelihood_computer::operator()(clade *node) {
 
 	else if (node->is_root()) {
 		// at the root, the size of the vector holding the final likelihoods will be _max_root_family_size (size 0 is not included, so we do not add 1)
-		child_calculator calc(_max_root_family_size, _lambda, _probabilities, 1, _max_root_family_size+1, 1, _max_root_family_size+1);
+		child_calculator calc(_max_root_family_size, _lambda, _calc, _probabilities, 1, _max_root_family_size+1, 1, _max_root_family_size+1);
 		node->apply_to_descendants(calc);
 		calc.update_probabilities(node);
 	}
 
     else {
 		// at any internal node, the size of the vector holding likelihoods will be _max_parsed_family_size+1 because size=0 is included
-        child_calculator calc(_max_parsed_family_size+1, _lambda, _probabilities, 0, _max_parsed_family_size, 0, _max_parsed_family_size);
+        child_calculator calc(_max_parsed_family_size+1, _lambda, _calc, _probabilities, 0, _max_parsed_family_size, 0, _max_parsed_family_size);
 		node->apply_to_descendants(calc);
 		calc.update_probabilities(node);
     }
@@ -385,8 +441,8 @@ std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simula
 	for (vector<trial*>::iterator ith_trial = simulation.begin(); ith_trial != simulation.end(); ++ith_trial)
 	{
 		gene_family gf(*ith_trial);
-		single_lambda lam(calc, lambda);
-		likelihood_computer pruner(root_family_size, max_family_size, &lam, &gf); 
+		single_lambda lam(lambda);
+		likelihood_computer pruner(root_family_size, max_family_size, &lam, &gf, *calc);
 		p_tree->apply_reverse_level_order(pruner);
 		result.push_back(pruner.max_likelihood(p_tree));
 	}

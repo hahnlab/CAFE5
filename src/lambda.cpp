@@ -14,10 +14,10 @@ using namespace std;
 
 /* START: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
-std::vector<double> single_lambda::calculate_child_factor(clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size)
+std::vector<double> single_lambda::calculate_child_factor(probability_calculator& calc, clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size)
 {
 	// cout << "Child node " << child->get_taxon_name() << " has " << probabilities.size() << " probabilities" << endl;
-	auto matrix = _p_calc->get_matrix(probabilities.size(), child->get_branch_length(), _lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
+	auto matrix = calc.get_matrix(probabilities.size(), child->get_branch_length(), _lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
     if (matrix.is_zero())
         cerr << "Saturation at " << child->get_taxon_name() << ": Lambda: " << _lambda << ", branch length: " << child->get_branch_length() << endl;
 	return matrix_multiply(matrix, probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
@@ -30,13 +30,13 @@ std::string single_lambda::to_string()
     return ost.str();
 }
 
-std::vector<double> multiple_lambda::calculate_child_factor(clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size)
+std::vector<double> multiple_lambda::calculate_child_factor(probability_calculator& calc, clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size)
 {
 	std::string nodename = child->get_taxon_name();
 	int lambda_index = _node_name_to_lambda_index[nodename];
 	double lambda = _lambdas[lambda_index];
 	//cout << "Matrix for " << child->get_taxon_name() << endl;
-	auto matrix = _p_calc->get_matrix(probabilities.size(), child->get_branch_length(), lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
+	auto matrix = calc.get_matrix(probabilities.size(), child->get_branch_length(), lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
 	return matrix_multiply(matrix, probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
 }
 
@@ -71,22 +71,23 @@ double multiple_lambda::get_value_for_clade(clade *c) {
 /// score of a lambda is the -log likelihood of the most likely resulting family size
 double calculate_lambda_score(double* p_lambda, void* args)
 {
-    std::pair<model *, root_equilibrium_distribution *>* vals = (std::pair<model *, root_equilibrium_distribution *>*)args;
+    auto vals = (std::tuple<model *, root_equilibrium_distribution *, probability_calculator * >*)args;
 
-    model *core = vals->first;
-    root_equilibrium_distribution* dist = vals->second;
+    model *core = std::get<0>(*vals);
+    root_equilibrium_distribution* dist = std::get<1>(*vals);
+    probability_calculator* calc = std::get<2>(*vals);
 
     core->set_current_guesses(p_lambda);
     core->start_inference_processes();
 
-    return core->infer_processes(dist);
+    return core->infer_processes(*calc, dist);
 }
 
-double* find_best_lambda(model * p_model, root_equilibrium_distribution *p_distribution)
+double* find_best_lambda(model * p_model, root_equilibrium_distribution *p_distribution, probability_calculator *calc)
 {
     auto initial = p_model->initial_guesses();
 	FMinSearch* pfm;
-    std::pair<model *, root_equilibrium_distribution *> args(p_model, p_distribution);
+    std::tuple<model *, root_equilibrium_distribution *, probability_calculator *> args(p_model, p_distribution, calc);
 	pfm = fminsearch_new_with_eq(calculate_lambda_score, initial.size(), &args);
 	pfm->tolx = 1e-6;
 	pfm->tolf = 1e-6;
