@@ -18,6 +18,7 @@
 #include "root_equilibrium_distribution.h"
 #include "base_model.h"
 #include "chisquare.h"
+#include "matrix_cache.h"
 
 using namespace std;
 
@@ -31,7 +32,7 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
   //for (int i = 0; i < prior_rfsize.size(); ++i)
   //  cout << "prior_rfsize " << i << "=" << prior_rfsize[i] << endl;
 
-  probability_calculator calc;
+  matrix_cache calc;
   single_lambda lam(lambda);
   likelihood_computer pruner(max_root_family_size, max_family_size, &lam, &gene_families[0], calc);
 
@@ -67,7 +68,7 @@ void call_viterbi(int max_family_size, int max_root_family_size, int number_of_s
 {
 	double lambda_val = dynamic_cast<single_lambda *>(p_lambda)->get_single_lambda();
 	auto cd = get_conditional_distribution_matrix(p_tree, max_root_family_size, max_family_size, number_of_simulations, lambda_val);
-    probability_calculator calc;
+    matrix_cache calc;
 
 	for (int i = 0; i < families.size(); ++i)
 	{
@@ -108,7 +109,7 @@ int cafexp(int argc, char *const argv[]) {
     clade *p_tree = NULL; // instead of new clade(), o.w. mem leak
     clade *p_lambda_tree = NULL; 
     std::vector<gene_family> gene_families;
-    probability_calculator calculator; // for computing lks
+    matrix_cache calculator; // for computing lks
     map<int, int>* p_rootdist_map = NULL; // for sims
 
     while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:k:a:s::g::p::r:", longopts, NULL)) != -1 ) {
@@ -230,7 +231,7 @@ int cafexp(int argc, char *const argv[]) {
         
             // If lambda was fixed, compute!
             if (p_lambda) {            
-                my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size, calculator); // passing my_input_parameters as reference
+                my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size); // passing my_input_parameters as reference
             }
         
             // If lambda was not fixed, estimate!
@@ -240,7 +241,7 @@ int cafexp(int argc, char *const argv[]) {
                 }
             
             // Printing: take estimated values, re-compute them for printing purposes
-            my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size, calculator); 
+            my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size); 
             }
 
             my_executer.reconstruct(models, my_input_parameters, p_prior, calculator);

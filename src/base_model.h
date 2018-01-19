@@ -4,6 +4,7 @@
 #include "core.h"
 
 class reconstruction_process;
+class matrix_cache;
 
 class base_model : public model {
     std::vector<inference_process *> processes;
@@ -14,7 +15,7 @@ public:
         int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map);
 
     virtual void start_inference_processes();
-    virtual double infer_processes(probability_calculator& calc, root_equilibrium_distribution *prior);
+    virtual double infer_processes(root_equilibrium_distribution *prior);
 
     virtual std::string name() {
         return "Base";
@@ -26,8 +27,8 @@ public:
     virtual std::vector<double> initial_guesses();
     void set_current_guesses(double * guesses);
 
-    virtual void reconstruct_ancestral_states(probability_calculator *p_calc, root_equilibrium_distribution* p_prior);
-    reconstruction_process* create_reconstruction_process(int family_number, probability_calculator *p_calc, root_equilibrium_distribution* p_prior);
+    virtual void reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
+    reconstruction_process* create_reconstruction_process(int family_number, matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
     void print_reconstructed_states(std::ostream& ost);
    };
 

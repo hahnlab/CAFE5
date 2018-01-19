@@ -63,7 +63,7 @@ void simulation_process::run_simulation() {
 }
 
 //! Prune process
-std::vector<double> inference_process::prune(probability_calculator& calc) {
+std::vector<double> inference_process::prune(matrix_cache& calc) {
     lambda *multiplier = _lambda->multiply(_lambda_multiplier);
 	likelihood_computer pruner(_max_root_family_size, _max_family_size, multiplier, _p_gene_family, calc); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
 	_p_tree->apply_reverse_level_order(pruner);

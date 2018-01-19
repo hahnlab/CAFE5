@@ -9,6 +9,7 @@
 #include "src/root_equilibrium_distribution.h"
 #include "src/base_model.h"
 #include "src/reconstruction_process.h"
+#include "src/matrix_cache.h"
 
 TEST_GROUP(GeneFamilies)
 {
@@ -79,7 +80,7 @@ TEST(Inference, infer_processes)
     fam4.set_species_size("A", 6);
     fam4.set_species_size("B", 3);
     families.push_back(fam4);
-    probability_calculator calc;
+
     single_lambda lambda(0.01);
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:1);";
@@ -90,7 +91,7 @@ TEST(Inference, infer_processes)
 
 
     uniform_distribution frq;
-    double multi = core.infer_processes(calc, &frq);
+    double multi = core.infer_processes(&frq);
     //core.get_likelihoods();
     DOUBLES_EQUAL(41.7504, multi, 0.001);
     delete p_tree;
@@ -128,7 +129,6 @@ TEST(Inference, gamma)
     std::vector<gene_family> families;
     read_gene_families(ist, NULL, &families);
 
-    probability_calculator calc;
     single_lambda lambda(0.5);
     newick_parser parser(false);
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
@@ -143,7 +143,7 @@ TEST(Inference, gamma)
 
     core.start_inference_processes();
     uniform_distribution frq;
-    double actual = core.infer_processes(calc, &frq);
+    double actual = core.infer_processes(&frq);
     // DOUBLES_EQUAL(56.3469, actual, .0001);
 
     delete p_tree;
@@ -175,7 +175,7 @@ TEST(Simulation, gamma_cats)
 
 TEST(Probability, probability_of_some_values)
 {
-    probability_calculator calc;
+    matrix_cache calc;
     double lambda = 0.05;
     double branch_length = 5;
     DOUBLES_EQUAL(0.0152237, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 5, 9), 0.00001);
@@ -205,10 +205,11 @@ bool operator==(matrix& m1, matrix& m2)
 
 TEST(Probability, probability_of_matrix)
 {
-    probability_calculator calc;
-    double lambda = 0.05;
-    double branch_length = 5;
-    matrix actual = calc.get_matrix(5, branch_length, lambda);
+    matrix_cache calc;
+    single_lambda lambda(0.05);
+    std::set<double> branch_lengths{ 5 };
+    calc.precalculate_matrices(5, &lambda, branch_lengths);
+    matrix actual = calc.get_matrix(5, 5, lambda.get_single_lambda());
     matrix expected(5);
     double values[5][5] = {
     {0,0,0,0,0},
@@ -222,7 +223,7 @@ TEST(Probability, probability_of_matrix)
     CHECK(actual == expected);
 
     // a second call should get the same results as the first
-    actual = calc.get_matrix(5, branch_length, lambda);
+    actual = calc.get_matrix(5, 5, lambda.get_single_lambda());
     CHECK(actual == expected);
 }
 
@@ -257,6 +258,27 @@ TEST(Inference, base_model_initial_guesses)
     delete p_tree;
 }
 
+TEST(Inference, base_model_reconstruction)
+{
+    newick_parser parser(false);
+    parser.newick_string = "((A:1,B:1):1";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    single_lambda sl(0.05);
+
+    std::vector<gene_family> families(1);
+    families[0].set_species_size("A", 3);
+    families[0].set_species_size("B", 4);
+
+    base_model model(&sl, p_tree.get(), &families, 5, 5, NULL);
+
+    matrix_cache calc;
+    calc.precalculate_matrices(6, &sl, set<double>({ 1 }));
+    uniform_distribution dist;
+    dist.initialize({ 1,2,3,4,5,6 });
+    model.reconstruct_ancestral_states(&calc, &dist);
+
+}
+
 TEST(Inference, branch_length_finder)
 {
     branch_length_finder finder;
@@ -280,7 +302,7 @@ TEST(Inference, reconstruction_process)
 
     clade leaf("Mouse",7);
 
-    probability_calculator calc;
+    matrix_cache calc;
    reconstruction_process process(cout, &lambda, 2.0, NULL, 3, 0, rootdist, &fam, &calc, NULL);
    process(&leaf);
    auto L = process.get_L(&leaf);
@@ -291,6 +313,47 @@ TEST(Inference, reconstruction_process)
    DOUBLES_EQUAL(0.0586679, L[1], 0.0001);
    DOUBLES_EQUAL(0.146916, L[2], 0.0001);
    DOUBLES_EQUAL(0.193072, L[3], 0.0001);
+}
+
+TEST(Inference, precalculate_matrices_calculates_all_lambdas_all_branchlengths)
+{
+    matrix_cache calc;
+    std::map<std::string, int> m;
+    multiple_lambda lambda(m, vector<double>({ .1, .2, .3, .4 }));
+    calc.precalculate_matrices(5, &lambda, set<double>({ 1,2,3 }));
+    LONGS_EQUAL(12, calc.get_cache_size());
+}
+
+TEST(Inference, reconstruction_process_internal_node)
+{
+    vector<int> rootdist;
+    single_lambda s_lambda(0.05);
+    double multiplier = 2.0;
+    gene_family fam;
+    fam.set_species_size("A", 3);
+    fam.set_species_size("B", 6);
+
+    newick_parser parser(false);
+    parser.newick_string = "((A:1,B:3):7,(C:11,D:17):23);";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<lambda> m(s_lambda.multiply(multiplier));
+    matrix_cache calc;
+    calc.precalculate_matrices(4, m.get(), set<double>({ 1, 3, 7, 11, 17, 23 }));
+    reconstruction_process process(cout, &s_lambda, multiplier, NULL, 3, 0, rootdist, &fam, &calc, NULL);
+
+    process(p_tree->find_descendant("A"));
+    process(p_tree->find_descendant("B"));
+
+    clade *internal_node = p_tree->find_descendant("AB");
+    process(internal_node);
+    auto L = process.get_L(internal_node);
+
+    // L holds the probability of the leaf moving from size 3 to size n
+    LONGS_EQUAL(4, L.size());
+    DOUBLES_EQUAL(0.0, L[0], 0.0001);
+    DOUBLES_EQUAL(0.00101688, L[1], 0.0001);
+    DOUBLES_EQUAL(0.00254648, L[2], 0.0001);
+    DOUBLES_EQUAL(0.0033465, L[3], 0.0001);
 }
 
 int main(int ac, char** av)

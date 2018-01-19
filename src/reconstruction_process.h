@@ -2,10 +2,12 @@
 #define RECONSTRUCTION_PROCESS_H
 #include "process.h"
 
+class matrix_cache;
+
 class reconstruction_process : public process {
 
     gene_family *_gene_family;
-    probability_calculator *_p_calc;
+    matrix_cache *_p_calc;
 
     /// Filled out when reconstruct() is called (NULL before then)
     root_equilibrium_distribution* _p_prior;
@@ -14,6 +16,8 @@ class reconstruction_process : public process {
     void reconstruct_leaf_node(clade * c, lambda * sl);
     void reconstruct_root_node(clade * c);
     std::map<clade *, std::vector<int> > all_node_Cs;
+
+    /// Ls hold a probability for each family size (values are probabilities of any given family size)
     std::map<clade *, std::vector<double> > all_node_Ls;
 
     std::map<clade *, int> reconstructed_states;
@@ -24,10 +28,10 @@ public:
         int max_family_size,
         int max_root_family_size, std::vector<int> rootdist,
         gene_family *gf,
-        probability_calculator *calc,
+        matrix_cache *calc,
         root_equilibrium_distribution* p_prior);
 
-    void set_values(probability_calculator *calc, root_equilibrium_distribution* prior)
+    void set_values(matrix_cache *calc, root_equilibrium_distribution* prior)
     {
         _p_prior = prior;
         _p_calc = calc;

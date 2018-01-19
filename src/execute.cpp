@@ -82,7 +82,7 @@ std::string filename(std::string base, std::string suffix)
     return base + (suffix.empty() ? "" : "_") + suffix + ".txt";
 }
 
-void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size, probability_calculator& calc)
+void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
 {
     std::ofstream results(filename("results", my_input_parameters.output_prefix));
 
@@ -94,7 +94,7 @@ void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_
         models[i]->start_inference_processes();
 
         cout << endl << "Inferring processes for model " << i << endl;
-        double result = models[i]->infer_processes(calc, p_prior);
+        double result = models[i]->infer_processes(p_prior);
         results << "Model " << models[i]->name() << " Result: " << result << endl;
 
         models[i]->print_results(likelihoods);
@@ -186,7 +186,7 @@ public:
 };
 
 void execute::estimate_lambda(model *p_model, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
-    std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size, probability_calculator& calculator)
+    std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size, matrix_cache& calculator)
 {
     lambda *p_lambda = NULL;
     if (p_lambda_tree != NULL)
@@ -207,7 +207,7 @@ void execute::estimate_lambda(model *p_model, const input_parameters &my_input_p
     p_model->set_current_guesses(find_best_lambda(p_model, p_prior, &calculator));
 }
 
-void execute::reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, probability_calculator& calculator)
+void execute::reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, matrix_cache& calculator)
 {
     for (model* p_model : models) {
         std::ofstream ofst(filename(p_model->name() + "_asr", my_input_parameters.output_prefix));

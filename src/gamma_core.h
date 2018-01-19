@@ -38,7 +38,7 @@ public:
     //! Inference methods
     void start_inference_processes();
 
-    double infer_processes(probability_calculator& calc, root_equilibrium_distribution *prior);
+    double infer_processes(root_equilibrium_distribution *prior);
 
     std::vector<double> initial_guesses();
 
@@ -50,7 +50,7 @@ public:
 
     virtual void print_results(std::ostream& ost);
 
-    virtual void reconstruct_ancestral_states(probability_calculator *, root_equilibrium_distribution* p_prior);
+    virtual void reconstruct_ancestral_states(matrix_cache *, root_equilibrium_distribution* p_prior);
     void print_reconstructed_states(std::ostream& ost);
 
 };

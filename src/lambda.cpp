@@ -9,12 +9,13 @@
 #include "utils.h"
 #include "probability.h"
 #include "core.h"
+#include "matrix_cache.h"
 
 using namespace std;
 
 /* START: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
-std::vector<double> single_lambda::calculate_child_factor(probability_calculator& calc, clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size)
+std::vector<double> single_lambda::calculate_child_factor(matrix_cache& calc, clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size)
 {
 	// cout << "Child node " << child->get_taxon_name() << " has " << probabilities.size() << " probabilities" << endl;
 	auto matrix = calc.get_matrix(probabilities.size(), child->get_branch_length(), _lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
@@ -30,7 +31,7 @@ std::string single_lambda::to_string()
     return ost.str();
 }
 
-std::vector<double> multiple_lambda::calculate_child_factor(probability_calculator& calc, clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size)
+std::vector<double> multiple_lambda::calculate_child_factor(matrix_cache& calc, clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size)
 {
 	std::string nodename = child->get_taxon_name();
 	int lambda_index = _node_name_to_lambda_index[nodename];
@@ -71,23 +72,22 @@ double multiple_lambda::get_value_for_clade(clade *c) {
 /// score of a lambda is the -log likelihood of the most likely resulting family size
 double calculate_lambda_score(double* p_lambda, void* args)
 {
-    auto vals = (std::tuple<model *, root_equilibrium_distribution *, probability_calculator * >*)args;
+    auto vals = (std::tuple<model *, root_equilibrium_distribution *>*)args;
 
     model *core = std::get<0>(*vals);
     root_equilibrium_distribution* dist = std::get<1>(*vals);
-    probability_calculator* calc = std::get<2>(*vals);
 
     core->set_current_guesses(p_lambda);
     core->start_inference_processes();
 
-    return core->infer_processes(*calc, dist);
+    return core->infer_processes(dist);
 }
 
-double* find_best_lambda(model * p_model, root_equilibrium_distribution *p_distribution, probability_calculator *calc)
+double* find_best_lambda(model * p_model, root_equilibrium_distribution *p_distribution, matrix_cache *calc)
 {
     auto initial = p_model->initial_guesses();
 	FMinSearch* pfm;
-    std::tuple<model *, root_equilibrium_distribution *, probability_calculator *> args(p_model, p_distribution, calc);
+    std::tuple<model *, root_equilibrium_distribution *> args(p_model, p_distribution);
 	pfm = fminsearch_new_with_eq(calculate_lambda_score, initial.size(), &args);
 	pfm->tolx = 1e-6;
 	pfm->tolf = 1e-6;

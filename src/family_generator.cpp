@@ -4,6 +4,7 @@
 #include "clade.h"
 #include "probability.h"
 #include "family_generator.h"
+#include "matrix_cache.h"
 
 std::default_random_engine gen(12);
 std::uniform_real_distribution<> dis(0, 1); // draw random number from uniform distribution
@@ -21,11 +22,11 @@ private:
     trial *_p_tth_trial;
     int _max_family_size; //!< We simulate from 0 to _max_family_size-1
     lambda *_p_lambda;
-    probability_calculator* _calculator; //!< Does the birth-death model computations
+    matrix_cache* _calculator; //!< Does the birth-death model computations
 
 public:
     //! Constructor
-    random_familysize_setter(trial *p_tth_trial, int max_family_size, lambda * p_lambda, probability_calculator* p_calc) :
+    random_familysize_setter(trial *p_tth_trial, int max_family_size, lambda * p_lambda, matrix_cache* p_calc) :
         _p_tth_trial(p_tth_trial), _max_family_size(max_family_size), _p_lambda(p_lambda), _calculator(p_calc) {
     }
 
@@ -74,7 +75,7 @@ void random_familysize_setter::operator()(clade *node) {
 */
 trial * simulate_family_from_root_size(clade *tree, int root_family_size, int max_family_size, lambda * p_lambda) {
 
-    probability_calculator calc;
+    matrix_cache calc;
     trial *result = new trial;
     random_familysize_setter rfs(result, max_family_size, p_lambda, &calc);
     (*result)[tree] = root_family_size;
@@ -92,7 +93,7 @@ trial * simulate_family_from_root_size(clade *tree, int root_family_size, int ma
 //map<clade *, int> simulate_families_from_root_size(clade *tree, int num_trials, int root_family_size, int max_family_size, double lambda) {
 vector<trial *> simulate_families_from_root_size(clade *tree, int num_trials, int root_family_size, int max_family_size, double lambda) {
 
-    probability_calculator calc;
+    matrix_cache calc;
     vector<trial *> result;
     single_lambda lam(lambda);
 

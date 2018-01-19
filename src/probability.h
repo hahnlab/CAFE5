@@ -1,15 +1,20 @@
 #ifndef PROBABILITY_H_A2E01F6E_6A7D_44FB_A9C0_6512F15FF939
 #define PROBABILITY_H_A2E01F6E_6A7D_44FB_A9C0_6512F15FF939
 
-#include <assert.h>
 #include <vector>
 #include <tuple>
+#include <set>
+
 #include <iostream>
+#include <set>
 #include "utils.h"
 #include "io.h"
 #include "lambda.h"
 
 class clade;
+class matrix;
+class matrix_cache;
+
 double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int size);
 double chooseln(double n, double k);
 double unifrnd();
@@ -23,11 +28,11 @@ private:
     int _max_root_family_size;
 	int _max_parsed_family_size;
 	lambda* _lambda;
-    probability_calculator& _calc;
+    matrix_cache& _calc;
     
 public:
     likelihood_computer(int max_root_family_size, int max_parsed_family_size, lambda* lambda, gene_family *family,
-        probability_calculator& calc) : 
+        matrix_cache& calc) : 
 		_max_root_family_size(max_root_family_size),
 		_max_parsed_family_size(max_parsed_family_size),
 		_lambda(lambda),
@@ -52,105 +57,13 @@ public:
 
 };
 
-class matrix
-{
-    vector<double> values;
-    int _size;
-public:
-    matrix(int sz) : _size(sz)
-    {
-        values.resize(_size*_size);
-    }
-    void set(int x, int y, double val)
-    {
-        assert(x < _size);
-        assert(y < _size);
-        values[x*_size + y] = val;
-    }
-    double get(int x, int y) const
-    {
-        assert(x < _size);
-        assert(y < _size);
-        return values[x*_size + y];
-    }
-    int size() const {
-        return _size;
-    }
-    bool is_zero() const;
-};
-
 /* END: Likelihood computation ---------------------- */
-
-/* START: Probability calculator for inference and simulation ------ */
-
-//! Class for the keys in cache
-/*! 
-  Each class instance (key in cahce) will hold a lambda, branch length, parent size and child size, and the value associated to it in the cache will be a transition probability given by the BD model.
-*/
-class cache_key {
-private:
-    double _lambda;
-    double _branch_length;
-    
-public:
-    //! Basic constructor
-    // cache_key(): _lambda(0.0), _branch_length(0,0), _parent_size(0), _child_size(0) {}
-    
-    //! Constructor passing values
-    cache_key(double some_lambda, double some_branch_length): _lambda(some_lambda), _branch_length(some_branch_length) { }
-    
-    double get_lambda() const { return _lambda; }
-    double get_branch_length() const { return _branch_length; }
-        
-    // std::tie : when given n input values, it returns a std:tuple (a container) of size n
-    // the < operator is defined for std::tuple, and it allows lexicographical sorting of n-tuples (it sorts and returns the first); the std::tuple < operator is left intact below -- below we overload the < operator of the probability_calculator class
-    //! Operator < overload
-    /*!
-      Necessary for the map method find() used below
-    */ 
-    bool operator<(const cache_key &o) const {
-        return std::tie(_branch_length, _lambda) < std::tie(o._branch_length, o._lambda);
-    }
-};
-
-class matrix_cache_key {
-    double _lambda;
-    double _branch_length;
-    size_t _size;
-public:
-    matrix_cache_key(int size, double some_lambda, double some_branch_length) : 
-        _size(size), 
-        _lambda(some_lambda), 
-        _branch_length(some_branch_length) { }
-    bool operator<(const matrix_cache_key &o) const {
-        return std::tie(_size, _branch_length, _lambda) < std::tie(o._size, o._branch_length, o._lambda);
-    }
-};
 
 class readwritelock;
 
-//! Computation of the probabilities of moving from a family size (parent) to another (child)
-/*!
-  Contains a map (_cache) that serves as a hash table to store precalculated values.
-  If the given parameters have already been calculated, will return the cached value rather than calculating the value again.
-*/
-class probability_calculator {
-private:
-    std::map<matrix_cache_key, matrix*> _matrix_cache; //!< nested map that stores transition probabilities for a given lambda and branch_length (outer), then for a given parent and child size (inner)
-public:
-    double get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size);
-	matrix get_matrix(int size, int branch_length, double lambda);
 
-    readwritelock *rw_lock = NULL;
-
-    void thread_cache();
-    void unthread_cache();
-    ~probability_calculator();
-};
 
 vector<double> matrix_multiply(const matrix& matrix, const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size);
-
-/* END: Probability calculator for simulator -------- */
 
 /* START: Uniform distribution */
 std::vector<int> uniform_dist(int n_draws, int min, int max);

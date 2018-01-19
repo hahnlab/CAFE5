@@ -8,7 +8,7 @@
 class lambda;
 class clade;
 class gene_family;
-class probability_calculator;
+class matrix_cache;
 class root_equilibrium_distribution;
 class child_multiplier;
 
@@ -45,7 +45,7 @@ public:
 		_p_gene_family = fam;
 	}
 
-	std::vector<double> prune(probability_calculator& calc);    // returns likelihood of the tree for each family size
+	std::vector<double> prune(matrix_cache& calc);    // returns likelihood of the tree for each family size
 };
 
 class simulation_process : public process {

@@ -34,7 +34,7 @@ void gamma_bundle::clear()
     _inf_processes.clear();
 }
 
-void gamma_bundle::set_values(probability_calculator *calc, root_equilibrium_distribution*prior)
+void gamma_bundle::set_values(matrix_cache *calc, root_equilibrium_distribution*prior)
 {
     for (auto rec : _rec_processes)
     {
@@ -43,7 +43,7 @@ void gamma_bundle::set_values(probability_calculator *calc, root_equilibrium_dis
 }
 
 std::vector<double> gamma_bundle::prune(const vector<double>& _gamma_cat_probs, root_equilibrium_distribution *eq,
-    probability_calculator& calc) {
+    matrix_cache& calc) {
     assert(_gamma_cat_probs.size() == _inf_processes.size());
 
     std::vector<double> cat_likelihoods;

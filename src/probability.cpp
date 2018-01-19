@@ -3,11 +3,11 @@
 #include <iostream>
 #include <random>
 #include <cassert>
-#include <omp.h>
 
 #include "utils.h" // for gene_family class
 #include "clade.h"
 #include "probability.h"
+#include "matrix_cache.h"
 
 /* Useful links
 1) http://www.rskey.org/gamma.htm # explanation for lgamma
@@ -99,168 +99,7 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
   return result;
 }
 
-bool matrix::is_zero() const
-{
-    return *max_element(values.begin(), values.end()) == 0;
-}
 /* END: Birth-death model components ----------------------- */
-
-#ifdef _OPENMP
-class readwritelock
-{
-    std::vector<omp_lock_t> readlocks;
-    omp_lock_t writelock;
-public:
-    readwritelock() : readlocks(omp_get_max_threads())
-    {
-        for (auto& i : readlocks)
-            omp_init_lock(&i);
-        omp_init_lock(&writelock);
-        cout << "Built " << readlocks.size() << " locks\n";
-    }
-    ~readwritelock()
-    {
-        for (auto& i : readlocks)
-            omp_destroy_lock(&i);
-        omp_destroy_lock(&writelock);
-    }
-    void lock_for_read()
-    {
-        omp_set_lock(&readlocks[omp_get_thread_num()]);
-    }
-    void unlock_for_read()
-    {
-        omp_unset_lock(&readlocks[omp_get_thread_num()]);
-    }
-    void lock_for_write()
-    {
-        int thread_count = omp_get_num_threads();
-        omp_set_lock(&writelock);
-        int locks_acquired = 0; // assume we already have our own thread locked
-        while (locks_acquired < thread_count) 
-        {
-            for (auto& i : readlocks)
-            {
-                if (omp_test_lock(&i))
-                {
-                    locks_acquired++;
-                }
-            }
-        }
-    }
-    void unlock_for_write()
-    {
-        for (auto& i : readlocks)
-        {
-            omp_unset_lock(&i);
-        }
-        omp_unset_lock(&writelock);
-    }
-};
-#else
-class readwritelock
-{
-public:
-    readwritelock() {}
-
-    void lock_for_read() {}
-    void unlock_for_read() {}
-    void lock_for_write() {}
-    void unlock_for_write() {}
-};
-#endif
-
-probability_calculator::~probability_calculator()
-{
-    for (auto m : _matrix_cache)
-        delete m.second;
-    delete rw_lock;
-}
-
-void probability_calculator::thread_cache()
-{
-    rw_lock = new readwritelock();
-}
-
-void probability_calculator::unthread_cache()
-{
-    delete rw_lock;
-    rw_lock = NULL;
-}
-
-/* START: Likelihood computation ---------------------- */
-//! Calls BD formulas, but checks/populates cache
-double probability_calculator::get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size) {
-    // The probability of 0 remaining 0 is 1
-    // The probability of 0 going to any other count is 0 (if you lose the gene family, you do not regain it)
-    if (parent_size == 0.0)
-        return child_size == 0.0 ? 1.0 : 0.0;
-
-    return the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, parent_size, child_size);
-}
-
-#define MATRIX_CACHING
-
-//! Compute transition probability matrix for all gene family sizes from 0 to size-1 (=_max_root_family_size-1)
-matrix probability_calculator::get_matrix(int size, int branch_length, double lambda) {
-#ifndef MATRIX_CACHING
-    matrix result(size);
-    result.at(0).resize(size);
-
-    double zero_val = 1.0;
-    result.at(0)[0] = get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0, &zero_val); // here we set the probability of 0 remaining 0 to 1 (if you lose the gene family, you do not regain it)
-    zero_val = 0.0;
-    for (int i = 0; i < result[0].size(); ++i)
-    {
-        result.at(0)[0] = get_from_parent_fam_size_to_c(lambda, branch_length, 0, i, &zero_val);
-    }
-    for (int s = 1; s < size; s++) {
-        result.at(s).resize(size);
-
-        for (int c = 0; c < size; c++) {
-            // result[s][c] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, s, c);
-            result.at(s)[c] = get_from_parent_fam_size_to_c(lambda, branch_length, s, c, NULL);
-            // cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
-        }
-    
-    }
-
-    return result;
-#else
-    // cout << "Matrix request " << size << "," << branch_length << "," << lambda << endl;
-
-    matrix *result = NULL;
-    matrix_cache_key key(size, lambda, branch_length);
-    if (rw_lock) rw_lock->lock_for_read();
-    if (_matrix_cache.find(key) != _matrix_cache.end())
-    {
-        result = _matrix_cache[key];
-    }
-    if (rw_lock) rw_lock->unlock_for_read();
-    if (result == NULL)
-    {
-        result = new matrix(size);
-
-        result->set(0, 0, get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0)); 
-        for (int i = 0; i < result[0].size(); ++i)
-        {
-            result->set(0,0,get_from_parent_fam_size_to_c(lambda, branch_length, 0, i));
-        }
-        for (int s = 1; s < size; s++) {
-            for (int c = 0; c < size; c++) {
-                // result[s][c] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, s, c);
-                result->set(s, c, get_from_parent_fam_size_to_c(lambda, branch_length, s, c));
-                // cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
-            }
-        }
-
-        if (rw_lock) rw_lock->lock_for_write(); 
-        _matrix_cache[key] = result;
-        if (rw_lock) rw_lock->unlock_for_write();
-    }
-    return *result;
-#endif
-}
 
 //! Take in a matrix and a vector, compute product, return it
 /*!
@@ -310,14 +149,14 @@ private:
 	int s_max_family_size; //!< parent max size (this is an index)
 	int c_min_family_size; //!< child min size (this is an index)
 	int c_max_family_size; //!< child max size (this is an index)
-    probability_calculator& _calc;
+    matrix_cache& _calc;
 
 public:
     //! Constructor.
     /*!
       Used once per internal node by likelihood_computer().
     */
-	child_calculator(int probabilities_vec_size, lambda* lambda, probability_calculator& calc, map<clade *, vector<double> >& probabilities, int s_min, int s_max, int c_min, int c_max) : _probabilities_vec_size(probabilities_vec_size), _lambda(lambda), _probabilities(probabilities),
+	child_calculator(int probabilities_vec_size, lambda* lambda, matrix_cache& calc, map<clade *, vector<double> >& probabilities, int s_min, int s_max, int c_min, int c_max) : _probabilities_vec_size(probabilities_vec_size), _lambda(lambda), _probabilities(probabilities),
 		s_min_family_size(s_min), s_max_family_size(s_max), c_min_family_size(c_min), c_max_family_size(c_max),
         _calc(calc) {}
 	
@@ -432,7 +271,7 @@ std::vector<int> * weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_
 }
 /* END: Weighted draw from vector */
 
-std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, double lambda, probability_calculator *calc)
+std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, double lambda, matrix_cache *calc)
 {
 	vector<trial *> simulation = simulate_families_from_root_size(p_tree, number_of_simulations, root_family_size, max_family_size, lambda);
 	cout << "Simulation yielded " << simulation.size() << " trials" << endl;
@@ -452,7 +291,7 @@ std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simula
 
 std::vector<std::vector<double> > get_conditional_distribution_matrix(clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, double lambda)
 {
-	probability_calculator calc;
+	matrix_cache calc;
 	cout << "get_conditional_distribution_matrix" << endl;
 	std::vector<std::vector<double> > matrix(root_family_size);
 	for (int i = 0; i < root_family_size; ++i)

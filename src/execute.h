@@ -5,7 +5,7 @@
 
 struct input_parameters;
 class lambda;
-class probability_calculator;
+class matrix_cache;
 class model;
 class root_equilibrium_distribution;
 
@@ -25,12 +25,12 @@ public:
     //! Read in single or multiple lambda (-l or -m)
     lambda * read_lambda(const input_parameters &my_input_parameters, clade *p_lambda_tree);
 
-    void compute(std::vector<model *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size, probability_calculator& calc);
+    void compute(std::vector<model *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size);
 
     void simulate(std::vector<model *>& models, const input_parameters &my_input_parameters);
 
-    void reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, probability_calculator& calculator);
+    void reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, matrix_cache& calculator);
     void estimate_lambda(model * p_model, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
-        std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size, probability_calculator& calculator);
+        std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size, matrix_cache& calculator);
 };
 #endif /* EXECUTE_H */

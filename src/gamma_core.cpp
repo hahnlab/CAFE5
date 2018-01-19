@@ -8,6 +8,7 @@
 #include "process.h"
 #include "root_equilibrium_distribution.h"
 #include "reconstruction_process.h"
+#include "matrix_cache.h"
 
 
 gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
@@ -109,7 +110,7 @@ std::vector<double> gamma_model::get_posterior_probabilities(std::vector<double>
 }
 
 //! Infer bundle
-double gamma_model::infer_processes(probability_calculator& calc, root_equilibrium_distribution *prior) {
+double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
 
     if (!_p_lambda->is_valid())
     {
@@ -129,21 +130,14 @@ double gamma_model::infer_processes(probability_calculator& calc, root_equilibri
     vector<double> all_bundles_likelihood(_family_bundles.size());
 
     bool success = true;
-    calc.thread_cache();
+    matrix_cache calc;
     branch_length_finder lengths;
     _p_tree->apply_prefix_order(lengths);
     //_lambda_multipliers
-    auto sl = dynamic_cast<single_lambda *>(_p_lambda);
-    if (sl)
+    for (auto multiplier : _lambda_multipliers)
     {
-        double lambda = sl->get_single_lambda();
-        for (auto branch_length : lengths.result())
-        {
-            for (auto multiplier : _lambda_multipliers)
-            {
-                calc.get_matrix(_max_family_size+1, branch_length, lambda * multiplier);
-            }
-        }
+        unique_ptr<lambda> mult(_p_lambda->multiply(multiplier));
+        calc.precalculate_matrices(_max_family_size + 1, mult.get(), lengths.result());
     }
 
     vector<vector<family_info_stash>> pruning_results(_family_bundles.size());
@@ -175,7 +169,7 @@ double gamma_model::infer_processes(probability_calculator& calc, root_equilibri
             success = false;
         }
     }
-    calc.unthread_cache();
+
     if (!success)
         return -log(0);
 
@@ -223,9 +217,18 @@ void gamma_model::set_current_guesses(double *guesses)
     cout << "Attempting lambda: " << *_p_lambda << ", alpha: " << alpha << std::endl;
 }
 
-void gamma_model::reconstruct_ancestral_states(probability_calculator *calc, root_equilibrium_distribution*prior)
+void gamma_model::reconstruct_ancestral_states(matrix_cache *calc, root_equilibrium_distribution*prior)
 {
-    cout << "Reconstructing ancestral states using lambda = " << *_p_lambda << ", alpha = " << _alpha << endl;
+    cout << "Gamma: reconstructing ancestral states - lambda = " << *_p_lambda << ", alpha = " << _alpha << endl;
+
+    branch_length_finder lengths;
+    _p_tree->apply_prefix_order(lengths);
+    for (auto multiplier : _lambda_multipliers)
+    {
+        unique_ptr<lambda> mult(_p_lambda->multiply(multiplier));
+        calc->precalculate_matrices(_max_family_size + 1, mult.get(), lengths.result());
+    }
+
     for (auto& bundle : _family_bundles)
     {
         bundle.set_values(calc, prior);

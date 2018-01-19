@@ -94,7 +94,7 @@ public:
     //! Inference methods
     virtual void start_inference_processes() = 0;
     
-    virtual double infer_processes(probability_calculator& calc, root_equilibrium_distribution *prior) = 0;  // return vector of likelihoods
+    virtual double infer_processes(root_equilibrium_distribution *prior) = 0;  // return vector of likelihoods
     
     //! Printing methods
     void print_parameter_values();
@@ -107,7 +107,7 @@ public:
     virtual std::vector<double> initial_guesses() = 0;
     virtual void set_current_guesses(double *guesses) = 0;
 
-    virtual void reconstruct_ancestral_states(probability_calculator *p_calc, root_equilibrium_distribution* p_prior) = 0;
+    virtual void reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
     virtual void print_reconstructed_states(std::ostream& ost) = 0;
 
     void print_node_depths(std::ostream& ost);

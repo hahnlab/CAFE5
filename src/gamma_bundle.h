@@ -4,7 +4,7 @@
 class inference_process;
 class reconstruction_process;
 class root_equilibrium_distribution;
-class probability_calculator;
+class matrix_cache;
 class lambda;
 class clade;
 class gene_family;
@@ -51,13 +51,13 @@ public:
     void clear();
 
     std::vector<double> prune(const std::vector<double>& gamma_cat_probs, root_equilibrium_distribution *eq_freq,
-        probability_calculator& calc);
+        matrix_cache& calc);
 
     void reconstruct(const std::vector<double>& _gamma_cat_probs);
 
     double get_lambda_likelihood(int family_id);
 
-    void set_values(probability_calculator *, root_equilibrium_distribution*);
+    void set_values(matrix_cache *, root_equilibrium_distribution*);
 
     void print_reconstruction(std::ostream& ost, std::vector<clade *> order);
 
