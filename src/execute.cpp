@@ -39,6 +39,9 @@ void execute::read_gene_family_data(const input_parameters &my_input_parameters,
     // cout << "Max root family size is: " << max_root_family_size << endl;
 }
 
+//! Read user provided error model file (whose path is stored in input_parameters instance)
+error_model execute::read_error_model(const input_parameters &my_input_parameters) {} // GOTTA WRITE THIS!
+
 //! Read user provided phylogenetic tree (whose path is stored in input_parameters instance)
 clade * execute::read_input_tree(const input_parameters &my_input_parameters) {    
     return read_tree(my_input_parameters.tree_file_path, false);

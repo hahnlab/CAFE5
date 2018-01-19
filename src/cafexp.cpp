@@ -125,6 +125,9 @@ int cafexp(int argc, char *const argv[]) {
             case 'i':
                 my_input_parameters.input_file_path = optarg;
                 break;
+            case 'e':
+                my_input_parameters.error_model_file_path = optarg;
+                break;
             case 'o':
                 my_input_parameters.output_prefix = optarg;
                 break;

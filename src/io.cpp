@@ -10,6 +10,7 @@ using namespace std;
 
 struct option longopts[] = {
   { "infile", required_argument, NULL, 'i' },
+  { "error_model", required_argument, NULL, 'e' },
   { "output_prefix", required_argument, NULL, 'o'}, 
   { "tree", required_argument, NULL, 't' },
   { "fixed_lambda", required_argument, NULL, 'l' },
@@ -21,7 +22,6 @@ struct option longopts[] = {
   { "poisson", optional_argument, NULL, 'p' },
   { "simulate", optional_argument, NULL, 's' },
   { "chisquare_compare", required_argument, NULL, 'r' },
-  //  { "nsims", optional_argument, NULL, 'n' },
   { "log", optional_argument, NULL, 'g'},
   { 0, 0, 0, 0 }
 };
@@ -57,8 +57,6 @@ void input_parameters::check_input() {
 
     }
 }
-
-
 
 /* START: Reading in tree data */
 //! Read tree from user-provided tree file
@@ -217,6 +215,16 @@ void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gen
     }
 }
 /* END: Reading in gene family data */
+
+/* START: Reading in error model data */
+void error_model::set_probs(int fam_size, std::vector<double> probs_deviation) {
+    _error_dists[fam_size] = probs_deviation; // fam_size starts at 0 at tips, so fam_size = index of vector
+}
+
+std::vector<double> error_model::get_probs(int fam_size) const {
+    return _error_dists[fam_size];
+}
+/* END: Reading in error model data */
 
 //! Populate famdist_map with root family distribution read from famdist_file_path
 /*!

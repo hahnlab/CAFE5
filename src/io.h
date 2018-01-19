@@ -29,6 +29,7 @@ void print_simulation(std::vector<vector<trial *> >  &sim, std::ostream& ost);
 struct input_parameters {
 public:	
     std::string input_file_path;
+    std::string error_model_file_path;
     std::string output_prefix;
     std::string tree_file_path;
     std::string lambda_tree_file_path;
@@ -87,4 +88,19 @@ public:
   int get_species_size(std::string species) const;
 };
 /* END: Reading in gene family data */
+
+/* START: Reading in error model file */
+class error_model {
+private:
+  std::vector<std::vector<double> > _error_dists; //!< Each vector element will be a gene family size; the vector of doubles inside (e.g., 0.1 0.8 0.1) will be the probs of deviating from the true value
+  
+  std::vector<int> _deviations; //!< Deviations from the true gene family (e.g., -1 0 1)
+  
+public:
+  //! Set deviation probability vector for a certain family size
+  void set_probs(int fam_size, std::vector<double>);
+    
+  //! Get deviation probability vector for a certain family size
+  std::vector<double> get_probs(int fam_size) const;
+};
 #endif
