@@ -54,7 +54,6 @@ void input_parameters::check_input() {
 
     if (fixed_alpha != 0.0 && n_gamma_cats == 1) {
         throw runtime_error("You have to specify both alpha and # of gamma categories to infer parameter values. Exiting...");
-
     }
 }
 
@@ -217,12 +216,70 @@ void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gen
 /* END: Reading in gene family data */
 
 /* START: Reading in error model data */
+void error_model::set_max_cnt(int max_cnt) {
+    _max_cnt = max_cnt;
+}
+
+void error_model::set_deviations(std::vector<std::string> deviations) {
+    for (std::vector<std::string>::iterator it = deviations.begin(); it != deviations.end(); ++it) {
+        _deviations.push_back(std::stoi(*it));
+    }
+    
+    _n_deviations = _deviations.size();
+
+    for (int i = 0; i < _max_cnt; ++i) {
+        std::vector<double> devs(_n_deviations, 0.0); // filling deviation probs with 0.0 for all family sizes
+        _error_dists.push_back(devs);
+    }
+}
+
 void error_model::set_probs(int fam_size, std::vector<double> probs_deviation) {
     _error_dists[fam_size] = probs_deviation; // fam_size starts at 0 at tips, so fam_size = index of vector
 }
 
 std::vector<double> error_model::get_probs(int fam_size) const {
     return _error_dists[fam_size];
+}
+
+//! Read user-provided error model
+/*!
+  This function is called by execute::read_error_model, which is itself called by CAFExp's main function when "--error_model"/"-e" is specified  
+*/
+void read_error_model_file(std::istream& error_model_file, error_model *p_error_model) {
+    std::string line;
+    std::string max_header = "max";
+    std::string cnt_diff_header = "cnt";
+    
+    while (getline(error_model_file, line)) {
+        std::vector<std::string> tokens;
+        
+        // maxcnt line
+        if (strncmp(line.c_str(), max_header.c_str(), max_header.size()) == 0) { 
+            tokens = tokenize_str(line, ':');
+            tokens[1].erase(remove_if(tokens[1].begin(), tokens[1].end(), ::isspace), tokens[1].end()); // removing whitespace
+            int max_cnt = std::stoi(tokens[1]);
+            p_error_model->set_max_cnt(max_cnt);
+        }
+        
+        // cntdiff line
+        if (strncmp(line.c_str(), cnt_diff_header.c_str(), cnt_diff_header.size()) == 0) { 
+            tokens = tokenize_str(line, ' ');
+            
+            if (tokens.size() % 2 != 0) { 
+                throw std::runtime_error("Number of different count differences in the error model (including 0) is not an odd number. Exiting...");
+            }
+            
+            std::vector<std::string> cnt_diffs(tokens.begin()+1, tokens.end());
+            
+//            cout << "Count diffs are" << endl;
+//            for (auto it = cnt_diffs.begin(); it != cnt_diffs.end(); ++it) {
+//                cout << *it << " ";
+//            }
+//            cout << endl;
+            p_error_model->set_deviations(cnt_diffs);
+        }
+    }
+        // std::vector<std::string> tokens = tokenize_str(line, '\t'); 
 }
 /* END: Reading in error model data */
 

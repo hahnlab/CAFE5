@@ -16,11 +16,15 @@ extern struct option longopts[];
 
 class clade;
 
+class error_model;
+
 clade *read_tree(std::string tree_file_path, bool lambda_tree);
 
 map<int, int> *read_rootdist(std::string famdist_file_path);
 
 void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gene_family> *p_gene_families);
+
+void read_error_model_file(std::istream& error_model_file, error_model *p_error_model);
 
 /* START: Printing functions for simulation engine */
 void print_simulation(std::vector<vector<trial *> >  &sim, std::ostream& ost);
@@ -92,11 +96,21 @@ public:
 /* START: Reading in error model file */
 class error_model {
 private:
-  std::vector<std::vector<double> > _error_dists; //!< Each vector element will be a gene family size; the vector of doubles inside (e.g., 0.1 0.8 0.1) will be the probs of deviating from the true value
-  
+  int _max_cnt;  
+    
   std::vector<int> _deviations; //!< Deviations from the true gene family (e.g., -1 0 1)
   
+  int _n_deviations;
+  
+  std::vector<std::vector<double> > _error_dists; //!< Each vector element will be a gene family size; the vector of doubles inside (e.g., 0.1 0.8 0.1) will be the probs of deviating from the true value
+  
 public:
+  //! Set max family size for which deviations apply
+  void set_max_cnt(int max_cnt);
+  
+  //! Set deviations
+  void set_deviations(std::vector<std::string> deviations);
+  
   //! Set deviation probability vector for a certain family size
   void set_probs(int fam_size, std::vector<double>);
     

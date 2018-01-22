@@ -15,7 +15,7 @@ public:
     void read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size, clade *p_tree, std::vector<gene_family> *p_gene_families);
     
     //! Read in error model file
-    error_model read_error_model(const input_parameters &my_input_parameters);
+    void read_error_model(const input_parameters &my_input_parameters, error_model *p_error_model);
     
     //! Read in phylogenetic tree data
     clade * read_input_tree(const input_parameters &my_input_parameters);
