@@ -9,7 +9,7 @@
 #include "root_equilibrium_distribution.h"
 #include "reconstruction_process.h"
 #include "matrix_cache.h"
-
+#include "gamma_bundle.h"
 
 gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
     int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map) :
@@ -27,9 +27,11 @@ gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_famil
 
 gamma_model::~gamma_model()
 {
-    for (size_t i = 0; i < _family_bundles.size(); ++i)
-        _family_bundles[i].clear();
-    _family_bundles.clear();
+    for (auto f : _family_bundles)
+    {
+        f->clear();
+        delete f;
+    }
 }
 
 void gamma_model::print_results(std::ostream& ost)
@@ -72,7 +74,7 @@ void gamma_model::start_inference_processes() {
     for (auto i = _p_gene_families->begin(); i != _p_gene_families->end(); ++i)
     {
         factory.set_gene_family(&(*i));
-        _family_bundles.push_back(gamma_bundle(factory, _lambda_multipliers));
+        _family_bundles.push_back(new gamma_bundle(factory, _lambda_multipliers));
     }
 }
 
@@ -143,10 +145,10 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     vector<vector<family_info_stash>> pruning_results(_family_bundles.size());
 #pragma omp parallel for
     for (int i = 0; i < _family_bundles.size(); ++i) {
-        gamma_bundle& bundle = _family_bundles[i];
+        gamma_bundle* bundle = _family_bundles[i];
 
         vector<double> cat_likelihoods;
-        if (bundle.prune(_gamma_cat_probs, prior, calc, cat_likelihoods))
+        if (bundle->prune(_gamma_cat_probs, prior, calc, cat_likelihoods))
         {
             double family_likelihood = accumulate(cat_likelihoods.begin(), cat_likelihoods.end(), 0.0);
 
@@ -155,7 +157,7 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
             pruning_results[i].resize(cat_likelihoods.size());
             for (size_t k = 0; k < cat_likelihoods.size(); ++k)
             {
-                pruning_results[i][k] = family_info_stash(i, bundle.get_lambda_likelihood(k), cat_likelihoods[k],
+                pruning_results[i][k] = family_info_stash(i, bundle->get_lambda_likelihood(k), cat_likelihoods[k],
                     family_likelihood, posterior_probabilities[k], posterior_probabilities[k] > 0.95);
                 //            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
             }
@@ -228,10 +230,10 @@ void gamma_model::reconstruct_ancestral_states(matrix_cache *calc, root_equilibr
         calc->precalculate_matrices(_max_family_size + 1, mult.get(), lengths.result());
     }
 
-    for (auto& bundle : _family_bundles)
+    for (auto bundle : _family_bundles)
     {
-        bundle.set_values(calc, prior);
-        bundle.reconstruct(_gamma_cat_probs);
+        bundle->set_values(calc, prior);
+        bundle->reconstruct(_gamma_cat_probs);
     }
 }
 
@@ -247,14 +249,14 @@ void gamma_model::print_reconstructed_states(std::ostream& ost)
     ost << endl;
 
     auto rec = _family_bundles[0];
-    auto order = rec.get_taxa();
+    auto order = rec->get_taxa();
     for (auto& it : order) {
         ost << "#" << it->get_taxon_name() << "\n";
     }
 
-    for (auto& bundle : _family_bundles)
+    for (auto bundle : _family_bundles)
     {
-        bundle.print_reconstruction(ost, order);
+        bundle->print_reconstruction(ost, order);
     }
 }
 

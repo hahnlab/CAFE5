@@ -1,7 +1,7 @@
 #include "core.h"
-#include "gamma_bundle.h"
 
 class inference_process_factory;
+class gamma_bundle;
 
 class gamma_model : public model {
 private:
@@ -14,7 +14,7 @@ private:
 
     double _alpha;
 
-    vector<gamma_bundle> _family_bundles; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
+    vector<gamma_bundle *> _family_bundles; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
                                              //! Basic constructor
 
     std::vector<double> get_posterior_probabilities(std::vector<double> cat_likelihoods);
