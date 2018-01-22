@@ -47,11 +47,12 @@ class gamma_bundle {
 
 public:
     gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers);
+    ~gamma_bundle();
 
     void clear();
 
-    std::vector<double> prune(const std::vector<double>& gamma_cat_probs, root_equilibrium_distribution *eq_freq,
-        matrix_cache& calc);
+    bool prune(const std::vector<double>& gamma_cat_probs, root_equilibrium_distribution *eq_freq,
+        matrix_cache& calc, std::vector<double>& cat_likelihoods);
 
     void reconstruct(const std::vector<double>& _gamma_cat_probs);
 

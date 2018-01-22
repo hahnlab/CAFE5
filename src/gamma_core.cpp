@@ -145,10 +145,9 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     for (int i = 0; i < _family_bundles.size(); ++i) {
         gamma_bundle& bundle = _family_bundles[i];
 
-        try
+        vector<double> cat_likelihoods;
+        if (bundle.prune(_gamma_cat_probs, prior, calc, cat_likelihoods))
         {
-            vector<double> cat_likelihoods = bundle.prune(_gamma_cat_probs, prior, calc);
-
             double family_likelihood = accumulate(cat_likelihoods.begin(), cat_likelihoods.end(), 0.0);
 
             vector<double> posterior_probabilities = get_posterior_probabilities(cat_likelihoods);
@@ -162,7 +161,7 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
             }
             all_bundles_likelihood[i] = std::log(family_likelihood);
         }
-        catch (runtime_error& ex)
+        else
         {
             // we got here because one of the gamma categories was saturated - reject this 
 #pragma omp_critical

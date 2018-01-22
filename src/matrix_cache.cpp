@@ -13,7 +13,9 @@ bool matrix::is_zero() const
 matrix_cache::~matrix_cache()
 {
     for (auto m : _matrix_cache)
+    {
         delete m.second;
+    }
 }
 
 /* START: Likelihood computation ---------------------- */

@@ -356,6 +356,70 @@ TEST(Inference, reconstruction_process_internal_node)
     DOUBLES_EQUAL(0.0033465, L[3], 0.0001);
 }
 
+TEST(Inference, gamma_bundle_prune)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    gene_family fam;
+    fam.set_species_size("A", 3);
+    fam.set_species_size("B", 6);
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    single_lambda lambda(0.005);
+    inference_process_factory factory(cout, &lambda, p_tree.get(), 10, 8, {2,2,2});
+    factory.set_gene_family(&fam);
+    gamma_bundle bundle(factory, { 0.1, 0.5 });
+    uniform_distribution dist;
+    dist.initialize({ 1,2,3,4,5,4,3,2,1 });
+    matrix_cache cache;
+    multiple_lambda ml(map<string, int>(), {0.0005, 0.0025});
+    cache.precalculate_matrices(11, &ml, set<double>{1, 3, 7});
+    vector<double> cat_likelihoods;
+    CHECK(bundle.prune({ 0.01, 0.05 }, &dist, cache, cat_likelihoods)); 
+
+    LONGS_EQUAL(2, cat_likelihoods.size());
+    DOUBLES_EQUAL(-23.3728, log(cat_likelihoods[0]), 0.0001);
+    DOUBLES_EQUAL(-17.0086, log(cat_likelihoods[1]), 0.0001);
+
+}
+
+TEST(Inference, gamma_bundle_prune_returns_false_if_saturated)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    gene_family fam;
+    fam.set_species_size("A", 3);
+    fam.set_species_size("B", 6);
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    single_lambda lambda(0.9);
+    inference_process_factory factory(cout, &lambda, p_tree.get(), 10, 8, { 2,2,2 });
+    factory.set_gene_family(&fam);
+    gamma_bundle bundle(factory, { 0.1, 0.5 });
+    uniform_distribution dist;
+    dist.initialize({ 1,2,3,4,5,4,3,2,1 });
+    matrix_cache cache;
+    multiple_lambda ml(map<string, int>(), { 0.09, 0.45 });
+    cache.precalculate_matrices(11, &ml, set<double>{1, 3, 7});
+    vector<double> cat_likelihoods;
+
+    CHECK(!bundle.prune({ 0.01, 0.05 }, &dist, cache, cat_likelihoods));
+}
+
+TEST(Inference, matrix_cache_key_handles_floating_point_imprecision)
+{
+    set<matrix_cache_key> keys;
+    double t = 0.0;
+    for (int i = 0; i < 31; i++)
+    {
+        t += 0.1;
+        matrix_cache_key key(1, t, 0.3);
+        keys.insert(key);
+    }
+    LONGS_EQUAL(31, keys.size());
+
+    matrix_cache_key key(1, 3.0, 0.3);
+    LONGS_EQUAL(1, keys.count(key));
+}
+
 int main(int ac, char** av)
 {
     return CommandLineTestRunner::RunAllTests(ac, av);

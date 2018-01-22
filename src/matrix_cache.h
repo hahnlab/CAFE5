@@ -39,22 +39,23 @@ public:
 
 
 class matrix_cache_key {
-    double _lambda;
-    double _branch_length;
+    long _lambda;
+    long _branch_length;
     size_t _size;
 public:
     matrix_cache_key(int size, double some_lambda, double some_branch_length) :
         _size(size),
-        _lambda(some_lambda),
-        _branch_length(some_branch_length) { }
+        _lambda(long(some_lambda * 1000000000)),    // keep 9 significant digits
+        _branch_length(long(some_branch_length * 1000)) {} // keep 3 significant digits
+
     bool operator<(const matrix_cache_key &o) const {
         return std::tie(_size, _branch_length, _lambda) < std::tie(o._size, o._branch_length, o._lambda);
     }
     double lambda() const {
-        return _lambda;
+        return double(_lambda) / 1000000000.0;
     }
     double branch_length() const {
-        return _branch_length;
+        return double(_branch_length) / 1000.0;
     }
 };
 
