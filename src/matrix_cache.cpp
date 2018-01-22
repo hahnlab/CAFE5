@@ -76,7 +76,7 @@ matrix matrix_cache::get_matrix(int size, double branch_length, double lambda) {
 #endif
 }
 
-void matrix_cache::precalculate_matrices(int size, lambda* p_lambda, const std::set<double>& branch_lengths)
+vector<double> get_lambda_values(lambda *p_lambda)
 {
     vector<double> lambdas;
     auto sl = dynamic_cast<single_lambda *>(p_lambda);
@@ -89,7 +89,11 @@ void matrix_cache::precalculate_matrices(int size, lambda* p_lambda, const std::
         auto ml = dynamic_cast<multiple_lambda *>(p_lambda);
         lambdas = ml->get_lambdas();
     }
+    return lambdas;
+}
 
+void matrix_cache::precalculate_matrices(int size, const std::vector<double>& lambdas, const std::set<double>& branch_lengths)
+{
     // build a list of required matrices
     vector<matrix_cache_key> keys;
     for (double lambda : lambdas)

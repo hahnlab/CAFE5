@@ -10,6 +10,8 @@
 #include "src/base_model.h"
 #include "src/reconstruction_process.h"
 #include "src/matrix_cache.h"
+#include "src/gamma_bundle.h"
+#include "src/probability.h"
 
 TEST_GROUP(GeneFamilies)
 {
@@ -208,7 +210,7 @@ TEST(Probability, probability_of_matrix)
     matrix_cache calc;
     single_lambda lambda(0.05);
     std::set<double> branch_lengths{ 5 };
-    calc.precalculate_matrices(5, &lambda, branch_lengths);
+    calc.precalculate_matrices(5, get_lambda_values(&lambda), branch_lengths);
     matrix actual = calc.get_matrix(5, 5, lambda.get_single_lambda());
     matrix expected(5);
     double values[5][5] = {
@@ -272,7 +274,7 @@ TEST(Inference, base_model_reconstruction)
     base_model model(&sl, p_tree.get(), &families, 5, 5, NULL);
 
     matrix_cache calc;
-    calc.precalculate_matrices(6, &sl, set<double>({ 1 }));
+    calc.precalculate_matrices(6, get_lambda_values(&sl), set<double>({ 1 }));
     uniform_distribution dist;
     dist.initialize({ 1,2,3,4,5,6 });
     model.reconstruct_ancestral_states(&calc, &dist);
@@ -320,7 +322,7 @@ TEST(Inference, precalculate_matrices_calculates_all_lambdas_all_branchlengths)
     matrix_cache calc;
     std::map<std::string, int> m;
     multiple_lambda lambda(m, vector<double>({ .1, .2, .3, .4 }));
-    calc.precalculate_matrices(5, &lambda, set<double>({ 1,2,3 }));
+    calc.precalculate_matrices(5, get_lambda_values(&lambda), set<double>({ 1,2,3 }));
     LONGS_EQUAL(12, calc.get_cache_size());
 }
 
@@ -338,7 +340,7 @@ TEST(Inference, reconstruction_process_internal_node)
     unique_ptr<clade> p_tree(parser.parse_newick());
     unique_ptr<lambda> m(s_lambda.multiply(multiplier));
     matrix_cache calc;
-    calc.precalculate_matrices(4, m.get(), set<double>({ 1, 3, 7, 11, 17, 23 }));
+    calc.precalculate_matrices(4, get_lambda_values(m.get()), set<double>({ 1, 3, 7, 11, 17, 23 }));
     reconstruction_process process(cout, &s_lambda, multiplier, NULL, 3, 0, rootdist, &fam, &calc, NULL);
 
     process(p_tree->find_descendant("A"));
@@ -372,7 +374,7 @@ TEST(Inference, gamma_bundle_prune)
     dist.initialize({ 1,2,3,4,5,4,3,2,1 });
     matrix_cache cache;
     multiple_lambda ml(map<string, int>(), {0.0005, 0.0025});
-    cache.precalculate_matrices(11, &ml, set<double>{1, 3, 7});
+    cache.precalculate_matrices(11, get_lambda_values(&ml), set<double>{1, 3, 7});
     vector<double> cat_likelihoods;
     CHECK(bundle.prune({ 0.01, 0.05 }, &dist, cache, cat_likelihoods)); 
 
@@ -398,7 +400,7 @@ TEST(Inference, gamma_bundle_prune_returns_false_if_saturated)
     dist.initialize({ 1,2,3,4,5,4,3,2,1 });
     matrix_cache cache;
     multiple_lambda ml(map<string, int>(), { 0.09, 0.45 });
-    cache.precalculate_matrices(11, &ml, set<double>{1, 3, 7});
+    cache.precalculate_matrices(11, get_lambda_values(&ml), set<double>{1, 3, 7});
     vector<double> cat_likelihoods;
 
     CHECK(!bundle.prune({ 0.01, 0.05 }, &dist, cache, cat_likelihoods));
@@ -418,6 +420,17 @@ TEST(Inference, matrix_cache_key_handles_floating_point_imprecision)
 
     matrix_cache_key key(1, 3.0, 0.3);
     LONGS_EQUAL(1, keys.count(key));
+}
+
+TEST(Inference, birthdeath_rate_with_log_alpha)
+{
+    // alpha and coeff are derived values from lambda and t
+    // (alpha = lambda*t / 1 + lambda*t, coeff = 1 - 2 * alpha);
+    DOUBLES_EQUAL(-1.55455, log(birthdeath_rate_with_log_alpha(46, 45, -3.672556, 0.949177)), 0.00001);
+    DOUBLES_EQUAL(-2.20436, log(birthdeath_rate_with_log_alpha(44, 46, -2.617970, 0.854098)), 0.00001);
+    DOUBLES_EQUAL(-2.39974, log(birthdeath_rate_with_log_alpha(43, 43, -1.686354, 0.629613)), 0.00001);
+    DOUBLES_EQUAL(-2.44301, log(birthdeath_rate_with_log_alpha(43, 44, -1.686354, 0.629613)), 0.00001);
+    DOUBLES_EQUAL(-1.58253, log(birthdeath_rate_with_log_alpha(13, 14, -2.617970, 0.854098)), 0.00001);
 }
 
 int main(int ac, char** av)

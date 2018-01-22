@@ -139,7 +139,7 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     for (auto multiplier : _lambda_multipliers)
     {
         unique_ptr<lambda> mult(_p_lambda->multiply(multiplier));
-        calc.precalculate_matrices(_max_family_size + 1, mult.get(), lengths.result());
+        calc.precalculate_matrices(_max_family_size + 1, get_lambda_values(mult.get()), lengths.result());
     }
 
     vector<vector<family_info_stash>> pruning_results(_family_bundles.size());
@@ -224,11 +224,17 @@ void gamma_model::reconstruct_ancestral_states(matrix_cache *calc, root_equilibr
 
     branch_length_finder lengths;
     _p_tree->apply_prefix_order(lengths);
-    for (auto multiplier : _lambda_multipliers)
+    auto values = get_lambda_values(_p_lambda);
+    vector<double> all;
+    for (double multiplier : _lambda_multipliers)
     {
-        unique_ptr<lambda> mult(_p_lambda->multiply(multiplier));
-        calc->precalculate_matrices(_max_family_size + 1, mult.get(), lengths.result());
+        for (double lambda : values)
+        {
+            all.push_back(lambda*multiplier);
+        }
     }
+
+    calc->precalculate_matrices(_max_family_size + 1, all, lengths.result());
 
 #pragma omp parallel for
     for (size_t i = 0; i<_family_bundles.size(); ++i)

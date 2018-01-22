@@ -69,7 +69,7 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
     _p_tree->apply_prefix_order(lengths);
 
     matrix_cache calc;
-    calc.precalculate_matrices(_max_family_size + 1, _p_lambda, lengths.result());
+    calc.precalculate_matrices(_max_family_size + 1, get_lambda_values(_p_lambda), lengths.result());
     // prune all the families with the same lambda
 #pragma omp parallel for
 
@@ -142,7 +142,7 @@ void base_model::reconstruct_ancestral_states(matrix_cache *p_calc, root_equilib
 
     branch_length_finder lengths;
     _p_tree->apply_prefix_order(lengths);
-    p_calc->precalculate_matrices(_max_family_size + 1, _p_lambda, lengths.result());
+    p_calc->precalculate_matrices(_max_family_size + 1, get_lambda_values(_p_lambda), lengths.result());
     cout << "Base: reconstructing ancestral states - lambda = " << *_p_lambda << endl;
     for (auto p : _rec_processes)
     {

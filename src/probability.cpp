@@ -47,7 +47,6 @@ double unifrnd() {
 
 double chooseln(double n, double r)
 {
-
   if (r == 0 || (n == 0 && r == 0)) return 0;
   else if (n <= 0 || r <= 0) return log(0);
   return lgamma(n + 1) - lgamma(r + 1) - lgamma(n - r + 1);
@@ -57,23 +56,41 @@ double chooseln(double n, double r)
 
 /* START: Birth-death model components --------------------- */
 
-/* Eqn. (1) in 2005 paper. Assumes u = lambda */
+/* Eqn. (1) in 2005 paper. Assumes u = lambda 
+  alpha should be lambda*t / 1+lambda*t
+  coeff = 1 - 2 * alpha;
+*/
+
 double birthdeath_rate_with_log_alpha(int s, int c, double log_alpha, double coeff)
 {
+  const int m = std::min(c, s);
 
-  int m = std::min(c, s);
-  double lastterm = 1;
-  double p = 0.0;
-  int s_add_c = s + c;
-  int s_add_c_sub_1 = s_add_c - 1;
-  int s_sub_1 = s - 1;
-
+  vector<double> vx1(m + 1);
   for (int j = 0; j <= m; j++) {
-    double t = chooseln(s, j) + chooseln(s_add_c_sub_1 - j, s_sub_1) + (s_add_c - 2 * j)*log_alpha;
-    p += (exp(t) * lastterm); // Note that t is in log scale, therefore we need to do exp(t) to match Eqn. (1)
-    lastterm *= coeff; // equivalent of ^j in Eqn. (1)
+      vx1[j] = chooseln(s, j);
   }
 
+  vector<double> vx2(m + 1);
+  for (int j = 0; j <= m; j++) {
+      vx2[j] = (s + c - 2 * j)*log_alpha;
+  }
+
+  vector<double> vx3(m + 1);
+  for (int j = 0; j <= m; j++) {
+      vx3[j] = chooseln((s + c - 1) - j, s - 1);
+  }
+
+  vector<double> vt(m + 1);
+  for (int j = 0; j <= m; j++) {
+      vt[j] = vx1[j] + vx2[j] + vx3[j];
+  }
+
+  double lastterm = 1;
+  double p = 0.0;
+  for (int j = 0; j <= m; j++) {
+      p += (exp(vt[j]) * lastterm); // Note that t is in log scale, therefore we need to do exp(t) to match Eqn. (1)
+      lastterm *= coeff; // equivalent of ^j in Eqn. (1)
+  }
   return std::max(std::min(p, 1.0), 0.0);
 }
 

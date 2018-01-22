@@ -59,6 +59,7 @@ public:
     }
 };
 
+std::vector<double> get_lambda_values(lambda *p_lambda);
 
 //! Computation of the probabilities of moving from a family size (parent) to another (child)
 /*!
@@ -71,7 +72,7 @@ private:
 public:
     double get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size) const;
     matrix get_matrix(int size, double branch_length, double lambda);
-    void precalculate_matrices(int size, lambda* lambda, const std::set<double>& branch_lengths);
+    void precalculate_matrices(int size, const std::vector<double>& lambdas, const std::set<double>& branch_lengths);
 
     int get_cache_size() const {
         return _matrix_cache.size();
