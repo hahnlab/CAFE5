@@ -230,10 +230,11 @@ void gamma_model::reconstruct_ancestral_states(matrix_cache *calc, root_equilibr
         calc->precalculate_matrices(_max_family_size + 1, mult.get(), lengths.result());
     }
 
-    for (auto bundle : _family_bundles)
+#pragma omp parallel for
+    for (size_t i = 0; i<_family_bundles.size(); ++i)
     {
-        bundle->set_values(calc, prior);
-        bundle->reconstruct(_gamma_cat_probs);
+        _family_bundles[i]->set_values(calc, prior);
+        _family_bundles[i]->reconstruct(_gamma_cat_probs);
     }
 }
 
