@@ -63,34 +63,20 @@ double chooseln(double n, double r)
 
 double birthdeath_rate_with_log_alpha(int s, int c, double log_alpha, double coeff)
 {
-  const int m = std::min(c, s);
+    int m = std::min(c, s);
+    double lastterm = 1;
+    double p = 0.0;
+    int s_add_c = s + c;
+    int s_add_c_sub_1 = s_add_c - 1;
+    int s_sub_1 = s - 1;
 
-  vector<double> vx1(m + 1);
-  for (int j = 0; j <= m; j++) {
-      vx1[j] = chooseln(s, j);
-  }
+    for (int j = 0; j <= m; j++) {
+        double t = chooseln(s, j) + chooseln(s_add_c_sub_1 - j, s_sub_1) + (s_add_c - 2 * j)*log_alpha;
+        p += (exp(t) * lastterm); // Note that t is in log scale, therefore we need to do exp(t) to match Eqn. (1)
+        lastterm *= coeff; // equivalent of ^j in Eqn. (1)
+    }
 
-  vector<double> vx2(m + 1);
-  for (int j = 0; j <= m; j++) {
-      vx2[j] = (s + c - 2 * j)*log_alpha;
-  }
-
-  vector<double> vx3(m + 1);
-  for (int j = 0; j <= m; j++) {
-      vx3[j] = chooseln((s + c - 1) - j, s - 1);
-  }
-
-  vector<double> vt(m + 1);
-  for (int j = 0; j <= m; j++) {
-      vt[j] = vx1[j] + vx2[j] + vx3[j];
-  }
-
-  double lastterm = 1;
-  double p = 0.0;
-  for (int j = 0; j <= m; j++) {
-      p += (exp(vt[j]) * lastterm); // Note that t is in log scale, therefore we need to do exp(t) to match Eqn. (1)
-      lastterm *= coeff; // equivalent of ^j in Eqn. (1)
-  }
+    return std::max(std::min(p, 1.0), 0.0);
   return std::max(std::min(p, 1.0), 0.0);
 }
 
@@ -129,15 +115,15 @@ vector<double> matrix_multiply(const matrix& matrix, const vector<double>& v, in
 	//cout << " " << c_min_family_size << ":" << c_max_family_size << ")" << endl;
 
 	//assert(s_max_family_size - s_min_family_size == c_max_family_size - c_min_family_size);
-	assert(v.size() > c_max_family_size);
+	assert(v.size() > c_max_family_size - c_min_family_size);
 
     vector<double> result(c_max_family_size - c_min_family_size + 1);
 
-	for (int s = s_min_family_size; s < s_max_family_size; s++) {
-        result[s] = 0;
+	for (int s = s_min_family_size; s <= s_max_family_size; s++) {
+        result[s - s_min_family_size] = 0;
     
-        for (int c = c_min_family_size; c < c_max_family_size; c++) {
-            result[s- s_min_family_size] += matrix.get(s, c - c_min_family_size) * v[c - c_min_family_size];
+        for (int c = c_min_family_size; c <= c_max_family_size; c++) {
+            result[s- s_min_family_size] += matrix.get(s, c) * v[c - c_min_family_size];
         }
     }
 

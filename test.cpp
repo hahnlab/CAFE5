@@ -95,7 +95,7 @@ TEST(Inference, infer_processes)
     uniform_distribution frq;
     double multi = core.infer_processes(&frq);
     //core.get_likelihoods();
-    DOUBLES_EQUAL(41.7504, multi, 0.001);
+    DOUBLES_EQUAL(39.9207, multi, 0.001);
     delete p_tree;
 }
 
@@ -379,8 +379,8 @@ TEST(Inference, gamma_bundle_prune)
     CHECK(bundle.prune({ 0.01, 0.05 }, &dist, cache, cat_likelihoods)); 
 
     LONGS_EQUAL(2, cat_likelihoods.size());
-    DOUBLES_EQUAL(-23.3728, log(cat_likelihoods[0]), 0.0001);
-    DOUBLES_EQUAL(-17.0086, log(cat_likelihoods[1]), 0.0001);
+    DOUBLES_EQUAL(-22.5251, log(cat_likelihoods[0]), 0.0001);
+    DOUBLES_EQUAL(-16.1766, log(cat_likelihoods[1]), 0.0001);
 
 }
 
@@ -399,8 +399,7 @@ TEST(Inference, gamma_bundle_prune_returns_false_if_saturated)
     uniform_distribution dist;
     dist.initialize({ 1,2,3,4,5,4,3,2,1 });
     matrix_cache cache;
-    multiple_lambda ml(map<string, int>(), { 0.09, 0.45 });
-    cache.precalculate_matrices(11, get_lambda_values(&ml), set<double>{1, 3, 7});
+    cache.precalculate_matrices(11, { 0.09, 0.45 }, set<double>{1, 3, 7});
     vector<double> cat_likelihoods;
 
     CHECK(!bundle.prune({ 0.01, 0.05 }, &dist, cache, cat_likelihoods));
@@ -431,6 +430,56 @@ TEST(Inference, birthdeath_rate_with_log_alpha)
     DOUBLES_EQUAL(-2.39974, log(birthdeath_rate_with_log_alpha(43, 43, -1.686354, 0.629613)), 0.00001);
     DOUBLES_EQUAL(-2.44301, log(birthdeath_rate_with_log_alpha(43, 44, -1.686354, 0.629613)), 0.00001);
     DOUBLES_EQUAL(-1.58253, log(birthdeath_rate_with_log_alpha(13, 14, -2.617970, 0.854098)), 0.00001);
+}
+
+void build_matrix(matrix& m)
+{
+    m.set(0, 0, 1);
+    m.set(0, 1, 2);
+    m.set(0, 2, 3);
+    m.set(1, 0, 4);
+    m.set(1, 1, 5);
+    m.set(1, 2, 6);
+    m.set(2, 0, 7);
+    m.set(2, 1, 8);
+    m.set(2, 2, 9);
+}
+
+TEST(Probability, matrix_multiply)
+{
+    matrix m1(3);
+    build_matrix(m1);
+    vector<double> m2({ 7, 9, 11 });
+    auto result = matrix_multiply(m1, m2, 0, 2, 0, 2);
+    LONGS_EQUAL(3, result.size());
+
+    DOUBLES_EQUAL(58, result[0], .001);
+    DOUBLES_EQUAL(139, result[1], .001);
+    DOUBLES_EQUAL(220, result[2], .001);
+
+    matrix m3(8);
+    m3.set(3, 3, 1);
+    m3.set(3, 4, 2);
+    m3.set(3, 5, 3);
+    m3.set(4, 3, 4);
+    m3.set(4, 4, 5);
+    m3.set(4, 5, 6);
+    m3.set(5, 3, 7);
+    m3.set(5, 4, 8);
+    m3.set(5, 5, 9);
+
+    result = matrix_multiply(m3, m2, 3, 5, 3, 5);
+    LONGS_EQUAL(3, result.size());
+
+    DOUBLES_EQUAL(58, result[0], .001);
+    DOUBLES_EQUAL(139, result[1], .001);
+    DOUBLES_EQUAL(220, result[2], .001);
+}
+
+TEST(Probability, birthdeath_rate_with_log_alpha)
+{
+    DOUBLES_EQUAL(0.107, birthdeath_rate_with_log_alpha(40, 42, -1.37, 0.5), .001);
+    DOUBLES_EQUAL(0.006, birthdeath_rate_with_log_alpha(41, 34, -1.262, 0.4), .001);
 }
 
 int main(int ac, char** av)
