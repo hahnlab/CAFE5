@@ -16,6 +16,14 @@ AC_SEARCH_LIBS(cblas_dgemm, satlas,
 	[ax_blas_ok=yes;BLAS_LIBS="-lsatlas";AC_DEFINE([HAVE_ATLAS],[1], [Atlas for matrix multiplication])],,
 	[])
 
+if test $ax_blas_ok = no; then
+	unset ac_cv_search_cblas_dgemm
+
+	AC_SEARCH_LIBS(cblas_dgemm, openblas,
+		[ax_blas_ok=yes;BLAS_LIBS="-lopenblas";AC_DEFINE([HAVE_OPENBLAS],[1], [OpenBLAS for matrix multiplication])],,
+		[])
+fi 
+
 if test $ax_blas_ok = yes; then
   save_LIBS="$LIBS"; LIBS="$BLAS_LIBS $LIBS"
   AC_DEFINE([HAVE_BLAS],[1], [If a matrix multiplication library exists])
