@@ -107,12 +107,12 @@ int cafexp(int argc, char *const argv[]) {
     input_parameters my_input_parameters;
     
     clade *p_tree = NULL; // instead of new clade(), o.w. mem leak
-    clade *p_lambda_tree = NULL; 
+    clade *p_lambda_tree = NULL;
     std::vector<gene_family> gene_families;
     matrix_cache calculator; // for computing lks
     map<int, int>* p_rootdist_map = NULL; // for sims
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:o:t:y:n:f:l:m:k:a:s::g::p::r:", longopts, NULL)) != -1 ) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:l:m:k:a:s::g::p::r:", longopts, NULL)) != -1 ) {
     // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -124,6 +124,9 @@ int cafexp(int argc, char *const argv[]) {
         switch (args) {
             case 'i':
                 my_input_parameters.input_file_path = optarg;
+                break;
+            case 'e':
+                my_input_parameters.error_model_file_path = optarg;
                 break;
             case 'o':
                 my_input_parameters.output_prefix = optarg;
@@ -205,10 +208,16 @@ int cafexp(int argc, char *const argv[]) {
 
         /* -i */
         if (!my_input_parameters.input_file_path.empty()) {
-            // Populates (pointer to) vectorr of gene family instances, max_family_size and max_root_family_size (last two passed by reference)
+            // Populates (pointer to) vector of gene family instances, max_family_size and max_root_family_size (last two passed by reference)
             my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size, p_tree, &gene_families);
         }
-            
+        
+        /* -e */
+        if (!my_input_parameters.error_model_file_path.empty()) {
+            error_model *p_error_model = new error_model;
+            my_executer.read_error_model(my_input_parameters, p_error_model);
+        }
+        
         /* -y */
         if (!my_input_parameters.lambda_tree_file_path.empty()) {
             p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);

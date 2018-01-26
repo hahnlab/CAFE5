@@ -21,7 +21,8 @@ void execute::read_gene_family_data(const input_parameters &my_input_parameters,
     
     ifstream input_file(my_input_parameters.input_file_path); 
     if (!input_file.is_open())
-        throw std::runtime_error("Failed to open " + my_input_parameters.input_file_path);
+        throw std::runtime_error("Failed to open " + my_input_parameters.input_file_path + ". Exiting...");
+    
     read_gene_families(input_file, p_tree, p_gene_families); // in io.cpp/io.h
             
     // Iterating over gene families to get max gene family size
@@ -38,6 +39,18 @@ void execute::read_gene_family_data(const input_parameters &my_input_parameters,
     // cout << "Max (parsed) family size is: " << max_family_size << endl;
     // cout << "Max root family size is: " << max_root_family_size << endl;
 }
+
+//! Read user provided error model file (whose path is stored in input_parameters instance)
+void execute::read_error_model(const input_parameters &my_input_parameters, error_model *p_error_model) {
+    
+    ifstream error_model_file(my_input_parameters.error_model_file_path); 
+    if (!error_model_file.is_open()) {
+        throw std::runtime_error("Failed to open " + my_input_parameters.error_model_file_path + ". Exiting...");
+    }
+
+    read_error_model_file(error_model_file, p_error_model);
+    
+} // GOTTA WRITE THIS!
 
 //! Read user provided phylogenetic tree (whose path is stored in input_parameters instance)
 clade * execute::read_input_tree(const input_parameters &my_input_parameters) {    
@@ -175,6 +188,7 @@ void execute::simulate(std::vector<model *>& models, const input_parameters &my_
         // core_model.print_parameter_values();
     }
 }
+
 class lambda_counter
 {
 public:
