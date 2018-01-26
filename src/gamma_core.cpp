@@ -166,7 +166,7 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
         else
         {
             // we got here because one of the gamma categories was saturated - reject this 
-#pragma omp_critical
+#pragma omp critical
             success = false;
         }
     }

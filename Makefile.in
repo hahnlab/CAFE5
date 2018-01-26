@@ -1,8 +1,11 @@
 # compilers and flags
-CC = g++
+CC=@CXX@
+CXX=@CXX@
+LD=@CXX@
+
 
 CFLAGS = -std=c++11 -I. -O3 @OPENMP_CXXFLAGS@
-LINKER = g++ -std=c++11 -O3 @OPENMP_CXXFLAGS@ -o
+LINKER = $(LD) -std=c++11 -O3 @OPENMP_CXXFLAGS@ -o
 LFLAGS = -I.
 
 # directories

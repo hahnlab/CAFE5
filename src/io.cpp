@@ -5,6 +5,7 @@
 #include <iostream>
 #include <getopt.h>
 #include <sstream>
+#include <cstring>
 
 using namespace std;
 
