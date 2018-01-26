@@ -72,6 +72,11 @@ clade* read_tree(string tree_file_path, bool lambda_tree) {
     }
     
     ifstream tree_file(tree_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
+    if (!tree_file.is_open())
+    {
+        throw std::runtime_error("Failed to open " + tree_file_path);
+    }
+
     string line;
     
     if (tree_file.good()) {
