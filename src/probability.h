@@ -60,12 +60,6 @@ public:
 
 /* END: Likelihood computation ---------------------- */
 
-class readwritelock;
-
-
-
-vector<double> matrix_multiply(const matrix& matrix, const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size);
-
 /* START: Uniform distribution */
 std::vector<int> uniform_dist(int n_draws, int min, int max);
 /* END: Uniform distribution - */

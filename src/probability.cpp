@@ -104,32 +104,6 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 
 /* END: Birth-death model components ----------------------- */
 
-//! Take in a matrix and a vector, compute product, return it
-/*!
-  This function returns a likelihood vector by multiplying an initial likelihood vector and a transition probability matrix.
-  A minimum and maximum on the parent's and child's family sizes is provided. Because the root is forced to be >=1, for example, s_min_family_size for the root could be set to 1.
-*/
-vector<double> matrix_multiply(const matrix& matrix, const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) 
-{
-	//cout << "Matrix multiply " << matrix.size() << "x" << v.size() << " (submatrix " << s_min_family_size << ":" << s_max_family_size;
-	//cout << " " << c_min_family_size << ":" << c_max_family_size << ")" << endl;
-
-	//assert(s_max_family_size - s_min_family_size == c_max_family_size - c_min_family_size);
-	assert(v.size() > c_max_family_size - c_min_family_size);
-
-    vector<double> result(c_max_family_size - c_min_family_size + 1);
-
-	for (int s = s_min_family_size; s <= s_max_family_size; s++) {
-        result[s - s_min_family_size] = 0;
-    
-        for (int c = c_min_family_size; c <= c_max_family_size; c++) {
-            result[s- s_min_family_size] += matrix.get(s, c) * v[c - c_min_family_size];
-        }
-    }
-
-    return result;
-}
-
 //! Computation and storage of the vector of likelihoods (one likelihood/family size) of an internal node
 /*!
   This class computes the vector of probabilities (of the data given the model; i.e., the likelihoods) for an internal node.

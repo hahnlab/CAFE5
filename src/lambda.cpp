@@ -21,7 +21,7 @@ std::vector<double> single_lambda::calculate_child_factor(matrix_cache& calc, cl
 	auto matrix = calc.get_matrix(probabilities.size(), child->get_branch_length(), _lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
     if (matrix.is_zero())
         cerr << "Saturation at " << child->get_taxon_name() << ": Lambda: " << _lambda << ", branch length: " << child->get_branch_length() << endl;
-	return matrix_multiply(matrix, probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
+	return matrix.multiply(probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
 }
 
 std::string single_lambda::to_string()
@@ -38,7 +38,7 @@ std::vector<double> multiple_lambda::calculate_child_factor(matrix_cache& calc, 
 	double lambda = _lambdas[lambda_index];
 	//cout << "Matrix for " << child->get_taxon_name() << endl;
 	auto matrix = calc.get_matrix(probabilities.size(), child->get_branch_length(), lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
-	return matrix_multiply(matrix, probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
+	return matrix.multiply(probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
 }
 
 void multiple_lambda::update(double* values)

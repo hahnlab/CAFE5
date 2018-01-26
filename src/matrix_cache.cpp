@@ -4,11 +4,55 @@
 
 #include "matrix_cache.h"
 #include "probability.h"
+#include "../config.h"
+
+#ifdef HAVE_BLAS
+#ifdef HAVE_OPENBLAS
+#include "cblas.h"
+#else
+#include "mkl.h"
+#endif
+#endif
 
 bool matrix::is_zero() const
 {
     return *max_element(values.begin(), values.end()) == 0;
 }
+
+//! Take in a matrix and a vector, compute product, return it
+/*!
+This function returns a likelihood vector by multiplying an initial likelihood vector and a transition probability matrix.
+A minimum and maximum on the parent's and child's family sizes is provided. Because the root is forced to be >=1, for example, s_min_family_size for the root could be set to 1.
+*/
+vector<double> matrix::multiply(const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const
+{
+    vector<double> result(c_max_family_size - c_min_family_size + 1);
+
+#ifdef HAVE_BLAS
+    double alpha = 1.0, beta = 0.;
+    int m = s_max_family_size - s_min_family_size + 1;
+    int k = c_max_family_size - c_min_family_size + 1;
+    int n = 1;
+    const double *sub = &values[0] + s_min_family_size*_size + c_min_family_size;
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, alpha, sub, _size, &v[0], n, beta, &result[0], n);
+#else
+    //cout << "Matrix multiply " << matrix.size() << "x" << v.size() << " (submatrix " << s_min_family_size << ":" << s_max_family_size;
+    //cout << " " << c_min_family_size << ":" << c_max_family_size << ")" << endl;
+
+    //assert(s_max_family_size - s_min_family_size == c_max_family_size - c_min_family_size);
+    assert(v.size() > c_max_family_size - c_min_family_size);
+
+    for (int s = s_min_family_size; s <= s_max_family_size; s++) {
+        result[s - s_min_family_size] = 0;
+
+        for (int c = c_min_family_size; c <= c_max_family_size; c++) {
+            result[s - s_min_family_size] += get(s, c) * v[c - c_min_family_size];
+        }
+    }
+#endif
+    return result;
+}
+
 
 matrix_cache::~matrix_cache()
 {

@@ -450,7 +450,7 @@ TEST(Probability, matrix_multiply)
     matrix m1(3);
     build_matrix(m1);
     vector<double> m2({ 7, 9, 11 });
-    auto result = matrix_multiply(m1, m2, 0, 2, 0, 2);
+    auto result = m1.multiply(m2, 0, 2, 0, 2);
     LONGS_EQUAL(3, result.size());
 
     DOUBLES_EQUAL(58, result[0], .001);
@@ -468,7 +468,7 @@ TEST(Probability, matrix_multiply)
     m3.set(5, 4, 8);
     m3.set(5, 5, 9);
 
-    result = matrix_multiply(m3, m2, 3, 5, 3, 5);
+    result = m3.multiply(m2, 3, 5, 3, 5);
     LONGS_EQUAL(3, result.size());
 
     DOUBLES_EQUAL(58, result[0], .001);
