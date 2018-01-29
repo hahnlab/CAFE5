@@ -97,6 +97,8 @@ void call_viterbi(int max_family_size, int max_root_family_size, int number_of_s
 	}
 }
 
+/// The main functio. Evaluates arguments, calls processes
+/// \callgraph
 int cafexp(int argc, char *const argv[]) {
     /* START: Option variables for main() */
     int args; // getopt_long returns int or char
@@ -109,7 +111,6 @@ int cafexp(int argc, char *const argv[]) {
     clade *p_tree = NULL; // instead of new clade(), o.w. mem leak
     clade *p_lambda_tree = NULL;
     std::vector<gene_family> gene_families;
-    matrix_cache calculator; // for computing lks
     map<int, int>* p_rootdist_map = NULL; // for sims
 
     while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:l:m:k:a:s::g::p::r:", longopts, NULL)) != -1 ) {
@@ -246,15 +247,14 @@ int cafexp(int argc, char *const argv[]) {
             // If lambda was not fixed, estimate!
             else {
                 for (model* p_model : models) {
-                    my_executer.estimate_lambda(p_model, my_input_parameters, p_prior, p_tree, p_lambda_tree, &gene_families, max_family_size, max_root_family_size, calculator);
+                    my_executer.estimate_lambda(p_model, my_input_parameters, p_prior, p_tree, p_lambda_tree, &gene_families, max_family_size, max_root_family_size);
                 }
             
             // Printing: take estimated values, re-compute them for printing purposes
             my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size); 
             }
 
-            my_executer.reconstruct(models, my_input_parameters, p_prior, calculator);
-
+            my_executer.reconstruct(models, my_input_parameters, p_prior);
         }
         delete p_prior;
 

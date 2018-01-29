@@ -89,7 +89,7 @@ public:
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
 std::vector<double> get_posterior(std::vector<gene_family> gene_families, int max_family_size, int max_root_family_size, double lambda, clade *p_tree);
-double* find_best_lambda(model *p_model, root_equilibrium_distribution *p_distribution, matrix_cache *calc);
+double* find_best_lambda(model *p_model, root_equilibrium_distribution *p_distribution);
 
 inline std::ostream& operator<<(std::ostream& ost, lambda& lambda)
 {

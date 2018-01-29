@@ -10,6 +10,7 @@
 #include "gamma_core.h"
 #include "root_equilibrium_distribution.h"
 #include "chisquare.h"
+#include "matrix_cache.h"
 
 double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 24.01409824083091, -1.231739572450155, 1.208650973866179e-3,
@@ -121,6 +122,8 @@ void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_
     }
 }
 
+/// Simulate
+/// \callgraph
 void execute::simulate(std::vector<model *>& models, const input_parameters &my_input_parameters)
 {
     // cout << "Simulations will use the root family distribution specified with -f: " << my_input_parameters.rootdist << endl;
@@ -199,8 +202,10 @@ public:
     }
 };
 
+/// estimate a lambda
+/// \callgraph
 void execute::estimate_lambda(model *p_model, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
-    std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size, matrix_cache& calculator)
+    std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size)
 {
     lambda *p_lambda = NULL;
     if (p_lambda_tree != NULL)
@@ -218,14 +223,15 @@ void execute::estimate_lambda(model *p_model, const input_parameters &my_input_p
 
     p_model->set_lambda(p_lambda);
     p_tree->init_gene_family_sizes(*p_gene_families);
-    p_model->set_current_guesses(find_best_lambda(p_model, p_prior, &calculator));
+    p_model->set_current_guesses(find_best_lambda(p_model, p_prior));
 }
 
-void execute::reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, matrix_cache& calculator)
+void execute::reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior)
 {
+    matrix_cache cache;
     for (model* p_model : models) {
         std::ofstream ofst(filename(p_model->name() + "_asr", my_input_parameters.output_prefix));
-        p_model->reconstruct_ancestral_states(&calculator, p_prior);
+        p_model->reconstruct_ancestral_states(&cache, p_prior);
         p_model->print_reconstructed_states(ofst);
     }
 
