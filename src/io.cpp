@@ -232,14 +232,16 @@ void error_model::set_deviations(std::vector<std::string> deviations) {
     }
     
     _n_deviations = _deviations.size();
-
-    for (int i = 0; i < _max_cnt; ++i) {
-        std::vector<double> devs(_n_deviations, 0.0); // filling deviation probs with 0.0 for all family sizes
-        _error_dists.push_back(devs);
-    }
 }
 
 void error_model::set_probs(int fam_size, std::vector<double> probs_deviation) {
+    if (_error_dists.empty())
+        _error_dists.push_back(vector<double>(probs_deviation.size()));
+
+    if (_error_dists.size() <= fam_size)
+    {
+        _error_dists.resize(fam_size + 1, _error_dists.back());
+    }
     _error_dists[fam_size] = probs_deviation; // fam_size starts at 0 at tips, so fam_size = index of vector
 }
 
@@ -247,6 +249,10 @@ std::vector<double> error_model::get_probs(int fam_size) const {
     return _error_dists[fam_size];
 }
 
+double to_double(string s)
+{
+    return std::stod(s);
+}
 //! Read user-provided error model
 /*!
   This function is called by execute::read_error_model, which is itself called by CAFExp's main function when "--error_model"/"-e" is specified  
@@ -268,7 +274,7 @@ void read_error_model_file(std::istream& error_model_file, error_model *p_error_
         }
         
         // cntdiff line
-        if (strncmp(line.c_str(), cnt_diff_header.c_str(), cnt_diff_header.size()) == 0) { 
+        else if (strncmp(line.c_str(), cnt_diff_header.c_str(), cnt_diff_header.size()) == 0) { 
             tokens = tokenize_str(line, ' ');
             
             if (tokens.size() % 2 != 0) { 
@@ -283,6 +289,14 @@ void read_error_model_file(std::istream& error_model_file, error_model *p_error_
 //            }
 //            cout << endl;
             p_error_model->set_deviations(cnt_diffs);
+        }
+        else
+        {
+            tokens = tokenize_str(line, ' ');
+            int sz = std::stoi(tokens[0]);
+            vector<double> values(tokens.size()-1);
+            transform(tokens.begin() + 1, tokens.end(), values.begin(), to_double);
+            p_error_model->set_probs(sz, values);
         }
     }
         // std::vector<std::string> tokens = tokenize_str(line, '\t'); 

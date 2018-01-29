@@ -482,6 +482,41 @@ TEST(Probability, birthdeath_rate_with_log_alpha)
     DOUBLES_EQUAL(0.006, birthdeath_rate_with_log_alpha(41, 34, -1.262, 0.4), .001);
 }
 
+TEST(Probability, error_model_set_probs)
+{
+    error_model model;
+    model.set_probs(0, { .1, .2, .3 });
+    auto vec = model.get_probs(0);
+    LONGS_EQUAL(3, vec.size());
+    DOUBLES_EQUAL(0.1, vec[0], 0.00001);
+    DOUBLES_EQUAL(0.2, vec[1], 0.00001);
+    DOUBLES_EQUAL(0.3, vec[2], 0.00001);
+}
+
+TEST(Probability, read_error_model)
+{
+    string input = "maxcnt: 10\ncntdiff: -1 0 1\n"
+        "1 0.2 0.6 0.2\n"
+        "2 0.2 0.6 0.2\n"
+        "3 0.2 0.6 0.2\n"
+        "5 0.2 0.6 0.2\n";
+
+    istringstream ist(input);
+    error_model model;
+    read_error_model_file(ist, &model);
+
+    auto vec = model.get_probs(1);
+    LONGS_EQUAL(3, vec.size());
+    DOUBLES_EQUAL(0.2, vec[0], 0.00001);
+    DOUBLES_EQUAL(0.6, vec[1], 0.00001);
+    DOUBLES_EQUAL(0.2, vec[2], 0.00001);
+
+
+    vec = model.get_probs(4);
+    LONGS_EQUAL(3, vec.size());
+    DOUBLES_EQUAL(0.2, vec[0], 0.00001);
+}
+
 int main(int ac, char** av)
 {
     return CommandLineTestRunner::RunAllTests(ac, av);
