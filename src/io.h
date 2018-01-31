@@ -118,5 +118,8 @@ public:
   size_t n_deviations() const {
       return _deviations.size();
   }
+
+  std::vector<double> get_epsilons() const;
+  error_model* replace_epsilons(double *new_epsilons) const;
 };
 #endif

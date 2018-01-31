@@ -163,3 +163,12 @@ void base_model::print_reconstructed_states(std::ostream& ost) {
     }
 }
 
+std::vector<double> base_model::initial_epsilon_guesses()
+{
+    return _p_error_model->get_epsilons();
+}
+
+void base_model::set_current_epsilon_guesses(double *guesses)
+{
+    error_model *m = _p_error_model->replace_epsilons(guesses);
+}

@@ -30,6 +30,10 @@ public:
     virtual void reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
     reconstruction_process* create_reconstruction_process(int family_number, matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
     void print_reconstructed_states(std::ostream& ost);
+
+    virtual std::vector<double> initial_epsilon_guesses();
+    virtual void set_current_epsilon_guesses(double *guesses);
+
    };
 
 #endif

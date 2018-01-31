@@ -6,6 +6,8 @@
 #include <getopt.h>
 #include <sstream>
 #include <cstring>
+#include <set>
+#include <numeric>
 
 using namespace std;
 
@@ -232,7 +234,23 @@ void error_model::set_deviations(std::vector<std::string> deviations) {
     }
 }
 
+inline bool is_nearly_equal(double x, double y)
+{
+    const double epsilon = 0.0000000000001;
+    return std::abs(x - y) <= epsilon * std::abs(x);
+}
+
 void error_model::set_probs(int fam_size, std::vector<double> probs_deviation) {
+    if (fam_size == 0 && !is_nearly_equal(probs_deviation[0], 0.0))
+    {
+        throw std::runtime_error("Cannot have a non-zero probability for family size 0 for negative deviation");
+    }
+
+    if (!is_nearly_equal(accumulate(probs_deviation.begin(), probs_deviation.end(), 0.0), 1.0))
+    {
+        throw std::runtime_error("Sum of probabilities must be equal to one");
+    }
+
     if (_error_dists.empty())
         _error_dists.push_back(vector<double>(probs_deviation.size()));
 
@@ -245,6 +263,23 @@ void error_model::set_probs(int fam_size, std::vector<double> probs_deviation) {
 
 std::vector<double> error_model::get_probs(int fam_size) const {
     return _error_dists[fam_size];
+}
+
+std::vector<double> error_model::get_epsilons() const {
+    set<double> unique_values;
+    for (auto& vec : _error_dists)
+        unique_values.insert(vec.back());
+
+    vector<double> result(unique_values.size());
+    copy(unique_values.begin(), unique_values.end(), result.begin());
+    return result;
+}
+
+error_model* error_model::replace_epsilons(double *new_epsilons) const
+{
+    error_model* result = new error_model();
+    // fill out values
+    return result;
 }
 
 double to_double(string s)

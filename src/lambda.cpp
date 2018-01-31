@@ -108,3 +108,30 @@ double* find_best_lambda(model * p_model, root_equilibrium_distribution *p_distr
     }
     return re;
 }
+#if 0
+double* find_best_epsilon(model * p_model, root_equilibrium_distribution *p_distribution)
+{
+    auto initial = p_model->initial_epsilon_guesses();
+    FMinSearch* pfm;
+    std::tuple<model *, root_equilibrium_distribution *> args(p_model, p_distribution);
+    pfm = fminsearch_new_with_eq(calculate_epsilon_score, initial.size(), &args);
+    pfm->tolx = 1e-6;
+    pfm->tolf = 1e-6;
+    pfm->maxiters = 25;
+    fminsearch_min(pfm, &initial[0]);
+    double *re = fminsearch_get_minX(pfm);
+    if (fminsearch_get_minF(pfm) == -log(0))
+    {
+        cerr << "Failed to find any reasonable values" << endl;
+    }
+    else
+    {
+        cout << "Completed " << pfm->iters << " iterations" << endl;
+        cout << "Best match" << (initial.size() == 1 ? " is: " : "es are: ") << setw(15) << setprecision(14);
+        for (size_t i = 0; i < initial.size(); ++i)
+            cout << re[i] << ',';
+        cout << endl;
+    }
+    return re;
+}
+#endif

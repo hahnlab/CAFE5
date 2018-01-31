@@ -432,6 +432,34 @@ TEST(Inference, birthdeath_rate_with_log_alpha)
     DOUBLES_EQUAL(-1.58253, log(birthdeath_rate_with_log_alpha(13, 14, -2.617970, 0.854098)), 0.00001);
 }
 
+TEST(Inference, create_one_model_if_lambda_is_null)
+{
+    input_parameters params;
+    params.input_file_path = "foo";
+    clade c;
+    single_lambda lambda(0.02);
+    vector<gene_family> fams;
+    auto models = build_models(params, &c, &lambda, &fams, 10, 10);
+    LONGS_EQUAL(1, models.size());
+    CHECK(dynamic_cast<base_model *>(models[0]));
+    for (auto m : models)
+        delete m;
+}
+
+TEST(Inference, build_models_sets_error_model)
+{
+    input_parameters params;
+    params.input_file_path = "foo";
+    clade c;
+    single_lambda lambda(0.02);
+    vector<gene_family> fams;
+    auto models = build_models(params, &c, &lambda, &fams, 10, 10);
+    LONGS_EQUAL(1, models.size());
+    CHECK(dynamic_cast<base_model *>(models[0]));
+    for (auto m : models)
+        delete m;
+}
+
 void build_matrix(matrix& m)
 {
     m.set(0, 0, 1);
@@ -485,17 +513,124 @@ TEST(Probability, birthdeath_rate_with_log_alpha)
 TEST(Probability, error_model_set_probs)
 {
     error_model model;
-    model.set_probs(0, { .1, .2, .3 });
+    model.set_probs(0, { .0, .7, .3 });
+    model.set_probs(1, { .2, .6, .2 });
     auto vec = model.get_probs(0);
     LONGS_EQUAL(3, vec.size());
-    DOUBLES_EQUAL(0.1, vec[0], 0.00001);
-    DOUBLES_EQUAL(0.2, vec[1], 0.00001);
+    DOUBLES_EQUAL(0.0, vec[0], 0.00001);
+    DOUBLES_EQUAL(0.7, vec[1], 0.00001);
     DOUBLES_EQUAL(0.3, vec[2], 0.00001);
+
+    vec = model.get_probs(1);
+    LONGS_EQUAL(3, vec.size());
+    DOUBLES_EQUAL(0.2, vec[0], 0.00001);
+    DOUBLES_EQUAL(0.6, vec[1], 0.00001);
+    DOUBLES_EQUAL(0.2, vec[2], 0.00001);
 }
+
+#if 0
+double* find_best_epsilon(model * p_model, root_equilibrium_distribution *p_distribution);
+
+TEST(Probability, find_best_epsilon)
+{
+    error_model err;
+    std::vector<gene_family> fams;
+    base_model model(NULL, NULL, &fams, 10, 10, NULL, &err);
+    ::poisson_distribution dist(.04);
+    find_best_epsilon(&model, &dist);
+}
+#endif
+
+TEST(Probability, base_model_initial_epsilon)
+{
+    error_model err;
+    err.set_probs(0, { .0, .7, .3 });
+    err.set_probs(1, { .4, .2, .4 });
+    std::vector<gene_family> fams;
+    base_model model(NULL, NULL, &fams, 10, 10, NULL, &err);
+    auto actual = model.initial_epsilon_guesses();
+    LONGS_EQUAL(2, actual.size());
+}
+
+TEST(Probability, base_model_set_current_epsilon_guesses)
+{
+    error_model err;
+    err.set_probs(0, { .0, .7, .3 });
+    err.set_probs(1, { .4, .2, .4 });
+    std::vector<gene_family> fams;
+    base_model model(NULL, NULL, &fams, 10, 10, NULL, &err);
+    model.set_current_epsilon_guesses({});
+    CHECK(false);
+}
+
+TEST(Probability, error_model_get_epsilon)
+{
+    error_model model;
+    model.set_probs(0, { .0, .7, .3 });
+    model.set_probs(1, { .2, .6, .2 });
+    model.set_probs(2, { .1, .8, .1 });
+    model.set_probs(3, { .2, .6, .2 });
+
+    auto actual = model.get_epsilons();
+    LONGS_EQUAL(3, actual.size());
+    vector<double> expected{ .1, .2, .3 };
+    CHECK(expected == actual);
+}
+
+TEST(Probability, error_model_get_epsilon_zero_zero_must_be_zero)
+{
+    error_model model;
+    try
+    {
+        model.set_probs(0, { 0.4, 0.3, 0.3 });
+        CHECK(false);
+    }
+    catch(runtime_error& err)
+    {
+        STRCMP_EQUAL("Cannot have a non-zero probability for family size 0 for negative deviation", err.what());
+    }
+}
+
+TEST(Probability, error_model_rows_must_add_to_one)
+{
+    error_model model;
+    try
+    {
+        model.set_probs(1, { 0.3, 0.3, 0.3 });
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("Sum of probabilities must be equal to one", err.what());
+    }
+}
+
+#if 0
+TEST(Probability, error_model_compute_parameters)
+{
+    error_model model;
+    model.set_probs(1, { .2, .6, .2 });
+    model.set_probs(2, { .1, .8, .1 });
+    model.set_probs(3, { .2, .6, .2 });
+
+    vector<double> actual = model.get_epsilons();
+
+
+    init = { .1, .2, .6, .8};
+    first = { .08, .2, .6, .8}
+
+    model.set_error_model(first);
+    calculate_score();
+    second = { .08, ..21, .6, .8 }
+
+    find_best_lambda(d1, d2, d3, d4);
+}
+#endif
 
 TEST(Probability, read_error_model)
 {
     string input = "maxcnt: 10\ncntdiff: -1 0 1\n"
+        "0 0.0 0.8 0.2\n"
         "1 0.2 0.6 0.2\n"
         "2 0.2 0.6 0.2\n"
         "3 0.2 0.6 0.2\n"
@@ -505,7 +640,13 @@ TEST(Probability, read_error_model)
     error_model model;
     read_error_model_file(ist, &model);
 
-    auto vec = model.get_probs(1);
+    auto vec = model.get_probs(0);
+    LONGS_EQUAL(3, vec.size());
+    DOUBLES_EQUAL(0.0, vec[0], 0.00001);
+    DOUBLES_EQUAL(0.8, vec[1], 0.00001);
+    DOUBLES_EQUAL(0.2, vec[2], 0.00001);
+
+    vec = model.get_probs(1);
     LONGS_EQUAL(3, vec.size());
     DOUBLES_EQUAL(0.2, vec[0], 0.00001);
     DOUBLES_EQUAL(0.6, vec[1], 0.00001);

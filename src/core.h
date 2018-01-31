@@ -59,13 +59,30 @@ protected:
     void initialize_rootdist_if_necessary();
 
     std::vector<family_info_stash> results;
+
+    const error_model* _p_error_model;
 public:
     //! Basic constructor
     model(): _ost(cout), _p_lambda(NULL), _p_tree(NULL), _p_gene_families(NULL), _total_n_families_sim(1) {}
     
-    model(ostream & ost, lambda* p_lambda, clade *p_tree, int max_family_size, int total_n_families, vector<int> rootdist_vec, const error_model *p_error_model): _ost(ost), _p_lambda(p_lambda), _p_tree(p_tree), _max_family_size(max_family_size), _total_n_families_sim(total_n_families), _rootdist_vec(rootdist_vec) {}
+    model(ostream & ost, 
+        lambda* p_lambda, 
+        clade *p_tree, 
+        int max_family_size, 
+        int total_n_families, 
+        vector<int> rootdist_vec, 
+        const error_model *p_error_model) : 
+        _ost(ost), _p_lambda(p_lambda), _p_tree(p_tree), _max_family_size(max_family_size), 
+        _total_n_families_sim(total_n_families), _rootdist_vec(rootdist_vec), _p_error_model(p_error_model) {}
     
-    model(lambda* p_lambda, clade *p_tree, vector<gene_family> *p_gene_families, int max_family_size, int max_root_family_size, const error_model *p_error_model): _ost(cout), _p_lambda(p_lambda), _p_tree(p_tree), _p_gene_families(p_gene_families), _max_family_size(max_family_size), _max_root_family_size(max_root_family_size) {}
+    model(lambda* p_lambda, 
+        clade *p_tree, 
+        vector<gene_family> *p_gene_families, 
+        int max_family_size, 
+        int max_root_family_size, 
+        const error_model *p_error_model) : 
+        _ost(cout), _p_lambda(p_lambda), _p_tree(p_tree), _p_gene_families(p_gene_families), _max_family_size(max_family_size), 
+        _max_root_family_size(max_root_family_size), _p_error_model(p_error_model) {}
     
     //void estimate_processes(); 
     
