@@ -5,3 +5,23 @@
 
 # Executable
 bin/
+
+# Data
+data/
+
+# autoconf artificats
+Makefile
+autom4te.cache/
+config.h
+config.log
+config.status
+configure
+
+# Doxygen artifacts
+src_docs/html/
+src_docs/latex/
+
+# Various artifacts
+.gdb_history
+.vs/
+CPPProperties.json

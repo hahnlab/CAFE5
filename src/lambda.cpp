@@ -74,13 +74,13 @@ double calculate_lambda_score(double* p_lambda, void* args)
 {
     auto vals = (std::tuple<model *, root_equilibrium_distribution *>*)args;
 
-    model *core = std::get<0>(*vals);
+    model *model = std::get<0>(*vals);
     root_equilibrium_distribution* dist = std::get<1>(*vals);
 
-    core->set_current_guesses(p_lambda);
-    core->start_inference_processes();
+    model->set_current_guesses(p_lambda);
+    model->start_inference_processes();
 
-    return core->infer_processes(dist);
+    return model->infer_processes(dist);
 }
 
 double* find_best_lambda(model * p_model, root_equilibrium_distribution *p_distribution)

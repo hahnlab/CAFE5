@@ -146,6 +146,11 @@ public:
       Note that depending on whether one or multiple lambdas are specified, the computation of the likelihood will be different. It is the abstract class lambda (which has a pure virtual method calculate_child_factor) that decides how to do it. 
      */
     void operator()(clade * child) {
+        if (_probabilities[child].empty())
+        {
+            throw std::runtime_error("Child node probabilities not calculated");
+        }
+
 		_factors[child].resize(_probabilities_vec_size);
 		// cout << "Child factor size is " << _probabilities_vec_size << endl;
 		_factors[child] = _lambda->calculate_child_factor(_calc, child, _probabilities[child],

@@ -121,7 +121,7 @@ inference_process_factory::inference_process_factory(std::ostream & ost, lambda*
 
 inference_process* inference_process_factory::operator()(double lambda_multiplier)
 {
-    return new inference_process(_ost, _lambda, lambda_multiplier, _p_tree, _max_family_size, _max_root_family_size, _family, _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
+    return new inference_process(_ost, _lambda, lambda_multiplier, _p_tree, _max_family_size, _max_root_family_size, _family, _rootdist_vec, NULL); // if a single _lambda_multiplier, how do we do it?
 }
 
 reconstruction_process* inference_process_factory::create_reconstruction_process(double lambda_multiplier)

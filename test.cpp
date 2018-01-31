@@ -515,6 +515,118 @@ TEST(Probability, read_error_model)
     vec = model.get_probs(4);
     LONGS_EQUAL(3, vec.size());
     DOUBLES_EQUAL(0.2, vec[0], 0.00001);
+    DOUBLES_EQUAL(0.6, vec[1], 0.00001);
+    DOUBLES_EQUAL(0.2, vec[2], 0.00001);
+}
+
+TEST(Inference, prune)
+{
+    ostringstream ost;
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    gene_family fam;
+    fam.set_species_size("A", 3);
+    fam.set_species_size("B", 6);
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    single_lambda lambda(0.03);
+    inference_process process(ost, &lambda, 1.5, p_tree.get(), 20, 20, &fam, { 1,2,3 }, NULL);
+    matrix_cache cache;
+    cache.precalculate_matrices(21, { 0.045 }, { 1.0,3.0,7.0 });
+    auto actual = process.prune(cache);
+    vector<double> log_expected{ -22.5513, -14.7206, -8.85104, -4.67892, -4.57456, -5.52831, -7.37063, -10.152, 
+        -13.4435, -17.0609, -20.9074, -24.9251, -29.076, -33.334, -37.6799, -42.0995, -46.5817, -51.1179, -55.7011, -60.3256 };
+
+    LONGS_EQUAL(log_expected.size(), actual.size());
+    for (size_t i = 0; i<log_expected.size(); ++i)
+    {
+        DOUBLES_EQUAL(log_expected[i], log(actual[i]), 0.0001);
+    }
+}
+
+TEST(Inference, likelihood_computer_sets_leaf_nodes_correctly)
+{
+    ostringstream ost;
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    gene_family fam;
+    fam.set_species_size("A", 3);
+    fam.set_species_size("B", 6);
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    single_lambda lambda(0.03);
+
+    matrix_cache cache;
+    likelihood_computer pruner(20, 20, &lambda, &fam, cache);
+    cache.precalculate_matrices(21, { 0.045 }, { 1.0,3.0,7.0 });
+
+    clade *A = p_tree->find_descendant("A");
+    pruner(A);
+    auto actual = pruner.get_likelihoods(A);
+
+    vector<double> expected{ 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    LONGS_EQUAL(expected.size(), actual.size());
+    for (size_t i = 0; i<expected.size(); ++i)
+    {
+        DOUBLES_EQUAL(expected[i], actual[i], 0.0001);
+    }
+
+    clade *B = p_tree->find_descendant("B");
+    pruner(B);
+    actual = pruner.get_likelihoods(B);
+
+    expected = { 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    LONGS_EQUAL(expected.size(), actual.size());
+    for (size_t i = 0; i<expected.size(); ++i)
+    {
+        DOUBLES_EQUAL(expected[i], actual[i], 0.0001);
+    }
+}
+
+TEST(Inference, likelihood_computer_sets_root_nodes_correctly)
+{
+    ostringstream ost;
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    gene_family fam;
+    fam.set_species_size("A", 3);
+    fam.set_species_size("B", 6);
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    single_lambda lambda(0.03);
+
+    matrix_cache cache;
+    likelihood_computer pruner(20, 20, &lambda, &fam, cache);
+    cache.precalculate_matrices(21, { 0.03 }, { 1.0,3.0,7.0 });
+
+    clade *AB = p_tree->find_descendant("AB");
+    try
+    {
+        pruner(AB);
+        CHECK(false);   
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("Child node probabilities not calculated", err.what());
+    }
+
+    pruner(p_tree->find_descendant("A"));
+    pruner(p_tree->find_descendant("B"));
+    pruner(AB);
+
+    auto actual = pruner.get_likelihoods(AB);
+
+    vector<double> log_expected{ -25.8046, -17.1121, -10.388, -5.37765, -5.24652, -6.21594, -8.18487, -11.5884,
+        -15.5796, -19.9223, -24.5056, -29.2661, -34.1635, -39.1702, -44.2664, -49.4374, -54.6718, -59.9609, -65.2974, -70.6756 };
+
+    LONGS_EQUAL(log_expected.size(), actual.size());
+    for (size_t i = 0; i<log_expected.size(); ++i)
+    {
+        DOUBLES_EQUAL(log_expected[i], log(actual[i]), 0.0001);
+    }
+
 }
 
 int main(int ac, char** av)

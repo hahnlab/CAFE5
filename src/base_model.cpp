@@ -42,7 +42,7 @@ void base_model::start_inference_processes()
 {
     processes.clear();
     for (int i = 0; i < _p_gene_families->size(); ++i) {
-        inference_process *p_new_process = new inference_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec); // if a single _lambda_multiplier, how do we do it?
+        inference_process *p_new_process = new inference_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec, NULL); // if a single _lambda_multiplier, how do we do it?
         processes.push_back(p_new_process);
     }
 }
