@@ -30,14 +30,16 @@ private:
 	int _max_parsed_family_size;
 	lambda* _lambda;
     matrix_cache& _calc;
+    const error_model* _p_error_model;
     
 public:
     likelihood_computer(int max_root_family_size, int max_parsed_family_size, lambda* lambda, gene_family *family,
-        matrix_cache& calc) : 
+        matrix_cache& calc, const error_model *p_error_model) : 
 		_max_root_family_size(max_root_family_size),
 		_max_parsed_family_size(max_parsed_family_size),
 		_lambda(lambda),
-        _calc(calc) {
+        _calc(calc),
+        _p_error_model(p_error_model) {
         _family = family;
     }
   

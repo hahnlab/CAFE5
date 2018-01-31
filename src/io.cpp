@@ -230,8 +230,6 @@ void error_model::set_deviations(std::vector<std::string> deviations) {
     for (std::vector<std::string>::iterator it = deviations.begin(); it != deviations.end(); ++it) {
         _deviations.push_back(std::stoi(*it));
     }
-    
-    _n_deviations = _deviations.size();
 }
 
 void error_model::set_probs(int fam_size, std::vector<double> probs_deviation) {

@@ -34,7 +34,7 @@ vector<double> get_posterior(vector<gene_family> gene_families, int max_family_s
 
   matrix_cache calc;
   single_lambda lam(lambda);
-  likelihood_computer pruner(max_root_family_size, max_family_size, &lam, &gene_families[0], calc);
+  likelihood_computer pruner(max_root_family_size, max_family_size, &lam, &gene_families[0], calc, NULL);
 
   p_tree->apply_reverse_level_order(pruner);
   //cout << "Pruner complete" << endl;
@@ -75,7 +75,7 @@ void call_viterbi(int max_family_size, int max_root_family_size, int number_of_s
 		int max = families[i].get_max_size();
 		max_root_family_size = rint(max*1.25);
 
-		likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &families[i], calc);
+		likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &families[i], calc, NULL);
 		p_tree->apply_reverse_level_order(pruner);
 		auto lh = pruner.get_likelihoods(p_tree);
 		std::cout << "likelihoods = ";

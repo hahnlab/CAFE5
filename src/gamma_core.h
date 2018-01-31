@@ -22,7 +22,7 @@ public:
 
     //! Computation or estimation constructor
     gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
-        int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map);
+        int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map, const error_model *p_error_model);
 
     ~gamma_model();
     //! Gamma methods

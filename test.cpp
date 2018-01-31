@@ -88,7 +88,7 @@ TEST(Inference, infer_processes)
     parser.newick_string = "(A:1,B:1);";
     clade *p_tree = parser.parse_newick();
 
-    base_model core(&lambda, p_tree, &families, 56, 30, NULL);
+    base_model core(&lambda, p_tree, &families, 56, 30, NULL, NULL);
     core.start_inference_processes();
 
 
@@ -110,7 +110,7 @@ TEST(Inference, uniform_distribution)
 
 TEST(Inference, gamma_set_alpha)
 {
-    gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL);
+    gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL, NULL);
     model.set_alpha(0.5, 3);
 }
 
@@ -121,7 +121,7 @@ TEST(Inference, gamma_adjust_family_gamma_membership)
     std::vector<gene_family> families;
     read_gene_families(ist, NULL, &families);
 
-    gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL);
+    gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL, NULL);
 }
 
 TEST(Inference, gamma)
@@ -137,7 +137,7 @@ TEST(Inference, gamma)
     clade *p_tree = parser.parse_newick();
 
     std::vector<int> rootdist;
-    gamma_model core(NULL, NULL, NULL, 0, 5, 0, 0, NULL);
+    gamma_model core(NULL, NULL, NULL, 0, 5, 0, 0, NULL, NULL);
     core.set_gene_families(&families);
     core.set_lambda(&lambda);
     core.set_tree(p_tree);
@@ -171,7 +171,7 @@ TEST(Simulation, gamma_cats)
     std::ostringstream ost;
     vector<int> rootdist_vec;
 
-    gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL);
+    gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL, NULL);
     model.start_sim_processes();
 }
 
@@ -236,7 +236,7 @@ TEST(Inference, gamma_model_initial_guesses)
     clade *p_tree = parser.parse_newick();
     single_lambda sl(0.05);
 
-    gamma_model model(&sl, p_tree, NULL, 0, 5, 4, 0.7, NULL);
+    gamma_model model(&sl, p_tree, NULL, 0, 5, 4, 0.7, NULL, NULL);
     auto guesses = model.initial_guesses();
     LONGS_EQUAL(2, guesses.size());
     DOUBLES_EQUAL(0.218321, guesses[0], 0.0001);
@@ -252,7 +252,7 @@ TEST(Inference, base_model_initial_guesses)
     clade *p_tree = parser.parse_newick();
     single_lambda sl(0.05);
 
-    base_model model(&sl, p_tree, NULL, 0, 5, NULL);
+    base_model model(&sl, p_tree, NULL, 0, 5, NULL, NULL);
     auto guesses = model.initial_guesses();
     LONGS_EQUAL(1, guesses.size());
     DOUBLES_EQUAL(0.565811, guesses[0], 0.0001);
@@ -271,7 +271,7 @@ TEST(Inference, base_model_reconstruction)
     families[0].set_species_size("A", 3);
     families[0].set_species_size("B", 4);
 
-    base_model model(&sl, p_tree.get(), &families, 5, 5, NULL);
+    base_model model(&sl, p_tree.get(), &families, 5, 5, NULL, NULL);
 
     matrix_cache calc;
     calc.precalculate_matrices(6, get_lambda_values(&sl), set<double>({ 1 }));
@@ -557,7 +557,7 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_correctly)
     single_lambda lambda(0.03);
 
     matrix_cache cache;
-    likelihood_computer pruner(20, 20, &lambda, &fam, cache);
+    likelihood_computer pruner(20, 20, &lambda, &fam, cache, NULL);
     cache.precalculate_matrices(21, { 0.045 }, { 1.0,3.0,7.0 });
 
     clade *A = p_tree->find_descendant("A");
@@ -598,7 +598,7 @@ TEST(Inference, likelihood_computer_sets_root_nodes_correctly)
     single_lambda lambda(0.03);
 
     matrix_cache cache;
-    likelihood_computer pruner(20, 20, &lambda, &fam, cache);
+    likelihood_computer pruner(20, 20, &lambda, &fam, cache, NULL);
     cache.precalculate_matrices(21, { 0.03 }, { 1.0,3.0,7.0 });
 
     clade *AB = p_tree->find_descendant("AB");
@@ -626,8 +626,46 @@ TEST(Inference, likelihood_computer_sets_root_nodes_correctly)
     {
         DOUBLES_EQUAL(log_expected[i], log(actual[i]), 0.0001);
     }
-
 }
+
+TEST(Inference, likelihood_computer_sets_leaf_nodes_from_error_model_if_provided)
+{
+    ostringstream ost;
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    gene_family fam;
+    fam.set_species_size("A", 3);
+    fam.set_species_size("B", 6);
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    single_lambda lambda(0.03);
+
+    matrix_cache cache;
+    cache.precalculate_matrices(21, { 0.045 }, { 1.0,3.0,7.0 });
+
+    string input = "maxcnt: 20\ncntdiff: -1 0 1\n"
+        "1 0.2 0.6 0.2\n"
+        "20 0.2 0.6 0.2\n";
+    istringstream ist(input);
+    error_model model;
+    read_error_model_file(ist, &model);
+
+    likelihood_computer pruner(20, 20, &lambda, &fam, cache, &model);
+
+    clade *A = p_tree->find_descendant("A");
+    pruner(A);
+    auto actual = pruner.get_likelihoods(A);
+
+    vector<double> expected{ 0, 0, 0.2, 0.6, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    LONGS_EQUAL(expected.size(), actual.size());
+    for (size_t i = 0; i < expected.size(); ++i)
+    {
+        //cout << actual[i] << endl;
+        DOUBLES_EQUAL(expected[i], actual[i], 0.0001);
+    }
+}
+
 
 int main(int ac, char** av)
 {

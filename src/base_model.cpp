@@ -10,8 +10,8 @@
 #include "root_equilibrium_distribution.h"
 
 base_model::base_model(lambda* p_lambda, clade *p_tree, vector<gene_family> *p_gene_families,
-    int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map) :
-    model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size)
+    int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map, const error_model *p_error_model) :
+    model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_error_model)
 {
     if (p_rootdist_map != NULL)
     {
