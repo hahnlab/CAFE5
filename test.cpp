@@ -1,3 +1,4 @@
+
 #include <numeric>
 #include <cmath>
 
@@ -237,7 +238,8 @@ TEST(Inference, gamma_model_initial_guesses)
     single_lambda sl(0.05);
 
     gamma_model model(&sl, p_tree, NULL, 0, 5, 4, 0.7, NULL, NULL);
-    auto guesses = model.initial_guesses();
+    unique_ptr<optimizer> opt(model.get_lambda_optimizer(NULL));
+    auto guesses = opt->initial_guesses();
     LONGS_EQUAL(2, guesses.size());
     DOUBLES_EQUAL(0.218321, guesses[0], 0.0001);
     DOUBLES_EQUAL(0.565811, guesses[1], 0.0001);
@@ -249,15 +251,14 @@ TEST(Inference, base_model_initial_guesses)
 {
     newick_parser parser(false);
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-    clade *p_tree = parser.parse_newick();
+    unique_ptr<clade> tree(parser.parse_newick());
     single_lambda sl(0.05);
 
-    base_model model(&sl, p_tree, NULL, 0, 5, NULL, NULL);
-    auto guesses = model.initial_guesses();
+    base_model model(&sl, tree.get(), NULL, 0, 5, NULL, NULL);
+    unique_ptr<optimizer> opt(model.get_lambda_optimizer(NULL));
+    auto guesses = opt->initial_guesses();
     LONGS_EQUAL(1, guesses.size());
     DOUBLES_EQUAL(0.565811, guesses[0], 0.0001);
-
-    delete p_tree;
 }
 
 TEST(Inference, base_model_reconstruction)
@@ -439,7 +440,7 @@ TEST(Inference, create_one_model_if_lambda_is_null)
     clade c;
     single_lambda lambda(0.02);
     vector<gene_family> fams;
-    auto models = build_models(params, &c, &lambda, &fams, 10, 10);
+    auto models = build_models(params, &c, &lambda, &fams, 10, 10, NULL);
     LONGS_EQUAL(1, models.size());
     CHECK(dynamic_cast<base_model *>(models[0]));
     for (auto m : models)
@@ -453,11 +454,33 @@ TEST(Inference, build_models_sets_error_model)
     clade c;
     single_lambda lambda(0.02);
     vector<gene_family> fams;
-    auto models = build_models(params, &c, &lambda, &fams, 10, 10);
+    auto models = build_models(params, &c, &lambda, &fams, 10, 10, NULL);
     LONGS_EQUAL(1, models.size());
     CHECK(dynamic_cast<base_model *>(models[0]));
     for (auto m : models)
         delete m;
+}
+
+TEST(Inference, base_model_computes_epsilon)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    gene_family fam;
+    fam.set_species_size("A", 3);
+    fam.set_species_size("B", 6);
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    single_lambda lambda(1);
+    error_model err;
+    err.set_probs(0, { .0, .7, .3 });
+    err.set_probs(1, { .4, .2, .4 });
+    std::vector<gene_family> fams{ fam };
+    uniform_distribution frq;
+
+    base_model model(&lambda, p_tree.get(), &fams, 10, 10, NULL, &err);
+    unique_ptr<optimizer> opt(model.get_epsilon_optimizer(&frq));
+
+    opt->optimize();
 }
 
 void build_matrix(matrix& m)
@@ -528,19 +551,6 @@ TEST(Probability, error_model_set_probs)
     DOUBLES_EQUAL(0.2, vec[2], 0.00001);
 }
 
-#if 0
-double* find_best_epsilon(model * p_model, root_equilibrium_distribution *p_distribution);
-
-TEST(Probability, find_best_epsilon)
-{
-    error_model err;
-    std::vector<gene_family> fams;
-    base_model model(NULL, NULL, &fams, 10, 10, NULL, &err);
-    ::poisson_distribution dist(.04);
-    find_best_epsilon(&model, &dist);
-}
-#endif
-
 TEST(Probability, base_model_initial_epsilon)
 {
     error_model err;
@@ -548,19 +558,12 @@ TEST(Probability, base_model_initial_epsilon)
     err.set_probs(1, { .4, .2, .4 });
     std::vector<gene_family> fams;
     base_model model(NULL, NULL, &fams, 10, 10, NULL, &err);
-    auto actual = model.initial_epsilon_guesses();
+    optimizer* opt = model.get_epsilon_optimizer(NULL);
+    auto actual = opt->initial_guesses();
     LONGS_EQUAL(2, actual.size());
-}
-
-TEST(Probability, base_model_set_current_epsilon_guesses)
-{
-    error_model err;
-    err.set_probs(0, { .0, .7, .3 });
-    err.set_probs(1, { .4, .2, .4 });
-    std::vector<gene_family> fams;
-    base_model model(NULL, NULL, &fams, 10, 10, NULL, &err);
-    model.set_current_epsilon_guesses({});
-    CHECK(false);
+    double a;
+    opt->finalize(&a);
+    delete opt;
 }
 
 TEST(Probability, error_model_get_epsilon)
@@ -605,27 +608,30 @@ TEST(Probability, error_model_rows_must_add_to_one)
     }
 }
 
-#if 0
-TEST(Probability, error_model_compute_parameters)
+TEST(Probability, error_model_replace_epsilons)
 {
+    string input = "maxcnt: 10\ncntdiff: -1 0 1\n"
+        "0 0.0 0.8 0.2\n"
+        "1 0.2 0.6 0.2\n"
+        "2 0.2 0.6 0.2\n";
+
+    istringstream ist(input);
     error_model model;
-    model.set_probs(1, { .2, .6, .2 });
-    model.set_probs(2, { .1, .8, .1 });
-    model.set_probs(3, { .2, .6, .2 });
+    read_error_model_file(ist, &model);
 
-    vector<double> actual = model.get_epsilons();
+    map<double, double> replacements;
+    replacements[.2] = .3;
+    model.replace_epsilons(&replacements);
 
+    auto actual = model.get_probs(0);
+    DOUBLES_EQUAL(.7, actual[1], 0.0001);
+    DOUBLES_EQUAL(.3, actual[2], 0.0001);
 
-    init = { .1, .2, .6, .8};
-    first = { .08, .2, .6, .8}
-
-    model.set_error_model(first);
-    calculate_score();
-    second = { .08, ..21, .6, .8 }
-
-    find_best_lambda(d1, d2, d3, d4);
+    actual = model.get_probs(1);
+    DOUBLES_EQUAL(.3, actual[0], 0.0001);
+    DOUBLES_EQUAL(.4, actual[1], 0.0001);
+    DOUBLES_EQUAL(.3, actual[2], 0.0001);
 }
-#endif
 
 TEST(Probability, read_error_model)
 {
@@ -639,7 +645,6 @@ TEST(Probability, read_error_model)
     istringstream ist(input);
     error_model model;
     read_error_model_file(ist, &model);
-
     auto vec = model.get_probs(0);
     LONGS_EQUAL(3, vec.size());
     DOUBLES_EQUAL(0.0, vec[0], 0.00001);

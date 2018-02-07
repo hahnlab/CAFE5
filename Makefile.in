@@ -52,7 +52,7 @@ remove: clean
 #
 DBGDIR = debug
 DBG_OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(DBGDIR)/%.o)
-DBG_CFLAGS = -std=c++11 @OPENMP_CXXFLAGS@ -g -I. -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -DVERBOSE
+DBG_CFLAGS = -std=c++11 @OPENMP_CXXFLAGS@ -g -I. -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 DBG_LINKER = g++ -std=c++11 @OPENMP_CXXFLAGS@ -o
 
 $(DBG_OBJECTS): $(DBGDIR)/%.o: $(SRCDIR)/%.cpp
@@ -62,7 +62,7 @@ $(DBGDIR)/main.o: main.cpp
 	$(CC) $(DBG_CFLAGS) -c $< -o $@
 
 $(DBGDIR)/$(TARGET): $(DBG_OBJECTS) $(DBGDIR)/main.o
-	$(DBG_LINKER) $@ $(LFLAGS) $(DBG_OBJECTS) $(DBGDIR)/main.o
+	$(DBG_LINKER) $@ $(LFLAGS) $(DBG_OBJECTS) $(DBGDIR)/main.o @LIBS@
 
 .PHONY: debug
 debug: $(DBGDIR)/$(TARGET)
@@ -71,7 +71,7 @@ TESTDIR = test
 TEST_TARGET = runtests
 TEST_OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(TESTDIR)/%.o)
 $(TEST_OBJECTS): $(TESTDIR)/%.o: $(SRCDIR)/%.cpp
-	$(CC) $(DBG_CFLAGS) -c $< -o $@
+	$(CC) $(DBG_CFLAGS) -DSILENT -c $< -o $@
 
 $(TESTDIR)/test.o: test.cpp
 	$(CC) $(DBG_CFLAGS) -c $< -o $@

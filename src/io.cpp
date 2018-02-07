@@ -8,6 +8,7 @@
 #include <cstring>
 #include <set>
 #include <numeric>
+#include <cassert>
 
 using namespace std;
 
@@ -163,6 +164,9 @@ void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gen
             if (line[0] == '#') {
                 if (p_tree == NULL) { throw std::runtime_error("No tree was provided."); }
                 string taxon_name = line.substr(1); // Grabs from character 1 and on
+                if (taxon_name.back() == '\r')
+                    taxon_name.pop_back();
+
                 clade *p_descendant = p_tree->find_descendant(taxon_name); // Searches (from root down) and grabs clade "taxon_name" root
                 
                 if (p_descendant == NULL) { throw std::runtime_error(taxon_name + " not located in tree"); }
@@ -275,11 +279,36 @@ std::vector<double> error_model::get_epsilons() const {
     return result;
 }
 
-error_model* error_model::replace_epsilons(double *new_epsilons) const
+error_model* error_model::replace_epsilons(std::map<double, double> *new_epsilons)
 {
-    error_model* result = new error_model();
-    // fill out values
-    return result;
+    vector<double> vec = _error_dists[0];
+    assert(vec.size() == 3);
+    for (auto kv : *new_epsilons)
+    {
+        if (is_nearly_equal(kv.first, vec.back()))
+        {
+            vec.back() = kv.second;
+            vec[1] = 1 - kv.second;
+            set_probs(0, vec);
+        }
+    }
+
+    for (size_t i = 1; i < _error_dists.size(); ++i)
+    {
+        vector<double> vec = _error_dists[i];
+        assert(vec.size() == 3);
+
+        for (auto kv : *new_epsilons)
+        {
+            if (is_nearly_equal(kv.first, vec.back()))
+            {
+                vec.back() = kv.second;
+                vec.front() = kv.second;
+                vec[1] = 1 - (kv.second * 2);
+                set_probs(i, vec);
+            }
+        }
+    }
 }
 
 double to_double(string s)

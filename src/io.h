@@ -120,6 +120,6 @@ public:
   }
 
   std::vector<double> get_epsilons() const;
-  error_model* replace_epsilons(double *new_epsilons) const;
+  error_model* replace_epsilons(std::map<double,double> *new_epsilons);
 };
 #endif

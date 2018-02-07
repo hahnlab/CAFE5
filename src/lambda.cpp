@@ -69,57 +69,32 @@ double multiple_lambda::get_value_for_clade(clade *c) {
 
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
-/// score of a lambda is the -log likelihood of the most likely resulting family size
-double calculate_lambda_score(double* p_lambda, void* args)
+double fn_calc_score(double* p_lambda, void* args)
 {
-    auto vals = (std::tuple<model *, root_equilibrium_distribution *>*)args;
-
-    model *model = std::get<0>(*vals);
-    root_equilibrium_distribution* dist = std::get<1>(*vals);
-
-    model->set_current_guesses(p_lambda);
-    model->start_inference_processes();
-
-    return model->infer_processes(dist);
+    optimizer *opt = reinterpret_cast<optimizer*>(args);
+    opt->calculate_score(p_lambda);
 }
 
-double* find_best_lambda(model * p_model, root_equilibrium_distribution *p_distribution)
+void optimizer::optimize()
 {
-    auto initial = p_model->initial_guesses();
+    auto initial = initial_guesses();
 	FMinSearch* pfm;
-    std::tuple<model *, root_equilibrium_distribution *> args(p_model, p_distribution);
-	pfm = fminsearch_new_with_eq(calculate_lambda_score, initial.size(), &args);
+	pfm = fminsearch_new_with_eq(fn_calc_score, initial.size(), this);
 	pfm->tolx = 1e-6;
 	pfm->tolf = 1e-6;
     pfm->maxiters = 25;
 	fminsearch_min(pfm, &initial[0]);
     double *re = fminsearch_get_minX(pfm);
-    if (fminsearch_get_minF(pfm) == -log(0))
+
+    if (!quiet)
     {
-        cerr << "Failed to find any reasonable values" << endl;
+        log_results(pfm, initial, re);
     }
-    else
-    {
-        cout << "Completed " << pfm->iters << " iterations" << endl;
-        cout << "Best match" << (initial.size() == 1 ? " is: " : "es are: ") << setw(15) << setprecision(14);
-        for (size_t i = 0; i < initial.size(); ++i)
-            cout << re[i] << ',';
-        cout << endl;
-    }
-    return re;
+    finalize(re);
 }
-#if 0
-double* find_best_epsilon(model * p_model, root_equilibrium_distribution *p_distribution)
+
+void optimizer::log_results(FMinSearch * pfm, std::vector<double> &initial, double * re)
 {
-    auto initial = p_model->initial_epsilon_guesses();
-    FMinSearch* pfm;
-    std::tuple<model *, root_equilibrium_distribution *> args(p_model, p_distribution);
-    pfm = fminsearch_new_with_eq(calculate_epsilon_score, initial.size(), &args);
-    pfm->tolx = 1e-6;
-    pfm->tolf = 1e-6;
-    pfm->maxiters = 25;
-    fminsearch_min(pfm, &initial[0]);
-    double *re = fminsearch_get_minX(pfm);
     if (fminsearch_get_minF(pfm) == -log(0))
     {
         cerr << "Failed to find any reasonable values" << endl;
@@ -132,6 +107,5 @@ double* find_best_epsilon(model * p_model, root_equilibrium_distribution *p_dist
             cout << re[i] << ',';
         cout << endl;
     }
-    return re;
 }
-#endif
+

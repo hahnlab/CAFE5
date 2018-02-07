@@ -12,7 +12,7 @@ class base_model : public model {
 public:
     //! Computation or estimation constructor
     base_model(lambda* p_lambda, clade *p_tree, vector<gene_family> *p_gene_families,
-        int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map, const error_model *p_error_model);
+        int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map, error_model *p_error_model);
 
     virtual void start_inference_processes();
     virtual double infer_processes(root_equilibrium_distribution *prior);
@@ -24,16 +24,13 @@ public:
 
     virtual void print_results(std::ostream& ost);
 
-    virtual std::vector<double> initial_guesses();
-    void set_current_guesses(double * guesses);
+    virtual optimizer *get_lambda_optimizer(root_equilibrium_distribution* p_distribution);
 
     virtual void reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
     reconstruction_process* create_reconstruction_process(int family_number, matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
     void print_reconstructed_states(std::ostream& ost);
 
-    virtual std::vector<double> initial_epsilon_guesses();
-    virtual void set_current_epsilon_guesses(double *guesses);
-
-   };
+    optimizer *get_epsilon_optimizer(root_equilibrium_distribution* p_distribution);
+};
 
 #endif

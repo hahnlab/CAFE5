@@ -22,7 +22,7 @@ public:
 
     //! Computation or estimation constructor
     gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
-        int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map, const error_model *p_error_model);
+        int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map, error_model *p_error_model);
 
     ~gamma_model();
     //! Gamma methods
@@ -40,9 +40,7 @@ public:
 
     double infer_processes(root_equilibrium_distribution *prior);
 
-    std::vector<double> initial_guesses();
-
-    void set_current_guesses(double * guesses);
+    virtual optimizer *get_lambda_optimizer(root_equilibrium_distribution* p_distribution);
 
     virtual std::string name() {
         return "Gamma";
@@ -53,4 +51,11 @@ public:
     virtual void reconstruct_ancestral_states(matrix_cache *, root_equilibrium_distribution* p_prior);
     void print_reconstructed_states(std::ostream& ost);
 
+    std::size_t get_gamma_cat_probs_count() const {
+        return _gamma_cat_probs.size();
+    }
+
+    std::size_t get_lambda_multiplier_count() const {
+        return _lambda_multipliers.size();
+    }
 };

@@ -9,6 +9,8 @@ class gene_family;
 class root_equilibrium_distribution;
 class model;
 
+struct FMinSearch;
+
 /* START: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
 //! Abstract class to hold lambda value.
@@ -88,8 +90,31 @@ public:
 
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
+class optimizer {
+public:
+    optimizer() 
+    {
+#ifdef SILENT
+        quiet = true;
+#endif
+    }
+
+    virtual ~optimizer() {}
+
+    virtual std::vector<double> initial_guesses() = 0;
+
+    virtual double calculate_score(double *values) = 0;
+
+    virtual void finalize(double *results) = 0;
+
+    void optimize();
+
+    void log_results(FMinSearch * pfm, std::vector<double> &initial, double * re);
+
+    bool quiet = false;
+};
+
 std::vector<double> get_posterior(std::vector<gene_family> gene_families, int max_family_size, int max_root_family_size, double lambda, clade *p_tree);
-double* find_best_lambda(model *p_model, root_equilibrium_distribution *p_distribution);
 
 inline std::ostream& operator<<(std::ostream& ost, lambda& lambda)
 {

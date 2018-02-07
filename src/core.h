@@ -60,7 +60,7 @@ protected:
 
     std::vector<family_info_stash> results;
 
-    const error_model* _p_error_model;
+    error_model* _p_error_model;
 public:
     //! Basic constructor
     model(): _ost(cout), _p_lambda(NULL), _p_tree(NULL), _p_gene_families(NULL), _total_n_families_sim(1) {}
@@ -71,7 +71,7 @@ public:
         int max_family_size, 
         int total_n_families, 
         vector<int> rootdist_vec, 
-        const error_model *p_error_model) : 
+        error_model *p_error_model) : 
         _ost(ost), _p_lambda(p_lambda), _p_tree(p_tree), _max_family_size(max_family_size), 
         _total_n_families_sim(total_n_families), _rootdist_vec(rootdist_vec), _p_error_model(p_error_model) {}
     
@@ -80,10 +80,11 @@ public:
         vector<gene_family> *p_gene_families, 
         int max_family_size, 
         int max_root_family_size, 
-        const error_model *p_error_model) : 
+        error_model *p_error_model) : 
         _ost(cout), _p_lambda(p_lambda), _p_tree(p_tree), _p_gene_families(p_gene_families), _max_family_size(max_family_size), 
         _max_root_family_size(max_root_family_size), _p_error_model(p_error_model) {}
     
+    virtual ~model() {}
     //void estimate_processes(); 
     
     //! Setter methods
@@ -121,15 +122,23 @@ public:
     virtual std::string name() = 0;
     virtual void print_results(std::ostream& ost) = 0;
 
-    virtual std::vector<double> initial_guesses() = 0;
-    virtual void set_current_guesses(double *guesses) = 0;
-
     virtual void reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
     virtual void print_reconstructed_states(std::ostream& ost) = 0;
 
+    virtual optimizer *get_lambda_optimizer(root_equilibrium_distribution* p_distribution) = 0;
     void print_node_depths(std::ostream& ost);
+
+    std::size_t get_gene_family_count() const {
+        return _p_gene_families->size();
+    }
 };
 
-std::vector<model *> build_models(const input_parameters& my_input_parameters, clade *p_tree, lambda *p_lambda, std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size);
+std::vector<model *> build_models(const input_parameters& my_input_parameters, 
+    clade *p_tree, 
+    lambda *p_lambda, 
+    std::vector<gene_family>* p_gene_families, 
+    int max_family_size, 
+    int max_root_family_size,
+    error_model *p_error_model);
 #endif /* CORE_H */
 

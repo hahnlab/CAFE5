@@ -11,8 +11,38 @@
 #include "matrix_cache.h"
 #include "gamma_bundle.h"
 
+class gamma_lambda_optimizer : public optimizer
+{
+    gamma_model *_p_model;
+    root_equilibrium_distribution *_p_distribution;
+    clade *_p_tree;
+    lambda *_p_lambda;
+public:
+    gamma_lambda_optimizer(clade *p_tree, lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution) :
+        _p_tree(p_tree),
+        _p_lambda(p_lambda),
+        _p_model(p_model),
+        _p_distribution(_p_distribution)
+    {
+
+    }
+
+    std::vector<double> initial_guesses();
+
+    double calculate_score(double *values);
+
+    /// results consists of the desired number of lambdas and one alpha value
+    void finalize(double *results) {
+        _p_lambda->update(results);
+        double alpha = results[_p_lambda->count()];
+        _p_model->set_alpha(alpha, _p_model->get_gene_family_count());
+    }
+
+};
+
+
 gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
-    int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map, const error_model* p_error_model) :
+    int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map, error_model* p_error_model) :
     model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_error_model) {
     if (p_rootdist_map != NULL)
         _rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
@@ -188,34 +218,9 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     return final_likelihood;
 }
 
-std::vector<double> gamma_model::initial_guesses()
+optimizer *gamma_model::get_lambda_optimizer(root_equilibrium_distribution* p_distribution)
 {
-    double alpha = unifrnd();
-
-    std::vector<double> x(_gamma_cat_probs.size());
-    std::vector<double> y(_lambda_multipliers.size());
-    get_gamma(x, y, alpha); // passing vectors by reference
-
-    double largest_multiplier = *max_element(y.begin(), y.end());
-    branch_length_finder finder;
-    _p_tree->apply_prefix_order(finder);
-    //double result = 1.0 / finder.result() * unifrnd();
-    std::vector<double> lambdas(_p_lambda->count());
-    const double longest_branch = finder.longest();
-    generate(lambdas.begin(), lambdas.end(), [longest_branch, largest_multiplier] { return 1.0 / (longest_branch*largest_multiplier) * unifrnd(); });
-
-    lambdas.push_back(alpha);
-    return lambdas;
-}
-
-void gamma_model::set_current_guesses(double *guesses)
-{
-    _p_lambda->update(guesses);
-
-    double alpha = guesses[_p_lambda->count()];
-    set_alpha(alpha, _p_gene_families->size());
-
-    cout << "Attempting lambda: " << *_p_lambda << ", alpha: " << alpha << std::endl;
+    return new gamma_lambda_optimizer(_p_tree, _p_lambda, this, p_distribution);
 }
 
 void gamma_model::reconstruct_ancestral_states(matrix_cache *calc, root_equilibrium_distribution*prior)
@@ -265,6 +270,41 @@ void gamma_model::print_reconstructed_states(std::ostream& ost)
     {
         bundle->print_reconstruction(ost, order);
     }
+}
+
+std::vector<double> gamma_lambda_optimizer::initial_guesses()
+{
+    double alpha = unifrnd();
+
+    std::vector<double> x(_p_model->get_gamma_cat_probs_count());
+    std::vector<double> y(_p_model->get_lambda_multiplier_count());
+    get_gamma(x, y, alpha); // passing vectors by reference
+
+    double largest_multiplier = *max_element(y.begin(), y.end());
+    branch_length_finder finder;
+    _p_tree->apply_prefix_order(finder);
+    //double result = 1.0 / finder.result() * unifrnd();
+    std::vector<double> lambdas(_p_lambda->count());
+    const double longest_branch = finder.longest();
+    generate(lambdas.begin(), lambdas.end(), [longest_branch, largest_multiplier] { return 1.0 / (longest_branch*largest_multiplier) * unifrnd(); });
+
+    lambdas.push_back(alpha);
+    return lambdas;
+
+}
+
+double gamma_lambda_optimizer::calculate_score(double *values)
+{
+    _p_lambda->update(values);
+
+    double alpha = values[_p_lambda->count()];
+    _p_model->set_alpha(alpha, _p_model->get_gene_family_count());
+
+    cout << "Attempting lambda: " << *_p_lambda << ", alpha: " << alpha << std::endl;
+
+    _p_model->start_inference_processes();
+
+    return _p_model->infer_processes(_p_distribution);
 }
 
 

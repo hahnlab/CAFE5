@@ -204,7 +204,7 @@ public:
 
 /// estimate a lambda
 /// \callgraph
-void execute::estimate_lambda(model *p_model, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
+void execute::estimate_lambda(model *p_model, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
     std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size)
 {
     lambda *p_lambda = NULL;
@@ -223,7 +223,8 @@ void execute::estimate_lambda(model *p_model, const input_parameters &my_input_p
 
     p_model->set_lambda(p_lambda);
     p_tree->init_gene_family_sizes(*p_gene_families);
-    p_model->set_current_guesses(find_best_lambda(p_model, p_prior));
+    unique_ptr<optimizer> opt(p_model->get_lambda_optimizer(p_prior));
+    opt->optimize();
 }
 
 void execute::reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior)

@@ -110,6 +110,7 @@ int cafexp(int argc, char *const argv[]) {
     
     clade *p_tree = NULL; // instead of new clade(), o.w. mem leak
     clade *p_lambda_tree = NULL;
+    error_model *p_error_model = NULL;
     std::vector<gene_family> gene_families;
     map<int, int>* p_rootdist_map = NULL; // for sims
 
@@ -215,7 +216,7 @@ int cafexp(int argc, char *const argv[]) {
         
         /* -e */
         if (!my_input_parameters.error_model_file_path.empty()) {
-            error_model *p_error_model = new error_model;
+            p_error_model = new error_model;
             my_executer.read_error_model(my_input_parameters, p_error_model);
         }
         
@@ -231,10 +232,20 @@ int cafexp(int argc, char *const argv[]) {
         
         // When computing or simulating, only base or gamma model is used. When estimating, base and gamma model are used (to do: compare base and gamma w/ LRT)
         // Build model takes care of -f
-        vector<model *> models = build_models(my_input_parameters, p_tree, p_lambda, &gene_families, max_family_size, max_root_family_size);
+        vector<model *> models = build_models(my_input_parameters, p_tree, p_lambda, &gene_families, max_family_size, max_root_family_size, p_error_model);
         
         if (models.empty())
             throw std::runtime_error("Not enough information to specify a model");
+        
+        if (p_error_model)
+        {
+            base_model *b = dynamic_cast<base_model *>(models[0]);
+            unique_ptr<optimizer> opt(b->get_epsilon_optimizer(p_prior));
+            opt->optimize();
+            // Printing: take estimated values, re-compute them for printing purposes
+            my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size);
+            return 0;
+        }
 
         // -f cannot have been specified
         if (my_input_parameters.rootdist.empty()) {
@@ -247,7 +258,7 @@ int cafexp(int argc, char *const argv[]) {
             // If lambda was not fixed, estimate!
             else {
                 for (model* p_model : models) {
-                    my_executer.estimate_lambda(p_model, my_input_parameters, p_prior, p_tree, p_lambda_tree, &gene_families, max_family_size, max_root_family_size);
+                    my_executer.estimate_lambda(p_model, p_prior, p_tree, p_lambda_tree, &gene_families, max_family_size, max_root_family_size);
                 }
             
             // Printing: take estimated values, re-compute them for printing purposes
