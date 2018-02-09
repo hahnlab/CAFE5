@@ -23,7 +23,7 @@ public:
     virtual lambda *multiply(double factor) = 0;
     virtual void update(double* values) = 0;
     virtual int count() const = 0;
-    virtual std::string to_string() = 0;
+    virtual std::string to_string() const = 0;
     virtual double get_value_for_clade(clade *c) = 0;
     virtual bool is_valid() = 0;
 };
@@ -47,7 +47,7 @@ public:
     virtual int count() const {
         return 1;
     }
-    virtual std::string to_string();
+    virtual std::string to_string() const;
     virtual double get_value_for_clade(clade *c) {
         return _lambda;
     }
@@ -79,7 +79,7 @@ public:
     virtual int count() const {
         return _lambdas.size();
     }
-    virtual std::string to_string();
+    virtual std::string to_string() const;
     virtual double get_value_for_clade(clade *c);
     virtual bool is_valid();
 
@@ -116,7 +116,7 @@ public:
 
 std::vector<double> get_posterior(std::vector<gene_family> gene_families, int max_family_size, int max_root_family_size, double lambda, clade *p_tree);
 
-inline std::ostream& operator<<(std::ostream& ost, lambda& lambda)
+inline std::ostream& operator<<(std::ostream& ost, const lambda& lambda)
 {
     ost << lambda.to_string();
     return ost;

@@ -89,7 +89,10 @@ public:
     
     //! Setter methods
     void set_lambda(lambda *p_lambda);
-    
+    const lambda * get_lambda() const {
+        return _p_lambda;
+    }
+
     void set_tree(clade *p_tree);
     
     void set_gene_families(std::vector<gene_family> *p_gene_families);

@@ -24,7 +24,7 @@ std::vector<double> single_lambda::calculate_child_factor(matrix_cache& calc, cl
 	return matrix.multiply(probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
 }
 
-std::string single_lambda::to_string()
+std::string single_lambda::to_string() const
 {
     ostringstream ost;
     ost << setw(15) << setprecision(14) << _lambda;
@@ -46,7 +46,7 @@ void multiple_lambda::update(double* values)
     std::copy(values, values + _lambdas.size(), _lambdas.begin());
 }
 
-std::string multiple_lambda::to_string()
+std::string multiple_lambda::to_string() const
 {
     ostringstream ost;
     ost << setw(15) << setprecision(14);

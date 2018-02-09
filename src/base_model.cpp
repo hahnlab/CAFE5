@@ -32,7 +32,6 @@ public:
     {
         _p_lambda->update(results);
     }
-
 };
 
 class base_epsilon_optimizer : public optimizer
@@ -261,7 +260,7 @@ double base_epsilon_optimizer::calculate_score(double *values)
     _p_error_model->replace_epsilons(&replacements);
 
     if (!quiet)
-        cout << "Epsilon: " << *values << std::endl;
+        cout << *values << "Error Model Run" << std::endl;
 
     _p_lambda_optimizer->optimize();
 
@@ -270,7 +269,10 @@ double base_epsilon_optimizer::calculate_score(double *values)
     double score = _p_model->infer_processes(_p_distribution);
 
     if (!quiet)
-        std::cout << "Score (-lnL): " << setw(15) << setprecision(14) << score << std::endl;
+    {
+        std::cout << "Score with above error models: " << setw(15) << setprecision(14) << score << std::endl;
+        std::cout << "Lambda with above error models: " << setw(15) << setprecision(14) << *_p_model->get_lambda() << std::endl;
+    }
 
     return score;
 }
