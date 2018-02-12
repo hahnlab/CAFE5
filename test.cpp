@@ -206,6 +206,20 @@ bool operator==(matrix& m1, matrix& m2)
     return true;
 }
 
+TEST(Probability, probability_of_matrix2)
+{
+    matrix_cache calc;
+    single_lambda lambda(0.006335);
+    std::set<double> branch_lengths{ 68.7105 };
+    calc.precalculate_matrices(141, get_lambda_values(&lambda), branch_lengths);
+    DOUBLES_EQUAL(0.194661, calc.get_matrix(141, 68.7105, 0.006335).get(5,5), 0.00001);
+}
+
+TEST(Probability, the_probability_of_going_from_parent_fam_size_to_c)
+{
+    DOUBLES_EQUAL(0.194661, the_probability_of_going_from_parent_fam_size_to_c(.006335, 68.7105, 5, 5), 0.00001);
+}
+
 TEST(Probability, probability_of_matrix)
 {
     matrix_cache calc;
@@ -431,6 +445,11 @@ TEST(Inference, birthdeath_rate_with_log_alpha)
     DOUBLES_EQUAL(-2.39974, log(birthdeath_rate_with_log_alpha(43, 43, -1.686354, 0.629613)), 0.00001);
     DOUBLES_EQUAL(-2.44301, log(birthdeath_rate_with_log_alpha(43, 44, -1.686354, 0.629613)), 0.00001);
     DOUBLES_EQUAL(-1.58253, log(birthdeath_rate_with_log_alpha(13, 14, -2.617970, 0.854098)), 0.00001);
+
+    DOUBLES_EQUAL(0.107, birthdeath_rate_with_log_alpha(40, 42, -1.37, 0.5), .001);
+    DOUBLES_EQUAL(0.006, birthdeath_rate_with_log_alpha(41, 34, -1.262, 0.4), .001);
+
+    DOUBLES_EQUAL(0.194661, birthdeath_rate_with_log_alpha(5, 5, -1.1931291703283662, 0.39345841643135504), 0.0001);
 }
 
 TEST(Inference, create_one_model_if_lambda_is_null)
@@ -525,12 +544,6 @@ TEST(Probability, matrix_multiply)
     DOUBLES_EQUAL(58, result[0], .001);
     DOUBLES_EQUAL(139, result[1], .001);
     DOUBLES_EQUAL(220, result[2], .001);
-}
-
-TEST(Probability, birthdeath_rate_with_log_alpha)
-{
-    DOUBLES_EQUAL(0.107, birthdeath_rate_with_log_alpha(40, 42, -1.37, 0.5), .001);
-    DOUBLES_EQUAL(0.006, birthdeath_rate_with_log_alpha(41, 34, -1.262, 0.4), .001);
 }
 
 TEST(Probability, error_model_set_probs)
