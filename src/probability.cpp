@@ -168,14 +168,13 @@ public:
     void update_probabilities(clade *node) {
 		vector<double>& node_probs = _probabilities[node];
 		node_probs.resize(_probabilities_vec_size);
-		// cout << "Node " << node->get_taxon_name() << " has " << node_probs.size() << " probabilities" << endl;
 
         for (int i = 0; i < node_probs.size(); i++) {
 			node_probs[i] = 1;
             map<clade *, std::vector<double> >::iterator it = _factors.begin();
-            
+
             for (; it != _factors.end(); it++) {
-				node_probs[i] *= it->second[i];
+                node_probs[i] *= it->second[i];
             }
         }
     }
@@ -208,8 +207,8 @@ void likelihood_computer::operator()(clade *node) {
 
 	else if (node->is_root()) {
 		// at the root, the size of the vector holding the final likelihoods will be _max_root_family_size (size 0 is not included, so we do not add 1)
-		child_calculator calc(_max_root_family_size, _lambda, _calc, _probabilities, 1, _max_root_family_size+1, 1, _max_root_family_size+1);
-		node->apply_to_descendants(calc);
+		child_calculator calc(_max_root_family_size, _lambda, _calc, _probabilities, 1, _max_root_family_size, 0, _max_parsed_family_size);
+        node->apply_to_descendants(calc);
 		calc.update_probabilities(node);
 	}
 

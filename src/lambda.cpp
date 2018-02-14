@@ -17,10 +17,12 @@ using namespace std;
 
 std::vector<double> single_lambda::calculate_child_factor(matrix_cache& calc, clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size)
 {
-	// cout << "Child node " << child->get_taxon_name() << " has " << probabilities.size() << " probabilities" << endl;
-	auto matrix = calc.get_matrix(probabilities.size(), child->get_branch_length(), _lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
-//    if (matrix.is_zero())
-//        cerr << "Saturation at " << child->get_taxon_name() << ": Lambda: " << _lambda << ", branch length: " << child->get_branch_length() << endl;
+    auto matrix = calc.get_matrix(probabilities.size(), child->get_branch_length(), _lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
+#if 0
+    printf("  Node %s matrix parameters: %d, %f, %f\n", child->get_taxon_name().c_str(), probabilities.size(), child->get_branch_length(), _lambda);
+    printf("  Multipliers: %d, %d, %d, %d\n", s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
+    printf("  Matrix 65, 65 is: %e\n", matrix.get(65, 65));
+#endif
 	return matrix.multiply(probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
 }
 

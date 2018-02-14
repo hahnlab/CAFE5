@@ -96,7 +96,7 @@ TEST(Inference, infer_processes)
     uniform_distribution frq;
     double multi = core.infer_processes(&frq);
     //core.get_likelihoods();
-    DOUBLES_EQUAL(39.9207, multi, 0.001);
+    DOUBLES_EQUAL(41.7504, multi, 0.001);
     delete p_tree;
 }
 
@@ -206,13 +206,14 @@ bool operator==(matrix& m1, matrix& m2)
     return true;
 }
 
-TEST(Probability, probability_of_matrix2)
+TEST(Probability, matrices_take_fractional_branch_lengths_into_account)
 {
     matrix_cache calc;
     single_lambda lambda(0.006335);
-    std::set<double> branch_lengths{ 68.7105 };
+    std::set<double> branch_lengths{ 68, 68.7105 };
     calc.precalculate_matrices(141, get_lambda_values(&lambda), branch_lengths);
-    DOUBLES_EQUAL(0.194661, calc.get_matrix(141, 68.7105, 0.006335).get(5,5), 0.00001);
+    DOUBLES_EQUAL(0.194661, calc.get_matrix(141, 68.7105, 0.006335).get(5,5), 0.00001); // a value 
+    DOUBLES_EQUAL(0.195791, calc.get_matrix(141, 68, 0.006335).get(5, 5), 0.00001);
 }
 
 TEST(Probability, the_probability_of_going_from_parent_fam_size_to_c)
@@ -394,8 +395,8 @@ TEST(Inference, gamma_bundle_prune)
     CHECK(bundle.prune({ 0.01, 0.05 }, &dist, cache, cat_likelihoods)); 
 
     LONGS_EQUAL(2, cat_likelihoods.size());
-    DOUBLES_EQUAL(-22.5251, log(cat_likelihoods[0]), 0.0001);
-    DOUBLES_EQUAL(-16.1766, log(cat_likelihoods[1]), 0.0001);
+    DOUBLES_EQUAL(-23.3728, log(cat_likelihoods[0]), 0.0001);
+    DOUBLES_EQUAL(-17.0086, log(cat_likelihoods[1]), 0.0001);
 
 }
 
@@ -693,8 +694,9 @@ TEST(Inference, prune)
     matrix_cache cache;
     cache.precalculate_matrices(21, { 0.045 }, { 1.0,3.0,7.0 });
     auto actual = process.prune(cache);
-    vector<double> log_expected{ -22.5513, -14.7206, -8.85104, -4.67892, -4.57456, -5.52831, -7.37063, -10.152, 
-        -13.4435, -17.0609, -20.9074, -24.9251, -29.076, -33.334, -37.6799, -42.0995, -46.5817, -51.1179, -55.7011, -60.3256 };
+
+    vector<double> log_expected{ -17.2771, -10.0323 , -5.0695 , -4.91426 , -5.86062 , -7.75163 , -10.7347 , -14.2334 , -18.0458 , 
+        -22.073 , -26.2579 , -30.5639 , -34.9663 , -39.4472 , -43.9935 , -48.595 , -53.2439 , -57.9338 , -62.6597 , -67.4173 };
 
     LONGS_EQUAL(log_expected.size(), actual.size());
     for (size_t i = 0; i<log_expected.size(); ++i)
@@ -777,8 +779,9 @@ TEST(Inference, likelihood_computer_sets_root_nodes_correctly)
 
     auto actual = pruner.get_likelihoods(AB);
 
-    vector<double> log_expected{ -25.8046, -17.1121, -10.388, -5.37765, -5.24652, -6.21594, -8.18487, -11.5884,
-        -15.5796, -19.9223, -24.5056, -29.2661, -34.1635, -39.1702, -44.2664, -49.4374, -54.6718, -59.9609, -65.2974, -70.6756 };
+    vector<double> log_expected{ -19.7743, -11.6688, -5.85672, -5.66748, -6.61256, -8.59725, -12.2301, -16.4424, -20.9882, -25.7574, 
+        -30.6888, -35.7439, -40.8971, -46.1299, -51.4289, -56.7837, -62.1863, -67.6304, -73.1106, -78.6228
+    };
 
     LONGS_EQUAL(log_expected.size(), actual.size());
     for (size_t i = 0; i<log_expected.size(); ++i)

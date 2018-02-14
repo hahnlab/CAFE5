@@ -139,7 +139,7 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
 
     for (int i = 0; i < processes.size(); ++i) {
 
-        auto partial_likelihood = processes[i]->prune(calc);
+        auto partial_likelihood = processes[i]->prune(calc);    // probabilities of various family sizes
         std::vector<double> full(partial_likelihood.size());
 
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
