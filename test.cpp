@@ -230,7 +230,7 @@ TEST(Probability, probability_of_matrix)
     matrix actual = calc.get_matrix(5, 5, lambda.get_single_lambda());
     matrix expected(5);
     double values[5][5] = {
-    {0,0,0,0,0},
+    {1,0,0,0,0},
     { 0.2,0.64,0.128,0.0256,0.00512 },
     { 0.04,0.256,0.4608,0.17408,0.0512 },
     { 0.008,0.0768,0.26112,0.36352,0.187392 },

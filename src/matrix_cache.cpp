@@ -166,7 +166,7 @@ void matrix_cache::precalculate_matrices(int size, const std::vector<double>& la
         m->set(0, 0, get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0));
         for (int i = 0; i < m->size(); ++i)
         {
-            m->set(0, 0, get_from_parent_fam_size_to_c(lambda, branch_length, 0, i));
+            m->set(0, i, get_from_parent_fam_size_to_c(lambda, branch_length, 0, i));
         }
         for (int s = 1; s < size; s++) {
             for (int c = 0; c < size; c++) {

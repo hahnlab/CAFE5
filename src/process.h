@@ -59,6 +59,7 @@ public:
 	}
 
 	std::vector<double> prune(matrix_cache& calc);    // returns likelihood of the tree for each family size
+    std::string family_id() const;
 };
 
 class simulation_process : public process {

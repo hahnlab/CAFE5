@@ -21,7 +21,8 @@ std::vector<double> single_lambda::calculate_child_factor(matrix_cache& calc, cl
 #if 0
     printf("  Node %s matrix parameters: %d, %f, %f\n", child->get_taxon_name().c_str(), probabilities.size(), child->get_branch_length(), _lambda);
     printf("  Multipliers: %d, %d, %d, %d\n", s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
-    printf("  Matrix 65, 65 is: %e\n", matrix.get(65, 65));
+    if (matrix.size() > 65)
+        printf("  Matrix 65, 65 is: %e\n", matrix.get(65, 65));
 #endif
 	return matrix.multiply(probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
 }
