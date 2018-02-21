@@ -30,8 +30,8 @@ public:
 
     void simulate(std::vector<model *>& models, const input_parameters &my_input_parameters);
 
-    void reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, matrix_cache& calculator);
-    void estimate_lambda(model * p_model, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
-        std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size, matrix_cache& calculator);
+    void reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior);
+    void estimate_lambda(model * p_model, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
+        std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size);
 };
 #endif /* EXECUTE_H */

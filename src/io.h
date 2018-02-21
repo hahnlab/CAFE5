@@ -100,8 +100,6 @@ private:
     
   std::vector<int> _deviations; //!< Deviations from the true gene family (e.g., -1 0 1)
   
-  int _n_deviations;
-  
   std::vector<std::vector<double> > _error_dists; //!< Each vector element will be a gene family size; the vector of doubles inside (e.g., 0.1 0.8 0.1) will be the probs of deviating from the true value
   
 public:
@@ -116,5 +114,12 @@ public:
     
   //! Get deviation probability vector for a certain family size
   std::vector<double> get_probs(int fam_size) const;
+
+  size_t n_deviations() const {
+      return _deviations.size();
+  }
+
+  std::vector<double> get_epsilons() const;
+  error_model* replace_epsilons(std::map<double,double> *new_epsilons);
 };
 #endif

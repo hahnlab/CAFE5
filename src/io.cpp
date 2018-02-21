@@ -5,6 +5,10 @@
 #include <iostream>
 #include <getopt.h>
 #include <sstream>
+#include <cstring>
+#include <set>
+#include <numeric>
+#include <cassert>
 
 using namespace std;
 
@@ -71,6 +75,11 @@ clade* read_tree(string tree_file_path, bool lambda_tree) {
     }
     
     ifstream tree_file(tree_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
+    if (!tree_file.is_open())
+    {
+        throw std::runtime_error("Failed to open " + tree_file_path);
+    }
+
     string line;
     
     if (tree_file.good()) {
@@ -155,6 +164,9 @@ void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gen
             if (line[0] == '#') {
                 if (p_tree == NULL) { throw std::runtime_error("No tree was provided."); }
                 string taxon_name = line.substr(1); // Grabs from character 1 and on
+                if (taxon_name.back() == '\r')
+                    taxon_name.pop_back();
+
                 clade *p_descendant = p_tree->find_descendant(taxon_name); // Searches (from root down) and grabs clade "taxon_name" root
                 
                 if (p_descendant == NULL) { throw std::runtime_error(taxon_name + " not located in tree"); }
@@ -224,16 +236,32 @@ void error_model::set_deviations(std::vector<std::string> deviations) {
     for (std::vector<std::string>::iterator it = deviations.begin(); it != deviations.end(); ++it) {
         _deviations.push_back(std::stoi(*it));
     }
-    
-    _n_deviations = _deviations.size();
+}
 
-    for (int i = 0; i < _max_cnt; ++i) {
-        std::vector<double> devs(_n_deviations, 0.0); // filling deviation probs with 0.0 for all family sizes
-        _error_dists.push_back(devs);
-    }
+inline bool is_nearly_equal(double x, double y)
+{
+    const double epsilon = 0.0000000000001;
+    return std::abs(x - y) <= epsilon * std::abs(x);
 }
 
 void error_model::set_probs(int fam_size, std::vector<double> probs_deviation) {
+    if (fam_size == 0 && !is_nearly_equal(probs_deviation[0], 0.0))
+    {
+        throw std::runtime_error("Cannot have a non-zero probability for family size 0 for negative deviation");
+    }
+
+    if (!is_nearly_equal(accumulate(probs_deviation.begin(), probs_deviation.end(), 0.0), 1.0))
+    {
+        throw std::runtime_error("Sum of probabilities must be equal to one");
+    }
+
+    if (_error_dists.empty())
+        _error_dists.push_back(vector<double>(probs_deviation.size()));
+
+    if (_error_dists.size() <= fam_size)
+    {
+        _error_dists.resize(fam_size + 1, _error_dists.back());
+    }
     _error_dists[fam_size] = probs_deviation; // fam_size starts at 0 at tips, so fam_size = index of vector
 }
 
@@ -241,6 +269,52 @@ std::vector<double> error_model::get_probs(int fam_size) const {
     return _error_dists[fam_size];
 }
 
+std::vector<double> error_model::get_epsilons() const {
+    set<double> unique_values;
+    for (auto& vec : _error_dists)
+        unique_values.insert(vec.back());
+
+    vector<double> result(unique_values.size());
+    copy(unique_values.begin(), unique_values.end(), result.begin());
+    return result;
+}
+
+error_model* error_model::replace_epsilons(std::map<double, double> *new_epsilons)
+{
+    vector<double> vec = _error_dists[0];
+    assert(vec.size() == 3);
+    for (auto kv : *new_epsilons)
+    {
+        if (is_nearly_equal(kv.first, vec.back()))
+        {
+            vec.back() = kv.second;
+            vec[1] = 1 - kv.second;
+            set_probs(0, vec);
+        }
+    }
+
+    for (size_t i = 1; i < _error_dists.size(); ++i)
+    {
+        vector<double> vec = _error_dists[i];
+        assert(vec.size() == 3);
+
+        for (auto kv : *new_epsilons)
+        {
+            if (is_nearly_equal(kv.first, vec.back()))
+            {
+                vec.back() = kv.second;
+                vec.front() = kv.second;
+                vec[1] = 1 - (kv.second * 2);
+                set_probs(i, vec);
+            }
+        }
+    }
+}
+
+double to_double(string s)
+{
+    return std::stod(s);
+}
 //! Read user-provided error model
 /*!
   This function is called by execute::read_error_model, which is itself called by CAFExp's main function when "--error_model"/"-e" is specified  
@@ -262,7 +336,7 @@ void read_error_model_file(std::istream& error_model_file, error_model *p_error_
         }
         
         // cntdiff line
-        if (strncmp(line.c_str(), cnt_diff_header.c_str(), cnt_diff_header.size()) == 0) { 
+        else if (strncmp(line.c_str(), cnt_diff_header.c_str(), cnt_diff_header.size()) == 0) { 
             tokens = tokenize_str(line, ' ');
             
             if (tokens.size() % 2 != 0) { 
@@ -277,6 +351,14 @@ void read_error_model_file(std::istream& error_model_file, error_model *p_error_
 //            }
 //            cout << endl;
             p_error_model->set_deviations(cnt_diffs);
+        }
+        else
+        {
+            tokens = tokenize_str(line, ' ');
+            int sz = std::stoi(tokens[0]);
+            vector<double> values(tokens.size()-1);
+            transform(tokens.begin() + 1, tokens.end(), values.begin(), to_double);
+            p_error_model->set_probs(sz, values);
         }
     }
         // std::vector<std::string> tokens = tokenize_str(line, '\t'); 

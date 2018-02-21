@@ -15,6 +15,7 @@ class clade;
 class matrix;
 class matrix_cache;
 
+double birthdeath_rate_with_log_alpha(int s, int c, double log_alpha, double coeff);
 double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int size);
 double chooseln(double n, double k);
 double unifrnd();
@@ -29,14 +30,16 @@ private:
 	int _max_parsed_family_size;
 	lambda* _lambda;
     matrix_cache& _calc;
+    const error_model* _p_error_model;
     
 public:
     likelihood_computer(int max_root_family_size, int max_parsed_family_size, lambda* lambda, gene_family *family,
-        matrix_cache& calc) : 
+        matrix_cache& calc, const error_model *p_error_model) : 
 		_max_root_family_size(max_root_family_size),
 		_max_parsed_family_size(max_parsed_family_size),
 		_lambda(lambda),
-        _calc(calc) {
+        _calc(calc),
+        _p_error_model(p_error_model) {
         _family = family;
     }
   
@@ -58,12 +61,6 @@ public:
 };
 
 /* END: Likelihood computation ---------------------- */
-
-class readwritelock;
-
-
-
-vector<double> matrix_multiply(const matrix& matrix, const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size);
 
 /* START: Uniform distribution */
 std::vector<int> uniform_dist(int n_draws, int min, int max);

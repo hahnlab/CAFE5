@@ -3,7 +3,7 @@
 
 typedef double(*math_func)(double* x, void* args);
 
-typedef struct
+struct FMinSearch
 {
   int maxiters;
   int bymax;
@@ -23,7 +23,7 @@ typedef struct
 
   void* args;
   math_func eq;
-}FMinSearch;
+};
 
 FMinSearch* fminsearch_new();
 FMinSearch* fminsearch_new_with_eq(math_func eq, int Xsize, void* args);

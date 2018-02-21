@@ -11,6 +11,7 @@ class gene_family;
 class matrix_cache;
 class root_equilibrium_distribution;
 class child_multiplier;
+class error_model;
 
 typedef std::map<clade *, int> trial;
 
@@ -36,16 +37,29 @@ public:
     }
 };
 
+/// Called when we fix lambda to calculate the probabilities of the tree
 class inference_process : public process {
 	gene_family *_p_gene_family;
+    const error_model *_p_error_model;
 public:
-	inference_process(std::ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size,
-		int max_root_family_size, gene_family *fam, std::vector<int> rootdist) : process(ost, lambda, lambda_multiplier, p_tree,
-			max_family_size, max_root_family_size, rootdist) {
-		_p_gene_family = fam;
+	inference_process(std::ostream & ost, 
+        lambda* lambda, 
+        double lambda_multiplier, 
+        clade *p_tree, 
+        int max_family_size,
+		int max_root_family_size, 
+        gene_family *fam, 
+        std::vector<int> rootdist,
+        error_model *p_error_model) : 
+        process(ost, lambda, lambda_multiplier, p_tree,
+			max_family_size, max_root_family_size, rootdist),
+            _p_error_model(p_error_model),
+            _p_gene_family(fam) 
+    {
 	}
 
 	std::vector<double> prune(matrix_cache& calc);    // returns likelihood of the tree for each family size
+    std::string family_id() const;
 };
 
 class simulation_process : public process {

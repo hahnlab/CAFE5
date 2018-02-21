@@ -15,19 +15,25 @@
 #include "root_equilibrium_distribution.h"
 #include "reconstruction_process.h"
 
-std::vector<model *> build_models(const input_parameters& my_input_parameters, clade *p_tree, lambda *p_lambda, std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size) {
+std::vector<model *> build_models(const input_parameters& my_input_parameters, 
+    clade *p_tree, 
+    lambda *p_lambda, 
+    std::vector<gene_family>* p_gene_families, 
+    int max_family_size, 
+    int max_root_family_size,
+    error_model *p_error_model) {
     std::vector<model *> models;
     
     /* If estimating or computing (-i; or -i + -l) and not simulating */
     if (my_input_parameters.nsims == 0 && !my_input_parameters.input_file_path.empty()) {
         
         /* Base core is always used (in both computation and estimation) */
-        models.push_back(new base_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, NULL));
+        models.push_back(new base_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, NULL, p_error_model));
         
         /* Gamma core is only used in estimation */
         if (p_lambda == NULL && my_input_parameters.n_gamma_cats > 1) {
             auto model = new gamma_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size,
-                my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, NULL);
+                my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, NULL, p_error_model);
             model->write_probabilities(cout);
             models.push_back(model);
         }
@@ -42,8 +48,8 @@ std::vector<model *> build_models(const input_parameters& my_input_parameters, c
         // Either use base core or gamma core when simulating
         if (my_input_parameters.n_gamma_cats > 1) { models.push_back(new gamma_model(p_lambda, p_tree, NULL, 
             max_family_size, max_root_family_size, my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha,
-            p_rootdist_map)); }
-        else { models.push_back(new base_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_rootdist_map)); }
+            p_rootdist_map, NULL)); }
+        else { models.push_back(new base_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_rootdist_map, NULL)); }
     }
 
     return models;

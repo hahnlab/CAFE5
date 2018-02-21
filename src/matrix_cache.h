@@ -35,29 +35,32 @@ public:
         return _size;
     }
     bool is_zero() const;
+    std::vector<double> multiply(const std::vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const;
 };
 
 
 class matrix_cache_key {
-    double _lambda;
-    double _branch_length;
+    long _lambda;
+    long _branch_length;
     size_t _size;
 public:
     matrix_cache_key(int size, double some_lambda, double some_branch_length) :
         _size(size),
-        _lambda(some_lambda),
-        _branch_length(some_branch_length) { }
+        _lambda(long(some_lambda * 1000000000)),    // keep 9 significant digits
+        _branch_length(long(some_branch_length * 1000)) {} // keep 3 significant digits
+
     bool operator<(const matrix_cache_key &o) const {
         return std::tie(_size, _branch_length, _lambda) < std::tie(o._size, o._branch_length, o._lambda);
     }
     double lambda() const {
-        return _lambda;
+        return double(_lambda) / 1000000000.0;
     }
     double branch_length() const {
-        return _branch_length;
+        return double(_branch_length) / 1000.0;
     }
 };
 
+std::vector<double> get_lambda_values(lambda *p_lambda);
 
 //! Computation of the probabilities of moving from a family size (parent) to another (child)
 /*!
@@ -70,7 +73,7 @@ private:
 public:
     double get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size) const;
     matrix get_matrix(int size, double branch_length, double lambda);
-    void precalculate_matrices(int size, lambda* lambda, const std::set<double>& branch_lengths);
+    void precalculate_matrices(int size, const std::vector<double>& lambdas, const std::set<double>& branch_lengths);
 
     int get_cache_size() const {
         return _matrix_cache.size();

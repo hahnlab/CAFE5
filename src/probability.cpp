@@ -47,7 +47,6 @@ double unifrnd() {
 
 double chooseln(double n, double r)
 {
-
   if (r == 0 || (n == 0 && r == 0)) return 0;
   else if (n <= 0 || r <= 0) return log(0);
   return lgamma(n + 1) - lgamma(r + 1) - lgamma(n - r + 1);
@@ -57,23 +56,27 @@ double chooseln(double n, double r)
 
 /* START: Birth-death model components --------------------- */
 
-/* Eqn. (1) in 2005 paper. Assumes u = lambda */
+/* Eqn. (1) in 2005 paper. Assumes u = lambda 
+  alpha should be lambda*t / 1+lambda*t
+  coeff = 1 - 2 * alpha;
+*/
+
 double birthdeath_rate_with_log_alpha(int s, int c, double log_alpha, double coeff)
 {
+    int m = std::min(c, s);
+    double lastterm = 1;
+    double p = 0.0;
+    int s_add_c = s + c;
+    int s_add_c_sub_1 = s_add_c - 1;
+    int s_sub_1 = s - 1;
 
-  int m = std::min(c, s);
-  double lastterm = 1;
-  double p = 0.0;
-  int s_add_c = s + c;
-  int s_add_c_sub_1 = s_add_c - 1;
-  int s_sub_1 = s - 1;
+    for (int j = 0; j <= m; j++) {
+        double t = chooseln(s, j) + chooseln(s_add_c_sub_1 - j, s_sub_1) + (s_add_c - 2 * j)*log_alpha;
+        p += (exp(t) * lastterm); // Note that t is in log scale, therefore we need to do exp(t) to match Eqn. (1)
+        lastterm *= coeff; // equivalent of ^j in Eqn. (1)
+    }
 
-  for (int j = 0; j <= m; j++) {
-    double t = chooseln(s, j) + chooseln(s_add_c_sub_1 - j, s_sub_1) + (s_add_c - 2 * j)*log_alpha;
-    p += (exp(t) * lastterm); // Note that t is in log scale, therefore we need to do exp(t) to match Eqn. (1)
-    lastterm *= coeff; // equivalent of ^j in Eqn. (1)
-  }
-
+    return std::max(std::min(p, 1.0), 0.0);
   return std::max(std::min(p, 1.0), 0.0);
 }
 
@@ -100,32 +103,6 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 }
 
 /* END: Birth-death model components ----------------------- */
-
-//! Take in a matrix and a vector, compute product, return it
-/*!
-  This function returns a likelihood vector by multiplying an initial likelihood vector and a transition probability matrix.
-  A minimum and maximum on the parent's and child's family sizes is provided. Because the root is forced to be >=1, for example, s_min_family_size for the root could be set to 1.
-*/
-vector<double> matrix_multiply(const matrix& matrix, const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) 
-{
-	//cout << "Matrix multiply " << matrix.size() << "x" << v.size() << " (submatrix " << s_min_family_size << ":" << s_max_family_size;
-	//cout << " " << c_min_family_size << ":" << c_max_family_size << ")" << endl;
-
-	//assert(s_max_family_size - s_min_family_size == c_max_family_size - c_min_family_size);
-	assert(v.size() > c_max_family_size);
-
-    vector<double> result(c_max_family_size - c_min_family_size + 1);
-
-	for (int s = s_min_family_size; s < s_max_family_size; s++) {
-        result[s] = 0;
-    
-        for (int c = c_min_family_size; c < c_max_family_size; c++) {
-            result[s- s_min_family_size] += matrix.get(s, c - c_min_family_size) * v[c - c_min_family_size];
-        }
-    }
-
-    return result;
-}
 
 //! Computation and storage of the vector of likelihoods (one likelihood/family size) of an internal node
 /*!
@@ -169,6 +146,11 @@ public:
       Note that depending on whether one or multiple lambdas are specified, the computation of the likelihood will be different. It is the abstract class lambda (which has a pure virtual method calculate_child_factor) that decides how to do it. 
      */
     void operator()(clade * child) {
+        if (_probabilities[child].empty())
+        {
+            throw std::runtime_error("Child node probabilities not calculated");
+        }
+
 		_factors[child].resize(_probabilities_vec_size);
 		// cout << "Child factor size is " << _probabilities_vec_size << endl;
 		_factors[child] = _lambda->calculate_child_factor(_calc, child, _probabilities[child],
@@ -186,14 +168,13 @@ public:
     void update_probabilities(clade *node) {
 		vector<double>& node_probs = _probabilities[node];
 		node_probs.resize(_probabilities_vec_size);
-		// cout << "Node " << node->get_taxon_name() << " has " << node_probs.size() << " probabilities" << endl;
 
         for (int i = 0; i < node_probs.size(); i++) {
 			node_probs[i] = 1;
             map<clade *, std::vector<double> >::iterator it = _factors.begin();
-            
+
             for (; it != _factors.end(); it++) {
-				node_probs[i] *= it->second[i];
+                node_probs[i] *= it->second[i];
             }
         }
     }
@@ -206,16 +187,28 @@ public:
 */
 void likelihood_computer::operator()(clade *node) {
     if (node->is_leaf()) {
-        _probabilities[node].resize(_max_parsed_family_size +1); // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
-		// cout << "Leaf node " << node->get_taxon_name() << " has " << _probabilities[node].size() << " probabilities" << endl;
-		int species_size = _family->get_species_size(node->get_taxon_name());
-        _probabilities[node][species_size] = 1.0;
+        int species_size = _family->get_species_size(node->get_taxon_name());
+        _probabilities[node].resize(_max_parsed_family_size + 1); // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
+        if (_p_error_model != NULL)
+        {
+            auto error_model_probabilities = _p_error_model->get_probs(species_size);
+            int offset = species_size - ((_p_error_model->n_deviations() - 1) / 2);
+            for (size_t i = 0; i<error_model_probabilities.size(); ++i)
+            {
+                _probabilities[node][offset+i] = error_model_probabilities[i];
+            }
+        }
+        else
+        {
+            // cout << "Leaf node " << node->get_taxon_name() << " has " << _probabilities[node].size() << " probabilities" << endl;
+            _probabilities[node][species_size] = 1.0;
+        }
     }
 
 	else if (node->is_root()) {
 		// at the root, the size of the vector holding the final likelihoods will be _max_root_family_size (size 0 is not included, so we do not add 1)
-		child_calculator calc(_max_root_family_size, _lambda, _calc, _probabilities, 1, _max_root_family_size+1, 1, _max_root_family_size+1);
-		node->apply_to_descendants(calc);
+		child_calculator calc(_max_root_family_size, _lambda, _calc, _probabilities, 1, _max_root_family_size, 0, _max_parsed_family_size);
+        node->apply_to_descendants(calc);
 		calc.update_probabilities(node);
 	}
 
@@ -281,7 +274,7 @@ std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simula
 	{
 		gene_family gf(*ith_trial);
 		single_lambda lam(lambda);
-		likelihood_computer pruner(root_family_size, max_family_size, &lam, &gf, *calc);
+		likelihood_computer pruner(root_family_size, max_family_size, &lam, &gf, *calc, NULL);
 		p_tree->apply_reverse_level_order(pruner);
 		result.push_back(pruner.max_likelihood(p_tree));
 	}
