@@ -67,7 +67,8 @@ bool multiple_lambda::is_valid()
 }
 
 double multiple_lambda::get_value_for_clade(clade *c) {
-    return _lambdas[c->get_lambda_index()];
+    int index = this->_node_name_to_lambda_index[c->get_taxon_name()];
+    return _lambdas[index];
 }
 
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */

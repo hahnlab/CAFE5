@@ -63,10 +63,16 @@ clade *newick_parser::parse_newick() {
       /* Checking ':' regex */
       // cout << "Found :: " << regex_it->str() << endl;
       
-		if (parse_to_lambdas)
-			p_current_clade->_lambda_index = atoi(regex_it->str().substr(1).c_str()); // atoi() converts string into int
-		else
-	      p_current_clade->_branch_length = atof(regex_it->str().substr(1).c_str()); // atof() converts string into float
+        if (parse_to_lambdas)
+        {
+            p_current_clade->_lambda_index = atoi(regex_it->str().substr(1).c_str()); // atoi() converts string into int
+            p_current_clade->is_lambda_clade = true;
+        }
+        else
+        {
+            p_current_clade->_branch_length = atof(regex_it->str().substr(1).c_str()); // atof() converts string into float
+            p_current_clade->is_lambda_clade = false;
+        }
    }
     
     /* Reading taxon name */

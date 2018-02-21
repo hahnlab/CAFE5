@@ -46,11 +46,13 @@ class clade {
    /* methods */
    void _name_interior_clade();
 
+   bool is_lambda_clade;
+
  public:
    /* methods */
-   clade(): _p_parent(NULL), _branch_length(0), _lambda_index(0) {} // basic constructor
+   clade(): _p_parent(NULL), _branch_length(0), _lambda_index(0), is_lambda_clade(false) {} // basic constructor
 
-   clade(string some_taxon_name, double length): _taxon_name(some_taxon_name), _branch_length(length), _lambda_index(0) {} // constructor giving taxon name and branch length
+   clade(string some_taxon_name, double length): _taxon_name(some_taxon_name), _branch_length(length), _lambda_index(0), is_lambda_clade(false) {} // constructor giving taxon name and branch length
 
    ~clade(); // destructor
   
@@ -64,9 +66,9 @@ class clade {
 
    bool is_root() const;
    
-   double get_branch_length() const { return _branch_length; }
+   double get_branch_length() const;
 
-   int get_lambda_index() const { return _lambda_index; }
+   int get_lambda_index() const;
 
    vector<clade*> find_internal_nodes();
    

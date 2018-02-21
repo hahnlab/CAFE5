@@ -34,6 +34,10 @@ TEST_GROUP(Probability)
 {
 };
 
+TEST_GROUP(Clade)
+{
+};
+
 TEST(GeneFamilies, read_gene_families_reads_cafe_files)
 {
     std::string str = "Desc\tFamily ID\tA\tB\tC\tD\n\t (null)1\t5\t10\t2\t6\n\t (null)2\t5\t10\t2\t6\n\t (null)3\t5\t10\t2\t6\n\t (null)4\t5\t10\t2\t6";
@@ -827,6 +831,68 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_from_error_model_if_provided
     }
 }
 
+TEST(Clade, get_lambda_index_throws_from_branch_length_tree)
+{
+    ostringstream ost;
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    LONGS_EQUAL(7, p_tree->get_branch_length());
+    try
+    {
+        p_tree->get_lambda_index();
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("Requested lambda index from branch length tree", err.what());
+    }
+
+}
+
+TEST(Clade, get_branch_length_throws_from_lambda_tree)
+{
+    ostringstream ost;
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    parser.parse_to_lambdas = true;
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    LONGS_EQUAL(7, p_tree->get_lambda_index());
+
+    try
+    {
+        p_tree->get_branch_length();
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("Requested branch length from lambda tree", err.what());
+    }
+
+}
+
+TEST(Inference, multiple_lambda_returns_correct_values)
+{
+    ostringstream ost;
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    map<string, int> key;
+    key["A"] = 5;
+    key["B"] = 3;
+    multiple_lambda ml(key, { .03, .05, .07, .011, .013, .017 });
+    DOUBLES_EQUAL(.017, ml.get_value_for_clade(p_tree->find_descendant("A")), 0.0001);
+    DOUBLES_EQUAL(.011, ml.get_value_for_clade(p_tree->find_descendant("B")), 0.0001);
+}
+
+TEST(Simulation, simulation_process_max_family_size_is_twice_max_rootdist)
+{
+    vector<int> rootdist{ 3, 5, 9, 11, 4 };
+    simulation_process p(cout, NULL, 1, NULL, 0, 0, rootdist, 0);
+    LONGS_EQUAL(22,p.get_max_family_size_to_simulate());
+}
 
 int main(int ac, char** av)
 {

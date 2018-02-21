@@ -75,6 +75,8 @@ public:
 	void print_simulation(std::ostream & ost, int index);
 
 	trial * get_simulation();
+
+    int get_max_family_size_to_simulate() const;
 };
 
 #endif

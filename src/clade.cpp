@@ -16,6 +16,22 @@ clade *clade::get_parent() const {
   return _p_parent; // memory address
 }
 
+double clade::get_branch_length() const
+{
+    if (is_lambda_clade)
+        throw std::runtime_error("Requested branch length from lambda tree");
+
+    return _branch_length;
+}
+
+int clade::get_lambda_index() const
+{
+    if (!is_lambda_clade)
+        throw std::runtime_error("Requested lambda index from branch length tree");
+
+    return _lambda_index;
+}
+
 /* Adds descendant to vector of descendants */
 void clade::add_descendant(clade *p_descendant) {
 	

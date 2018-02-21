@@ -28,32 +28,31 @@ itr select_randomly(itr start, itr end) {
 //using namespace std;
 
 simulation_process::simulation_process(std::ostream &ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size,
-	int max_root_family_size, std::vector<int> rootdist, int family_number) : process(ost, lambda, lambda_multiplier, p_tree,
-		max_family_size, max_root_family_size, rootdist) {
+    int max_root_family_size, std::vector<int> rootdist, int family_number) : process(ost, lambda, lambda_multiplier, p_tree,
+        max_family_size, max_root_family_size, rootdist) {
 
-	// generating uniform root distribution when no distribution is provided 
-	if (_rootdist_vec.empty()) {
-		_max_family_size_sim = 100;
+    // generating uniform root distribution when no distribution is provided 
+    if (_rootdist_vec.empty()) {
+        _max_family_size_sim = 100;
 
-		cout << "Max family size to simulate: " << _max_family_size_sim << endl;
-		_rootdist_vec.resize(_max_family_size_sim);
+        cout << "Max family size to simulate: " << _max_family_size_sim << endl;
+        _rootdist_vec.resize(_max_family_size_sim);
 
-		for (size_t i = 0; i < _rootdist_vec.size(); ++i)
-			_rootdist_vec[i] = i;
-    
+        for (size_t i = 0; i < _rootdist_vec.size(); ++i)
+            _rootdist_vec[i] = i;
+
         _root_size = *select_randomly(_rootdist_vec.begin(), _rootdist_vec.end()); // getting a random root size from the provided (core's) root distribution
     }
-	else {
-#if 0
-            cout << "Using provided root distribution ";
-            for (auto i : _rootdist_vec)
-                cout << i << " ";
-            cout << endl;
-#endif
-            _max_family_size_sim = *std::max_element(_rootdist_vec.begin(), _rootdist_vec.end());
-            _root_size = _rootdist_vec[family_number];
+    else {
+        _max_family_size_sim = get_max_family_size_to_simulate();
+        _root_size = _rootdist_vec[family_number];
     }
 
+}
+
+int simulation_process::get_max_family_size_to_simulate() const
+{
+    return 2 * *std::max_element(_rootdist_vec.begin(), _rootdist_vec.end());
 }
 
 //! Run process' simulation
