@@ -109,7 +109,7 @@ void base_model::start_inference_processes()
         delete proc;
     processes.clear();
     for (int i = 0; i < _p_gene_families->size(); ++i) {
-        inference_process *p_new_process = new inference_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec, NULL); // if a single _lambda_multiplier, how do we do it?
+        inference_process *p_new_process = new inference_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec, _p_error_model); // if a single _lambda_multiplier, how do we do it?
         processes.push_back(p_new_process);
     }
 }
@@ -145,18 +145,14 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
             double eq_freq = prior->compute(j);
 
-            double log_full_lk = std::log(partial_likelihood[j]) + std::log(eq_freq);
-            full[j] = log_full_lk;
-
             full[j] = std::log(partial_likelihood[j]) + std::log(eq_freq);
         }
 
         //        all_families_likelihood[i] = accumulate(full.begin(), full.end(), 0.0); // sum over all sizes (Felsenstein's approach)
-        all_families_likelihood[i] = *max_element(full.begin(), full.end()); // get max (CAFE's approach)
-
+        all_families_likelihood[i] = log(exp(*max_element(full.begin(), full.end()))); // get max (CAFE's approach)
+       // cout << i << " contribution " << scientific << all_families_likelihood[i] << endl;
         results[i] = family_info_stash(i, 0.0, 0.0, 0.0, all_families_likelihood[i], false);
     }
-
     double final_likelihood = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families
 
     return final_likelihood;

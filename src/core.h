@@ -87,12 +87,12 @@ public:
     virtual ~model() {}
     //void estimate_processes(); 
     
-    //! Setter methods
-    void set_lambda(lambda *p_lambda);
     const lambda * get_lambda() const {
         return _p_lambda;
     }
+    void initialize_lambda(clade *p_lambda_tree);
 
+    //! Setter methods
     void set_tree(clade *p_tree);
     
     void set_gene_families(std::vector<gene_family> *p_gene_families);

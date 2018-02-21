@@ -138,9 +138,8 @@ TEST(Inference, gamma)
     clade *p_tree = parser.parse_newick();
 
     std::vector<int> rootdist;
-    gamma_model core(NULL, NULL, NULL, 0, 5, 0, 0, NULL, NULL);
+    gamma_model core(&lambda, NULL, NULL, 0, 5, 0, 0, NULL, NULL);
     core.set_gene_families(&families);
-    core.set_lambda(&lambda);
     core.set_tree(p_tree);
     core.set_max_sizes(148, 122);
 
@@ -493,7 +492,7 @@ TEST(Inference, base_model_computes_epsilon)
     single_lambda lambda(1);
     error_model err;
     err.set_probs(0, { .0, .7, .3 });
-    err.set_probs(1, { .4, .2, .4 });
+    err.set_probs(8, { .4, .2, .4 });
     std::vector<gene_family> fams{ fam };
     uniform_distribution frq;
 

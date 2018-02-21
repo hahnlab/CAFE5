@@ -195,6 +195,9 @@ void likelihood_computer::operator()(clade *node) {
             int offset = species_size - ((_p_error_model->n_deviations() - 1) / 2);
             for (size_t i = 0; i<error_model_probabilities.size(); ++i)
             {
+                if (offset + int(i) < 0)
+                    continue;
+                
                 _probabilities[node][offset+i] = error_model_probabilities[i];
             }
         }

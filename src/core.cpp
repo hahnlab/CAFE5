@@ -63,11 +63,6 @@ std::ostream& operator<<(std::ostream& ost, const family_info_stash& r)
 }
 
 //! Set pointer to lambda in core class
-void model::set_lambda(lambda *p_lambda) {
-    _p_lambda = p_lambda;
-}
-
-//! Set pointer to lambda in core class
 void model::set_tree(clade *p_tree) {
     _p_tree = p_tree;
 }
@@ -169,6 +164,36 @@ void model::print_parameter_values() {
         _p_tree->print_clade();
     }
     
+}
+
+class lambda_counter
+{
+public:
+    std::set<int> unique_lambdas;
+    void operator()(clade *p_node)
+    {
+        unique_lambdas.insert(p_node->get_lambda_index());
+    }
+};
+
+
+void model::initialize_lambda(clade *p_lambda_tree)
+{
+    lambda *p_lambda = NULL;
+    if (p_lambda_tree != NULL)
+    {
+        lambda_counter counter;
+        p_lambda_tree->apply_prefix_order(counter);
+        auto node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
+        p_lambda = new multiple_lambda(node_name_to_lambda_index, std::vector<double>(counter.unique_lambdas.size()));
+        cout << "Searching for " << counter.unique_lambdas.size() << " lambdas" << endl;
+    }
+    else
+    {
+        p_lambda = new single_lambda(0.0);
+    }
+
+    _p_lambda = p_lambda;
 }
 
 class depth_finder

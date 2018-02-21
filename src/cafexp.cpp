@@ -239,11 +239,20 @@ int cafexp(int argc, char *const argv[]) {
         
         if (p_error_model)
         {
-            base_model *b = dynamic_cast<base_model *>(models[0]);
-            unique_ptr<optimizer> opt(b->get_epsilon_optimizer(p_prior));
-            opt->optimize();
-            // Printing: take estimated values, re-compute them for printing purposes
-            my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size);
+            // If lambda was fixed, compute!
+            if (p_lambda)
+            {
+                my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size);
+            }
+            else
+            {
+                base_model *b = dynamic_cast<base_model *>(models[0]);
+                b->initialize_lambda(p_lambda_tree);
+                unique_ptr<optimizer> opt(b->get_epsilon_optimizer(p_prior));
+                opt->optimize();
+                // Printing: take estimated values, re-compute them for printing purposes
+                my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size);
+            }
             return 0;
         }
 
