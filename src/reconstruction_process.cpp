@@ -47,8 +47,6 @@ void reconstruction_process::reconstruct_leaf_node(clade * c, lambda * _lambda)
 
     double branch_length = c->get_branch_length();
 
-    single_lambda * sl = dynamic_cast<single_lambda *>(_lambda);
-
     L.resize(_max_family_size + 1);
 
     int observed_count = _gene_family->get_species_size(c->get_taxon_name());
@@ -57,7 +55,7 @@ void reconstruction_process::reconstruct_leaf_node(clade * c, lambda * _lambda)
     // i will be the parent size
     for (size_t i = 1; i < L.size(); ++i)
     {
-        L[i] = _p_calc->get_from_parent_fam_size_to_c(sl->get_single_lambda(), branch_length, i, observed_count);
+        L[i] = _p_calc->get_from_parent_fam_size_to_c(_lambda->get_value_for_clade(c), branch_length, i, observed_count);
     }
 }
 
@@ -106,11 +104,9 @@ void reconstruction_process::reconstruct_internal_node(clade * c, lambda * _lamb
 
     double branch_length = c->get_branch_length();
 
-    single_lambda * sl = dynamic_cast<single_lambda *>(_lambda);
-
     L.resize(_max_family_size + 1);
 
-    auto matrix = _p_calc->get_matrix(L.size(), branch_length, sl->get_single_lambda());
+    auto matrix = _p_calc->get_matrix(L.size(), branch_length, _lambda->get_value_for_clade(c));
 
     if (matrix.is_zero())
         throw runtime_error("Zero matrix found");
@@ -140,15 +136,11 @@ void reconstruction_process::reconstruct_internal_node(clade * c, lambda * _lamb
 void reconstruction_process::operator()(clade *c)
 {
     // all_node_Cs and all_node_Ls are hashtables where the keys are nodes and values are vectors of doubles
-    single_lambda * sl = dynamic_cast<single_lambda *>(_lambda->multiply(_lambda_multiplier));
-    if (!sl)
-    {
-        throw std::runtime_error("Cannot reconstruct with multiple lambdas yet");
-    }
+    unique_ptr<lambda> ml(_lambda->multiply(_lambda_multiplier));
 
     if (c->is_leaf())
     {
-        reconstruct_leaf_node(c, sl);
+        reconstruct_leaf_node(c, ml.get());
     }
     else if (c->is_root())
     {
@@ -156,9 +148,8 @@ void reconstruction_process::operator()(clade *c)
     }
     else
     {
-        reconstruct_internal_node(c, sl);
+        reconstruct_internal_node(c, ml.get());
     }
-    delete sl;
 }
 
 class backtracker

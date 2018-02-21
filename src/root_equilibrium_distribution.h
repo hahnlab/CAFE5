@@ -40,6 +40,9 @@ public:
 
     virtual float compute(int val) const
     {
+        if (val >= poisson.size())
+            return 0;
+
         return poisson[val];
     }
 
