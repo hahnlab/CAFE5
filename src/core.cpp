@@ -62,6 +62,19 @@ std::ostream& operator<<(std::ostream& ost, const family_info_stash& r)
     return ost;
 }
 
+model::model(lambda* p_lambda,
+    clade *p_tree,
+    vector<gene_family> *p_gene_families,
+    int max_family_size,
+    int max_root_family_size,
+    error_model *p_error_model) :
+    _ost(cout), _p_lambda(p_lambda), _p_tree(p_tree), _p_gene_families(p_gene_families), _max_family_size(max_family_size),
+    _max_root_family_size(max_root_family_size), _p_error_model(p_error_model) 
+{
+    if (_p_gene_families)
+        references = build_reference_list(*_p_gene_families);
+}
+
 //! Set pointer to lambda in core class
 void model::set_tree(clade *p_tree) {
     _p_tree = p_tree;

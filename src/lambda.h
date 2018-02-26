@@ -114,8 +114,6 @@ public:
     bool quiet = false;
 };
 
-std::vector<double> get_posterior(std::vector<gene_family> gene_families, int max_family_size, int max_root_family_size, double lambda, clade *p_tree);
-
 inline std::ostream& operator<<(std::ostream& ost, const lambda& lambda)
 {
     ost << lambda.to_string();

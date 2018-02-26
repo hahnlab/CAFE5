@@ -9,6 +9,7 @@
 #include <set>
 #include <numeric>
 #include <cassert>
+#include <cmath>
 
 using namespace std;
 
@@ -93,17 +94,6 @@ clade* read_tree(string tree_file_path, bool lambda_tree) {
     return p_tree;
 }
 /* END: Reading in tree data */
-
-/* START: Reading in gene family data */
-//! Constructor for simulations (trial is a typedef for a map = {clade *: int}
-gene_family::gene_family(trial *t) {
-    // for (auto it = t->begin(); it != t->end(); ++it) {
-    for (std::map<clade *, int>::iterator it = t->begin(); it != t->end(); ++it) {
-	if (it->first->is_leaf()) { this->_species_size_map[it->first->get_taxon_name()] = it->second; }
-    }
-    
-    find_max_size();
-}
 
 //! Find and set _max_family_size and _parsed_max_family_size for this family
 /*!

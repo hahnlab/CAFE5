@@ -103,23 +103,48 @@ reconstruction_process* base_model::create_reconstruction_process(int family_num
         &_p_gene_families->at(family_number), p_calc, p_prior);
 }
 
+
+
+vector<int> build_reference_list(vector<gene_family>& families)
+{
+    vector<int> reff;
+    const int num_families = families.size();
+    reff.resize(num_families, -1);
+    for (int i = 0; i < num_families; ++i) {
+        if (reff[i] != -1) continue;
+
+        reff[i] = i;
+        auto candidate = families[i].get_species_map();
+        for (int j = i + 1; j < num_families; ++j) {
+            if (reff[j] == -1)
+            {
+                if (candidate == families[j].get_species_map())
+                {
+                    reff[j] = i;
+                }
+            }
+        }
+    }
+
+    return reff;
+}
+
 void base_model::start_inference_processes()
 {
     for (auto proc : processes)
         delete proc;
     processes.clear();
+
+    processes.resize(_p_gene_families->size());
     for (int i = 0; i < _p_gene_families->size(); ++i) {
-        inference_process *p_new_process = new inference_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec, _p_error_model); // if a single _lambda_multiplier, how do we do it?
-        processes.push_back(p_new_process);
+        if (references[i] == i)
+            processes[i] = new inference_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec, _p_error_model); // if a single _lambda_multiplier, how do we do it?
     }
 }
 
 double base_model::infer_processes(root_equilibrium_distribution *prior) {
     if (!_p_lambda->is_valid())
     {
-#ifndef SILENT
-        std::cout << "-lnL: " << log(0) << std::endl;
-#endif
         return -log(0);
     }
 
@@ -134,12 +159,19 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
 
     matrix_cache calc;
     calc.precalculate_matrices(_max_family_size + 1, get_lambda_values(_p_lambda), lengths.result());
+
+    vector<vector<double>> partial_likelihoods(processes.size());
+#pragma omp parallel for
+    for (int i = 0; i < processes.size(); ++i) {
+        if (processes[i])
+            partial_likelihoods[i] = processes[i]->prune(calc);    // probabilities of various family sizes
+    }
+
     // prune all the families with the same lambda
 #pragma omp parallel for
-
     for (int i = 0; i < processes.size(); ++i) {
 
-        auto partial_likelihood = processes[i]->prune(calc);    // probabilities of various family sizes
+        auto& partial_likelihood = partial_likelihoods[references[i]];
         std::vector<double> full(partial_likelihood.size());
 
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
@@ -149,7 +181,7 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
         }
 
         //        all_families_likelihood[i] = accumulate(full.begin(), full.end(), 0.0); // sum over all sizes (Felsenstein's approach)
-        all_families_likelihood[i] = log(exp(*max_element(full.begin(), full.end()))); // get max (CAFE's approach)
+        all_families_likelihood[i] = *max_element(full.begin(), full.end()); // get max (CAFE's approach)
        // cout << i << " contribution " << scientific << all_families_likelihood[i] << endl;
         results[i] = family_info_stash(i, 0.0, 0.0, 0.0, all_families_likelihood[i], false);
     }
@@ -256,7 +288,7 @@ double base_epsilon_optimizer::calculate_score(double *values)
     _p_error_model->replace_epsilons(&replacements);
 
     if (!quiet)
-        cout << *values << "Error Model Run" << std::endl;
+        cout << "Calculating probability: epsilon=" << *values*2 << std::endl;
 
     _p_lambda_optimizer->optimize();
 

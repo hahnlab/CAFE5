@@ -22,40 +22,6 @@
 
 using namespace std;
 
-vector<double> get_posterior(vector<gene_family> gene_families, int max_family_size, int max_root_family_size, double lambda, clade *p_tree)
-{
-  vector<double> posterior(max_family_size);
-
-  vector<double> root_poisson_lambda = find_poisson_lambda(gene_families);
-
-  vector<double> prior_rfsize = get_prior_rfsize_poisson_lambda(0, max_family_size, root_poisson_lambda[0]);
-  //for (int i = 0; i < prior_rfsize.size(); ++i)
-  //  cout << "prior_rfsize " << i << "=" << prior_rfsize[i] << endl;
-
-  matrix_cache calc;
-  single_lambda lam(lambda);
-  likelihood_computer pruner(max_root_family_size, max_family_size, &lam, &gene_families[0], calc, NULL);
-
-  p_tree->apply_reverse_level_order(pruner);
-  //cout << "Pruner complete" << endl;
-  vector<double> likelihood = pruner.get_likelihoods(p_tree);		// likelihood of the whole tree = multiplication of likelihood of all nodes
-
-  int root_max_family_size = 30;
-  for (int i = 0; i < root_max_family_size-1; i++) {
-    // our lk vector has a lk for family size = 0, but we are ignoring it (the root cannot have size 1) -- so we do i + 1 when calculating the posterior
-    // our prior on the root family size starts at family size = 1, and goes to root_max_family size; because there is no 0 here, we do root_max_family_size - 1 in the for loop
-      posterior[i] = exp(log(likelihood[i+1]) + log(prior_rfsize[i]));	//prior_rfsize also starts from 1
-	  cout << "Likelihood of size " << i << " is " << likelihood[i + 1] << " - prior " << prior_rfsize[i] << endl;
-  }
-
-  return posterior;
-}
-
-void do_something(clade *c)
-{
-	cout << "Clade id is: " << c->get_taxon_name() << endl;
-}
-
 double pvalue(double v, vector<double>& conddist)
 {
 	int idx = std::upper_bound(conddist.begin(), conddist.end(), v) - conddist.begin();
@@ -75,7 +41,12 @@ void call_viterbi(int max_family_size, int max_root_family_size, int number_of_s
 		int max = families[i].get_max_size();
 		max_root_family_size = rint(max*1.25);
 
-		likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, &families[i], calc, NULL);
+        map<string, int> species_count;
+        for (auto& species : families[i].get_species()) {
+            species_count[species] = families[i].get_species_size(species);
+        }
+
+		likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, species_count, calc, NULL);
 		p_tree->apply_reverse_level_order(pruner);
 		auto lh = pruner.get_likelihoods(p_tree);
 		std::cout << "likelihoods = ";

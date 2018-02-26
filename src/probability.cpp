@@ -187,7 +187,7 @@ public:
 */
 void likelihood_computer::operator()(clade *node) {
     if (node->is_leaf()) {
-        int species_size = _family->get_species_size(node->get_taxon_name());
+        int species_size = _species_count[node->get_taxon_name()];
         _probabilities[node].resize(_max_parsed_family_size + 1); // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
         if (_p_error_model != NULL)
         {
@@ -275,9 +275,15 @@ std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simula
 	vector<double> result;
 	for (vector<trial*>::iterator ith_trial = simulation.begin(); ith_trial != simulation.end(); ++ith_trial)
 	{
-		gene_family gf(*ith_trial);
+        map<string, int> species_count;
+        for (auto& it : **ith_trial) {
+            if (it.first->is_leaf()) 
+            { 
+                species_count[it.first->get_taxon_name()] = it.second; 
+            }
+        }
 		single_lambda lam(lambda);
-		likelihood_computer pruner(root_family_size, max_family_size, &lam, &gf, *calc, NULL);
+		likelihood_computer pruner(root_family_size, max_family_size, &lam, species_count, *calc, NULL);
 		p_tree->apply_reverse_level_order(pruner);
 		result.push_back(pruner.max_likelihood(p_tree));
 	}

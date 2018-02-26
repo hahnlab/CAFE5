@@ -25,7 +25,7 @@ double unifrnd();
 class likelihood_computer {
 private:
     std::map<clade *, std::vector<double> > _probabilities; //!< represents probability of the node having various family sizes
-    gene_family *_family;
+    std::map<std::string, int> _species_count;
     int _max_root_family_size;
 	int _max_parsed_family_size;
 	lambda* _lambda;
@@ -33,14 +33,14 @@ private:
     const error_model* _p_error_model;
     
 public:
-    likelihood_computer(int max_root_family_size, int max_parsed_family_size, lambda* lambda, gene_family *family,
+    likelihood_computer(int max_root_family_size, int max_parsed_family_size, lambda* lambda, std::map<std::string, int> species_count,
         matrix_cache& calc, const error_model *p_error_model) : 
 		_max_root_family_size(max_root_family_size),
 		_max_parsed_family_size(max_parsed_family_size),
 		_lambda(lambda),
         _calc(calc),
-        _p_error_model(p_error_model) {
-        _family = family;
+        _p_error_model(p_error_model),
+        _species_count(species_count) {
     }
   
     void operator()(clade *node);

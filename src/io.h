@@ -65,8 +65,6 @@ private:
 public:
   gene_family() { find_max_size(); } //!< Constructor for read user-provided input (sets _max_family_size and _parsed_max_family_size for this family)
   
-  gene_family(trial *a_trial); //!< Constructor for simulations (trial is a typedef for a map = {clade *: int}
-  
   void set_desc(std::string desc) { _desc = desc; }
   
   void set_id(std::string id) { _id = id; }
@@ -90,6 +88,10 @@ public:
   
   //! Mainly for debugging: In case one want to grab the gene count for a given species
   int get_species_size(std::string species) const;
+
+  std::map<std::string, int> get_species_map() const {
+      return _species_size_map;
+  }
 };
 /* END: Reading in gene family data */
 
