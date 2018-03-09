@@ -218,8 +218,22 @@ int cafexp(int argc, char *const argv[]) {
         
             // If lambda was not fixed, estimate!
             else {
-                for (model* p_model : models) {
-                    my_executer.estimate_lambda(p_model, p_prior, p_tree, p_lambda_tree, &gene_families, max_family_size, max_root_family_size);
+                if (p_error_model)
+                {   // we only support base model epsilon optimizing at the moment
+                    base_model *b = dynamic_cast<base_model *>(models[0]);
+                    b->initialize_lambda(p_lambda_tree);
+                    unique_ptr<optimizer> opt(b->get_epsilon_optimizer(p_prior));
+                    opt->optimize();
+                }
+                else
+                {
+                    for (model* p_model : models) {
+                        p_model->initialize_lambda(p_lambda_tree);
+
+                        p_tree->init_gene_family_sizes(gene_families);
+                        unique_ptr<optimizer> opt(p_model->get_lambda_optimizer(p_prior));
+                        opt->optimize();
+                    }
                 }
             
             // Printing: take estimated values, re-compute them for printing purposes

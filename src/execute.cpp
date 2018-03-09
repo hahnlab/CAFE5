@@ -192,18 +192,6 @@ void execute::simulate(std::vector<model *>& models, const input_parameters &my_
     }
 }
 
-/// estimate a lambda
-/// \callgraph
-void execute::estimate_lambda(model *p_model, root_equilibrium_distribution *p_prior, clade *p_tree, clade *p_lambda_tree,
-    std::vector<gene_family>* p_gene_families, int max_family_size, int max_root_family_size)
-{
-    p_model->initialize_lambda(p_lambda_tree);
-
-    p_tree->init_gene_family_sizes(*p_gene_families);
-    unique_ptr<optimizer> opt(p_model->get_lambda_optimizer(p_prior));
-    opt->optimize();
-}
-
 void execute::reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior)
 {
     matrix_cache cache;

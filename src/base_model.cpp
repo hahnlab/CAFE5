@@ -329,7 +329,7 @@ void epsilon_optimizer_lambda_first_then_epsilon::finalize(double *results)
 
 double epsilon_optimizer_lambda_first_then_epsilon::calculate_score(double *values)
 {
-    if (*values < 0 || *values > 1)
+    if (*values < 0 || *values > .5)
     {
         return std::numeric_limits<double>::max();
     }
@@ -427,7 +427,7 @@ double lambda_epsilon_simultaneous_optimizer::calculate_score(double *values)
     double * lambdas = values;
     double * epsilons = values + _p_lambda->count();
 
-    if (*epsilons < 0 || *epsilons > 1)
+    if (*epsilons < 0 || *epsilons > .5)
     {
         return std::numeric_limits<double>::max();
     }
