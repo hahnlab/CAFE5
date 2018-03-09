@@ -208,25 +208,6 @@ int cafexp(int argc, char *const argv[]) {
         if (models.empty())
             throw std::runtime_error("Not enough information to specify a model");
         
-        if (p_error_model)
-        {
-            // If lambda was fixed, compute!
-            if (p_lambda)
-            {
-                my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size);
-            }
-            else
-            {
-                base_model *b = dynamic_cast<base_model *>(models[0]);
-                b->initialize_lambda(p_lambda_tree);
-                unique_ptr<optimizer> opt(b->get_epsilon_optimizer(p_prior));
-                opt->optimize();
-                // Printing: take estimated values, re-compute them for printing purposes
-                my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size);
-            }
-            return 0;
-        }
-
         // -f cannot have been specified
         if (my_input_parameters.rootdist.empty()) {
         

@@ -127,6 +127,9 @@ public:
       return _deviations.size();
   }
 
+  size_t get_max_count() const {
+      return _error_dists.size();
+  }
   std::vector<double> get_epsilons() const;
   error_model* replace_epsilons(std::map<double,double> *new_epsilons);
 };

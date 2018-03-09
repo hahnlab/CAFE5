@@ -64,10 +64,11 @@ public:
 
 class simulation_process : public process {
 	trial *_my_simulation;
+    error_model *_p_error_model;
 	int _max_family_size_sim;
 public:
 	simulation_process(std::ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size,
-		int max_root_family_size, std::vector<int> rootdist, int family_number);
+		int max_root_family_size, std::vector<int> rootdist, int family_number, error_model *p_error_model);
 
 
 	void run_simulation();

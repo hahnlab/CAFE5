@@ -267,9 +267,9 @@ std::vector<int> * weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_
 }
 /* END: Weighted draw from vector */
 
-std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, double lambda, matrix_cache *calc)
+std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, double lambda, matrix_cache *calc, error_model *p_error_model)
 {
-	vector<trial *> simulation = simulate_families_from_root_size(p_tree, number_of_simulations, root_family_size, max_family_size, lambda);
+	vector<trial *> simulation = simulate_families_from_root_size(p_tree, number_of_simulations, root_family_size, max_family_size, lambda, p_error_model);
 	cout << "Simulation yielded " << simulation.size() << " trials" << endl;
 
 	vector<double> result;
@@ -298,7 +298,7 @@ std::vector<std::vector<double> > get_conditional_distribution_matrix(clade *p_t
 	std::vector<std::vector<double> > matrix(root_family_size);
 	for (int i = 0; i < root_family_size; ++i)
 	{
-		matrix[i] = get_random_probabilities(p_tree, number_of_simulations, root_family_size, max_family_size, lambda, &calc);
+		matrix[i] = get_random_probabilities(p_tree, number_of_simulations, root_family_size, max_family_size, lambda, &calc, NULL);
 #if 0
 		for (size_t j = 0; j < matrix[i].size(); j++)
 		{

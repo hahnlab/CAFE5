@@ -28,8 +28,8 @@ itr select_randomly(itr start, itr end) {
 //using namespace std;
 
 simulation_process::simulation_process(std::ostream &ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size,
-    int max_root_family_size, std::vector<int> rootdist, int family_number) : process(ost, lambda, lambda_multiplier, p_tree,
-        max_family_size, max_root_family_size, rootdist) {
+    int max_root_family_size, std::vector<int> rootdist, int family_number, error_model* p_error_model ) : process(ost, lambda, lambda_multiplier, p_tree,
+        max_family_size, max_root_family_size, rootdist), _p_error_model(p_error_model) {
 
     // generating uniform root distribution when no distribution is provided 
     if (_rootdist_vec.empty()) {
@@ -58,7 +58,7 @@ int simulation_process::get_max_family_size_to_simulate() const
 //! Run process' simulation
 void simulation_process::run_simulation() {
     lambda *multiplier = _lambda->multiply(_lambda_multiplier);
-	_my_simulation = simulate_family_from_root_size(_p_tree, _root_size, _max_family_size_sim, multiplier);
+	_my_simulation = simulate_family_from_root_size(_p_tree, _root_size, _max_family_size_sim, multiplier, _p_error_model);
 }
 
 //! Prune process

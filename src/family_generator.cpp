@@ -17,28 +17,6 @@ std::uniform_real_distribution<> dis(0, 1); // draw random number from uniform d
 
   The birth-death probability calculations are done using a class (probability_calculator defined in probability.h.
 */
-class random_familysize_setter {
-private:
-    trial *_p_tth_trial;
-    int _max_family_size; //!< We simulate from 0 to _max_family_size-1
-    lambda *_p_lambda;
-    matrix_cache* _calculator; //!< Does the birth-death model computations
-
-public:
-    //! Constructor
-    random_familysize_setter(trial *p_tth_trial, int max_family_size, lambda * p_lambda, matrix_cache* p_calc) :
-        _p_tth_trial(p_tth_trial), _max_family_size(max_family_size), _p_lambda(p_lambda), _calculator(p_calc) {
-    }
-
-    //! Operator () overload.
-    /*!
-      Makes random_family_setter a functor. 
-      The functor is called once on each node of the tree, recursively, and in each recursion it populates _p_tth_trial.
-    */
-    void operator()(clade *node);
-
-};
-
 void random_familysize_setter::operator()(clade *node) {
 
     if (node->is_root()) { return; } // if node is root, we do nothing
@@ -63,8 +41,26 @@ void random_familysize_setter::operator()(clade *node) {
             }
         }   
     }
-  
-  (*_p_tth_trial)[node] = c;
+    if (node->is_leaf() && _p_error_model != NULL)
+    {
+        if (c >= _p_error_model->get_max_count())
+        {
+            throw runtime_error("Trying to simulate leaf family size that was not included in error model");
+        }
+        auto probs = _p_error_model->get_probs(c);
+       
+        double rnd = unifrnd();
+        if (rnd < probs[0])
+        {
+            c--;
+        }
+        else if (rnd > (1 - probs[2]))
+        {
+            c++;
+        }
+    }
+
+    (*_p_tth_trial)[node] = c;
 }
 
 //! Simulate one gene family from a single root family size 
@@ -73,11 +69,11 @@ void random_familysize_setter::operator()(clade *node) {
   Given a root gene family size, a lambda, simulates gene family counts for all nodes in the tree just once.
   Returns a trial, key = pointer to node, value = gene family size
 */
-trial * simulate_family_from_root_size(clade *tree, int root_family_size, int max_family_size, lambda * p_lambda) {
+trial * simulate_family_from_root_size(clade *tree, int root_family_size, int max_family_size, lambda * p_lambda, error_model *p_error_model) {
 
     matrix_cache calc;
     trial *result = new trial;
-    random_familysize_setter rfs(result, max_family_size, p_lambda, &calc);
+    random_familysize_setter rfs(result, max_family_size, p_lambda, &calc, p_error_model);
     (*result)[tree] = root_family_size;
     tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
     
@@ -91,7 +87,7 @@ trial * simulate_family_from_root_size(clade *tree, int root_family_size, int ma
   Returns family_sizes map (= trial), key = pointer to node, value = gene family size
 */
 //map<clade *, int> simulate_families_from_root_size(clade *tree, int num_trials, int root_family_size, int max_family_size, double lambda) {
-vector<trial *> simulate_families_from_root_size(clade *tree, int num_trials, int root_family_size, int max_family_size, double lambda) {
+vector<trial *> simulate_families_from_root_size(clade *tree, int num_trials, int root_family_size, int max_family_size, double lambda, error_model *p_error_model) {
 
     matrix_cache calc;
     vector<trial *> result;
@@ -99,7 +95,7 @@ vector<trial *> simulate_families_from_root_size(clade *tree, int num_trials, in
 
     for (int t = 0; t < num_trials; ++t) {
         trial *p_tth_trial = new trial;
-        random_familysize_setter rfs(p_tth_trial, max_family_size, &lam, &calc);
+        random_familysize_setter rfs(p_tth_trial, max_family_size, &lam, &calc, p_error_model);
         (*p_tth_trial)[tree] = root_family_size;
         tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
         //tree->apply_to_descendants(rfs); // setting the family size (random) of the descendants
@@ -110,23 +106,24 @@ vector<trial *> simulate_families_from_root_size(clade *tree, int num_trials, in
     return result;
 }
 
+
 //! Simulate gene family evolution from a distribution of root family sizes
 /*!
   Wraps around simulate_families_from_root_size.
   Given a root family size distribution (provided as a map read using read_rootdist()), simulates gene family counts for all nodes in the tree, and the number of times specified by the distribution (e.g., 10 families with root size 2, 5 families with root size 3, etc.)
 */
-vector<vector<trial *> > simulate_families_from_distribution(clade *p_tree, int num_trials, const std::map<int, int>& root_dist, int max_family_size, double lambda) {
-    
-    vector<vector<trial *> > result;
-    std::map<int, int>::const_iterator it = root_dist.begin();
-    
-    while (it != root_dist.end()) {
-        int root_size = it->first;
-        cout << "Root size: " << root_size << endl;
-        int n_fams_this_size = it->second;
-        result.push_back(simulate_families_from_root_size(p_tree, n_fams_this_size, root_size, max_family_size, lambda));
-        it++;
-    }
-
-    return result;
-}
+//vector<vector<trial *> > simulate_families_from_distribution(clade *p_tree, int num_trials, const std::map<int, int>& root_dist, int max_family_size, double lambda) {
+//    
+//    vector<vector<trial *> > result;
+//    std::map<int, int>::const_iterator it = root_dist.begin();
+//    
+//    while (it != root_dist.end()) {
+//        int root_size = it->first;
+//        cout << "Root size: " << root_size << endl;
+//        int n_fams_this_size = it->second;
+//        result.push_back(simulate_families_from_root_size(p_tree, n_fams_this_size, root_size, max_family_size, lambda, NULL));
+//        it++;
+//    }
+//
+//    return result;
+//}

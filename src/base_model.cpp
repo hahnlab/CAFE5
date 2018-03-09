@@ -53,7 +53,7 @@ public:
         root_equilibrium_distribution* p_distribution,
         lambda *p_lambda,
         double longest_branch
-        ) :
+    ) :
         _p_model(p_model),
         _p_error_model(p_error_model),
         _p_distribution(p_distribution),
@@ -90,11 +90,11 @@ base_model::~base_model()
 }
 
 simulation_process* base_model::create_simulation_process(int family_number) {
-    return new simulation_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, family_number); // if a single _lambda_multiplier, how do we do it?
+    return new simulation_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, family_number, _p_error_model); // if a single _lambda_multiplier, how do we do it?
 }
 
 reconstruction_process* base_model::create_reconstruction_process(int family_number, matrix_cache *p_calc, root_equilibrium_distribution* p_prior) {
-    return new reconstruction_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, 
+    return new reconstruction_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec,
         &_p_gene_families->at(family_number), p_calc, p_prior);
 }
 
@@ -108,7 +108,7 @@ vector<int> build_reference_list(vector<gene_family>& families)
         if (reff[i] != -1) continue;
 
         reff[i] = i;
-        
+
         for (int j = i + 1; j < num_families; ++j) {
             if (reff[j] == -1)
             {
@@ -176,7 +176,7 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
 
         //        all_families_likelihood[i] = accumulate(full.begin(), full.end(), 0.0); // sum over all sizes (Felsenstein's approach)
         all_families_likelihood[i] = *max_element(full.begin(), full.end()); // get max (CAFE's approach)
-       // cout << i << " contribution " << scientific << all_families_likelihood[i] << endl;
+                                                                             // cout << i << " contribution " << scientific << all_families_likelihood[i] << endl;
         results[i] = family_info_stash(i, 0.0, 0.0, 0.0, all_families_likelihood[i], false);
     }
     double final_likelihood = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families
@@ -207,7 +207,7 @@ optimizer *base_model::get_epsilon_optimizer(root_equilibrium_distribution* p_di
 
     enum strategy { optimize_lambda, epsilon_range, simultaneous };
 
-    const strategy strat = optimize_lambda;
+    const strategy strat = simultaneous;
 
     switch (strat) {
     case optimize_lambda:
@@ -291,12 +291,12 @@ double base_lambda_optimizer::calculate_score(double *values)
 
     _p_model->start_inference_processes();
 
-   double score = _p_model->infer_processes(_p_distribution);
+    double score = _p_model->infer_processes(_p_distribution);
 
-   if (!quiet)
-       std::cout << "Score (-lnL): " << setw(15) << setprecision(14) << score << std::endl;
+    if (!quiet)
+        std::cout << "Score (-lnL): " << setw(15) << setprecision(14) << score << std::endl;
 
-   return score;
+    return score;
 }
 
 epsilon_optimizer_lambda_first_then_epsilon::epsilon_optimizer_lambda_first_then_epsilon(model* p_model,
@@ -394,7 +394,7 @@ double lambda_optimizer_with_epsilon_range::calculate_score(double *values)
     }
 
     double result = *std::min_element(scores.begin(), scores.end());
-    
+
     if (!quiet)
         cout << "Final score: " << result << endl;
 
@@ -427,8 +427,10 @@ double lambda_epsilon_simultaneous_optimizer::calculate_score(double *values)
     double * lambdas = values;
     double * epsilons = values + _p_lambda->count();
 
-    if (!quiet)
-        cout << "Lambda " << *lambdas << ", Epsilon " << *epsilons << endl;
+    if (*epsilons < 0 || *epsilons > 1)
+    {
+        return std::numeric_limits<double>::max();
+    }
 
     _p_lambda->update(lambdas);
     map<double, double> replacements;
@@ -439,12 +441,18 @@ double lambda_epsilon_simultaneous_optimizer::calculate_score(double *values)
     }
 
     _p_error_model->replace_epsilons(&replacements);
+
+    if (!quiet)
+    {
+        cout << "Calculating probability: epsilon=" << _p_error_model->get_epsilons().back()*2.0 << ", " << "lambda=" << *_p_lambda << std::endl;
+    }
+
     _p_model->start_inference_processes();
 
     double score = _p_model->infer_processes(_p_distribution);
 
     if (!quiet)
-        cout << " Score: " << score << endl;
+        cout << " Score with above error models: " << score << endl;
 
     return score;
 }

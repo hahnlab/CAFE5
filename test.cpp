@@ -13,6 +13,7 @@
 #include "src/matrix_cache.h"
 #include "src/gamma_bundle.h"
 #include "src/probability.h"
+#include "src/family_generator.h"
 
 TEST_GROUP(GeneFamilies)
 {
@@ -1012,8 +1013,59 @@ TEST(Inference, lambda_epsilon_simultaneous_optimizer)
 TEST(Simulation, simulation_process_max_family_size_is_twice_max_rootdist)
 {
     vector<int> rootdist{ 3, 5, 9, 11, 4 };
-    simulation_process p(cout, NULL, 1, NULL, 0, 0, rootdist, 0);
+    simulation_process p(cout, NULL, 1, NULL, 0, 0, rootdist, 0, NULL);
     LONGS_EQUAL(22,p.get_max_family_size_to_simulate());
+}
+
+TEST(Simulation, random_familysize_setter_without_error_model)
+{
+    srand(10);
+
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    matrix_cache cache;
+    single_lambda lambda(0.05);
+    trial t;
+    random_familysize_setter setter(&t, 10, &lambda, &cache, NULL);
+    clade *b = p_tree->find_descendant("B");
+    setter(b);
+
+    LONGS_EQUAL(0, t[b]);
+
+    t[p_tree.get()] = 5;
+    setter(b);
+    LONGS_EQUAL(5, t[b]);
+}
+
+TEST(Simulation, random_familysize_setter_with_error_model)
+{
+    srand(10);
+
+    const int family_size = 10;
+    const double initial_epsilon = 0.2;
+    error_model err;
+    err.set_probs(0, { .0, .8, initial_epsilon });
+    err.set_probs(1, { initial_epsilon, .6, initial_epsilon });
+    err.set_probs(family_size, { initial_epsilon, .6, initial_epsilon });
+
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    matrix_cache cache;
+    single_lambda lambda(0.05);
+    trial t;
+    random_familysize_setter setter(&t, family_size, &lambda, &cache, &err);
+    clade *b = p_tree->find_descendant("B");
+    setter(b);
+
+    LONGS_EQUAL(0, t[b]);
+
+    t[p_tree.get()] = 5;
+    setter(b);
+    LONGS_EQUAL(4, t[b]);
 }
 
 int main(int ac, char** av)

@@ -345,10 +345,13 @@ void read_error_model_file(std::istream& error_model_file, error_model *p_error_
         else
         {
             tokens = tokenize_str(line, ' ');
-            int sz = std::stoi(tokens[0]);
-            vector<double> values(tokens.size()-1);
-            transform(tokens.begin() + 1, tokens.end(), values.begin(), to_double);
-            p_error_model->set_probs(sz, values);
+            if (tokens.size() > 0)
+            {
+                int sz = std::stoi(tokens[0]);
+                vector<double> values(tokens.size() - 1);
+                transform(tokens.begin() + 1, tokens.end(), values.begin(), to_double);
+                p_error_model->set_probs(sz, values);
+            }
         }
     }
         // std::vector<std::string> tokens = tokenize_str(line, '\t'); 

@@ -48,8 +48,8 @@ std::vector<model *> build_models(const input_parameters& my_input_parameters,
         // Either use base core or gamma core when simulating
         if (my_input_parameters.n_gamma_cats > 1) { models.push_back(new gamma_model(p_lambda, p_tree, NULL, 
             max_family_size, max_root_family_size, my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha,
-            p_rootdist_map, NULL)); }
-        else { models.push_back(new base_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_rootdist_map, NULL)); }
+            p_rootdist_map, p_error_model)); }
+        else { models.push_back(new base_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_rootdist_map, p_error_model)); }
     }
 
     return models;
