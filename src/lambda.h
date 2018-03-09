@@ -112,6 +112,7 @@ public:
     void log_results(FMinSearch * pfm, std::vector<double> &initial, double * re);
 
     bool quiet = false;
+    bool explode = false;
 };
 
 inline std::ostream& operator<<(std::ostream& ost, const lambda& lambda)

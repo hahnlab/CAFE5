@@ -33,4 +33,59 @@ public:
     optimizer *get_epsilon_optimizer(root_equilibrium_distribution* p_distribution);
 };
 
+class base_lambda_optimizer;
+/// optimize epsilon by taking the best value of lambda for each epsilon candidate
+class epsilon_optimizer_lambda_first_then_epsilon : public optimizer
+{
+    error_model* _p_error_model;
+    model *_p_model;
+    root_equilibrium_distribution *_p_distribution;
+    optimizer* _p_lambda_optimizer;
+    std::vector<double> current_guesses;
+public:
+    epsilon_optimizer_lambda_first_then_epsilon(model* p_model,
+        error_model *p_error_model,
+        root_equilibrium_distribution* p_distribution,
+        optimizer* p_optimizer);
+
+    virtual ~epsilon_optimizer_lambda_first_then_epsilon();
+
+    virtual std::vector<double> initial_guesses();
+
+    virtual double calculate_score(double *values);
+
+    virtual void finalize(double *results);
+};
+
+/// optimize lambdas and epsilons together
+class lambda_epsilon_simultaneous_optimizer : public optimizer
+{
+    error_model* _p_error_model;
+    lambda *_p_lambda;
+    model *_p_model;
+    root_equilibrium_distribution *_p_distribution;
+
+    double _longest_branch;
+    std::vector<double> current_guesses;
+public:
+    lambda_epsilon_simultaneous_optimizer(model* p_model,
+        error_model *p_error_model,
+        root_equilibrium_distribution* p_distribution,
+        lambda *p_lambda,
+        double longest_branch) :
+        _p_model(p_model),
+        _p_error_model(p_error_model),
+        _p_distribution(p_distribution),
+        _p_lambda(p_lambda),
+        _longest_branch(longest_branch)
+    {
+
+    }
+    std::vector<double> initial_guesses();
+
+    virtual double calculate_score(double *values);
+    virtual void finalize(double *results);
+};
+
+
 #endif

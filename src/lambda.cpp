@@ -84,6 +84,12 @@ void optimizer::optimize()
     auto initial = initial_guesses();
 	FMinSearch* pfm;
 	pfm = fminsearch_new_with_eq(fn_calc_score, initial.size(), this);
+    if (explode)
+    {
+        pfm->rho = 1.5;				// reflection
+        pfm->chi = 50;				// expansion
+        pfm->delta = 0.4;
+    }
 	pfm->tolx = 1e-6;
 	pfm->tolf = 1e-6;
     pfm->maxiters = 25;
