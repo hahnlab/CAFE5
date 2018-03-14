@@ -24,41 +24,17 @@ public:
 
     virtual void print_results(std::ostream& ost);
 
-    virtual optimizer *get_lambda_optimizer(root_equilibrium_distribution* p_distribution);
+    virtual optimizer_scorer *get_lambda_optimizer(root_equilibrium_distribution* p_distribution);
 
     virtual void reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
     reconstruction_process* create_reconstruction_process(int family_number, matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
     void print_reconstructed_states(std::ostream& ost);
 
-    optimizer *get_epsilon_optimizer(root_equilibrium_distribution* p_distribution);
-};
-
-class base_lambda_optimizer;
-/// optimize epsilon by taking the best value of lambda for each epsilon candidate
-class epsilon_optimizer_lambda_first_then_epsilon : public optimizer
-{
-    error_model* _p_error_model;
-    model *_p_model;
-    root_equilibrium_distribution *_p_distribution;
-    optimizer* _p_lambda_optimizer;
-    std::vector<double> current_guesses;
-public:
-    epsilon_optimizer_lambda_first_then_epsilon(model* p_model,
-        error_model *p_error_model,
-        root_equilibrium_distribution* p_distribution,
-        optimizer* p_optimizer);
-
-    virtual ~epsilon_optimizer_lambda_first_then_epsilon();
-
-    virtual std::vector<double> initial_guesses();
-
-    virtual double calculate_score(double *values);
-
-    virtual void finalize(double *results);
+    optimizer_scorer *get_epsilon_optimizer(root_equilibrium_distribution* p_distribution);
 };
 
 /// optimize lambdas and epsilons together
-class lambda_epsilon_simultaneous_optimizer : public optimizer
+class lambda_epsilon_simultaneous_optimizer : public optimizer_scorer
 {
     error_model* _p_error_model;
     lambda *_p_lambda;
@@ -81,10 +57,13 @@ public:
     {
 
     }
+
     std::vector<double> initial_guesses();
 
     virtual double calculate_score(double *values);
     virtual void finalize(double *results);
+
+    bool quiet;
 };
 
 

@@ -269,6 +269,16 @@ std::vector<double> error_model::get_epsilons() const {
     return result;
 }
 
+// simple case where we have a single epsilon value in the tree
+void error_model::update_single_epsilon(double new_epsilon)
+{
+    auto epsilons = get_epsilons();
+    assert(epsilons.size() == 1);
+    map<double, double> replacements;
+    replacements[epsilons[0]] = new_epsilon;
+    replace_epsilons(&replacements);
+}
+
 error_model* error_model::replace_epsilons(std::map<double, double> *new_epsilons)
 {
     vector<double> vec = _error_dists[0];

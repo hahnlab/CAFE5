@@ -75,15 +75,22 @@ double multiple_lambda::get_value_for_clade(clade *c) {
 
 double fn_calc_score(double* p_lambda, void* args)
 {
-    optimizer *opt = reinterpret_cast<optimizer*>(args);
+    optimizer_scorer *opt = reinterpret_cast<optimizer_scorer*>(args);
     opt->calculate_score(p_lambda);
 }
 
-void optimizer::optimize()
+optimizer::optimizer(optimizer_scorer *p_scorer) : _p_scorer(p_scorer)
 {
-    auto initial = initial_guesses();
-	FMinSearch* pfm;
-	pfm = fminsearch_new_with_eq(fn_calc_score, initial.size(), this);
+#ifdef SILENT
+    quiet = true;
+#endif
+    pfm = fminsearch_new();
+}
+
+optimizer::result optimizer::optimize()
+{
+    auto initial = _p_scorer->initial_guesses();
+    fminsearch_set_equation(pfm, fn_calc_score, initial.size(), _p_scorer);
     if (explode)
     {
         pfm->rho = 1.5;				// reflection
@@ -96,11 +103,15 @@ void optimizer::optimize()
 	fminsearch_min(pfm, &initial[0]);
     double *re = fminsearch_get_minX(pfm);
 
+    result r;
+    r.score = fminsearch_get_minF(pfm);
+    r.values.resize(initial.size());
+    copy(re, re + initial.size(), r.values.begin());
     if (!quiet)
     {
         log_results(pfm, initial, re);
     }
-    finalize(re);
+    return r;
 }
 
 void optimizer::log_results(FMinSearch * pfm, std::vector<double> &initial, double * re)
@@ -118,4 +129,5 @@ void optimizer::log_results(FMinSearch * pfm, std::vector<double> &initial, doub
         cout << endl;
     }
 }
+
 

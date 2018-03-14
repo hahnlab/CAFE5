@@ -11,7 +11,7 @@
 #include "matrix_cache.h"
 #include "gamma_bundle.h"
 
-class gamma_lambda_optimizer : public optimizer
+class gamma_lambda_optimizer : public optimizer_scorer
 {
     gamma_model *_p_model;
     root_equilibrium_distribution *_p_distribution;
@@ -218,7 +218,7 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     return final_likelihood;
 }
 
-optimizer *gamma_model::get_lambda_optimizer(root_equilibrium_distribution* p_distribution)
+optimizer_scorer *gamma_model::get_lambda_optimizer(root_equilibrium_distribution* p_distribution)
 {
     return new gamma_lambda_optimizer(_p_tree, _p_lambda, this, p_distribution);
 }

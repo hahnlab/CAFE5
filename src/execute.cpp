@@ -11,6 +11,7 @@
 #include "root_equilibrium_distribution.h"
 #include "chisquare.h"
 #include "matrix_cache.h"
+#include "base_model.h"
 
 double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 24.01409824083091, -1.231739572450155, 1.208650973866179e-3,
@@ -120,6 +121,44 @@ void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_
     {
         cout << "PValue = " << (1.0 - chi2cdf(2 * (model_likelihoods[1] - model_likelihoods[0]), 1.0));
     }
+}
+
+bool compare_result(const optimizer::result& a, const optimizer::result& b)
+{
+    return a.score < b.score;
+}
+
+void execute::estimate_lambda(std::vector<model *>& models, std::vector<gene_family> &gene_families, error_model *p_error_model, clade *p_tree, clade *p_lambda_tree, root_equilibrium_distribution *p_prior)
+{
+    if (p_error_model)
+    {   // we only support base model epsilon optimizing at the moment
+        base_model *b = dynamic_cast<base_model *>(models[0]);
+        b->initialize_lambda(p_lambda_tree);
+        unique_ptr<optimizer_scorer> scorer(b->get_epsilon_optimizer(p_prior));
+        optimizer opt(scorer.get());
+        vector<optimizer::result> results;
+        for (double epsilon = 0.05; epsilon < .5; epsilon += .1)
+        {
+            p_error_model->update_single_epsilon(epsilon);
+            results.push_back(opt.optimize());
+        }
+        auto best = min_element(results.begin(), results.end(), compare_result);
+        scorer->finalize(&best->values[0]);
+        cout << "Final score: " << best->score << ", Lambda: " << best->values[0] << ", Epsilon: " << best->values[1] * 2 << endl;
+    }
+    else
+    {
+        for (model* p_model : models) {
+            p_model->initialize_lambda(p_lambda_tree);
+
+            p_tree->init_gene_family_sizes(gene_families);
+            unique_ptr<optimizer_scorer> scorer(p_model->get_lambda_optimizer(p_prior));
+            optimizer opt(scorer.get());
+            auto result = opt.optimize();
+            scorer->finalize(&result.values[0]);
+        }
+    }
+
 }
 
 /// Simulate

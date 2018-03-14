@@ -132,5 +132,7 @@ public:
   }
   std::vector<double> get_epsilons() const;
   error_model* replace_epsilons(std::map<double,double> *new_epsilons);
+  void update_single_epsilon(double new_epsilon);
+
 };
 #endif

@@ -257,7 +257,7 @@ TEST(Inference, gamma_model_initial_guesses)
     single_lambda sl(0.05);
 
     gamma_model model(&sl, p_tree, NULL, 0, 5, 4, 0.7, NULL, NULL);
-    unique_ptr<optimizer> opt(model.get_lambda_optimizer(NULL));
+    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(NULL));
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(2, guesses.size());
     DOUBLES_EQUAL(0.218321, guesses[0], 0.0001);
@@ -274,7 +274,7 @@ TEST(Inference, base_model_initial_guesses)
     single_lambda sl(0.05);
 
     base_model model(&sl, tree.get(), NULL, 0, 5, NULL, NULL);
-    unique_ptr<optimizer> opt(model.get_lambda_optimizer(NULL));
+    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(NULL));
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(1, guesses.size());
     DOUBLES_EQUAL(0.565811, guesses[0], 0.0001);
@@ -559,23 +559,8 @@ TEST(Probability, base_model_get_epsilon_optimizer)
     std::vector<gene_family> fams;
     single_lambda lambda(0.001);
     base_model model(&lambda, p_tree.get(), &fams, 10, 10, NULL, &err);
-    unique_ptr<optimizer> opt(model.get_epsilon_optimizer(NULL));
+    unique_ptr<optimizer_scorer> opt(model.get_epsilon_optimizer(NULL));
     CHECK(opt.get() != NULL);
-}
-
-TEST(Probability, base_model_initial_epsilon)
-{
-    error_model err;
-    err.set_probs(0, { .0, .7, .3 });
-    err.set_probs(1, { .4, .2, .4 });
-    std::vector<gene_family> fams;
-    single_lambda lambda(0.001);
-
-    epsilon_optimizer_lambda_first_then_epsilon optimizer(NULL, &err, NULL, NULL);
-    auto actual = optimizer.initial_guesses();
-    LONGS_EQUAL(2, actual.size());
-    double a;
-    optimizer.finalize(&a);
 }
 
 TEST(Probability, error_model_get_epsilon)
@@ -901,7 +886,7 @@ TEST(Inference, multiple_lambda_returns_correct_values)
     DOUBLES_EQUAL(.011, ml.get_value_for_clade(p_tree->find_descendant("B")), 0.0001);
 }
 
-class mock_optimizer : public optimizer
+class mock_optimizer : public optimizer_scorer
 {
     double _initial;
     // Inherited via optimizer
@@ -912,9 +897,6 @@ class mock_optimizer : public optimizer
     virtual double calculate_score(double * values) override
     {
         return 0.0;
-    }
-    virtual void finalize(double * results) override
-    {
     }
 public:
     mock_optimizer(double initial) : _initial(initial)
@@ -950,7 +932,7 @@ class mock_model : public model {
     virtual void print_reconstructed_states(std::ostream & ost) override
     {
     }
-    virtual optimizer * get_lambda_optimizer(root_equilibrium_distribution * p_distribution) override
+    virtual optimizer_scorer * get_lambda_optimizer(root_equilibrium_distribution * p_distribution) override
     {
         return nullptr;
     }
@@ -960,30 +942,6 @@ public:
 
     }
 };
-
-TEST(Inference, epsilon_optimizer_lambda_first_then_epsilon)
-{
-    const double initial_epsilon = 0.01;
-    error_model err;
-    err.set_probs(0, { .0, .99, initial_epsilon });
-    err.set_probs(1, { initial_epsilon, .98, initial_epsilon });
-
-    mock_model model;
-
-    epsilon_optimizer_lambda_first_then_epsilon optimizer(&model, &err, NULL, new mock_optimizer(initial_epsilon));
-    optimizer.initial_guesses();
-    double values = 0.06;
-    optimizer.calculate_score(&values);
-    auto actual = err.get_probs(0);
-    vector<double> expected{ 0, .94, .06 };
-    CHECK(expected == actual);
-
-    values = 0.04;
-    optimizer.calculate_score(&values);
-    actual = err.get_probs(0);
-    expected = { 0, .96, .04 };
-    CHECK(expected == actual);
-}
 
 TEST(Inference, lambda_epsilon_simultaneous_optimizer)
 {

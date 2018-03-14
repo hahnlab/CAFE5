@@ -90,29 +90,33 @@ public:
 
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
-class optimizer {
+class optimizer_scorer {
 public:
-    optimizer() 
-    {
-#ifdef SILENT
-        quiet = true;
-#endif
-    }
-
-    virtual ~optimizer() {}
-
     virtual std::vector<double> initial_guesses() = 0;
 
     virtual double calculate_score(double *values) = 0;
 
-    virtual void finalize(double *results) = 0;
+    virtual void finalize(double *result) = 0;
+};
 
-    void optimize();
+class optimizer {
+    FMinSearch* pfm;
+    optimizer_scorer *_p_scorer;
+public:
+    optimizer(optimizer_scorer *scorer);
+
+    struct result {
+        std::vector<double> values;
+        double score;
+    };
+
+    result optimize();
 
     void log_results(FMinSearch * pfm, std::vector<double> &initial, double * re);
 
     bool quiet = false;
     bool explode = false;
+
 };
 
 inline std::ostream& operator<<(std::ostream& ost, const lambda& lambda)
