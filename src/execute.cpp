@@ -99,9 +99,9 @@ std::string filename(std::string base, std::string suffix)
 
 void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
 {
-    std::ofstream results(filename("results", my_input_parameters.output_prefix));
+    std::ofstream results_file(filename("results", my_input_parameters.output_prefix));
 
-    std::ofstream likelihoods(filename("family_lks", my_input_parameters.output_prefix));
+    std::ofstream likelihoods_file(filename("family_lks", my_input_parameters.output_prefix));
 
     std::vector<double> model_likelihoods(models.size());
     for (int i = 0; i < models.size(); ++i) {
@@ -110,9 +110,9 @@ void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_
 
         cout << endl << "Inferring processes for model " << i << endl;
         double result = models[i]->infer_processes(p_prior);
-        results << "Model " << models[i]->name() << " Result: " << result << endl;
+        models[i]->write_vital_statistics(results_file, result);
 
-        models[i]->print_results(likelihoods);
+        models[i]->write_family_likelihoods(likelihoods_file);
 
         model_likelihoods[i] = result;
     }

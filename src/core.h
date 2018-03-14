@@ -111,7 +111,8 @@ public:
     void adjust_family(ostream& ost);
 
     virtual std::string name() = 0;
-    virtual void print_results(std::ostream& ost) = 0;
+    virtual void write_family_likelihoods(std::ostream& ost) = 0;
+    virtual void write_vital_statistics(std::ostream& ost, double final_likelihood) = 0;
 
     virtual void reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
     virtual void print_reconstructed_states(std::ostream& ost) = 0;

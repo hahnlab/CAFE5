@@ -22,7 +22,8 @@ public:
     }
     virtual ~base_model();
 
-    virtual void print_results(std::ostream& ost);
+    virtual void write_family_likelihoods(std::ostream& ost);
+    virtual void write_vital_statistics(std::ostream& ost, double final_likelihood);
 
     virtual optimizer_scorer *get_lambda_optimizer(root_equilibrium_distribution* p_distribution);
 

@@ -152,7 +152,15 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
     return final_likelihood;
 }
 
-void base_model::print_results(std::ostream& ost)
+void base_model::write_vital_statistics(std::ostream& ost, double final_likelihood)
+{
+    ost << "Model " << name() << " Result: " << final_likelihood << endl;
+    ost << "Lambda: " << *get_lambda() << endl;
+    if (_p_error_model)
+        ost << "Epsilon: " << _p_error_model->get_epsilons()[0] << endl;
+}
+
+void base_model::write_family_likelihoods(std::ostream& ost)
 {
     ost << "#FamilyID\tLikelihood of Family" << endl;
     for (const auto& r : results)
@@ -297,4 +305,5 @@ double lambda_epsilon_simultaneous_optimizer::calculate_score(double *values)
 void lambda_epsilon_simultaneous_optimizer::finalize(double *results)
 {
     _p_lambda->update(results);
+    _p_error_model->update_single_epsilon(results[_p_lambda->count()]);
 }

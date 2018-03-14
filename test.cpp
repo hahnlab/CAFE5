@@ -923,7 +923,10 @@ class mock_model : public model {
     {
         return std::string();
     }
-    virtual void print_results(std::ostream & ost) override
+    virtual void write_family_likelihoods(std::ostream & ost) override
+    {
+    }
+    virtual void write_vital_statistics(std::ostream& ost, double final_likelihood) override
     {
     }
     virtual void reconstruct_ancestral_states(matrix_cache * p_calc, root_equilibrium_distribution * p_prior) override

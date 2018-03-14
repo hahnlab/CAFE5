@@ -46,7 +46,8 @@ public:
         return "Gamma";
     }
 
-    virtual void print_results(std::ostream& ost);
+    virtual void write_family_likelihoods(std::ostream& ost);
+    virtual void write_vital_statistics(std::ostream& ost, double final_likelihood);
 
     virtual void reconstruct_ancestral_states(matrix_cache *, root_equilibrium_distribution* p_prior);
     void print_reconstructed_states(std::ostream& ost);
