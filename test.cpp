@@ -1013,6 +1013,30 @@ TEST(Inference, lambda_epsilon_simultaneous_optimizer)
     CHECK(expected == actual);
 }
 
+TEST(Inference, gamma_lambda_optimizer)
+{
+    // TODO: Add families and a tree to the Inference test group, since they are required for pretty much everything
+    // Remove p_tree pointer from gamma_lambda_optimizer as it is only used to find the longest branch length
+    single_lambda lambda(0.05);
+
+    vector<gene_family> families;
+    gene_family fam;
+    fam.set_species_size("A", 1);
+    fam.set_species_size("B", 2);
+    families.push_back(fam);
+
+    uniform_distribution frq;
+
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    gamma_model m(&lambda,p_tree.get(), &families, 10, 10, 4, 0.25, NULL, NULL);
+    gamma_lambda_optimizer optimizer(p_tree.get(), &lambda, &m, &frq);
+    vector<double> values{ 0.01, 0.25 };
+    optimizer.calculate_score(&values[0]);
+}
+
 TEST(Simulation, simulation_process_max_family_size_is_twice_max_rootdist)
 {
     vector<int> rootdist{ 3, 5, 9, 11, 4 };

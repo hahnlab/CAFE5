@@ -11,36 +11,6 @@
 #include "matrix_cache.h"
 #include "gamma_bundle.h"
 
-class gamma_lambda_optimizer : public optimizer_scorer
-{
-    gamma_model *_p_model;
-    root_equilibrium_distribution *_p_distribution;
-    clade *_p_tree;
-    lambda *_p_lambda;
-public:
-    gamma_lambda_optimizer(clade *p_tree, lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution) :
-        _p_tree(p_tree),
-        _p_lambda(p_lambda),
-        _p_model(p_model),
-        _p_distribution(_p_distribution)
-    {
-
-    }
-
-    std::vector<double> initial_guesses();
-
-    double calculate_score(double *values);
-
-    /// results consists of the desired number of lambdas and one alpha value
-    void finalize(double *results) {
-        _p_lambda->update(results);
-        double alpha = results[_p_lambda->count()];
-        _p_model->set_alpha(alpha, _p_model->get_gene_family_count());
-    }
-
-};
-
-
 gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
     int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map, error_model* p_error_model) :
     model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_error_model) {
@@ -297,10 +267,9 @@ void gamma_model::print_increases_decreases(std::ostream& ost)
         ost << "#" << it->get_taxon_name() << "\n";
     }
 
-    throw std::runtime_error("Not implemented yet\n");
     for (auto bundle : _family_bundles)
     {
-        //bundle->print_increases_decreases(ost, order);
+        bundle->print_increases_decreases(ost, order);
     }
 }
 

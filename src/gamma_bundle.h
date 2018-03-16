@@ -61,6 +61,7 @@ public:
     void set_values(matrix_cache *, root_equilibrium_distribution*);
 
     void print_reconstruction(std::ostream& ost, std::vector<clade *> order);
+    void print_increases_decreases(std::ostream& ost, std::vector<clade *> order);
 
     std::vector<clade *> get_taxa();
 };

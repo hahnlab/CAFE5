@@ -105,6 +105,24 @@ void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<clade *> 
     ost << endl;
 }
 
+void gamma_bundle::print_increases_decreases(std::ostream& ost, std::vector<clade *> order)
+{
+#if 0
+    auto rec = processes[0];
+    auto order = rec->get_taxa();
+
+    ost << "#FamilyID\t";
+    for (auto& it : order) {
+        ost << it->get_taxon_name() << "\t";
+    }
+    ost << endl;
+
+    for (auto proc : processes) {
+        ost << proc->get_increases_decreases(order);
+    }
+#endif
+}
+
 double gamma_bundle::get_lambda_likelihood(int family_id)
 {
     return _inf_processes[family_id]->get_lambda_multiplier();
