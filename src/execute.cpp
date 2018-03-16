@@ -235,9 +235,13 @@ void execute::reconstruct(std::vector<model *>& models, const input_parameters &
 {
     matrix_cache cache;
     for (model* p_model : models) {
-        std::ofstream ofst(filename(p_model->name() + "_asr", my_input_parameters.output_prefix));
         p_model->reconstruct_ancestral_states(&cache, p_prior);
+
+        std::ofstream ofst(filename(p_model->name() + "_asr", my_input_parameters.output_prefix));
         p_model->print_reconstructed_states(ofst);
+
+        std::ofstream results(filename(p_model->name() + "_family_results", my_input_parameters.output_prefix));
+        p_model->print_increases_decreases(results);
     }
 
     std::ofstream dfst(filename("depth", my_input_parameters.output_prefix));

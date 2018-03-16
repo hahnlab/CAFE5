@@ -4,6 +4,14 @@
 
 class matrix_cache;
 
+enum family_size_change { Increase, Decrease, Constant };
+
+struct increase_decrease
+{
+    std::string gene_family_id;
+    std::vector<family_size_change> change;
+};
+
 class reconstruction_process : public process {
 
     gene_family *_gene_family;
@@ -21,6 +29,8 @@ class reconstruction_process : public process {
     std::map<clade *, std::vector<double> > all_node_Ls;
 
     std::map<clade *, int> reconstructed_states;
+
+    std::map<clade *, family_size_change> increase_decrease_map;
 public:
     void reconstruct();
 
@@ -39,6 +49,9 @@ public:
     std::vector<clade *> get_taxa();
 
     void print_reconstruction(std::ostream & ost, std::vector<clade *>& order);
+
+    increase_decrease get_increases_decreases(std::vector<clade *>& order);
+
     std::map<clade *, int> get_reconstructed_states() const
     {
         return reconstructed_states;
@@ -55,4 +68,9 @@ public:
         return all_node_Ls.at(c);
     }
 };
+
+void compute_increase_decrease(std::map<clade *, int>& input, std::map<clade *, family_size_change>& output);
+std::ostream& operator<<(std::ostream & ost, const increase_decrease& val);
+std::ostream& operator<<(std::ostream& ost, const std::vector<reconstruction_process *>& processes);
+
 #endif

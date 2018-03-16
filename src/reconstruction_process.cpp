@@ -4,6 +4,25 @@
 #include "matrix_cache.h"
 #include "root_equilibrium_distribution.h"
 
+std::ostream& operator<<(std::ostream& ost, family_size_change fsc)
+{
+    switch (fsc)
+    {
+    case Increase:
+        ost << "i";
+        break;
+    case Decrease:
+        ost << "d";
+        break;
+    case Constant:
+        ost << "c";
+        break;
+    }
+
+    return ost;
+}
+
+
 reconstruction_process::reconstruction_process(std::ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree,
     int max_family_size,
     int max_root_family_size, std::vector<int> rootdist,
@@ -183,6 +202,8 @@ void reconstruction_process::reconstruct()
 
     backtracker b(reconstructed_states, all_node_Cs, _p_tree);
     _p_tree->apply_to_descendants(b);
+
+    compute_increase_decrease(reconstructed_states, increase_decrease_map);
 }
 
 std::vector<clade *> reconstruction_process::get_taxa()
@@ -202,6 +223,20 @@ void reconstruction_process::print_reconstruction(std::ostream & ost, std::vecto
 
     ost << endl;
 }
+
+increase_decrease reconstruction_process::get_increases_decreases(std::vector<clade *>& order)
+{
+    increase_decrease result;
+    result.change.resize(increase_decrease_map.size());
+    result.gene_family_id = _gene_family->id();
+
+    transform(order.begin(), order.end(), result.change.begin(), [this](clade *taxon)->family_size_change {
+        return increase_decrease_map[taxon];
+    });
+
+    return result;
+}
+
 
 std::map<clade *, double> reconstruction_process::get_weighted_averages(std::vector<reconstruction_process *> m, const vector<double>& _gamma_cat_probs)
 {
@@ -227,3 +262,50 @@ std::string reconstruction_process::get_family_id() const
 {
     return _gene_family->id();
 }
+
+void compute_increase_decrease(std::map<clade *, int>& input, std::map<clade *, family_size_change>& output)
+{
+    for (auto &clade_state : input)
+    {
+        clade *p_clade = clade_state.first;
+        if (!p_clade->is_root())
+        {
+            int parent_size = input[p_clade->get_parent()];
+            if (parent_size > clade_state.second)
+                output[p_clade] = Decrease;
+            else if (parent_size < clade_state.second)
+                output[p_clade] = Increase;
+            else
+                output[p_clade] = Constant;
+        }
+    }
+
+}
+
+std::ostream& operator<<(std::ostream & ost, const increase_decrease& val)
+{
+    ost << val.gene_family_id << '\t';
+    ostream_iterator<family_size_change> out_it(ost, "\t");
+    copy(val.change.begin(), val.change.end(), out_it);
+
+    ost << endl;
+
+    return ost;
+}
+
+std::ostream& operator<<(std::ostream& ost, const vector<reconstruction_process *>& processes) {
+    auto rec = processes[0];
+    auto order = rec->get_taxa();
+
+    ost << "#FamilyID\t";
+    for (auto& it : order) {
+        ost << it->get_taxon_name() << "\t";
+    }
+    ost << endl;
+
+    for (auto proc : processes) {
+        ost << proc->get_increases_decreases(order);
+    }
+}
+
+

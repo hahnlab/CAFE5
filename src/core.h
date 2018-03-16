@@ -116,6 +116,7 @@ public:
 
     virtual void reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
     virtual void print_reconstructed_states(std::ostream& ost) = 0;
+    virtual void print_increases_decreases(std::ostream& ost) = 0;
 
     virtual optimizer_scorer *get_lambda_optimizer(root_equilibrium_distribution* p_distribution) = 0;
     void print_node_depths(std::ostream& ost);

@@ -280,6 +280,30 @@ void gamma_model::print_reconstructed_states(std::ostream& ost)
     }
 }
 
+void gamma_model::print_increases_decreases(std::ostream& ost)
+{
+    std::function<std::string()> f = [&]() {f = []() { return "\t"; }; return ""; };
+
+    ost << "&Lambda multipliers: ";
+    for (auto& i : _lambda_multipliers)
+    {
+        ost << f() << i;
+    }
+    ost << endl;
+
+    auto rec = _family_bundles[0];
+    auto order = rec->get_taxa();
+    for (auto& it : order) {
+        ost << "#" << it->get_taxon_name() << "\n";
+    }
+
+    throw std::runtime_error("Not implemented yet\n");
+    for (auto bundle : _family_bundles)
+    {
+        //bundle->print_increases_decreases(ost, order);
+    }
+}
+
 std::vector<double> gamma_lambda_optimizer::initial_guesses()
 {
     double alpha = unifrnd();

@@ -337,6 +337,44 @@ TEST(Inference, reconstruction_process)
    DOUBLES_EQUAL(0.193072, L[3], 0.0001);
 }
 
+TEST(Inference, increase_decrease)
+{
+    map<clade *, int> family_size;
+    map<clade *, family_size_change> result;
+
+    newick_parser parser(false);
+    parser.newick_string = "((A:1,B:3):7,(C:11,D:17):23);";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    clade *a = p_tree->find_descendant("A");
+    clade *b = p_tree->find_descendant("B");
+    clade *ab = p_tree->find_descendant("AB");
+    clade *abcd = p_tree->find_descendant("ABCD");
+
+    family_size[a] = 2;
+    family_size[b] = 4;
+    family_size[ab] = 3;
+    family_size[abcd] = 3;
+    compute_increase_decrease(family_size, result);
+
+    CHECK(result[a] == Decrease);
+    CHECK(result[b] == Increase);
+    CHECK(result[ab] == Constant);
+}
+
+TEST(Inference, increase_decrease_stream)
+{
+    ostringstream ost;
+    increase_decrease id;
+    id.gene_family_id = "1234";
+    id.change.push_back(Decrease);
+    id.change.push_back(Constant);
+    id.change.push_back(Increase);
+    id.change.push_back(Increase);
+    ost << id;
+    STRCMP_EQUAL("1234\td\tc\ti\ti\t\n", ost.str().c_str());
+}
+
 TEST(Inference, precalculate_matrices_calculates_all_lambdas_all_branchlengths)
 {
     matrix_cache calc;
@@ -939,11 +977,15 @@ class mock_model : public model {
     {
         return nullptr;
     }
+    virtual void print_increases_decreases(std::ostream & ost) override
+    {
+    }
 public:
     mock_model() : model(NULL, NULL, NULL, 0, 0, NULL)
     {
 
     }
+
 };
 
 TEST(Inference, lambda_epsilon_simultaneous_optimizer)
