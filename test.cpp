@@ -959,12 +959,9 @@ class mock_model : public model {
     }
     virtual std::string name() override
     {
-        return std::string();
+        return "mockmodel";
     }
     virtual void write_family_likelihoods(std::ostream & ost) override
-    {
-    }
-    virtual void write_vital_statistics(std::ostream& ost, double final_likelihood) override
     {
     }
     virtual void reconstruct_ancestral_states(matrix_cache * p_calc, root_equilibrium_distribution * p_prior) override
@@ -985,8 +982,21 @@ public:
     {
 
     }
-
+    void set_lambda(lambda * lambda)
+    {
+        _p_lambda = lambda;
+    }
 };
+
+TEST(Inference, model_vitals)
+{
+    mock_model model;
+    single_lambda lambda(0.05);
+    model.set_lambda(&lambda);
+    std::ostringstream ost;
+    model.write_vital_statistics(ost, 0.01);
+    STRCMP_EQUAL("Model mockmodel Result: 0.01\nLambda:            0.05\n", ost.str().c_str());
+}
 
 TEST(Inference, lambda_epsilon_simultaneous_optimizer)
 {

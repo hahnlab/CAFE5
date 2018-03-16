@@ -36,11 +36,8 @@ gamma_model::~gamma_model()
 
 void gamma_model::write_vital_statistics(std::ostream& ost, double final_likelihood)
 {
-    ost << "Model " << name() << " Result: " << final_likelihood << endl;
-    ost << "Lambda: " << *get_lambda() << endl;
+    model::write_vital_statistics(ost, final_likelihood);
     ost << "Alpha: " << _alpha << endl;
-    if (_p_error_model)
-        ost << "Epsilon: " << _p_error_model->get_epsilons()[0] << endl;
 }
 
 void gamma_model::write_family_likelihoods(std::ostream& ost)

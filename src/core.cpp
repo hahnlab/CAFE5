@@ -246,6 +246,13 @@ void model::print_node_depths(std::ostream& ost)
     }
 }
 
+void model::write_vital_statistics(std::ostream& ost, double final_likelihood)
+{
+    ost << "Model " << name() << " Result: " << final_likelihood << endl;
+    ost << "Lambda: " << *get_lambda() << endl;
+    if (_p_error_model)
+        ost << "Epsilon: " << _p_error_model->get_epsilons()[0] << endl;
+}
 
 void branch_length_finder::operator()(clade *c)
 {
