@@ -135,5 +135,27 @@ std::vector<model *> build_models(const input_parameters& my_input_parameters,
     int max_family_size, 
     int max_root_family_size,
     error_model *p_error_model);
+
+template <class T>
+void print_increases_decreases(std::ostream& ost, const std::vector<T>& printables)
+{
+    if (printables.empty())
+    {
+        ost << "No increases or decreases recorded\n";
+        return;
+    }
+    auto rec = printables[0];
+    auto order = rec->get_taxa();
+
+    ost << "#FamilyID\t";
+    for (auto& it : order) {
+        ost << it->get_taxon_name() << "\t";
+    }
+    ost << endl;
+
+    for (auto item : printables) {
+        ost << item->get_increases_decreases(order);
+    }
+}
 #endif /* CORE_H */
 

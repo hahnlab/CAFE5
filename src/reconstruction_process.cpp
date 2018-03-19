@@ -316,19 +316,3 @@ std::ostream& operator<<(std::ostream & ost, const increase_decrease& val)
     return ost;
 }
 
-std::ostream& operator<<(std::ostream& ost, const vector<reconstruction_process *>& processes) {
-    auto rec = processes[0];
-    auto order = rec->get_taxa();
-
-    ost << "#FamilyID\t";
-    for (auto& it : order) {
-        ost << it->get_taxon_name() << "\t";
-    }
-    ost << endl;
-
-    for (auto proc : processes) {
-        ost << proc->get_increases_decreases(order);
-    }
-}
-
-

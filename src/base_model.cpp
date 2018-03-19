@@ -216,7 +216,7 @@ void base_model::print_reconstructed_states(std::ostream& ost) {
 }
 
 void base_model::print_increases_decreases(std::ostream& ost) {
-    ost << _rec_processes;
+    ::print_increases_decreases(ost, _rec_processes);
 }
 
 std::vector<double> base_lambda_optimizer::initial_guesses()

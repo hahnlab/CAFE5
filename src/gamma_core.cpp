@@ -250,18 +250,7 @@ void gamma_model::print_reconstructed_states(std::ostream& ost)
 
 void gamma_model::print_increases_decreases(std::ostream& ost)
 {
-    auto rec = _family_bundles[0];
-    auto order = rec->get_taxa();
-
-    ost << "#FamilyID\t";
-    for (auto& it : order) {
-        ost << it->get_taxon_name() << "\t";
-    }
-    ost << endl;
-
-    for (auto proc : _family_bundles) {
-        ost << proc->get_increases_decreases(order);
-    }
+    ::print_increases_decreases(ost, _family_bundles);
 }
 
 std::vector<double> gamma_lambda_optimizer::initial_guesses()
