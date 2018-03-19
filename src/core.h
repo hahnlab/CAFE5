@@ -116,7 +116,8 @@ public:
 
     virtual void reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
     virtual void print_reconstructed_states(std::ostream& ost) = 0;
-    virtual void print_increases_decreases(std::ostream& ost) = 0;
+    virtual void print_increases_decreases_by_family(std::ostream& ost) = 0;
+    virtual void print_increases_decreases_by_clade(std::ostream& ost) = 0;
 
     virtual optimizer_scorer *get_lambda_optimizer(root_equilibrium_distribution* p_distribution) = 0;
     void print_node_depths(std::ostream& ost);
@@ -128,6 +129,15 @@ public:
 
 std::vector<int> build_reference_list(std::vector<gene_family>& families);
 
+enum family_size_change { Increase, Decrease, Constant };
+
+struct increase_decrease
+{
+    std::string gene_family_id;
+    std::vector<family_size_change> change;
+};
+
+
 std::vector<model *> build_models(const input_parameters& my_input_parameters, 
     clade *p_tree, 
     lambda *p_lambda, 
@@ -137,7 +147,7 @@ std::vector<model *> build_models(const input_parameters& my_input_parameters,
     error_model *p_error_model);
 
 template <class T>
-void print_increases_decreases(std::ostream& ost, const std::vector<T>& printables)
+void print_increases_decreases_by_family(std::ostream& ost, const std::vector<T>& printables)
 {
     if (printables.empty())
     {
@@ -157,5 +167,58 @@ void print_increases_decreases(std::ostream& ost, const std::vector<T>& printabl
         ost << item->get_increases_decreases(order);
     }
 }
+
+template<class T>
+void print_increases_decreases_by_clade(std::ostream& ost, const std::vector<T>& printables) {
+    if (printables.empty())
+    {
+        ost << "No increases or decreases recorded\n";
+        return;
+    }
+
+    auto rec = printables[0];
+    auto order = rec->get_taxa();
+
+    map<clade *, pair<int, int>> increase_decrease_map;
+
+    for (auto item : printables) {
+        auto incdec = item->get_increases_decreases(order);
+        for (int i = 0; i < order.size(); ++i)
+        {
+            if (incdec.change[i] == Increase)
+                increase_decrease_map[order[i]].first++;
+            if (incdec.change[i] == Decrease)
+                increase_decrease_map[order[i]].second++;
+        }
+    }
+
+    ost << "#Taxon_ID\tIncrease/Decrease\n";
+    for (auto& it : increase_decrease_map) {
+        ost << it.first->get_taxon_name() << "\t";
+        ost << it.second.first << "/" << it.second.second << endl;
+    }
+}
+
+template <class T>
+void print_reconstructed_states(std::ostream& ost, const std::vector<T>& printables)
+{
+    if (printables.empty())
+    {
+        ost << "No reconstructions recorded\n";
+        return;
+    }
+
+    auto rec = printables[0];
+    auto order = rec->get_taxa();
+    for (auto& it : order) {
+        ost << "#" << it->get_taxon_name() << "\n";
+    }
+
+    for (auto item : printables)
+    {
+        item->print_reconstruction(ost, order);
+    }
+}
+
 #endif /* CORE_H */
 

@@ -974,7 +974,10 @@ class mock_model : public model {
     {
         return nullptr;
     }
-    virtual void print_increases_decreases(std::ostream & ost) override
+    virtual void print_increases_decreases_by_family(std::ostream & ost) override
+    {
+    }
+    virtual void print_increases_decreases_by_clade(std::ostream & ost) override
     {
     }
 public:
@@ -998,47 +1001,68 @@ TEST(Inference, model_vitals)
     STRCMP_EQUAL("Model mockmodel Result: 0.01\nLambda:            0.05\n", ost.str().c_str());
 }
 
-TEST(Inference, print_increases_decreases)
+class increasable {
+    clade *_p_tree;
+public:
+    increasable(clade *p_tree) : _p_tree(p_tree)
+    {
+
+    }
+    std::vector<clade *> get_taxa()
+    {
+        vector<string> taxa{ "A", "B", "AB" };
+        vector<clade*> result(3);
+        transform(taxa.begin(), taxa.end(), result.begin(), [this](string taxon)->clade * {
+            return _p_tree->find_descendant(taxon);});
+        return result;
+    }
+    increase_decrease get_increases_decreases(std::vector<clade *>& order)
+    {
+        increase_decrease result;
+        result.gene_family_id = "myid";
+        result.change = vector<family_size_change>{ Increase, Decrease, Constant };
+        return result;
+    }
+};
+
+
+TEST(Inference, print_increases_decreases_by_family)
 {
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:3):7";
     unique_ptr<clade> p_tree(parser.parse_newick());
 
-    class increasable {
-        clade *_p_tree;
-    public:
-        increasable(clade *p_tree) : _p_tree(p_tree)
-        {
-                
-        }
-        std::vector<clade *> get_taxa()
-        {
-            vector<string> taxa{ "A", "B", "AB" };
-            vector<clade*> result(3);
-            transform(taxa.begin(), taxa.end(), result.begin(), [this](string taxon)->clade * {
-                return _p_tree->find_descendant(taxon);});
-            return result;
-        }
-        increase_decrease get_increases_decreases(std::vector<clade *>& order)
-        {
-            increase_decrease result;
-            result.gene_family_id = "myid";
-            result.change = vector<family_size_change>{ Increase, Decrease, Constant };
-            return result;
-        }
-    };
-
     vector<increasable*> vec;
     ostringstream empty;
-    ::print_increases_decreases(empty, vec);
+    ::print_increases_decreases_by_family(empty, vec);
     STRCMP_CONTAINS("No increases or decreases recorded", empty.str().c_str());
 
     unique_ptr<increasable> ic(new increasable(p_tree.get()));
     vec.push_back(ic.get());
     ostringstream ost;
-    ::print_increases_decreases(ost, vec);
+    ::print_increases_decreases_by_family(ost, vec);
     STRCMP_CONTAINS("#FamilyID\tA\tB\tAB", ost.str().c_str());
     STRCMP_CONTAINS("myid\ti\td\tc", ost.str().c_str());
+}
+
+TEST(Inference, print_increases_decreases_by_clade)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    vector<increasable*> vec;
+    ostringstream empty;
+    ::print_increases_decreases_by_clade(empty, vec);
+    STRCMP_CONTAINS("No increases or decreases recorded", empty.str().c_str());
+
+    unique_ptr<increasable> ic(new increasable(p_tree.get()));
+    vec.push_back(ic.get());
+    ostringstream ost;
+    ::print_increases_decreases_by_clade(ost, vec);
+    STRCMP_CONTAINS("#Taxon_ID\tIncrease/Decrease", ost.str().c_str());
+    STRCMP_CONTAINS("A\t1/0", ost.str().c_str());
+    STRCMP_CONTAINS("B\t0/1", ost.str().c_str());
 }
 
 TEST(Inference, lambda_epsilon_simultaneous_optimizer)

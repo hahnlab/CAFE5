@@ -240,8 +240,11 @@ void execute::reconstruct(std::vector<model *>& models, const input_parameters &
         std::ofstream ofst(filename(p_model->name() + "_asr", my_input_parameters.output_prefix));
         p_model->print_reconstructed_states(ofst);
 
-        std::ofstream results(filename(p_model->name() + "_family_results", my_input_parameters.output_prefix));
-        p_model->print_increases_decreases(results);
+        std::ofstream family_results(filename(p_model->name() + "_family_results", my_input_parameters.output_prefix));
+        p_model->print_increases_decreases_by_family(family_results);
+
+        std::ofstream clade_results(filename(p_model->name() + "_clade_results", my_input_parameters.output_prefix));
+        p_model->print_increases_decreases_by_clade(clade_results);
     }
 
     std::ofstream dfst(filename("depth", my_input_parameters.output_prefix));

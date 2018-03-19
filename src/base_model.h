@@ -29,7 +29,8 @@ public:
     virtual void reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
     reconstruction_process* create_reconstruction_process(int family_number, matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
     void print_reconstructed_states(std::ostream& ost);
-    void print_increases_decreases(std::ostream& ost);
+    void print_increases_decreases_by_family(std::ostream& ost);
+    void print_increases_decreases_by_clade(std::ostream& ost);
 
     optimizer_scorer *get_epsilon_optimizer(root_equilibrium_distribution* p_distribution);
 };
@@ -56,7 +57,9 @@ public:
         _p_lambda(p_lambda),
         _longest_branch(longest_branch)
     {
-
+#ifdef SILENT
+        quiet = true;
+#endif
     }
 
     std::vector<double> initial_guesses();
@@ -64,7 +67,7 @@ public:
     virtual double calculate_score(double *values);
     virtual void finalize(double *results);
 
-    bool quiet;
+    bool quiet = false;
 };
 
 

@@ -51,8 +51,9 @@ public:
 
     virtual void reconstruct_ancestral_states(matrix_cache *, root_equilibrium_distribution* p_prior);
     void print_reconstructed_states(std::ostream& ost);
-    void print_increases_decreases(std::ostream& ost);
-    
+    void print_increases_decreases_by_family(std::ostream& ost);
+    void print_increases_decreases_by_clade(std::ostream& ost);
+
     std::size_t get_gamma_cat_probs_count() const {
         return _gamma_cat_probs.size();
     }

@@ -204,19 +204,15 @@ void base_model::reconstruct_ancestral_states(matrix_cache *p_calc, root_equilib
 }
 
 void base_model::print_reconstructed_states(std::ostream& ost) {
-    auto rec = _rec_processes[0];
-    auto order = rec->get_taxa();
-    for (auto& it : order) {
-        ost << "#" << it->get_taxon_name() << "\n";
-    }
-
-    for (int i = 0; i < _rec_processes.size(); ++i) {
-        _rec_processes[i]->print_reconstruction(ost, order);
-    }
+    ::print_reconstructed_states(ost, _rec_processes);
 }
 
-void base_model::print_increases_decreases(std::ostream& ost) {
-    ::print_increases_decreases(ost, _rec_processes);
+void base_model::print_increases_decreases_by_family(std::ostream& ost) {
+    ::print_increases_decreases_by_family(ost, _rec_processes);
+}
+
+void base_model::print_increases_decreases_by_clade(std::ostream& ost) {
+    ::print_increases_decreases_by_clade(ost, _rec_processes);
 }
 
 std::vector<double> base_lambda_optimizer::initial_guesses()

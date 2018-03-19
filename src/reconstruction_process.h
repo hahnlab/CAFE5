@@ -1,16 +1,10 @@
 #ifndef RECONSTRUCTION_PROCESS_H
 #define RECONSTRUCTION_PROCESS_H
+
 #include "process.h"
+#include "core.h"
 
 class matrix_cache;
-
-enum family_size_change { Increase, Decrease, Constant };
-
-struct increase_decrease
-{
-    std::string gene_family_id;
-    std::vector<family_size_change> change;
-};
 
 class reconstruction_process : public process {
 
