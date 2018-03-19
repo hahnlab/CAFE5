@@ -8,6 +8,7 @@
 #include "gamma_bundle.h"
 #include "reconstruction_process.h"
 #include "root_equilibrium_distribution.h"
+#include "clade.h"
 
 using namespace std;
 
@@ -83,6 +84,8 @@ void gamma_bundle::reconstruct(const vector<double>& _gamma_cat_probs)
 
     // multiply every reconstruction by gamma_cat_prob
     reconstruction = reconstruction_process::get_weighted_averages(_rec_processes, _gamma_cat_probs);
+
+    compute_increase_decrease(reconstruction, increase_decrease_map);
 }
 
 void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<clade *> order)
@@ -105,22 +108,17 @@ void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<clade *> 
     ost << endl;
 }
 
-void gamma_bundle::print_increases_decreases(std::ostream& ost, std::vector<clade *> order)
+increase_decrease gamma_bundle::get_increases_decreases(std::vector<clade *>& order)
 {
-#if 0
-    auto rec = processes[0];
-    auto order = rec->get_taxa();
+    increase_decrease result;
+    result.change.resize(order.size());
+    result.gene_family_id = _rec_processes[0]->get_family_id();
 
-    ost << "#FamilyID\t";
-    for (auto& it : order) {
-        ost << it->get_taxon_name() << "\t";
-    }
-    ost << endl;
+    transform(order.begin(), order.end(), result.change.begin(), [this](clade *taxon)->family_size_change {
+        return taxon->is_root() ? Constant : increase_decrease_map.at(taxon);
+    });
 
-    for (auto proc : processes) {
-        ost << proc->get_increases_decreases(order);
-    }
-#endif
+    return result;
 }
 
 double gamma_bundle::get_lambda_likelihood(int family_id)

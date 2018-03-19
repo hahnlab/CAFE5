@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "reconstruction_process.h"
 #include "lambda.h"
 #include "io.h"
@@ -227,7 +229,7 @@ void reconstruction_process::print_reconstruction(std::ostream & ost, std::vecto
 increase_decrease reconstruction_process::get_increases_decreases(std::vector<clade *>& order)
 {
     increase_decrease result;
-    result.change.resize(increase_decrease_map.size());
+    result.change.resize(order.size());
     result.gene_family_id = _gene_family->id();
 
     transform(order.begin(), order.end(), result.change.begin(), [this](clade *taxon)->family_size_change {
@@ -263,23 +265,44 @@ std::string reconstruction_process::get_family_id() const
     return _gene_family->id();
 }
 
-void compute_increase_decrease(std::map<clade *, int>& input, std::map<clade *, family_size_change>& output)
+bool parent_compare(int a, int b)
+{
+    return a < b;
+}
+
+bool parent_compare(double a, double b)
+{
+    return parent_compare(int(std::round(a)), int(std::round(b)));
+}
+
+template <typename T>
+void compute_increase_decrease_t(std::map<clade *, T>& input, std::map<clade *, family_size_change>& output)
 {
     for (auto &clade_state : input)
     {
         clade *p_clade = clade_state.first;
+        T size = clade_state.second;
         if (!p_clade->is_root())
         {
-            int parent_size = input[p_clade->get_parent()];
-            if (parent_size > clade_state.second)
+            T parent_size = input[p_clade->get_parent()];
+            if (parent_compare(size, parent_size))
                 output[p_clade] = Decrease;
-            else if (parent_size < clade_state.second)
+            else if (parent_compare(parent_size, size))
                 output[p_clade] = Increase;
             else
                 output[p_clade] = Constant;
         }
     }
+}
 
+void compute_increase_decrease(std::map<clade *, int>& input, std::map<clade *, family_size_change>& output)
+{
+    compute_increase_decrease_t(input, output);
+}
+
+void compute_increase_decrease(std::map<clade *, double>& input, std::map<clade *, family_size_change>& output)
+{
+    compute_increase_decrease_t(input, output);
 }
 
 std::ostream& operator<<(std::ostream & ost, const increase_decrease& val)

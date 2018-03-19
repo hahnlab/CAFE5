@@ -70,6 +70,7 @@ public:
 };
 
 void compute_increase_decrease(std::map<clade *, int>& input, std::map<clade *, family_size_change>& output);
+void compute_increase_decrease(std::map<clade *, double>& input, std::map<clade *, family_size_change>& output);
 std::ostream& operator<<(std::ostream & ost, const increase_decrease& val);
 std::ostream& operator<<(std::ostream& ost, const std::vector<reconstruction_process *>& processes);
 

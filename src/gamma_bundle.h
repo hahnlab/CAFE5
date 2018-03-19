@@ -13,6 +13,8 @@ class gene_family;
 #include <iosfwd>
 #include <map>
 
+#include "reconstruction_process.h"
+
 class inference_process_factory
 {
     std::ostream & _ost;
@@ -44,7 +46,7 @@ class gamma_bundle {
     std::vector<reconstruction_process *> _rec_processes;
 
     std::map<clade *, double> reconstruction;
-
+    std::map<clade *, family_size_change> increase_decrease_map;
 public:
     gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers);
     ~gamma_bundle();
@@ -61,7 +63,8 @@ public:
     void set_values(matrix_cache *, root_equilibrium_distribution*);
 
     void print_reconstruction(std::ostream& ost, std::vector<clade *> order);
-    void print_increases_decreases(std::ostream& ost, std::vector<clade *> order);
+
+    increase_decrease get_increases_decreases(std::vector<clade *>& order);
 
     std::vector<clade *> get_taxa();
 };
