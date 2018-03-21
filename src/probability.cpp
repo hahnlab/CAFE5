@@ -126,14 +126,14 @@ private:
 	int s_max_family_size; //!< parent max size (this is an index)
 	int c_min_family_size; //!< child min size (this is an index)
 	int c_max_family_size; //!< child max size (this is an index)
-    matrix_cache& _calc;
+    const matrix_cache& _calc;
 
 public:
     //! Constructor.
     /*!
       Used once per internal node by likelihood_computer().
     */
-	child_calculator(int probabilities_vec_size, lambda* lambda, matrix_cache& calc, map<clade *, vector<double> >& probabilities, int s_min, int s_max, int c_min, int c_max) : _probabilities_vec_size(probabilities_vec_size), _lambda(lambda), _probabilities(probabilities),
+	child_calculator(int probabilities_vec_size, lambda* lambda, const matrix_cache& calc, map<clade *, vector<double> >& probabilities, int s_min, int s_max, int c_min, int c_max) : _probabilities_vec_size(probabilities_vec_size), _lambda(lambda), _probabilities(probabilities),
 		s_min_family_size(s_min), s_max_family_size(s_max), c_min_family_size(c_min), c_max_family_size(c_max),
         _calc(calc) {}
 	
@@ -267,7 +267,7 @@ std::vector<int> * weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_
 }
 /* END: Weighted draw from vector */
 
-std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, double lambda, matrix_cache *calc, error_model *p_error_model)
+std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, double lambda, const matrix_cache& cache, error_model *p_error_model)
 {
 	vector<trial *> simulation = simulate_families_from_root_size(p_tree, number_of_simulations, root_family_size, max_family_size, lambda, p_error_model);
 	cout << "Simulation yielded " << simulation.size() << " trials" << endl;
@@ -283,7 +283,7 @@ std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simula
             }
         }
 		single_lambda lam(lambda);
-		likelihood_computer pruner(root_family_size, max_family_size, &lam, species_count, *calc, NULL);
+		likelihood_computer pruner(root_family_size, max_family_size, &lam, species_count, cache, NULL);
 		p_tree->apply_reverse_level_order(pruner);
 		result.push_back(pruner.max_likelihood(p_tree));
 	}
@@ -291,14 +291,13 @@ std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simula
 	return result;
 }
 
-std::vector<std::vector<double> > get_conditional_distribution_matrix(clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, double lambda)
+std::vector<std::vector<double> > get_conditional_distribution_matrix(clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, double lambda, const matrix_cache& cache)
 {
-	matrix_cache calc;
 	cout << "get_conditional_distribution_matrix" << endl;
 	std::vector<std::vector<double> > matrix(root_family_size);
 	for (int i = 0; i < root_family_size; ++i)
 	{
-		matrix[i] = get_random_probabilities(p_tree, number_of_simulations, root_family_size, max_family_size, lambda, &calc, NULL);
+		matrix[i] = get_random_probabilities(p_tree, number_of_simulations, root_family_size, max_family_size, lambda, cache, NULL);
 #if 0
 		for (size_t j = 0; j < matrix[i].size(); j++)
 		{

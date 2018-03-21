@@ -33,8 +33,12 @@ double pvalue(double v, vector<double>& conddist)
 void call_viterbi(int max_family_size, int max_root_family_size, int number_of_simulations, lambda *p_lambda, vector<gene_family>& families, clade* p_tree)
 {
 	double lambda_val = dynamic_cast<single_lambda *>(p_lambda)->get_single_lambda();
-	auto cd = get_conditional_distribution_matrix(p_tree, max_root_family_size, max_family_size, number_of_simulations, lambda_val);
-    matrix_cache calc;
+    matrix_cache cache;
+    branch_length_finder lengths;
+    p_tree->apply_prefix_order(lengths);
+    cache.precalculate_matrices(max_family_size + 1, get_lambda_values(p_lambda), lengths.result());
+    
+    auto cd = get_conditional_distribution_matrix(p_tree, max_root_family_size, max_family_size, number_of_simulations, lambda_val, cache);
 
 	for (int i = 0; i < families.size(); ++i)
 	{
@@ -46,7 +50,7 @@ void call_viterbi(int max_family_size, int max_root_family_size, int number_of_s
             species_count[species] = families[i].get_species_size(species);
         }
 
-		likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, species_count, calc, NULL);
+		likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, species_count, cache, NULL);
 		p_tree->apply_reverse_level_order(pruner);
 		auto lh = pruner.get_likelihoods(p_tree);
 		std::cout << "likelihoods = ";
@@ -219,6 +223,8 @@ int cafexp(int argc, char *const argv[]) {
             my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size); 
 
             my_executer.reconstruct(models, my_input_parameters, p_prior);
+
+            // call_viterbi(max_family_size, max_root_family_size, 1000, p_lambda, gene_families, p_tree);
         }
         delete p_prior;
 

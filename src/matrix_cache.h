@@ -72,7 +72,7 @@ private:
     std::map<matrix_cache_key, matrix*> _matrix_cache; //!< nested map that stores transition probabilities for a given lambda and branch_length (outer), then for a given parent and child size (inner)
 public:
     double get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size) const;
-    matrix get_matrix(int size, double branch_length, double lambda);
+    matrix get_matrix(int size, double branch_length, double lambda) const;
     void precalculate_matrices(int size, const std::vector<double>& lambdas, const std::set<double>& branch_lengths);
 
     int get_cache_size() const {

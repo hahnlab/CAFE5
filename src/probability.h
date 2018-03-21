@@ -29,12 +29,12 @@ private:
     int _max_root_family_size;
 	int _max_parsed_family_size;
 	lambda* _lambda;
-    matrix_cache& _calc;
+    const matrix_cache& _calc;
     const error_model* _p_error_model;
     
 public:
     likelihood_computer(int max_root_family_size, int max_parsed_family_size, lambda* lambda, std::map<std::string, int> species_count,
-        matrix_cache& calc, const error_model *p_error_model) : 
+        const matrix_cache& calc, const error_model *p_error_model) : 
 		_max_root_family_size(max_root_family_size),
 		_max_parsed_family_size(max_parsed_family_size),
 		_lambda(lambda),
@@ -68,6 +68,6 @@ std::vector<int> uniform_dist(int n_draws, int min, int max);
 
 std::vector<int> * weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_probs);
 
-std::vector<std::vector<double> > get_conditional_distribution_matrix(clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, double lambda);
+std::vector<std::vector<double> > get_conditional_distribution_matrix(clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, double lambda, const matrix_cache& cache);
 
 #endif

@@ -73,34 +73,8 @@ double matrix_cache::get_from_parent_fam_size_to_c(double lambda, double branch_
     return the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, parent_size, child_size);
 }
 
-#define MATRIX_CACHING
-
 //! Compute transition probability matrix for all gene family sizes from 0 to size-1 (=_max_root_family_size-1)
-matrix matrix_cache::get_matrix(int size, double branch_length, double lambda) {
-#ifndef MATRIX_CACHING
-    matrix result(size);
-    result.at(0).resize(size);
-
-    double zero_val = 1.0;
-    result.at(0)[0] = get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0, &zero_val); // here we set the probability of 0 remaining 0 to 1 (if you lose the gene family, you do not regain it)
-    zero_val = 0.0;
-    for (int i = 0; i < result[0].size(); ++i)
-    {
-        result.at(0)[0] = get_from_parent_fam_size_to_c(lambda, branch_length, 0, i, &zero_val);
-    }
-    for (int s = 1; s < size; s++) {
-        result.at(s).resize(size);
-
-        for (int c = 0; c < size; c++) {
-            // result[s][c] = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, s, c);
-            result.at(s)[c] = get_from_parent_fam_size_to_c(lambda, branch_length, s, c, NULL);
-            // cout << "s = " << s << " c= " << c << ", result=" << result[s][c] << endl;
-        }
-
-    }
-
-    return result;
-#else
+matrix matrix_cache::get_matrix(int size, double branch_length, double lambda) const {
     // cout << "Matrix request " << size << "," << branch_length << "," << lambda << endl;
 
     matrix *result = NULL;
@@ -117,7 +91,6 @@ matrix matrix_cache::get_matrix(int size, double branch_length, double lambda) {
         throw std::runtime_error(ost.str());
     }
     return *result;
-#endif
 }
 
 vector<double> get_lambda_values(lambda *p_lambda)
