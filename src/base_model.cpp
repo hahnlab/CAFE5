@@ -207,8 +207,8 @@ void base_model::print_reconstructed_states(std::ostream& ost) {
     ::print_reconstructed_states(ost, _rec_processes);
 }
 
-void base_model::print_increases_decreases_by_family(std::ostream& ost) {
-    ::print_increases_decreases_by_family(ost, _rec_processes);
+void base_model::print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues) {
+    ::print_increases_decreases_by_family(ost, _rec_processes, pvalues);
 }
 
 void base_model::print_increases_decreases_by_clade(std::ostream& ost) {

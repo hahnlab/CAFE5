@@ -226,11 +226,12 @@ void reconstruction_process::print_reconstruction(std::ostream & ost, std::vecto
     ost << endl;
 }
 
-increase_decrease reconstruction_process::get_increases_decreases(std::vector<clade *>& order)
+increase_decrease reconstruction_process::get_increases_decreases(std::vector<clade *>& order, double pvalue)
 {
     increase_decrease result;
     result.change.resize(order.size());
     result.gene_family_id = _gene_family->id();
+    result.pvalue = pvalue;
 
     transform(order.begin(), order.end(), result.change.begin(), [this](clade *taxon)->family_size_change {
         return increase_decrease_map[taxon];
@@ -308,6 +309,7 @@ void compute_increase_decrease(std::map<clade *, double>& input, std::map<clade 
 std::ostream& operator<<(std::ostream & ost, const increase_decrease& val)
 {
     ost << val.gene_family_id << '\t';
+    ost << (val.pvalue < 0.05 ? 'y' : 'n') << "\t";
     ostream_iterator<family_size_change> out_it(ost, "\t");
     copy(val.change.begin(), val.change.end(), out_it);
 

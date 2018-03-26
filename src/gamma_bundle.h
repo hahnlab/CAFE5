@@ -64,7 +64,7 @@ public:
 
     void print_reconstruction(std::ostream& ost, std::vector<clade *> order);
 
-    increase_decrease get_increases_decreases(std::vector<clade *>& order);
+    increase_decrease get_increases_decreases(std::vector<clade *>& order, double pvalue);
 
     std::vector<clade *> get_taxa();
 };

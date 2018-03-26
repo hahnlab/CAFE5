@@ -108,7 +108,7 @@ void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<clade *> 
     ost << endl;
 }
 
-increase_decrease gamma_bundle::get_increases_decreases(std::vector<clade *>& order)
+increase_decrease gamma_bundle::get_increases_decreases(std::vector<clade *>& order, double pvalue)
 {
     increase_decrease result;
     result.change.resize(order.size());

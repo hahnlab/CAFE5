@@ -367,12 +367,13 @@ TEST(Inference, increase_decrease_stream)
     ostringstream ost;
     increase_decrease id;
     id.gene_family_id = "1234";
+    id.pvalue = 0.02;
     id.change.push_back(Decrease);
     id.change.push_back(Constant);
     id.change.push_back(Increase);
     id.change.push_back(Increase);
     ost << id;
-    STRCMP_EQUAL("1234\td\tc\ti\ti\t\n", ost.str().c_str());
+    STRCMP_EQUAL("1234\ty\td\tc\ti\ti\t\n", ost.str().c_str());
 }
 
 TEST(Inference, precalculate_matrices_calculates_all_lambdas_all_branchlengths)
@@ -974,7 +975,7 @@ class mock_model : public model {
     {
         return nullptr;
     }
-    virtual void print_increases_decreases_by_family(std::ostream & ost) override
+    virtual void print_increases_decreases_by_family(std::ostream & ost, const std::vector<double>& pvalues) override
     {
     }
     virtual void print_increases_decreases_by_clade(std::ostream & ost) override
@@ -1016,10 +1017,11 @@ public:
             return _p_tree->find_descendant(taxon);});
         return result;
     }
-    increase_decrease get_increases_decreases(std::vector<clade *>& order)
+    increase_decrease get_increases_decreases(std::vector<clade *>& order, double pvalue)
     {
         increase_decrease result;
         result.gene_family_id = "myid";
+        result.pvalue = pvalue;
         result.change = vector<family_size_change>{ Increase, Decrease, Constant };
         return result;
     }
@@ -1033,16 +1035,18 @@ TEST(Inference, print_increases_decreases_by_family)
     unique_ptr<clade> p_tree(parser.parse_newick());
 
     vector<increasable*> vec;
+    vector<double> pvalues;
     ostringstream empty;
-    ::print_increases_decreases_by_family(empty, vec);
+    ::print_increases_decreases_by_family(empty, vec, pvalues);
     STRCMP_CONTAINS("No increases or decreases recorded", empty.str().c_str());
 
     unique_ptr<increasable> ic(new increasable(p_tree.get()));
     vec.push_back(ic.get());
+    pvalues.push_back(0.07);
     ostringstream ost;
-    ::print_increases_decreases_by_family(ost, vec);
-    STRCMP_CONTAINS("#FamilyID\tA\tB\tAB", ost.str().c_str());
-    STRCMP_CONTAINS("myid\ti\td\tc", ost.str().c_str());
+    ::print_increases_decreases_by_family(ost, vec, pvalues);
+    STRCMP_CONTAINS("#FamilyID\t*\tA\tB\tAB", ost.str().c_str());
+    STRCMP_CONTAINS("myid\tn\ti\td\tc", ost.str().c_str());
 }
 
 TEST(Inference, print_increases_decreases_by_clade)

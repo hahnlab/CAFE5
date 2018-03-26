@@ -116,7 +116,7 @@ public:
 
     virtual void reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
     virtual void print_reconstructed_states(std::ostream& ost) = 0;
-    virtual void print_increases_decreases_by_family(std::ostream& ost) = 0;
+    virtual void print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues) = 0;
     virtual void print_increases_decreases_by_clade(std::ostream& ost) = 0;
 
     virtual optimizer_scorer *get_lambda_optimizer(root_equilibrium_distribution* p_distribution) = 0;
@@ -134,6 +134,7 @@ enum family_size_change { Increase, Decrease, Constant };
 struct increase_decrease
 {
     std::string gene_family_id;
+    double pvalue = 0.0;
     std::vector<family_size_change> change;
 };
 
@@ -147,8 +148,12 @@ std::vector<model *> build_models(const input_parameters& my_input_parameters,
     error_model *p_error_model);
 
 template <class T>
-void print_increases_decreases_by_family(std::ostream& ost, const std::vector<T>& printables)
+void print_increases_decreases_by_family(std::ostream& ost, const std::vector<T>& printables, const std::vector<double>& pvalues)
 {
+    if (printables.size() != pvalues.size())
+    {
+        throw std::runtime_error("No pvalues found for family");
+    }
     if (printables.empty())
     {
         ost << "No increases or decreases recorded\n";
@@ -157,14 +162,14 @@ void print_increases_decreases_by_family(std::ostream& ost, const std::vector<T>
     auto rec = printables[0];
     auto order = rec->get_taxa();
 
-    ost << "#FamilyID\t";
+    ost << "#FamilyID\t*\t";
     for (auto& it : order) {
         ost << it->get_taxon_name() << "\t";
     }
     ost << endl;
 
-    for (auto item : printables) {
-        ost << item->get_increases_decreases(order);
+    for (size_t i = 0; i < printables.size(); ++i) {
+        ost << printables[i]->get_increases_decreases(order, pvalues[i]);
     }
 }
 
@@ -182,7 +187,7 @@ void print_increases_decreases_by_clade(std::ostream& ost, const std::vector<T>&
     map<clade *, pair<int, int>> increase_decrease_map;
 
     for (auto item : printables) {
-        auto incdec = item->get_increases_decreases(order);
+        auto incdec = item->get_increases_decreases(order, 0.0);
         for (int i = 0; i < order.size(); ++i)
         {
             if (incdec.change[i] == Increase)

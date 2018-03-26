@@ -33,5 +33,7 @@ public:
     void simulate(std::vector<model *>& models, const input_parameters &my_input_parameters);
 
     void reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior);
+
+    void write_results(std::vector<model *>& models, const input_parameters &my_input_parameters, std::vector<double>& pvalues);
 };
 #endif /* EXECUTE_H */

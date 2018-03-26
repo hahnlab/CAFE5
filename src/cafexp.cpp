@@ -22,16 +22,24 @@
 
 using namespace std;
 
-double pvalue(double v, vector<double>& conddist)
+double pvalue(double v, const vector<double>& conddist)
 {
-	int idx = std::upper_bound(conddist.begin(), conddist.end(), v) - conddist.begin();
-	return  idx / (double)conddist.size();
+    int idx = conddist.size() - 1;
+
+    auto bound = std::upper_bound(conddist.begin(), conddist.end(), v);
+    if (bound != conddist.end())
+    {
+        idx = bound - conddist.begin();
+    }
+    return  idx / (double)conddist.size();
 }
 
 
 // find_fast_families under base model through simulations (if we reject gamma)
-void call_viterbi(int max_family_size, int max_root_family_size, int number_of_simulations, lambda *p_lambda, vector<gene_family>& families, clade* p_tree)
+vector<double> compute_pvalues(int max_family_size, int max_root_family_size, int number_of_simulations, lambda *p_lambda, vector<gene_family>& families, clade* p_tree)
 {
+    cout << "Computing pvalues\n" << std::unitbuf;
+
 	double lambda_val = dynamic_cast<single_lambda *>(p_lambda)->get_single_lambda();
     matrix_cache cache;
     branch_length_finder lengths;
@@ -40,36 +48,34 @@ void call_viterbi(int max_family_size, int max_root_family_size, int number_of_s
     
     auto cd = get_conditional_distribution_matrix(p_tree, max_root_family_size, max_family_size, number_of_simulations, lambda_val, cache);
 
-	for (int i = 0; i < families.size(); ++i)
-	{
-		int max = families[i].get_max_size();
-		max_root_family_size = rint(max*1.25);
+    vector<double> result(families.size());
+    transform(families.begin(), families.end(), result.begin(), [max_family_size, p_lambda, p_tree, &cache, &cd](gene_family& gf)->double {
+        cout << ".";
+		int max = gf.get_max_size();
+		double max_root_family_size = rint(max*1.25);
 
         map<string, int> species_count;
-        for (auto& species : families[i].get_species()) {
-            species_count[species] = families[i].get_species_size(species);
+        for (auto& species : gf.get_species()) {
+            species_count[species] = gf.get_species_size(species);
         }
 
 		likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, species_count, cache, NULL);
 		p_tree->apply_reverse_level_order(pruner);
 		auto lh = pruner.get_likelihoods(p_tree);
-		std::cout << "likelihoods = ";
-		for (int i = 0; i < lh.size(); ++i)
-			std::cout << lh[i] << " ";
-		std::cout << std::endl;
 
 		double observed_max_likelihood = pruner.max_likelihood(p_tree);	// max value but do we need a posteriori value instead?
-	//	std::cout << "observed_likelihood = ";
-	//	for (int i = 0; i < root_family_size; ++i)
-	//		std::cout << observed_likelihood[i] << " ";
-	//	std::cout << std::endl;
-	//	max_family_size = std::max(50, max_family_size / 5);
-		vector<double> pvalues(max_root_family_size);
+
+        vector<double> pvalues(max_root_family_size);
 		for (int s = 0; s < max_root_family_size; s++)
 		{
-			pvalues[s] = pvalue(observed_max_likelihood, cd[s]);
+			pvalues[s] = pvalue(observed_max_likelihood, cd.at(s));
 		}
-	}
+        return *max_element(pvalues.begin(), pvalues.end());
+    });
+
+    cout << "done!\n";
+
+    return result;
 }
 
 /// The main functio. Evaluates arguments, calls processes
@@ -224,7 +230,10 @@ int cafexp(int argc, char *const argv[]) {
 
             my_executer.reconstruct(models, my_input_parameters, p_prior);
 
-            // call_viterbi(max_family_size, max_root_family_size, 1000, p_lambda, gene_families, p_tree);
+            auto pvalues = compute_pvalues(max_family_size, max_root_family_size, 1000, p_lambda, gene_families, p_tree);
+
+            my_executer.write_results(models, my_input_parameters, pvalues);
+
         }
         delete p_prior;
 

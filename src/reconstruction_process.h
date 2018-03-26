@@ -44,7 +44,7 @@ public:
 
     void print_reconstruction(std::ostream & ost, std::vector<clade *>& order);
 
-    increase_decrease get_increases_decreases(std::vector<clade *>& order);
+    increase_decrease get_increases_decreases(std::vector<clade *>& order, double pvalue);
 
     std::map<clade *, int> get_reconstructed_states() const
     {

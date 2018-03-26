@@ -236,12 +236,17 @@ void execute::reconstruct(std::vector<model *>& models, const input_parameters &
     matrix_cache cache;
     for (model* p_model : models) {
         p_model->reconstruct_ancestral_states(&cache, p_prior);
+    }
+}
 
+void execute::write_results(std::vector<model *>& models, const input_parameters &my_input_parameters, std::vector<double>& pvalues)
+{
+    for (model* p_model : models) {
         std::ofstream ofst(filename(p_model->name() + "_asr", my_input_parameters.output_prefix));
         p_model->print_reconstructed_states(ofst);
 
         std::ofstream family_results(filename(p_model->name() + "_family_results", my_input_parameters.output_prefix));
-        p_model->print_increases_decreases_by_family(family_results);
+        p_model->print_increases_decreases_by_family(family_results, pvalues);
 
         std::ofstream clade_results(filename(p_model->name() + "_clade_results", my_input_parameters.output_prefix));
         p_model->print_increases_decreases_by_clade(clade_results);

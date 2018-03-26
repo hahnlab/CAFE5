@@ -239,9 +239,9 @@ void gamma_model::print_reconstructed_states(std::ostream& ost)
     ::print_reconstructed_states(ost, _family_bundles);
 }
 
-void gamma_model::print_increases_decreases_by_family(std::ostream& ost)
+void gamma_model::print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues)
 {
-    ::print_increases_decreases_by_family(ost, _family_bundles);
+    ::print_increases_decreases_by_family(ost, _family_bundles, pvalues);
 }
 
 void gamma_model::print_increases_decreases_by_clade(std::ostream& ost)
