@@ -224,6 +224,7 @@ int cafexp(int argc, char *const argv[]) {
             if (p_lambda == NULL)
             {
                 my_executer.estimate_lambda(models, gene_families, p_error_model, p_tree, p_lambda_tree, p_prior);
+                p_lambda = models[0]->get_lambda();
             }
 
             my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size); 

@@ -8,6 +8,9 @@
 
 float uniform_distribution::compute(int val) const
 {
+    if (val >= _rootdist_vec.size())
+        return 0;
+
     int sum = std::accumulate(_rootdist_vec.begin(), _rootdist_vec.end(), 0);
     return float(_rootdist_vec[val]) / float(sum);
 }

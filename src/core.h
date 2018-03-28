@@ -75,7 +75,7 @@ public:
     
     virtual ~model() {}
     
-    const lambda * get_lambda() const {
+    lambda * get_lambda() const {
         return _p_lambda;
     }
     void initialize_lambda(clade *p_lambda_tree);
