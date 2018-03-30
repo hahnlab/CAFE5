@@ -57,6 +57,9 @@ int simulation_process::get_max_family_size_to_simulate() const
 
 //! Run process' simulation
 void simulation_process::run_simulation() {
+    if (_lambda == NULL)
+        throw std::runtime_error("No lambda specified for simulation");
+
     lambda *multiplier = _lambda->multiply(_lambda_multiplier);
 	_my_simulation = simulate_family_from_root_size(_p_tree, _root_size, _max_family_size_sim, multiplier, _p_error_model);
 }

@@ -70,6 +70,8 @@ void random_familysize_setter::operator()(clade *node) {
   Returns a trial, key = pointer to node, value = gene family size
 */
 trial * simulate_family_from_root_size(clade *tree, int root_family_size, int max_family_size, lambda * p_lambda, error_model *p_error_model) {
+    if (tree == NULL)
+        throw runtime_error("No tree specified for simulation");
 
     matrix_cache calc;
     trial *result = new trial;

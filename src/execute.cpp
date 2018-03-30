@@ -130,6 +130,10 @@ bool compare_result(const optimizer::result& a, const optimizer::result& b)
 
 void execute::estimate_lambda(std::vector<model *>& models, std::vector<gene_family> &gene_families, error_model *p_error_model, clade *p_tree, clade *p_lambda_tree, root_equilibrium_distribution *p_prior)
 {
+    if (p_tree == NULL)
+    {
+        throw runtime_error("No tree specified for lambda estimation");
+    }
     if (p_error_model)
     {   // we only support base model epsilon optimizing at the moment
         base_model *b = dynamic_cast<base_model *>(models[0]);
@@ -175,7 +179,7 @@ void execute::simulate(std::vector<model *>& models, const input_parameters &my_
         if (my_input_parameters.rootdist.empty())
             models[i]->set_total_n_families_sim(my_input_parameters.nsims);
 
-        cerr << "Simulating " << my_input_parameters.nsims << " families" << endl;
+        cerr << "Simulating " << models[i]->get_total_n_families_sim() << " families" << endl;
 
         models[i]->start_sim_processes();
         

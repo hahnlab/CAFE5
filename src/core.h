@@ -90,6 +90,7 @@ public:
     void set_rootdist_vec(std::vector<int> rootdist_vec);
     
     void set_total_n_families_sim(int total_n_families_sim);
+    int get_total_n_families_sim() const { return _total_n_families_sim; }
     
     //! Simulation methods
     void start_sim_processes();
