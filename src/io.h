@@ -45,12 +45,12 @@ public:
     double poisson_lambda = 0.0;
     int nsims = 0;
     int n_gamma_cats = 1;
-//    bool simulate = false;
     bool do_log = false;
     bool use_uniform_eq_freq = true;
 
     //! Check calls
     void check_input();
+    bool is_simulating() const;
 };
 
 /* START: Reading in gene family data */

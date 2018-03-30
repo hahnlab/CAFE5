@@ -41,8 +41,11 @@ std::vector<model *> build_models(const input_parameters& my_input_parameters,
     }
     
     /* If simulating (-s) */
-    else if (my_input_parameters.nsims > 0 || !my_input_parameters.rootdist.empty()) {
-        
+    else if (my_input_parameters.is_simulating()) {
+        if (my_input_parameters.rootdist.empty())
+        {
+            throw std::runtime_error("No root distribution specified"); // cannot simulate without a rootdist (TODO)
+        }
         /* -f */
         std::map<int, int> *p_rootdist_map = read_rootdist(my_input_parameters.rootdist); // in map form
 

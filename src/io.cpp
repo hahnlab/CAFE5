@@ -31,6 +31,11 @@ struct option longopts[] = {
   { 0, 0, 0, 0 }
 };
 
+bool input_parameters::is_simulating() const
+{
+    return nsims != 0 || !rootdist.empty();
+}
+
 void input_parameters::check_input() {
     //! Options -l and -m cannot both specified.
     if (fixed_lambda > 0.0 && !fixed_multiple_lambdas.empty()) {

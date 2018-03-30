@@ -78,170 +78,178 @@ vector<double> compute_pvalues(int max_family_size, int max_root_family_size, in
     return result;
 }
 
-/// The main functio. Evaluates arguments, calls processes
-/// \callgraph
-int cafexp(int argc, char *const argv[]) {
-    /* START: Option variables for main() */
+input_parameters read_arguments(int argc, char *const argv[])
+{
+    input_parameters my_input_parameters;
+
     int args; // getopt_long returns int or char
     int prev_arg;
-    srand(10);
-    int max_family_size = -1; // needed for defining matrix size
-    int max_root_family_size = -1; // needed for defining matrix size
-    input_parameters my_input_parameters;
-    
-    clade *p_tree = NULL; // instead of new clade(), o.w. mem leak
-    clade *p_lambda_tree = NULL;
-    error_model *p_error_model = NULL;
-    std::vector<gene_family> gene_families;
-    map<int, int>* p_rootdist_map = NULL; // for sims
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:l:m:k:a:s::g::p::r:", longopts, NULL)) != -1 ) {
-    // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:l:m:k:a:s::g::p::r:", longopts, NULL)) != -1) {
+        // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
             exit(EXIT_FAILURE);
             // args = ':';
             // --optind;
         }
-            
+
         switch (args) {
-            case 'i':
-                my_input_parameters.input_file_path = optarg;
-                break;
-            case 'e':
-                my_input_parameters.error_model_file_path = optarg;
-                break;
-            case 'o':
-                my_input_parameters.output_prefix = optarg;
-                break;
-            case 't':
-		my_input_parameters.tree_file_path = optarg;
-                break;
-            case 'y':
-		my_input_parameters.lambda_tree_file_path = optarg;
-                break;
-            case 's':
-                // Number of fams simulated defaults to 0 if -f is not provided
-                if (optarg != NULL) { my_input_parameters.nsims = atoi(optarg); }
-                break;
-            case 'l':
-		my_input_parameters.fixed_lambda = atof(optarg);
-                break;
-            case 'p':
-                my_input_parameters.use_uniform_eq_freq = false; // If the user types '-p', the root eq freq dist will not be a uniform
-                // If the user provides an argument to -p, then we do not estimate it
-                if (optarg != NULL) { my_input_parameters.poisson_lambda = atof(optarg); }
-                break;
-            case 'm':
-		my_input_parameters.fixed_multiple_lambdas = optarg;
-                break;
-            case 'k':
-                if (optarg != NULL) { my_input_parameters.n_gamma_cats = atoi(optarg); }
-                break;
-            case 'a':
-                my_input_parameters.fixed_alpha = atof(optarg);
-                break;
-//            case 'n':
-//		my_input_parameters.nsims = atoi(optarg);
-//                break;
-            case 'f':
-		my_input_parameters.rootdist = optarg;
-                break;
-            case 'r':
-                my_input_parameters.chisquare_compare = optarg;
-                break;
-            case 'g':
-		my_input_parameters.do_log = true;
-                break;
-            case ':':   // missing argument
-                fprintf(stderr, "%s: option `-%c' requires an argument",
-                        argv[0], optopt);
-                break;
-            default: // '?' is parsed (
-                cout << "Unrecognized parameter: '" << (char)args << "' Exiting..." << endl;
-                return EXIT_FAILURE; //abort ();
-          }
-      }
- 
+        case 'i':
+            my_input_parameters.input_file_path = optarg;
+            break;
+        case 'e':
+            my_input_parameters.error_model_file_path = optarg;
+            break;
+        case 'o':
+            my_input_parameters.output_prefix = optarg;
+            break;
+        case 't':
+            my_input_parameters.tree_file_path = optarg;
+            break;
+        case 'y':
+            my_input_parameters.lambda_tree_file_path = optarg;
+            break;
+        case 's':
+            // Number of fams simulated defaults to 0 if -f is not provided
+            if (optarg != NULL) { my_input_parameters.nsims = atoi(optarg); }
+            break;
+        case 'l':
+            my_input_parameters.fixed_lambda = atof(optarg);
+            break;
+        case 'p':
+            my_input_parameters.use_uniform_eq_freq = false; // If the user types '-p', the root eq freq dist will not be a uniform
+                                                             // If the user provides an argument to -p, then we do not estimate it
+            if (optarg != NULL) { my_input_parameters.poisson_lambda = atof(optarg); }
+            break;
+        case 'm':
+            my_input_parameters.fixed_multiple_lambdas = optarg;
+            break;
+        case 'k':
+            if (optarg != NULL) { my_input_parameters.n_gamma_cats = atoi(optarg); }
+            break;
+        case 'a':
+            my_input_parameters.fixed_alpha = atof(optarg);
+            break;
+            //            case 'n':
+            //		my_input_parameters.nsims = atoi(optarg);
+            //                break;
+        case 'f':
+            my_input_parameters.rootdist = optarg;
+            break;
+        case 'r':
+            my_input_parameters.chisquare_compare = optarg;
+            break;
+        case 'g':
+            my_input_parameters.do_log = true;
+            break;
+        case ':':   // missing argument
+            fprintf(stderr, "%s: option `-%c' requires an argument",
+                argv[0], optopt);
+            break;
+        default: // '?' is parsed (
+            throw std::runtime_error(string("Unrecognized parameter: '") + (char)args + "'");
+            
+        }
+    }
+
+    my_input_parameters.check_input(); // seeing if options are not mutually exclusive              
+
+    return my_input_parameters;
+}
+
+void show_pvalues(string values)
+{
+    vector<string> chistrings = tokenize_str(values, ',');
+    vector<double> chis(chistrings.size());
+
+    // transform is like R's apply (vector lambdas takes the outputs, here we are making doubles from strings
+    transform(chistrings.begin(), chistrings.end(), chis.begin(),
+        [](string const& val) { return stod(val); } // this is the equivalent of a Python's lambda function
+    );
+
+    double degrees_of_freedom = chis[2];
+    cout << "PValue = " << 1.0 - chi2cdf(2 * (chis[1] - chis[0]), degrees_of_freedom) << std::endl;
+}
+
+struct user_data {
+    int max_family_size = -1; // needed for defining matrix size
+    int max_root_family_size = -1; // needed for defining matrix size
+
+    clade *p_tree = NULL; // instead of new clade(), o.w. mem leak
+    lambda *p_lambda;
+    clade *p_lambda_tree = NULL;
+    error_model *p_error_model = NULL;
+    std::vector<gene_family> gene_families;
+};
+
+user_data read_datafiles(execute& my_executer, const input_parameters& my_input_parameters)
+{
+    user_data data;
+
+    /* -t */
+    if (!my_input_parameters.tree_file_path.empty()) {
+        data.p_tree = my_executer.read_input_tree(my_input_parameters); // populates p_tree (pointer to phylogenetic tree)
+    }
+
+    /* -i */
+    if (!my_input_parameters.input_file_path.empty()) {
+        // Populates (pointer to) vector of gene family instances, max_family_size and max_root_family_size (last two passed by reference)
+        my_executer.read_gene_family_data(my_input_parameters, data.max_family_size, data.max_root_family_size, data.p_tree, &data.gene_families);
+    }
+
+    /* -e */
+    if (!my_input_parameters.error_model_file_path.empty()) {
+        data.p_error_model = new error_model;
+        my_executer.read_error_model(my_input_parameters, data.p_error_model);
+    }
+
+    /* -y */
+    if (!my_input_parameters.lambda_tree_file_path.empty()) {
+        data.p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
+    }
+
+    /* -l/-m (in the absence of -l, estimate) */
+    data.p_lambda = my_executer.read_lambda(my_input_parameters, data.p_lambda_tree);
+
+    return data;
+}
+
+/// The main function. Evaluates arguments, calls processes
+/// \callgraph
+int cafexp(int argc, char *const argv[]) {
+    /* START: Option variables for main() */
+    srand(10);
+    map<int, int>* p_rootdist_map = NULL; // for sims
+
     execute my_executer;
     try {
-        my_input_parameters.check_input(); // seeing if options are not mutually exclusive              
+        input_parameters my_input_parameters = read_arguments(argc, argv);
 
         /* -r */
         if (!my_input_parameters.chisquare_compare.empty()) {
-            vector<string> chistrings = tokenize_str(my_input_parameters.chisquare_compare, ',');
-            vector<double> chis(chistrings.size());
 
-            // transform is like R's apply (vector lambdas takes the outputs, here we are making doubles from strings
-            transform(chistrings.begin(), chistrings.end(), chis.begin(),
-                [](string const& val) { return stod(val); } // this is the equivalent of a Python's lambda function
-            );
-
-            double degrees_of_freedom = chis[2];
-            cout << "PValue = " << 1.0 - chi2cdf(2*(chis[1] - chis[0]), degrees_of_freedom) << std::endl;
+            show_pvalues(my_input_parameters.chisquare_compare);
 
             return 0;
-
         }
 
-        /* -t */
-        if (!my_input_parameters.tree_file_path.empty()) {
-            p_tree = my_executer.read_input_tree(my_input_parameters); // populates p_tree (pointer to phylogenetic tree)
-        }
+        user_data data = read_datafiles(my_executer, my_input_parameters);
 
-        /* -i */
-        if (!my_input_parameters.input_file_path.empty()) {
-            // Populates (pointer to) vector of gene family instances, max_family_size and max_root_family_size (last two passed by reference)
-            my_executer.read_gene_family_data(my_input_parameters, max_family_size, max_root_family_size, p_tree, &gene_families);
-        }
-        
-        /* -e */
-        if (!my_input_parameters.error_model_file_path.empty()) {
-            p_error_model = new error_model;
-            my_executer.read_error_model(my_input_parameters, p_error_model);
-        }
-        
-        /* -y */
-        if (!my_input_parameters.lambda_tree_file_path.empty()) {
-            p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
-        }
-
-        /* -l/-m (in the absence of -l, estimate) */
-        lambda *p_lambda = my_executer.read_lambda(my_input_parameters, p_lambda_tree);
-
-        root_equilibrium_distribution* p_prior = root_eq_dist_factory(my_input_parameters, &gene_families);
+        root_equilibrium_distribution* p_prior = root_eq_dist_factory(my_input_parameters, &data.gene_families);
         
         // When computing or simulating, only base or gamma model is used. When estimating, base and gamma model are used (to do: compare base and gamma w/ LRT)
         // Build model takes care of -f
-        vector<model *> models = build_models(my_input_parameters, p_tree, p_lambda, &gene_families, max_family_size, max_root_family_size, p_error_model);
+        vector<model *> models = build_models(my_input_parameters, data.p_tree, data.p_lambda, &data.gene_families, data.max_family_size, data.max_root_family_size, data.p_error_model);
         
         if (models.empty())
             throw std::runtime_error("Not enough information to specify a model");
         
-        // -f cannot have been specified
-        if (my_input_parameters.rootdist.empty()) {
-        
-            if (p_lambda == NULL)
-            {
-                my_executer.estimate_lambda(models, gene_families, p_error_model, p_tree, p_lambda_tree, p_prior);
-                p_lambda = models[0]->get_lambda();
-            }
-
-            my_executer.compute(models, &gene_families, p_prior, my_input_parameters, max_family_size, max_root_family_size); 
-
-            my_executer.reconstruct(models, my_input_parameters, p_prior);
-
-            auto pvalues = compute_pvalues(max_family_size, max_root_family_size, 1000, p_lambda, gene_families, p_tree);
-
-            my_executer.write_results(models, my_input_parameters, pvalues);
-
-        }
-        delete p_prior;
-
         /* -s */
-        if (my_input_parameters.nsims != 0 || !my_input_parameters.rootdist.empty()) {
+        if (my_input_parameters.is_simulating()) {
             // -s is provided an argument (-f is not), using -i to obtain root eq freq distr'n
             if (my_input_parameters.nsims != 0) {
+                throw std::runtime_error("A specified number of simulations with a root distribution is not supported");
                 // place holder for estimating poisson lambda if -p, or using uniform as root eq freq distr'n
             }
 
@@ -251,6 +259,24 @@ int cafexp(int argc, char *const argv[]) {
                 my_executer.simulate(models, my_input_parameters);
             }
         }
+        else {  // not simulating - calculate values
+            if (data.p_lambda == NULL)
+            {
+                my_executer.estimate_lambda(models, data.gene_families, data.p_error_model, data.p_tree, data.p_lambda_tree, p_prior);
+                data.p_lambda = models[0]->get_lambda();
+            }
+
+            my_executer.compute(models, &data.gene_families, p_prior, my_input_parameters, data.max_family_size, data.max_root_family_size);
+
+            my_executer.reconstruct(models, my_input_parameters, p_prior);
+
+            auto pvalues = compute_pvalues(data.max_family_size, data.max_root_family_size, 1000, data.p_lambda, data.gene_families, data.p_tree);
+
+            my_executer.write_results(models, my_input_parameters, pvalues);
+
+        }
+        delete p_prior;
+
 
         /* -g */
         if (my_input_parameters.do_log) {
