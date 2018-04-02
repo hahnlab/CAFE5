@@ -267,9 +267,9 @@ std::vector<int> * weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_
 }
 /* END: Weighted draw from vector */
 
-std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, double lambda, const matrix_cache& cache, error_model *p_error_model)
+std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, lambda *p_lambda, const matrix_cache& cache, error_model *p_error_model)
 {
-	vector<trial *> simulation = simulate_families_from_root_size(p_tree, number_of_simulations, root_family_size, max_family_size, lambda, p_error_model);
+	vector<trial *> simulation = simulate_families_from_root_size(p_tree, number_of_simulations, root_family_size, max_family_size, p_lambda, p_error_model);
 
 	vector<double> result;
 	for (vector<trial*>::iterator ith_trial = simulation.begin(); ith_trial != simulation.end(); ++ith_trial)
@@ -281,29 +281,27 @@ std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simula
                 species_count[it.first->get_taxon_name()] = it.second; 
             }
         }
-		single_lambda lam(lambda);
-		likelihood_computer pruner(root_family_size, max_family_size, &lam, species_count, cache, NULL);
+		likelihood_computer pruner(root_family_size, max_family_size, p_lambda, species_count, cache, NULL);
 		p_tree->apply_reverse_level_order(pruner);
 		result.push_back(pruner.max_likelihood(p_tree));
 	}
 
     sort(result.begin(), result.end());
+
+    for (auto t : simulation)
+    {
+        delete t;
+    }
+
 	return result;
 }
 
-std::vector<std::vector<double> > get_conditional_distribution_matrix(clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, double lambda, const matrix_cache& cache)
+std::vector<std::vector<double> > get_conditional_distribution_matrix(clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, lambda * p_lambda, const matrix_cache& cache)
 {
 	std::vector<std::vector<double> > matrix(root_family_size);
 	for (int i = 0; i < root_family_size; ++i)
 	{
-		matrix[i] = get_random_probabilities(p_tree, number_of_simulations, root_family_size, max_family_size, lambda, cache, NULL);
-#if 0
-		for (size_t j = 0; j < matrix[i].size(); j++)
-		{
-			cout << matrix[i][j] << " ";
-		}
-		cout << endl;
-#endif
+		matrix[i] = get_random_probabilities(p_tree, number_of_simulations, root_family_size, max_family_size, p_lambda, cache, NULL);
 	}
 	return matrix;
 }

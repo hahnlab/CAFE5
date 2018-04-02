@@ -40,13 +40,12 @@ vector<double> compute_pvalues(int max_family_size, int max_root_family_size, in
 {
     cout << "Computing pvalues\n" << std::unitbuf;
 
-	double lambda_val = dynamic_cast<single_lambda *>(p_lambda)->get_single_lambda();
     matrix_cache cache;
     branch_length_finder lengths;
     p_tree->apply_prefix_order(lengths);
     cache.precalculate_matrices(max_family_size + 1, get_lambda_values(p_lambda), lengths.result());
     
-    auto cd = get_conditional_distribution_matrix(p_tree, max_root_family_size, max_family_size, number_of_simulations, lambda_val, cache);
+    auto cd = get_conditional_distribution_matrix(p_tree, max_root_family_size, max_family_size, number_of_simulations, p_lambda, cache);
 
     vector<double> result(families.size());
     transform(families.begin(), families.end(), result.begin(), [max_family_size, p_lambda, p_tree, &cache, &cd](gene_family& gf)->double {
