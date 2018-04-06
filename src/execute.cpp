@@ -105,10 +105,10 @@ void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_
 
     std::vector<double> model_likelihoods(models.size());
     for (int i = 0; i < models.size(); ++i) {
-        cout << endl << "Starting inference processes for model " << i << endl;
+        cout << endl << "Starting inference processes for " << models[i]->name() << " model" << endl;
         models[i]->start_inference_processes();
 
-        cout << endl << "Inferring processes for model " << i << endl;
+        cout << endl << "Inferring processes for " << models[i]->name() << " model" << endl;
         double result = models[i]->infer_processes(p_prior);
         models[i]->write_vital_statistics(results_file, result);
 
