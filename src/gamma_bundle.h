@@ -39,6 +39,15 @@ public:
     reconstruction_process* create_reconstruction_process(double lambda_multiplier);
 };
 
+struct gamma_increase_decrease
+{
+    std::vector<family_size_change> change;
+    std::string gene_family_id;
+    std::vector<double> category_likelihoods;
+};
+
+std::ostream& operator<<(std::ostream & ost, const gamma_increase_decrease& val);
+
 //! One gamma bundle per family
 //! Should reconstruct values for all gamma category probabilities
 class gamma_bundle {
@@ -47,6 +56,8 @@ class gamma_bundle {
 
     std::map<clade *, double> reconstruction;
     std::map<clade *, family_size_change> increase_decrease_map;
+    std::vector<double> _category_likelihoods;
+
 public:
     gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers);
     ~gamma_bundle();
@@ -54,7 +65,7 @@ public:
     void clear();
 
     bool prune(const std::vector<double>& gamma_cat_probs, root_equilibrium_distribution *eq_freq,
-        matrix_cache& calc, std::vector<double>& cat_likelihoods);
+        matrix_cache& calc);
 
     void reconstruct(const std::vector<double>& _gamma_cat_probs);
 
@@ -64,9 +75,14 @@ public:
 
     void print_reconstruction(std::ostream& ost, std::vector<clade *> order);
 
-    increase_decrease get_increases_decreases(std::vector<clade *>& order, double pvalue);
+    gamma_increase_decrease get_increases_decreases(std::vector<clade *>& order, double pvalue);
 
     std::vector<clade *> get_taxa();
+
+    std::vector<double> get_category_likelihoods() const
+    {
+        return _category_likelihoods;
+    }
 };
 
 #endif

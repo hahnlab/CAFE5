@@ -52,9 +52,9 @@ void gamma_bundle::set_values(matrix_cache *calc, root_equilibrium_distribution*
     }
 }
 
-bool gamma_bundle::prune(const vector<double>& _gamma_cat_probs, root_equilibrium_distribution *eq,
-    matrix_cache& calc, std::vector<double>& cat_likelihoods) {
+bool gamma_bundle::prune(const vector<double>& _gamma_cat_probs, root_equilibrium_distribution *eq, matrix_cache& calc) {
     assert(_gamma_cat_probs.size() == _inf_processes.size());
+    _category_likelihoods.clear();
 
     for (int k = 0; k < _gamma_cat_probs.size(); ++k)
     {
@@ -68,8 +68,8 @@ bool gamma_bundle::prune(const vector<double>& _gamma_cat_probs, root_equilibriu
             full[j] = partial_likelihood[j] * eq_freq;
         }
 
-//        cat_likelihoods.push_back(accumulate(full.begin(), full.end(), 0.0) * _gamma_cat_probs[k]); // sum over all sizes (Felsenstein's approach)
-        cat_likelihoods.push_back(*max_element(full.begin(), full.end()) * _gamma_cat_probs[k]); // get max (CAFE's approach)
+//        _category_likelihoods.push_back(accumulate(full.begin(), full.end(), 0.0) * _gamma_cat_probs[k]); // sum over all sizes (Felsenstein's approach)
+        _category_likelihoods.push_back(*max_element(full.begin(), full.end()) * _gamma_cat_probs[k]); // get max (CAFE's approach)
     }
 
     return true;
@@ -108,9 +108,9 @@ void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<clade *> 
     ost << endl;
 }
 
-increase_decrease gamma_bundle::get_increases_decreases(std::vector<clade *>& order, double pvalue)
+gamma_increase_decrease gamma_bundle::get_increases_decreases(std::vector<clade *>& order, double pvalue)
 {
-    increase_decrease result;
+    gamma_increase_decrease result;
     result.change.resize(order.size());
     result.gene_family_id = _rec_processes[0]->get_family_id();
 
@@ -118,7 +118,21 @@ increase_decrease gamma_bundle::get_increases_decreases(std::vector<clade *>& or
         return taxon->is_root() ? Constant : increase_decrease_map.at(taxon);
     });
 
+    result.category_likelihoods = _category_likelihoods;
     return result;
+}
+
+std::ostream& operator<<(std::ostream & ost, const gamma_increase_decrease& val)
+{
+    ost << val.gene_family_id << '\t';
+    ostream_iterator<family_size_change> out_it(ost, "\t");
+    copy(val.change.begin(), val.change.end(), out_it);
+
+    ostream_iterator<double> out_it2(ost, "\t");
+    copy(val.category_likelihoods.begin(), val.category_likelihoods.end(), out_it2);
+
+    ost << endl;
+    return ost;
 }
 
 double gamma_bundle::get_lambda_likelihood(int family_id)

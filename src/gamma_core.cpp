@@ -153,9 +153,9 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     for (int i = 0; i < _family_bundles.size(); ++i) {
         gamma_bundle* bundle = _family_bundles[i];
 
-        vector<double> cat_likelihoods;
-        if (bundle->prune(_gamma_cat_probs, prior, calc, cat_likelihoods))
+        if (bundle->prune(_gamma_cat_probs, prior, calc))
         {
+            auto cat_likelihoods = bundle->get_category_likelihoods();
             double family_likelihood = accumulate(cat_likelihoods.begin(), cat_likelihoods.end(), 0.0);
 
             vector<double> posterior_probabilities = get_posterior_probabilities(cat_likelihoods);

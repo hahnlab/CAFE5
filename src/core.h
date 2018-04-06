@@ -131,6 +131,7 @@ public:
 std::vector<int> build_reference_list(std::vector<gene_family>& families);
 
 enum family_size_change { Increase, Decrease, Constant };
+std::ostream& operator<<(std::ostream& ost, family_size_change fsc);
 
 struct increase_decrease
 {

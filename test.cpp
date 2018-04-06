@@ -394,12 +394,20 @@ TEST(Inference, increase_decrease_stream)
     increase_decrease id;
     id.gene_family_id = "1234";
     id.pvalue = 0.02;
-    id.change.push_back(Decrease);
-    id.change.push_back(Constant);
-    id.change.push_back(Increase);
-    id.change.push_back(Increase);
+    id.change = vector<family_size_change>{ Decrease, Constant, Increase, Increase};
     ost << id;
     STRCMP_EQUAL("1234\ty\td\tc\ti\ti\t\n", ost.str().c_str());
+}
+
+TEST(Inference, gamma_increase_decrease_stream)
+{
+    ostringstream ost;
+    gamma_increase_decrease id;
+    id.gene_family_id = "1234";
+    id.change = vector<family_size_change>{ Decrease, Constant, Increase, Increase };
+    id.category_likelihoods = vector<double>{ .1,.2,.3,.4 };
+    ost << id;
+    STRCMP_EQUAL("1234\td\tc\ti\ti\t0.1\t0.2\t0.3\t0.4\t\n", ost.str().c_str());
 }
 
 TEST(Inference, precalculate_matrices_calculates_all_lambdas_all_branchlengths)
@@ -460,8 +468,8 @@ TEST(Inference, gamma_bundle_prune)
     matrix_cache cache;
     multiple_lambda ml(map<string, int>(), {0.0005, 0.0025});
     cache.precalculate_matrices(11, get_lambda_values(&ml), set<double>{1, 3, 7});
-    vector<double> cat_likelihoods;
-    CHECK(bundle.prune({ 0.01, 0.05 }, &dist, cache, cat_likelihoods)); 
+    CHECK(bundle.prune({ 0.01, 0.05 }, &dist, cache)); 
+    auto cat_likelihoods = bundle.get_category_likelihoods();
 
     LONGS_EQUAL(2, cat_likelihoods.size());
     DOUBLES_EQUAL(-23.3728, log(cat_likelihoods[0]), 0.0001);
@@ -485,9 +493,8 @@ TEST(Inference, gamma_bundle_prune_returns_false_if_saturated)
     dist.initialize({ 1,2,3,4,5,4,3,2,1 });
     matrix_cache cache;
     cache.precalculate_matrices(11, { 0.09, 0.45 }, set<double>{1, 3, 7});
-    vector<double> cat_likelihoods;
 
-    CHECK(!bundle.prune({ 0.01, 0.05 }, &dist, cache, cat_likelihoods));
+    CHECK(!bundle.prune({ 0.01, 0.05 }, &dist, cache));
 }
 
 TEST(Inference, matrix_cache_key_handles_floating_point_imprecision)
