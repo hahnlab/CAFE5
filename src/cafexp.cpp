@@ -214,12 +214,16 @@ user_data read_datafiles(execute& my_executer, const input_parameters& my_input_
     return data;
 }
 
+void init_lgamma_cache();
+
 /// The main function. Evaluates arguments, calls processes
 /// \callgraph
 int cafexp(int argc, char *const argv[]) {
     /* START: Option variables for main() */
     srand(10);
     map<int, int>* p_rootdist_map = NULL; // for sims
+
+    init_lgamma_cache();
 
     execute my_executer;
     try {

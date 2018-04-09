@@ -45,11 +45,28 @@ double unifrnd() {
   return result;
 }
 
+map<int, double> lgamma_cache;
+void init_lgamma_cache()
+{
+    for (int i = 0; i < 512; ++i)
+    {
+        lgamma_cache[i] = lgamma(i);
+    }
+}
+
+double lgamma2(double n)
+{
+    if (n < 512 && (n - int(n) < 0.00000000001))
+        return lgamma_cache.at(int(n));
+
+    return lgamma(n);
+}
+
 double chooseln(double n, double r)
 {
   if (r == 0 || (n == 0 && r == 0)) return 0;
   else if (n <= 0 || r <= 0) return log(0);
-  return lgamma(n + 1) - lgamma(r + 1) - lgamma(n - r + 1);
+  return lgamma2(n + 1) - lgamma2(r + 1) - lgamma2(n - r + 1);
 }
 
 /* END: Math tools ----------------------- */

@@ -1209,7 +1209,10 @@ TEST(Simulation, random_familysize_setter_with_error_model)
     LONGS_EQUAL(4, t[b]);
 }
 
+void init_lgamma_cache();
+
 int main(int ac, char** av)
 {
+    init_lgamma_cache();
     return CommandLineTestRunner::RunAllTests(ac, av);
 }
