@@ -15,7 +15,7 @@ using namespace std;
 
 /* START: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
-std::vector<double> single_lambda::calculate_child_factor(const matrix_cache& calc, clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size)
+std::vector<double> single_lambda::calculate_child_factor(const matrix_cache& calc, clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const
 {
     auto matrix = calc.get_matrix(probabilities.size(), child->get_branch_length(), _lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
 #if 0
@@ -34,10 +34,10 @@ std::string single_lambda::to_string() const
     return ost.str();
 }
 
-std::vector<double> multiple_lambda::calculate_child_factor(const matrix_cache& calc, clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size)
+std::vector<double> multiple_lambda::calculate_child_factor(const matrix_cache& calc, clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const
 {
 	std::string nodename = child->get_taxon_name();
-	int lambda_index = _node_name_to_lambda_index[nodename];
+	int lambda_index = _node_name_to_lambda_index.at(nodename);
 	double lambda = _lambdas[lambda_index];
 	//cout << "Matrix for " << child->get_taxon_name() << endl;
 	auto matrix = calc.get_matrix(probabilities.size(), child->get_branch_length(), lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?

@@ -139,7 +139,7 @@ private:
     map<clade *, vector<double> > _factors; //!< keys = pointers to clade objects (children of internal node), values = clade's contribution (factor) to the vector of likelihoods of the internal node
     map<clade *, vector<double> >& _probabilities; //!< (member of likelihood_computer) keys = pointer to clade object (all nodes in the tree), values = clade's vector of likelihoods
     int _probabilities_vec_size; //!< size of vector that will store probabilities (likelihoods)
-    lambda* _lambda; //!< lambda used in likelihood computation
+    const lambda* _lambda; //!< lambda used in likelihood computation
 	int s_min_family_size; //!< parent min size (this is an index)
 	int s_max_family_size; //!< parent max size (this is an index)
 	int c_min_family_size; //!< child min size (this is an index)
@@ -151,7 +151,7 @@ public:
     /*!
       Used once per internal node by likelihood_computer().
     */
-	child_calculator(int probabilities_vec_size, lambda* lambda, const matrix_cache& calc, map<clade *, vector<double> >& probabilities, int s_min, int s_max, int c_min, int c_max) : _probabilities_vec_size(probabilities_vec_size), _lambda(lambda), _probabilities(probabilities),
+	child_calculator(int probabilities_vec_size, const lambda* lambda, const matrix_cache& calc, map<clade *, vector<double> >& probabilities, int s_min, int s_max, int c_min, int c_max) : _probabilities_vec_size(probabilities_vec_size), _lambda(lambda), _probabilities(probabilities),
 		s_min_family_size(s_min), s_max_family_size(s_max), c_min_family_size(c_min), c_max_family_size(c_max),
         _calc(calc) {}
 	
@@ -289,11 +289,13 @@ std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simula
 {
 	vector<trial *> simulation = simulate_families_from_root_size(p_tree, number_of_simulations, root_family_size, max_family_size, p_lambda, p_error_model);
 
-	vector<double> result;
-	for (vector<trial*>::iterator ith_trial = simulation.begin(); ith_trial != simulation.end(); ++ith_trial)
+	vector<double> result(simulation.size());
+
+#pragma omp parallel for
+    for (size_t i = 0; i<simulation.size(); ++i)
 	{
         map<string, int> species_count;
-        for (auto& it : **ith_trial) {
+        for (auto& it : *simulation[i]) {
             if (it.first->is_leaf()) 
             { 
                 species_count[it.first->get_taxon_name()] = it.second; 
@@ -301,7 +303,7 @@ std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simula
         }
 		likelihood_computer pruner(root_family_size, max_family_size, p_lambda, species_count, cache, NULL);
 		p_tree->apply_reverse_level_order(pruner);
-		result.push_back(pruner.max_likelihood(p_tree));
+		result[i] = pruner.max_likelihood(p_tree);
 	}
 
     sort(result.begin(), result.end());

@@ -28,7 +28,7 @@ private:
     std::map<std::string, int> _species_count;
     int _max_root_family_size;
 	int _max_parsed_family_size;
-	lambda* _lambda;
+	const lambda* _lambda;
     const matrix_cache& _calc;
     const error_model* _p_error_model;
     
