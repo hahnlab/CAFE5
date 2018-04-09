@@ -38,7 +38,7 @@ double pvalue(double v, const vector<double>& conddist)
 // find_fast_families under base model through simulations (if we reject gamma)
 vector<double> compute_pvalues(int max_family_size, int max_root_family_size, int number_of_simulations, lambda *p_lambda, vector<gene_family>& families, clade* p_tree)
 {
-    cout << "Computing pvalues\n" << std::unitbuf;
+    cout << "Computing pvalues..." << flush;
 
     matrix_cache cache;
     branch_length_finder lengths;
@@ -49,7 +49,6 @@ vector<double> compute_pvalues(int max_family_size, int max_root_family_size, in
 
     vector<double> result(families.size());
     transform(families.begin(), families.end(), result.begin(), [max_family_size, p_lambda, p_tree, &cache, &cd](gene_family& gf)->double {
-        cout << ".";
 		int max = gf.get_max_size();
 		double max_root_family_size = rint(max*1.25);
 

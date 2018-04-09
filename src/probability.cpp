@@ -45,16 +45,17 @@ double unifrnd() {
   return result;
 }
 
-map<int, double> lgamma_cache;
+vector<double> lgamma_cache;
 void init_lgamma_cache()
 {
+    lgamma_cache.resize(512);
     for (int i = 0; i < 512; ++i)
     {
         lgamma_cache[i] = lgamma(i);
     }
 }
 
-double lgamma2(double n)
+inline double lgamma2(double n)
 {
     if (n < 512 && (n - int(n) < 0.00000000001))
         return lgamma_cache.at(int(n));
