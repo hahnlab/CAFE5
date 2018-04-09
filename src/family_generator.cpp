@@ -91,15 +91,14 @@ trial * simulate_family_from_root_size(clade *tree, int root_family_size, int ma
 vector<trial *> simulate_families_from_root_size(clade *tree, int num_trials, int root_family_size, int max_family_size, lambda* p_lambda, error_model *p_error_model) {
 
     matrix_cache calc;
-    vector<trial *> result;
+    vector<trial *> result(num_trials);
+    generate(result.begin(), result.end(), [] { return new trial; });
 
+#pragma omp parallel for
     for (int t = 0; t < num_trials; ++t) {
-        trial *p_tth_trial = new trial;
-        random_familysize_setter rfs(p_tth_trial, max_family_size, p_lambda, &calc, p_error_model);
-        (*p_tth_trial)[tree] = root_family_size;
+        random_familysize_setter rfs(result[t], max_family_size, p_lambda, &calc, p_error_model);
+        (*result[t])[tree] = root_family_size;
         tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
-        
-        result.push_back(p_tth_trial);
     }
     
     return result;
