@@ -209,7 +209,4 @@ void execute::write_results(std::vector<model *>& models, const input_parameters
         std::ofstream clade_results(filename(p_model->name() + "_clade_results", my_input_parameters.output_prefix));
         p_model->print_increases_decreases_by_clade(clade_results);
     }
-
-    std::ofstream dfst(filename("depth", my_input_parameters.output_prefix));
-    models[0]->print_node_depths(dfst);
 }
