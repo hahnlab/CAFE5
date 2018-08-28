@@ -170,9 +170,10 @@ void show_pvalues(string values)
     cout << "PValue = " << 1.0 - chi2cdf(2 * (chis[1] - chis[0]), degrees_of_freedom) << std::endl;
 }
 
+/// Class holding data defined by the user, or derived from data defined by the user
 struct user_data {
-    int max_family_size = -1; // needed for defining matrix size
-    int max_root_family_size = -1; // needed for defining matrix size
+    int max_family_size = -1; //!<  The maximum family size for which probabilities will be calculated
+    int max_root_family_size = -1; //!<  The maximum family size for which probabilities will be calculated at the root of the tree
 
     clade *p_tree = NULL; // instead of new clade(), o.w. mem leak
     lambda *p_lambda;

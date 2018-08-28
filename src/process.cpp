@@ -64,7 +64,10 @@ void simulation_process::run_simulation() {
 	_my_simulation = simulate_family_from_root_size(_p_tree, _root_size, _max_family_size_sim, multiplier, _p_error_model);
 }
 
-//! Prune process
+//! Computes likelihoods for the given tree and a single family. Uses a lambda value based on the provided lambda
+/// and a given multiplier. Works by creating a likelihood_computer and calling it on all modes of the tree
+/// using the species counts for the family. 
+/// \returns a vector of probabilities for gene counts at the root of the tree 
 std::vector<double> inference_process::prune(matrix_cache& calc) {
 
     unique_ptr<lambda> multiplier(_lambda->multiply(_lambda_multiplier));

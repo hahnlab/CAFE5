@@ -22,6 +22,11 @@ double unifrnd();
 
 /* START: Likelihood computation ---------------------- */
 
+/// The likelihood_computer class is a functor that is used in the pruning algorithm. It is called once on each node of the tree,
+/// starting with the leaf nodes and working upwards. For each node, a vector of probabilities is added to the _probabilities
+/// map. For leaf nodes, the probabilities are set based on input data, but for internal nodes the probabilities are calculated 
+/// based on the probabilities of the child nodes. After all calculations, the caller should call the max_likelihood method,
+/// passing the root of the tree, to determine the overall probabilities for the tree.
 class likelihood_computer {
 private:
     std::map<clade *, std::vector<double> > _probabilities; //!< represents probability of the node having various family sizes

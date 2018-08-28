@@ -19,6 +19,11 @@ double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 
 
 //! Read user provided gene family data (whose path is stored in input_parameters instance)
+/// @param[in] my_input_parameters Parsed parameters passed to the application
+/// @param[in] p_tree The tree to be used in calculations. Necessary for syncing tree data to gene family data
+/// @param[out] p_gene_families Parsed data in the gene family file specified by my_input_parameters
+/// @param[out] max_family_size Equal to the largest family size given in the file plus 20%, or plus 50 if the largest family size is more than 250
+/// @param[out] max_root_family_size Equal to 5/4 the size of the largest family size given in the file (with a minimum of 30)
 void execute::read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size, clade *p_tree, std::vector<gene_family> *p_gene_families) {
     
     ifstream input_file(my_input_parameters.input_file_path); 
