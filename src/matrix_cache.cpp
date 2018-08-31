@@ -26,7 +26,7 @@ A minimum and maximum on the parent's and child's family sizes is provided. Beca
 */
 vector<double> matrix::multiply(const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const
 {
-    vector<double> result(c_max_family_size - c_min_family_size + 1);
+    vector<double> result(s_max_family_size - s_min_family_size + 1);
 
 #ifdef HAVE_BLAS
     double alpha = 1.0, beta = 0.;

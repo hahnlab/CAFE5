@@ -119,7 +119,7 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
     branch_length_finder lengths;
     _p_tree->apply_prefix_order(lengths);
 
-    matrix_cache calc(_max_family_size + 1);
+    matrix_cache calc(max(_max_root_family_size, _max_family_size) + 1);
     calc.precalculate_matrices(get_lambda_values(_p_lambda), lengths.result());
 
     vector<vector<double>> partial_likelihoods(processes.size());
