@@ -24,13 +24,12 @@ private:
     trial *_p_tth_trial;
     int _max_family_size; //!< We simulate from 0 to _max_family_size-1
     const lambda *_p_lambda;
-    const matrix_cache* _calculator; //!< Does the birth-death model computations
     const error_model *_p_error_model;
 
 public:
     //! Constructor
-    random_familysize_setter(trial *p_tth_trial, int max_family_size, const lambda * p_lambda, const matrix_cache* p_calc, const error_model *error) :
-        _p_tth_trial(p_tth_trial), _max_family_size(max_family_size), _p_lambda(p_lambda), _calculator(p_calc), _p_error_model(error) {
+    random_familysize_setter(trial *p_tth_trial, int max_family_size, const lambda * p_lambda, const error_model *error) :
+        _p_tth_trial(p_tth_trial), _max_family_size(max_family_size), _p_lambda(p_lambda), _p_error_model(error) {
     }
 
     //! Operator () overload.

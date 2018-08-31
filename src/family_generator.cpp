@@ -33,7 +33,7 @@ void random_familysize_setter::operator()(clade *node) {
 
     if (parent_family_size > 0) {
         for (; c < _max_family_size - 1; c++) { // Ben: why -1
-            double prob = _calculator->get_from_parent_fam_size_to_c(lambda, node->get_branch_length(), parent_family_size, c);
+            double prob = the_probability_of_going_from_parent_fam_size_to_c(lambda, node->get_branch_length(), parent_family_size, c);
             cumul += prob;
 
             if (cumul >= rnd) {
@@ -73,9 +73,8 @@ trial * simulate_family_from_root_size(clade *tree, int root_family_size, int ma
     if (tree == NULL)
         throw runtime_error("No tree specified for simulation");
 
-    matrix_cache calc;
     trial *result = new trial;
-    random_familysize_setter rfs(result, max_family_size, p_lambda, &calc, p_error_model);
+    random_familysize_setter rfs(result, max_family_size, p_lambda, p_error_model);
     (*result)[tree] = root_family_size;
     tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
     
@@ -90,13 +89,12 @@ trial * simulate_family_from_root_size(clade *tree, int root_family_size, int ma
 */
 vector<trial *> simulate_families_from_root_size(clade *tree, int num_trials, int root_family_size, int max_family_size, lambda* p_lambda, error_model *p_error_model) {
 
-    matrix_cache calc;
     vector<trial *> result(num_trials);
     generate(result.begin(), result.end(), [] { return new trial; });
 
 #pragma omp parallel for
     for (int t = 0; t < num_trials; ++t) {
-        random_familysize_setter rfs(result[t], max_family_size, p_lambda, &calc, p_error_model);
+        random_familysize_setter rfs(result[t], max_family_size, p_lambda, p_error_model);
         (*result[t])[tree] = root_family_size;
         tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
     }

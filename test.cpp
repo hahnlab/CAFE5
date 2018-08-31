@@ -1168,10 +1168,9 @@ TEST(Simulation, random_familysize_setter_without_error_model)
     parser.newick_string = "(A:1,B:3):7";
     unique_ptr<clade> p_tree(parser.parse_newick());
 
-    matrix_cache cache;
     single_lambda lambda(0.05);
     trial t;
-    random_familysize_setter setter(&t, 10, &lambda, &cache, NULL);
+    random_familysize_setter setter(&t, 10, &lambda, NULL);
     clade *b = p_tree->find_descendant("B");
     setter(b);
 
@@ -1197,10 +1196,9 @@ TEST(Simulation, random_familysize_setter_with_error_model)
     parser.newick_string = "(A:1,B:3):7";
     unique_ptr<clade> p_tree(parser.parse_newick());
 
-    matrix_cache cache;
     single_lambda lambda(0.05);
     trial t;
-    random_familysize_setter setter(&t, family_size, &lambda, &cache, &err);
+    random_familysize_setter setter(&t, family_size, &lambda, &err);
     clade *b = p_tree->find_descendant("B");
     setter(b);
 
