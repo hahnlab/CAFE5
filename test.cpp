@@ -341,28 +341,6 @@ TEST(Inference, branch_length_finder)
 
 }
 
-TEST(Inference, reconstruction_process)
-{
-    vector<int> rootdist;
-    single_lambda lambda(0.05);
-    gene_family fam;
-    fam.set_species_size("Mouse", 3);
-
-    clade leaf("Mouse",7);
-
-    matrix_cache calc;
-   reconstruction_process process(cout, &lambda, 2.0, NULL, 3, 0, rootdist, &fam, &calc, NULL);
-   process(&leaf);
-   auto L = process.get_L(&leaf);
-
-   // L holds the probability of the leaf moving from size 3 to size n
-   LONGS_EQUAL(4, L.size());
-   DOUBLES_EQUAL(0.0, L[0], 0.0001);
-   DOUBLES_EQUAL(0.0586679, L[1], 0.0001);
-   DOUBLES_EQUAL(0.146916, L[2], 0.0001);
-   DOUBLES_EQUAL(0.193072, L[3], 0.0001);
-}
-
 TEST(Inference, increase_decrease)
 {
     map<clade *, int> family_size;
@@ -419,6 +397,30 @@ TEST(Inference, precalculate_matrices_calculates_all_lambdas_all_branchlengths)
     LONGS_EQUAL(12, calc.get_cache_size());
 }
 
+TEST(Inference, reconstruction_process)
+{
+  vector<int> rootdist;
+  single_lambda lambda(0.05);
+  gene_family fam;
+  fam.set_species_size("Mouse", 3);
+
+  clade leaf("Mouse", 7);
+
+  matrix_cache calc;
+  calc.precalculate_matrices(8, { .1 }, set<double>({ 7 }));
+  reconstruction_process process(cout, &lambda, 2.0, NULL, 7, 0, rootdist, &fam, &calc, NULL);
+  process(&leaf);
+  auto L = process.get_L(&leaf);
+
+  // L holds the probability of the leaf moving from size 3 to size n
+  LONGS_EQUAL(8, L.size());
+  DOUBLES_EQUAL(0.0, L[0], 0.0001);
+  DOUBLES_EQUAL(0.0586679, L[1], 0.0001);
+  DOUBLES_EQUAL(0.146916, L[2], 0.0001);
+  DOUBLES_EQUAL(0.193072, L[3], 0.0001);
+}
+
+
 TEST(Inference, reconstruction_process_internal_node)
 {
     vector<int> rootdist;
@@ -433,8 +435,8 @@ TEST(Inference, reconstruction_process_internal_node)
     unique_ptr<clade> p_tree(parser.parse_newick());
     unique_ptr<lambda> m(s_lambda.multiply(multiplier));
     matrix_cache calc;
-    calc.precalculate_matrices(4, get_lambda_values(m.get()), set<double>({ 1, 3, 7, 11, 17, 23 }));
-    reconstruction_process process(cout, &s_lambda, multiplier, NULL, 3, 0, rootdist, &fam, &calc, NULL);
+    calc.precalculate_matrices(25, get_lambda_values(m.get()), set<double>({ 1, 3, 7, 11, 17, 23 }));
+    reconstruction_process process(cout, &s_lambda, multiplier, NULL, 24, 24, rootdist, &fam, &calc, NULL);
 
     process(p_tree->find_descendant("A"));
     process(p_tree->find_descendant("B"));
@@ -444,7 +446,7 @@ TEST(Inference, reconstruction_process_internal_node)
     auto L = process.get_L(internal_node);
 
     // L holds the probability of the leaf moving from size 3 to size n
-    LONGS_EQUAL(4, L.size());
+    LONGS_EQUAL(25, L.size());
     DOUBLES_EQUAL(0.0, L[0], 0.0001);
     DOUBLES_EQUAL(0.00101688, L[1], 0.0001);
     DOUBLES_EQUAL(0.00254648, L[2], 0.0001);

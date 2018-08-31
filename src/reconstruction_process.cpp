@@ -73,10 +73,11 @@ void reconstruction_process::reconstruct_leaf_node(clade * c, lambda * _lambda)
     int observed_count = _gene_family->get_species_size(c->get_taxon_name());
     fill(C.begin(), C.end(), observed_count);
 
+    auto matrix = _p_calc->get_matrix(L.size(), branch_length, _lambda->get_value_for_clade(c));
     // i will be the parent size
     for (size_t i = 1; i < L.size(); ++i)
     {
-        L[i] = _p_calc->get_from_parent_fam_size_to_c(_lambda->get_value_for_clade(c), branch_length, i, observed_count);
+        L[i] = matrix.get(i, observed_count);
     }
 }
 
