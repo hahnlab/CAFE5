@@ -194,9 +194,9 @@ void execute::simulate(std::vector<model *>& models, const input_parameters &my_
     }
 }
 
-void execute::reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, root_equilibrium_distribution *p_prior)
+void execute::reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, int max_family_size, root_equilibrium_distribution *p_prior)
 {
-    matrix_cache cache;
+    matrix_cache cache(max_family_size + 1);
     for (model* p_model : models) {
         p_model->reconstruct_ancestral_states(&cache, p_prior);
     }

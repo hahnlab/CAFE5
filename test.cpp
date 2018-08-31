@@ -182,7 +182,7 @@ TEST(Simulation, gamma_cats)
 
 TEST(Probability, probability_of_some_values)
 {
-    matrix_cache calc;
+    matrix_cache calc(0);
     double lambda = 0.05;
     double branch_length = 5;
     DOUBLES_EQUAL(0.0152237, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 5, 9), 0.00001);
@@ -212,12 +212,12 @@ bool operator==(matrix& m1, matrix& m2)
 
 TEST(Probability, matrices_take_fractional_branch_lengths_into_account)
 {
-    matrix_cache calc;
+    matrix_cache calc(141);
     single_lambda lambda(0.006335);
     std::set<double> branch_lengths{ 68, 68.7105 };
-    calc.precalculate_matrices(141, get_lambda_values(&lambda), branch_lengths);
-    DOUBLES_EQUAL(0.194661, calc.get_matrix(141, 68.7105, 0.006335).get(5,5), 0.00001); // a value 
-    DOUBLES_EQUAL(0.195791, calc.get_matrix(141, 68, 0.006335).get(5, 5), 0.00001);
+    calc.precalculate_matrices(get_lambda_values(&lambda), branch_lengths);
+    DOUBLES_EQUAL(0.194661, calc.get_matrix(68.7105, 0.006335).get(5,5), 0.00001); // a value 
+    DOUBLES_EQUAL(0.195791, calc.get_matrix(68, 0.006335).get(5, 5), 0.00001);
 }
 
 TEST(Probability, the_probability_of_going_from_parent_fam_size_to_c)
@@ -227,11 +227,11 @@ TEST(Probability, the_probability_of_going_from_parent_fam_size_to_c)
 
 TEST(Probability, probability_of_matrix)
 {
-    matrix_cache calc;
+    matrix_cache calc(5);
     single_lambda lambda(0.05);
     std::set<double> branch_lengths{ 5 };
-    calc.precalculate_matrices(5, get_lambda_values(&lambda), branch_lengths);
-    matrix actual = calc.get_matrix(5, 5, lambda.get_single_lambda());
+    calc.precalculate_matrices(get_lambda_values(&lambda), branch_lengths);
+    matrix actual = calc.get_matrix(5, lambda.get_single_lambda());
     matrix expected(5);
     double values[5][5] = {
     {1,0,0,0,0},
@@ -245,7 +245,7 @@ TEST(Probability, probability_of_matrix)
     CHECK(actual == expected);
 
     // a second call should get the same results as the first
-    actual = calc.get_matrix(5, 5, lambda.get_single_lambda());
+    actual = calc.get_matrix(5, lambda.get_single_lambda());
     CHECK(actual == expected);
 }
 
@@ -269,8 +269,8 @@ TEST(Probability, get_conditional_distribution_matrix)
     unique_ptr<clade> p_tree(parser.parse_newick());
 
     single_lambda lam(0.05);
-    matrix_cache cache;
-    cache.precalculate_matrices(11, vector<double>{0.05}, set<double>{1});
+    matrix_cache cache(11);
+    cache.precalculate_matrices(vector<double>{0.05}, set<double>{1});
     auto cd_matrix = get_conditional_distribution_matrix(p_tree.get(), 10, 10, 3, &lam, cache);
     LONGS_EQUAL(10, cd_matrix.size());
 }
@@ -319,8 +319,8 @@ TEST(Inference, base_model_reconstruction)
 
     base_model model(&sl, p_tree.get(), &families, 5, 5, NULL, NULL);
 
-    matrix_cache calc;
-    calc.precalculate_matrices(6, get_lambda_values(&sl), set<double>({ 1 }));
+    matrix_cache calc(6);
+    calc.precalculate_matrices(get_lambda_values(&sl), set<double>({ 1 }));
     uniform_distribution dist;
     dist.initialize({ 1,2,3,4,5,6 });
     model.reconstruct_ancestral_states(&calc, &dist);
@@ -390,10 +390,10 @@ TEST(Inference, gamma_increase_decrease_stream)
 
 TEST(Inference, precalculate_matrices_calculates_all_lambdas_all_branchlengths)
 {
-    matrix_cache calc;
+    matrix_cache calc(5);
     std::map<std::string, int> m;
     multiple_lambda lambda(m, vector<double>({ .1, .2, .3, .4 }));
-    calc.precalculate_matrices(5, get_lambda_values(&lambda), set<double>({ 1,2,3 }));
+    calc.precalculate_matrices(get_lambda_values(&lambda), set<double>({ 1,2,3 }));
     LONGS_EQUAL(12, calc.get_cache_size());
 }
 
@@ -406,8 +406,8 @@ TEST(Inference, reconstruction_process)
 
   clade leaf("Mouse", 7);
 
-  matrix_cache calc;
-  calc.precalculate_matrices(8, { .1 }, set<double>({ 7 }));
+  matrix_cache calc(8);
+  calc.precalculate_matrices({ .1 }, set<double>({ 7 }));
   reconstruction_process process(cout, &lambda, 2.0, NULL, 7, 0, rootdist, &fam, &calc, NULL);
   process(&leaf);
   auto L = process.get_L(&leaf);
@@ -434,8 +434,8 @@ TEST(Inference, reconstruction_process_internal_node)
     parser.newick_string = "((A:1,B:3):7,(C:11,D:17):23);";
     unique_ptr<clade> p_tree(parser.parse_newick());
     unique_ptr<lambda> m(s_lambda.multiply(multiplier));
-    matrix_cache calc;
-    calc.precalculate_matrices(25, get_lambda_values(m.get()), set<double>({ 1, 3, 7, 11, 17, 23 }));
+    matrix_cache calc(25);
+    calc.precalculate_matrices(get_lambda_values(m.get()), set<double>({ 1, 3, 7, 11, 17, 23 }));
     reconstruction_process process(cout, &s_lambda, multiplier, NULL, 24, 24, rootdist, &fam, &calc, NULL);
 
     process(p_tree->find_descendant("A"));
@@ -467,9 +467,9 @@ TEST(Inference, gamma_bundle_prune)
     gamma_bundle bundle(factory, { 0.1, 0.5 });
     uniform_distribution dist;
     dist.initialize({ 1,2,3,4,5,4,3,2,1 });
-    matrix_cache cache;
+    matrix_cache cache(11);
     multiple_lambda ml(map<string, int>(), {0.0005, 0.0025});
-    cache.precalculate_matrices(11, get_lambda_values(&ml), set<double>{1, 3, 7});
+    cache.precalculate_matrices(get_lambda_values(&ml), set<double>{1, 3, 7});
     CHECK(bundle.prune({ 0.01, 0.05 }, &dist, cache)); 
     auto cat_likelihoods = bundle.get_category_likelihoods();
 
@@ -493,8 +493,8 @@ TEST(Inference, gamma_bundle_prune_returns_false_if_saturated)
     gamma_bundle bundle(factory, { 0.1, 0.5 });
     uniform_distribution dist;
     dist.initialize({ 1,2,3,4,5,4,3,2,1 });
-    matrix_cache cache;
-    cache.precalculate_matrices(11, { 0.09, 0.45 }, set<double>{1, 3, 7});
+    matrix_cache cache(11);
+    cache.precalculate_matrices({ 0.09, 0.45 }, set<double>{1, 3, 7});
 
     CHECK(!bundle.prune({ 0.01, 0.05 }, &dist, cache));
 }
@@ -764,8 +764,8 @@ TEST(Inference, prune)
 
     single_lambda lambda(0.03);
     inference_process process(ost, &lambda, 1.5, p_tree.get(), 20, 20, &fam, { 1,2,3 }, NULL);
-    matrix_cache cache;
-    cache.precalculate_matrices(21, { 0.045 }, { 1.0,3.0,7.0 });
+    matrix_cache cache(21);
+    cache.precalculate_matrices({ 0.045 }, { 1.0,3.0,7.0 });
     auto actual = process.prune(cache);
 
     vector<double> log_expected{ -17.2771, -10.0323 , -5.0695 , -4.91426 , -5.86062 , -7.75163 , -10.7347 , -14.2334 , -18.0458 , 
@@ -791,9 +791,9 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_correctly)
 
     single_lambda lambda(0.03);
 
-    matrix_cache cache;
+    matrix_cache cache(21);
     likelihood_computer pruner(20, 20, &lambda, species_count, cache, NULL);
-    cache.precalculate_matrices(21, { 0.045 }, { 1.0,3.0,7.0 });
+    cache.precalculate_matrices({ 0.045 }, { 1.0,3.0,7.0 });
 
     clade *A = p_tree->find_descendant("A");
     pruner(A);
@@ -833,9 +833,9 @@ TEST(Inference, likelihood_computer_sets_root_nodes_correctly)
 
     single_lambda lambda(0.03);
 
-    matrix_cache cache;
+    matrix_cache cache(21);
     likelihood_computer pruner(20, 20, &lambda, species_count, cache, NULL);
-    cache.precalculate_matrices(21, { 0.03 }, { 1.0,3.0,7.0 });
+    cache.precalculate_matrices({ 0.03 }, { 1.0,3.0,7.0 });
 
     clade *AB = p_tree->find_descendant("AB");
     try
@@ -878,8 +878,8 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_from_error_model_if_provided
 
     single_lambda lambda(0.03);
 
-    matrix_cache cache;
-    cache.precalculate_matrices(21, { 0.045 }, { 1.0,3.0,7.0 });
+    matrix_cache cache(21);
+    cache.precalculate_matrices({ 0.045 }, { 1.0,3.0,7.0 });
 
     string input = "maxcnt: 20\ncntdiff: -1 0 1\n"
         "1 0.2 0.6 0.2\n"

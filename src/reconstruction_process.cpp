@@ -73,7 +73,7 @@ void reconstruction_process::reconstruct_leaf_node(clade * c, lambda * _lambda)
     int observed_count = _gene_family->get_species_size(c->get_taxon_name());
     fill(C.begin(), C.end(), observed_count);
 
-    auto matrix = _p_calc->get_matrix(L.size(), branch_length, _lambda->get_value_for_clade(c));
+    auto matrix = _p_calc->get_matrix(branch_length, _lambda->get_value_for_clade(c));
     // i will be the parent size
     for (size_t i = 1; i < L.size(); ++i)
     {
@@ -128,7 +128,7 @@ void reconstruction_process::reconstruct_internal_node(clade * c, lambda * _lamb
 
     L.resize(_max_family_size + 1);
 
-    auto matrix = _p_calc->get_matrix(L.size(), branch_length, _lambda->get_value_for_clade(c));
+    auto matrix = _p_calc->get_matrix(branch_length, _lambda->get_value_for_clade(c));
 
     if (matrix.is_zero())
         throw runtime_error("Zero matrix found");

@@ -74,11 +74,11 @@ double matrix_cache::get_from_parent_fam_size_to_c(double lambda, double branch_
 }
 
 //! Compute transition probability matrix for all gene family sizes from 0 to size-1 (=_max_root_family_size-1)
-matrix matrix_cache::get_matrix(int size, double branch_length, double lambda) const {
+matrix matrix_cache::get_matrix(double branch_length, double lambda) const {
     // cout << "Matrix request " << size << "," << branch_length << "," << lambda << endl;
 
     matrix *result = NULL;
-    matrix_cache_key key(size, lambda, branch_length);
+    matrix_cache_key key(_matrix_size, lambda, branch_length);
     if (_matrix_cache.find(key) != _matrix_cache.end())
     {
         result = _matrix_cache.at(key);
@@ -87,7 +87,7 @@ matrix matrix_cache::get_matrix(int size, double branch_length, double lambda) c
     if (result == NULL)
     {
         ostringstream ost;
-        ost << "Failed to find matrix for " << size << "," << branch_length << "," << lambda;
+        ost << "Failed to find matrix for " << _matrix_size << "," << branch_length << "," << lambda;
         throw std::runtime_error(ost.str());
     }
     return *result;
@@ -109,7 +109,7 @@ vector<double> get_lambda_values(lambda *p_lambda)
     return lambdas;
 }
 
-void matrix_cache::precalculate_matrices(int size, const std::vector<double>& lambdas, const std::set<double>& branch_lengths)
+void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, const std::set<double>& branch_lengths)
 {
     // build a list of required matrices
     vector<matrix_cache_key> keys;
@@ -117,7 +117,7 @@ void matrix_cache::precalculate_matrices(int size, const std::vector<double>& la
     {
         for (double branch_length : branch_lengths)
         {
-            matrix_cache_key key(size, lambda, branch_length);
+            matrix_cache_key key(_matrix_size, lambda, branch_length);
             if (_matrix_cache.find(key) == _matrix_cache.end())
             {
                 keys.push_back(key);
@@ -127,7 +127,7 @@ void matrix_cache::precalculate_matrices(int size, const std::vector<double>& la
 
     // calculate matrices in parallel
     vector<matrix *> matrices(keys.size());
-    generate(matrices.begin(), matrices.end(), [size] { return new matrix(size); });
+    generate(matrices.begin(), matrices.end(), [this] { return new matrix(this->_matrix_size); });
 
 #pragma omp parallel for
     for (size_t i = 0; i<keys.size(); ++i)
@@ -141,8 +141,8 @@ void matrix_cache::precalculate_matrices(int size, const std::vector<double>& la
         {
             m->set(0, i, get_from_parent_fam_size_to_c(lambda, branch_length, 0, i));
         }
-        for (int s = 1; s < size; s++) {
-            for (int c = 0; c < size; c++) {
+        for (int s = 1; s < _matrix_size; s++) {
+            for (int c = 0; c < _matrix_size; c++) {
                 m->set(s, c, get_from_parent_fam_size_to_c(lambda, branch_length, s, c));
             }
         }

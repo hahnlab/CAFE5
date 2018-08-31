@@ -40,10 +40,10 @@ vector<double> compute_pvalues(int max_family_size, int max_root_family_size, in
 {
     cout << "Computing pvalues..." << flush;
 
-    matrix_cache cache;
+    matrix_cache cache(max_family_size + 1);
     branch_length_finder lengths;
     p_tree->apply_prefix_order(lengths);
-    cache.precalculate_matrices(max_family_size + 1, get_lambda_values(p_lambda), lengths.result());
+    cache.precalculate_matrices(get_lambda_values(p_lambda), lengths.result());
     
     auto cd = get_conditional_distribution_matrix(p_tree, max_root_family_size, max_family_size, number_of_simulations, p_lambda, cache);
 
@@ -271,7 +271,7 @@ int cafexp(int argc, char *const argv[]) {
 
             my_executer.compute(models, &data.gene_families, p_prior, my_input_parameters, data.max_family_size, data.max_root_family_size);
 
-            my_executer.reconstruct(models, my_input_parameters, p_prior);
+            my_executer.reconstruct(models, my_input_parameters, data.max_family_size, p_prior);
 
             auto pvalues = compute_pvalues(data.max_family_size, data.max_root_family_size, 1000, data.p_lambda, data.gene_families, data.p_tree);
 
