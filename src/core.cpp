@@ -15,48 +15,40 @@
 #include "root_equilibrium_distribution.h"
 #include "reconstruction_process.h"
 
-std::vector<model *> build_models(const input_parameters& my_input_parameters, 
-    clade *p_tree, 
-    lambda *p_lambda, 
-    std::vector<gene_family>* p_gene_families, 
-    int max_family_size, 
+std::vector<model *> build_models(const input_parameters& my_input_parameters,
+    clade *p_tree,
+    lambda *p_lambda,
+    std::vector<gene_family>* p_gene_families,
+    int max_family_size,
     int max_root_family_size,
     error_model *p_error_model) {
-    std::vector<model *> models;
-    
-    /* If estimating or computing (-i; or -i + -l) and not simulating */
-    if (my_input_parameters.nsims == 0 && !my_input_parameters.input_file_path.empty()) {
-        
-        if (my_input_parameters.n_gamma_cats > 1)
-        {
-            auto model = new gamma_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size,
-                my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, NULL, p_error_model);
-            model->write_probabilities(cout);
-            models.push_back(model);
-        }
-        else
-        {
-            models.push_back(new base_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, NULL, p_error_model));
-        }
-    }
-    
-    /* If simulating (-s) */
-    else if (my_input_parameters.is_simulating()) {
-        if (my_input_parameters.rootdist.empty())
-        {
-            throw std::runtime_error("No root distribution specified"); // cannot simulate without a rootdist (TODO)
-        }
-        /* -f */
-        std::map<int, int> *p_rootdist_map = read_rootdist(my_input_parameters.rootdist); // in map form
 
-        // Either use base core or gamma core when simulating
-        if (my_input_parameters.n_gamma_cats > 1) { models.push_back(new gamma_model(p_lambda, p_tree, NULL, 
-            max_family_size, max_root_family_size, my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha,
-            p_rootdist_map, p_error_model)); }
-        else { models.push_back(new base_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_rootdist_map, p_error_model)); }
+    if (my_input_parameters.is_simulating() && my_input_parameters.rootdist.empty())
+    {
+        throw std::runtime_error("No root distribution specified"); // cannot simulate without a rootdist (TODO)
     }
 
-    return models;
+    std::map<int, int> *p_rootdist_map = NULL;
+    model *p_model = NULL;
+
+    if (my_input_parameters.is_simulating()) {
+        p_rootdist_map = read_rootdist(my_input_parameters.rootdist);
+        p_gene_families = NULL;
+    }
+
+    if (my_input_parameters.n_gamma_cats > 1)
+    {
+        auto gmodel = new gamma_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size,
+            my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, p_rootdist_map, p_error_model);
+        gmodel->write_probabilities(cout);
+        p_model = gmodel;
+    }
+    else
+    {
+        p_model = new base_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_rootdist_map, p_error_model);
+    }
+
+    return std::vector<model *>{p_model};
 }
 
 std::ostream& operator<<(std::ostream& ost, const family_info_stash& r)
