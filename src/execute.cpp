@@ -172,7 +172,7 @@ void execute::estimate_lambda(std::vector<model *>& models, std::vector<gene_fam
 
 /// Simulate
 /// \callgraph
-void execute::simulate(std::vector<model *>& models, const input_parameters &my_input_parameters)
+void simulator::simulate(std::vector<model *>& models, const input_parameters &my_input_parameters)
 {
     cout << "I will simulate with this many models: " << models.size() << endl;
 

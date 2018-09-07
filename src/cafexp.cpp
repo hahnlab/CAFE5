@@ -156,9 +156,9 @@ input_parameters read_arguments(int argc, char *const argv[])
     return my_input_parameters;
 }
 
-void show_pvalues(string values)
+void chisquare_compare::execute(std::vector<model *>&)
 {
-    vector<string> chistrings = tokenize_str(values, ',');
+    vector<string> chistrings = tokenize_str(_values, ',');
     vector<double> chis(chistrings.size());
 
     // transform is like R's apply (vector lambdas takes the outputs, here we are making doubles from strings
@@ -216,10 +216,44 @@ user_data read_datafiles(execute& my_executer, const input_parameters& my_input_
 
 void init_lgamma_cache();
 
+action* get_executor(input_parameters& user_input)
+{
+    if (!user_input.chisquare_compare.empty()) {
+        return new chisquare_compare(user_input.chisquare_compare);
+    }
+    if (user_input.is_simulating()) {
+        return new simulator(user_input);
+    }
+
+    return NULL;
+}
+
+void simulator::execute(std::vector<model *>& models)
+{
+    if (models.empty())
+        throw std::runtime_error("Not enough information to specify a model");
+
+    if (_user_input.rootdist.empty())
+    {
+        throw std::runtime_error("No root distribution specified"); // cannot simulate without a rootdist (TODO)
+    }
+
+    // -s is provided an argument (-f is not), using -i to obtain root eq freq distr'n
+    if (_user_input.nsims != 0) {
+        throw std::runtime_error("A specified number of simulations with a root distribution is not supported");
+        // place holder for estimating poisson lambda if -p, or using uniform as root eq freq distr'n
+    }
+
+    // -f is provided (-s does not have an argument), not using -i
+    else if (!_user_input.rootdist.empty()) {
+        cout << "Using -f, not using -i, nsims = " << _user_input.nsims << endl;
+        simulate(models, _user_input);
+    }
+}
+
 /// The main function. Evaluates arguments, calls processes
 /// \callgraph
 int cafexp(int argc, char *const argv[]) {
-    /* START: Option variables for main() */
     srand(10);
     map<int, int>* p_rootdist_map = NULL; // for sims
 
@@ -227,66 +261,47 @@ int cafexp(int argc, char *const argv[]) {
 
     execute my_executer;
     try {
-        input_parameters my_input_parameters = read_arguments(argc, argv);
+        input_parameters user_input = read_arguments(argc, argv);
 
-        /* -r */
-        if (!my_input_parameters.chisquare_compare.empty()) {
+        user_data data = read_datafiles(my_executer, user_input);
 
-            show_pvalues(my_input_parameters.chisquare_compare);
+        unique_ptr<root_equilibrium_distribution> p_prior(root_eq_dist_factory(user_input, &data.gene_families));
 
-            return 0;
-        }
-
-        user_data data = read_datafiles(my_executer, my_input_parameters);
-
-        root_equilibrium_distribution* p_prior = root_eq_dist_factory(my_input_parameters, &data.gene_families);
-        
         // When computing or simulating, only base or gamma model is used. When estimating, base and gamma model are used (to do: compare base and gamma w/ LRT)
         // Build model takes care of -f
-        vector<model *> models = build_models(my_input_parameters, data.p_tree, data.p_lambda, &data.gene_families, data.max_family_size, data.max_root_family_size, data.p_error_model);
-        
-        if (models.empty())
-            throw std::runtime_error("Not enough information to specify a model");
-        
-        /* -s */
-        if (my_input_parameters.is_simulating()) {
-            // -s is provided an argument (-f is not), using -i to obtain root eq freq distr'n
-            if (my_input_parameters.nsims != 0) {
-                throw std::runtime_error("A specified number of simulations with a root distribution is not supported");
-                // place holder for estimating poisson lambda if -p, or using uniform as root eq freq distr'n
-            }
+        vector<model *> models = build_models(user_input, data.p_tree, data.p_lambda, &data.gene_families, data.max_family_size, data.max_root_family_size, data.p_error_model);
 
-            // -f is provided (-s does not have an argument), not using -i
-            else if (!my_input_parameters.rootdist.empty()) {
-                cout << "Using -f, not using -i, nsims = " << my_input_parameters.nsims << endl;
-                my_executer.simulate(models, my_input_parameters);
-            }
+        unique_ptr<action> act(get_executor(user_input));
+        if (act)
+        {
+            act->execute(models);
         }
-        else {  // not simulating - calculate values
+
+        /* -s */
+        if (!user_input.is_simulating()) {
             if (data.p_lambda == NULL)
             {
-                my_executer.estimate_lambda(models, data.gene_families, data.p_error_model, data.p_tree, data.p_lambda_tree, p_prior);
+                my_executer.estimate_lambda(models, data.gene_families, data.p_error_model, data.p_tree, data.p_lambda_tree, p_prior.get());
                 data.p_lambda = models[0]->get_lambda();
             }
 
-            my_executer.compute(models, &data.gene_families, p_prior, my_input_parameters, data.max_family_size, data.max_root_family_size);
+            my_executer.compute(models, &data.gene_families, p_prior.get(), user_input, data.max_family_size, data.max_root_family_size);
 
-            my_executer.reconstruct(models, my_input_parameters, data.max_family_size, p_prior);
+            my_executer.reconstruct(models, user_input, data.max_family_size, p_prior.get());
 
             auto pvalues = compute_pvalues(data.max_family_size, data.max_root_family_size, 1000, data.p_lambda, data.gene_families, data.p_tree);
 
-            my_executer.write_results(models, my_input_parameters, pvalues);
+            my_executer.write_results(models, user_input, pvalues);
 
         }
-        delete p_prior;
 
 
         /* -g */
-        if (my_input_parameters.do_log) {
+        if (user_input.do_log) {
 
             string prob_matrix_suffix = "_tr_prob_matrices.txt";
-            string prob_matrix_file_name = my_input_parameters.output_prefix + prob_matrix_suffix;
-            std::ofstream ofst(my_input_parameters.output_prefix + prob_matrix_suffix);
+            string prob_matrix_file_name = user_input.output_prefix + prob_matrix_suffix;
+            std::ofstream ofst(user_input.output_prefix + prob_matrix_suffix);
         }
         /* END: Printing log file(s) */
 

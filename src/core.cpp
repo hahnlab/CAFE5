@@ -23,11 +23,6 @@ std::vector<model *> build_models(const input_parameters& my_input_parameters,
     int max_root_family_size,
     error_model *p_error_model) {
 
-    if (my_input_parameters.is_simulating() && my_input_parameters.rootdist.empty())
-    {
-        throw std::runtime_error("No root distribution specified"); // cannot simulate without a rootdist (TODO)
-    }
-
     std::map<int, int> *p_rootdist_map = NULL;
     model *p_model = NULL;
 

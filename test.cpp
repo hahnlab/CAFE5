@@ -14,6 +14,7 @@
 #include "src/gamma_bundle.h"
 #include "src/probability.h"
 #include "src/family_generator.h"
+#include "src/execute.h"
 
 TEST_GROUP(GeneFamilies)
 {
@@ -1207,6 +1208,16 @@ TEST(Simulation, random_familysize_setter_with_error_model)
     t[p_tree.get()] = 5;
     setter(b);
     LONGS_EQUAL(4, t[b]);
+}
+
+TEST(Simulation, executor)
+{
+    input_parameters params;
+    CHECK(!get_executor(params));
+
+    params.chisquare_compare = true;
+    unique_ptr<action> act(get_executor(params));
+    CHECK(dynamic_cast<const chisquare_compare *>(act.get()))
 }
 
 void init_lgamma_cache();
