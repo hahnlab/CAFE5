@@ -21,7 +21,8 @@ public:
         _p_tree(p_tree),
         _p_lambda(p_lambda),
         _p_model(p_model),
-        _p_distribution(p_distribution)
+        _p_distribution(p_distribution),
+        quiet(false)
     {
     }
 

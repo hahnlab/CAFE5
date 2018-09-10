@@ -15,6 +15,7 @@
 #include "src/probability.h"
 #include "src/family_generator.h"
 #include "src/execute.h"
+#include "src/user_data.h"
 
 TEST_GROUP(GeneFamilies)
 {
@@ -1213,11 +1214,13 @@ TEST(Simulation, random_familysize_setter_with_error_model)
 TEST(Simulation, executor)
 {
     input_parameters params;
-    CHECK(!get_executor(params));
+    user_data ud;
+    unique_ptr<action> act(get_executor(params, ud, NULL));
+    CHECK(dynamic_cast<const estimator *>(act.get()))
 
     params.chisquare_compare = true;
-    unique_ptr<action> act(get_executor(params));
-    CHECK(dynamic_cast<const chisquare_compare *>(act.get()))
+    unique_ptr<action> act2(get_executor(params, ud, NULL));
+    CHECK(dynamic_cast<const chisquare_compare *>(act2.get()))
 }
 
 void init_lgamma_cache();

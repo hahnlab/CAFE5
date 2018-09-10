@@ -1,80 +1,13 @@
 #include <getopt.h>
-#include <cmath>
 #include <map>
 
 #include "io.h"
 #include "execute.h"
-#include "utils.h"
-#include "clade.h"
-#include "probability.h"
-#include "family_generator.h"
-#include "fminsearch.h"
-#include "poisson.h"
-#include "core.h"
-#include "gamma.h"
-#include "fminsearch.h"
-#include "lambda.h"
-#include "gamma_core.h"
+#include "user_data.h"
 #include "root_equilibrium_distribution.h"
-#include "base_model.h"
-#include "chisquare.h"
-#include "matrix_cache.h"
+#include "core.h"
 
 using namespace std;
-
-double pvalue(double v, const vector<double>& conddist)
-{
-    int idx = conddist.size() - 1;
-
-    auto bound = std::upper_bound(conddist.begin(), conddist.end(), v);
-    if (bound != conddist.end())
-    {
-        idx = bound - conddist.begin();
-    }
-    return  idx / (double)conddist.size();
-}
-
-
-// find_fast_families under base model through simulations (if we reject gamma)
-vector<double> compute_pvalues(int max_family_size, int max_root_family_size, int number_of_simulations, lambda *p_lambda, vector<gene_family>& families, clade* p_tree)
-{
-    cout << "Computing pvalues..." << flush;
-
-    matrix_cache cache(max_family_size + 1);
-    branch_length_finder lengths;
-    p_tree->apply_prefix_order(lengths);
-    cache.precalculate_matrices(get_lambda_values(p_lambda), lengths.result());
-    
-    auto cd = get_conditional_distribution_matrix(p_tree, max_root_family_size, max_family_size, number_of_simulations, p_lambda, cache);
-
-    vector<double> result(families.size());
-    transform(families.begin(), families.end(), result.begin(), [max_family_size, p_lambda, p_tree, &cache, &cd](gene_family& gf)->double {
-		int max = gf.get_max_size();
-		double max_root_family_size = rint(max*1.25);
-
-        map<string, int> species_count;
-        for (auto& species : gf.get_species()) {
-            species_count[species] = gf.get_species_size(species);
-        }
-
-		likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, species_count, cache, NULL);
-		p_tree->apply_reverse_level_order(pruner);
-		auto lh = pruner.get_likelihoods(p_tree);
-
-		double observed_max_likelihood = pruner.max_likelihood(p_tree);	// max value but do we need a posteriori value instead?
-
-        vector<double> pvalues(max_root_family_size);
-		for (int s = 0; s < max_root_family_size; s++)
-		{
-			pvalues[s] = pvalue(observed_max_likelihood, cd.at(s));
-		}
-        return *max_element(pvalues.begin(), pvalues.end());
-    });
-
-    cout << "done!\n";
-
-    return result;
-}
 
 input_parameters read_arguments(int argc, char *const argv[])
 {
@@ -156,67 +89,9 @@ input_parameters read_arguments(int argc, char *const argv[])
     return my_input_parameters;
 }
 
-void chisquare_compare::execute(std::vector<model *>&)
-{
-    vector<string> chistrings = tokenize_str(_values, ',');
-    vector<double> chis(chistrings.size());
-
-    // transform is like R's apply (vector lambdas takes the outputs, here we are making doubles from strings
-    transform(chistrings.begin(), chistrings.end(), chis.begin(),
-        [](string const& val) { return stod(val); } // this is the equivalent of a Python's lambda function
-    );
-
-    double degrees_of_freedom = chis[2];
-    cout << "PValue = " << 1.0 - chi2cdf(2 * (chis[1] - chis[0]), degrees_of_freedom) << std::endl;
-}
-
-/// Class holding data defined by the user, or derived from data defined by the user
-struct user_data {
-    int max_family_size = -1; //!<  The maximum family size for which probabilities will be calculated
-    int max_root_family_size = -1; //!<  The maximum family size for which probabilities will be calculated at the root of the tree
-
-    clade *p_tree = NULL; // instead of new clade(), o.w. mem leak
-    lambda *p_lambda;
-    clade *p_lambda_tree = NULL;
-    error_model *p_error_model = NULL;
-    std::vector<gene_family> gene_families;
-};
-
-user_data read_datafiles(execute& my_executer, const input_parameters& my_input_parameters)
-{
-    user_data data;
-
-    /* -t */
-    if (!my_input_parameters.tree_file_path.empty()) {
-        data.p_tree = my_executer.read_input_tree(my_input_parameters); // populates p_tree (pointer to phylogenetic tree)
-    }
-
-    /* -i */
-    if (!my_input_parameters.input_file_path.empty()) {
-        // Populates (pointer to) vector of gene family instances, max_family_size and max_root_family_size (last two passed by reference)
-        my_executer.read_gene_family_data(my_input_parameters, data.max_family_size, data.max_root_family_size, data.p_tree, &data.gene_families);
-    }
-
-    /* -e */
-    if (!my_input_parameters.error_model_file_path.empty()) {
-        data.p_error_model = new error_model;
-        my_executer.read_error_model(my_input_parameters, data.p_error_model);
-    }
-
-    /* -y */
-    if (!my_input_parameters.lambda_tree_file_path.empty()) {
-        data.p_lambda_tree = my_executer.read_lambda_tree(my_input_parameters);
-    }
-
-    /* -l/-m (in the absence of -l, estimate) */
-    data.p_lambda = my_executer.read_lambda(my_input_parameters, data.p_lambda_tree);
-
-    return data;
-}
-
 void init_lgamma_cache();
 
-action* get_executor(input_parameters& user_input)
+action* get_executor(input_parameters& user_input, user_data& data, root_equilibrium_distribution *dist)
 {
     if (!user_input.chisquare_compare.empty()) {
         return new chisquare_compare(user_input.chisquare_compare);
@@ -224,31 +99,12 @@ action* get_executor(input_parameters& user_input)
     if (user_input.is_simulating()) {
         return new simulator(user_input);
     }
+    else
+    {
+        return new estimator(data, dist, user_input);
+    }
 
     return NULL;
-}
-
-void simulator::execute(std::vector<model *>& models)
-{
-    if (models.empty())
-        throw std::runtime_error("Not enough information to specify a model");
-
-    if (_user_input.rootdist.empty())
-    {
-        throw std::runtime_error("No root distribution specified"); // cannot simulate without a rootdist (TODO)
-    }
-
-    // -s is provided an argument (-f is not), using -i to obtain root eq freq distr'n
-    if (_user_input.nsims != 0) {
-        throw std::runtime_error("A specified number of simulations with a root distribution is not supported");
-        // place holder for estimating poisson lambda if -p, or using uniform as root eq freq distr'n
-    }
-
-    // -f is provided (-s does not have an argument), not using -i
-    else if (!_user_input.rootdist.empty()) {
-        cout << "Using -f, not using -i, nsims = " << _user_input.nsims << endl;
-        simulate(models, _user_input);
-    }
 }
 
 /// The main function. Evaluates arguments, calls processes
@@ -259,11 +115,11 @@ int cafexp(int argc, char *const argv[]) {
 
     init_lgamma_cache();
 
-    execute my_executer;
     try {
         input_parameters user_input = read_arguments(argc, argv);
 
-        user_data data = read_datafiles(my_executer, user_input);
+        user_data data;
+        data.read_datafiles(user_input);
 
         unique_ptr<root_equilibrium_distribution> p_prior(root_eq_dist_factory(user_input, &data.gene_families));
 
@@ -271,30 +127,11 @@ int cafexp(int argc, char *const argv[]) {
         // Build model takes care of -f
         vector<model *> models = build_models(user_input, data.p_tree, data.p_lambda, &data.gene_families, data.max_family_size, data.max_root_family_size, data.p_error_model);
 
-        unique_ptr<action> act(get_executor(user_input));
+        unique_ptr<action> act(get_executor(user_input, data, p_prior.get()));
         if (act)
         {
             act->execute(models);
         }
-
-        /* -s */
-        if (!user_input.is_simulating()) {
-            if (data.p_lambda == NULL)
-            {
-                my_executer.estimate_lambda(models, data.gene_families, data.p_error_model, data.p_tree, data.p_lambda_tree, p_prior.get());
-                data.p_lambda = models[0]->get_lambda();
-            }
-
-            my_executer.compute(models, &data.gene_families, p_prior.get(), user_input, data.max_family_size, data.max_root_family_size);
-
-            my_executer.reconstruct(models, user_input, data.max_family_size, p_prior.get());
-
-            auto pvalues = compute_pvalues(data.max_family_size, data.max_root_family_size, 1000, data.p_lambda, data.gene_families, data.p_tree);
-
-            my_executer.write_results(models, user_input, pvalues);
-
-        }
-
 
         /* -g */
         if (user_input.do_log) {

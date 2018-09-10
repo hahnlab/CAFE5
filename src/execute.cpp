@@ -12,97 +12,19 @@
 #include "chisquare.h"
 #include "matrix_cache.h"
 #include "base_model.h"
+#include "user_data.h"
 
 double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 24.01409824083091, -1.231739572450155, 1.208650973866179e-3,
 -5.395239384953e-6 };
 
 
-//! Read user provided gene family data (whose path is stored in input_parameters instance)
-/// @param[in] my_input_parameters Parsed parameters passed to the application
-/// @param[in] p_tree The tree to be used in calculations. Necessary for syncing tree data to gene family data
-/// @param[out] p_gene_families Parsed data in the gene family file specified by my_input_parameters
-/// @param[out] max_family_size Equal to the largest family size given in the file plus 20%, or plus 50 if the largest family size is more than 250
-/// @param[out] max_root_family_size Equal to 5/4 the size of the largest family size given in the file (with a minimum of 30)
-void execute::read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size, clade *p_tree, std::vector<gene_family> *p_gene_families) {
-    
-    ifstream input_file(my_input_parameters.input_file_path); 
-    if (!input_file.is_open())
-        throw std::runtime_error("Failed to open " + my_input_parameters.input_file_path + ". Exiting...");
-    
-    read_gene_families(input_file, p_tree, p_gene_families); // in io.cpp/io.h
-            
-    // Iterating over gene families to get max gene family size
-    for (std::vector<gene_family>::iterator it = p_gene_families->begin(); it != p_gene_families->end(); ++it) {
-        int this_family_max_size = it->get_max_size();
-            
-        if (max_family_size < this_family_max_size)
-            max_family_size = this_family_max_size;
-    }
-
-    max_root_family_size = std::max(30, static_cast<int>(std::rint(max_family_size*1.25)));
-    max_family_size = max_family_size + std::max(50, max_family_size/5);
-    // cout << "Read input file " << my_input_parameters.input_file_path << "." << endl;
-    // cout << "Max (parsed) family size is: " << max_family_size << endl;
-    // cout << "Max root family size is: " << max_root_family_size << endl;
-}
-
-//! Read user provided error model file (whose path is stored in input_parameters instance)
-void execute::read_error_model(const input_parameters &my_input_parameters, error_model *p_error_model) {
-    
-    ifstream error_model_file(my_input_parameters.error_model_file_path); 
-    if (!error_model_file.is_open()) {
-        throw std::runtime_error("Failed to open " + my_input_parameters.error_model_file_path + ". Exiting...");
-    }
-
-    read_error_model_file(error_model_file, p_error_model);
-    
-} // GOTTA WRITE THIS!
-
-//! Read user provided phylogenetic tree (whose path is stored in input_parameters instance)
-clade * execute::read_input_tree(const input_parameters &my_input_parameters) {    
-    return read_tree(my_input_parameters.tree_file_path, false);
-}
-
-//! Read user provided lambda tree (lambda structure)
-clade * execute::read_lambda_tree(const input_parameters &my_input_parameters) {
-        return read_tree(my_input_parameters.lambda_tree_file_path, true);
-}
-
-//! Read user provided single or multiple lambdas
-lambda * execute::read_lambda(const input_parameters &my_input_parameters, clade *p_lambda_tree) {
-      
-    lambda *p_lambda = NULL; // lambda is an abstract class, and so we can only instantiate it as single_lambda or multiple lambda -- therefore initializing it to NULL
-        
-    // -l
-    if (my_input_parameters.fixed_lambda > 0.0) {
-        p_lambda = new single_lambda(my_input_parameters.fixed_lambda);
-        // call_viterbi(max_family_size, max_root_family_size, 15, p_lambda, *p_gene_families, p_tree);
-    }
-    
-    // -m
-    if (!my_input_parameters.fixed_multiple_lambdas.empty()) {       
-        map<std::string, int> node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map(); // allows matching different lambda values to nodes in lambda tree
-        vector<string> lambdastrings = tokenize_str(my_input_parameters.fixed_multiple_lambdas, ',');
-	vector<double> lambdas(lambdastrings.size());
-
-        // transform is like R's apply (vector lambdas takes the outputs, here we are making doubles from strings
-        transform(lambdastrings.begin(), lambdastrings.end(), lambdas.begin(),
-                [](string const& val) { return stod(val); } // this is the equivalent of a Python's lambda function
-                );
-        
-        p_lambda = new multiple_lambda(node_name_to_lambda_index, lambdas);
-    }
-    
-    return p_lambda;
-} 
-
 std::string filename(std::string base, std::string suffix)
 {
     return base + (suffix.empty() ? "" : "_") + suffix + ".txt";
 }
 
-void execute::compute(std::vector<model *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
+void estimator::compute(std::vector<model *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
 {
     std::ofstream results_file(filename("results", my_input_parameters.output_prefix));
 
@@ -133,7 +55,7 @@ bool compare_result(const optimizer::result& a, const optimizer::result& b)
     return a.score < b.score;
 }
 
-void execute::estimate_lambda(std::vector<model *>& models, std::vector<gene_family> &gene_families, error_model *p_error_model, clade *p_tree, clade *p_lambda_tree, root_equilibrium_distribution *p_prior)
+void estimator::estimate_lambda(std::vector<model *>& models, std::vector<gene_family> &gene_families, error_model *p_error_model, clade *p_tree, clade *p_lambda_tree, root_equilibrium_distribution *p_prior)
 {
     if (p_tree == NULL)
     {
@@ -170,6 +92,136 @@ void execute::estimate_lambda(std::vector<model *>& models, std::vector<gene_fam
 
 }
 
+void estimator::reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, int max_family_size, root_equilibrium_distribution *p_prior)
+{
+    matrix_cache cache(max_family_size + 1);
+    for (model* p_model : models) {
+        p_model->reconstruct_ancestral_states(&cache, p_prior);
+    }
+}
+
+void estimator::write_results(std::vector<model *>& models, const input_parameters &my_input_parameters, std::vector<double>& pvalues)
+{
+    for (model* p_model : models) {
+        std::ofstream ofst(filename(p_model->name() + "_asr", my_input_parameters.output_prefix));
+        p_model->print_reconstructed_states(ofst);
+
+        std::ofstream family_results(filename(p_model->name() + "_family_results", my_input_parameters.output_prefix));
+        p_model->print_increases_decreases_by_family(family_results, pvalues);
+
+        std::ofstream clade_results(filename(p_model->name() + "_clade_results", my_input_parameters.output_prefix));
+        p_model->print_increases_decreases_by_clade(clade_results);
+    }
+}
+
+void estimator::execute(std::vector<model *>& models)
+{
+    if (data.p_lambda == NULL)
+    {
+        estimate_lambda(models, data.gene_families, data.p_error_model, data.p_tree, data.p_lambda_tree, p_prior);
+        data.p_lambda = models[0]->get_lambda();
+    }
+
+    compute(models, &data.gene_families, p_prior, _user_input, data.max_family_size, data.max_root_family_size);
+
+    reconstruct(models, _user_input, data.max_family_size, p_prior);
+
+    auto pvalues = compute_pvalues(data.max_family_size, data.max_root_family_size, 1000, data.p_lambda, data.gene_families, data.p_tree);
+
+    write_results(models, _user_input, pvalues);
+
+}
+
+double pvalue(double v, const vector<double>& conddist)
+{
+    int idx = conddist.size() - 1;
+
+    auto bound = std::upper_bound(conddist.begin(), conddist.end(), v);
+    if (bound != conddist.end())
+    {
+        idx = bound - conddist.begin();
+    }
+    return  idx / (double)conddist.size();
+}
+
+// find_fast_families under base model through simulations (if we reject gamma)
+vector<double> estimator::compute_pvalues(int max_family_size, int max_root_family_size, int number_of_simulations, lambda *p_lambda, vector<gene_family>& families, clade* p_tree)
+{
+    cout << "Computing pvalues..." << flush;
+
+    matrix_cache cache(max_family_size + 1);
+    branch_length_finder lengths;
+    p_tree->apply_prefix_order(lengths);
+    cache.precalculate_matrices(get_lambda_values(p_lambda), lengths.result());
+
+    auto cd = get_conditional_distribution_matrix(p_tree, max_root_family_size, max_family_size, number_of_simulations, p_lambda, cache);
+
+    vector<double> result(families.size());
+    transform(families.begin(), families.end(), result.begin(), [max_family_size, p_lambda, p_tree, &cache, &cd](gene_family& gf)->double {
+        int max = gf.get_max_size();
+        double max_root_family_size = rint(max*1.25);
+
+        map<string, int> species_count;
+        for (auto& species : gf.get_species()) {
+            species_count[species] = gf.get_species_size(species);
+        }
+
+        likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, species_count, cache, NULL);
+        p_tree->apply_reverse_level_order(pruner);
+        auto lh = pruner.get_likelihoods(p_tree);
+
+        double observed_max_likelihood = pruner.max_likelihood(p_tree);	// max value but do we need a posteriori value instead?
+
+        vector<double> pvalues(max_root_family_size);
+        for (int s = 0; s < max_root_family_size; s++)
+        {
+            pvalues[s] = pvalue(observed_max_likelihood, cd.at(s));
+        }
+        return *max_element(pvalues.begin(), pvalues.end());
+    });
+
+    cout << "done!\n";
+
+    return result;
+}
+
+void chisquare_compare::execute(std::vector<model *>&)
+{
+    vector<string> chistrings = tokenize_str(_values, ',');
+    vector<double> chis(chistrings.size());
+
+    // transform is like R's apply (vector lambdas takes the outputs, here we are making doubles from strings
+    transform(chistrings.begin(), chistrings.end(), chis.begin(),
+        [](string const& val) { return stod(val); } // this is the equivalent of a Python's lambda function
+    );
+
+    double degrees_of_freedom = chis[2];
+    cout << "PValue = " << 1.0 - chi2cdf(2 * (chis[1] - chis[0]), degrees_of_freedom) << std::endl;
+}
+
+void simulator::execute(std::vector<model *>& models)
+{
+    if (models.empty())
+        throw std::runtime_error("Not enough information to specify a model");
+
+    if (_user_input.rootdist.empty())
+    {
+        throw std::runtime_error("No root distribution specified"); // cannot simulate without a rootdist (TODO)
+    }
+
+    // -s is provided an argument (-f is not), using -i to obtain root eq freq distr'n
+    if (_user_input.nsims != 0) {
+        throw std::runtime_error("A specified number of simulations with a root distribution is not supported");
+        // place holder for estimating poisson lambda if -p, or using uniform as root eq freq distr'n
+    }
+
+    // -f is provided (-s does not have an argument), not using -i
+    else if (!_user_input.rootdist.empty()) {
+        cout << "Using -f, not using -i, nsims = " << _user_input.nsims << endl;
+        simulate(models, _user_input);
+    }
+}
+
 /// Simulate
 /// \callgraph
 void simulator::simulate(std::vector<model *>& models, const input_parameters &my_input_parameters)
@@ -187,31 +239,10 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
         cerr << "Simulating " << models[i]->get_total_n_families_sim() << " families" << endl;
 
         models[i]->start_sim_processes();
-        
+
         std::ofstream ofst(filename("simulation", my_input_parameters.output_prefix));
         models[i]->simulate_processes();
         models[i]->print_processes(ofst);
     }
 }
 
-void execute::reconstruct(std::vector<model *>& models, const input_parameters &my_input_parameters, int max_family_size, root_equilibrium_distribution *p_prior)
-{
-    matrix_cache cache(max_family_size + 1);
-    for (model* p_model : models) {
-        p_model->reconstruct_ancestral_states(&cache, p_prior);
-    }
-}
-
-void execute::write_results(std::vector<model *>& models, const input_parameters &my_input_parameters, std::vector<double>& pvalues)
-{
-    for (model* p_model : models) {
-        std::ofstream ofst(filename(p_model->name() + "_asr", my_input_parameters.output_prefix));
-        p_model->print_reconstructed_states(ofst);
-
-        std::ofstream family_results(filename(p_model->name() + "_family_results", my_input_parameters.output_prefix));
-        p_model->print_increases_decreases_by_family(family_results, pvalues);
-
-        std::ofstream clade_results(filename(p_model->name() + "_clade_results", my_input_parameters.output_prefix));
-        p_model->print_increases_decreases_by_clade(clade_results);
-    }
-}
