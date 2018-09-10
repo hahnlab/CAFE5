@@ -217,7 +217,6 @@ void simulator::execute(std::vector<model *>& models)
 
     // -f is provided (-s does not have an argument), not using -i
     else if (!_user_input.rootdist.empty()) {
-        cout << "Using -f, not using -i, nsims = " << _user_input.nsims << endl;
         simulate(models, _user_input);
     }
 }
@@ -226,22 +225,23 @@ void simulator::execute(std::vector<model *>& models)
 /// \callgraph
 void simulator::simulate(std::vector<model *>& models, const input_parameters &my_input_parameters)
 {
-    cout << "I will simulate with this many models: " << models.size() << endl;
+    cout << "Simulating with " << models.size() << " model(s)" << endl;
 
     for (int i = 0; i < models.size(); ++i) {
 
-        cout << "Simulating for model " << models[i]->name() << endl;
+        cout << "Simulating " << models[i]->get_total_n_families_sim() << " families for model " << models[i]->name() << endl;
 
         // lambda_multipliers and lambda_bins will not be harcoded in the future
         if (my_input_parameters.rootdist.empty())
             models[i]->set_total_n_families_sim(my_input_parameters.nsims);
 
-        cerr << "Simulating " << models[i]->get_total_n_families_sim() << " families" << endl;
-
         models[i]->start_sim_processes();
 
-        std::ofstream ofst(filename("simulation", my_input_parameters.output_prefix));
         models[i]->simulate_processes();
+
+        string fname = filename("simulation", my_input_parameters.output_prefix);
+        std::ofstream ofst(fname);
+        cout << "Writing to " << fname << endl;
         models[i]->print_processes(ofst);
     }
 }

@@ -14,33 +14,28 @@
 #include "poisson.h"
 #include "root_equilibrium_distribution.h"
 #include "reconstruction_process.h"
+#include "user_data.h"
 
-std::vector<model *> build_models(const input_parameters& my_input_parameters,
-    clade *p_tree,
-    lambda *p_lambda,
-    std::vector<gene_family>* p_gene_families,
-    int max_family_size,
-    int max_root_family_size,
-    error_model *p_error_model) {
+std::vector<model *> build_models(const input_parameters& my_input_parameters, user_data& user_data) {
 
-    std::map<int, int> *p_rootdist_map = NULL;
     model *p_model = NULL;
 
-    if (my_input_parameters.is_simulating()) {
-        p_rootdist_map = read_rootdist(my_input_parameters.rootdist);
+    std::vector<gene_family> *p_gene_families = &user_data.gene_families;
+
+    if (my_input_parameters.is_simulating) {
         p_gene_families = NULL;
     }
 
     if (my_input_parameters.n_gamma_cats > 1)
     {
-        auto gmodel = new gamma_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size,
-            my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, p_rootdist_map, p_error_model);
+        auto gmodel = new gamma_model(user_data.p_lambda, user_data.p_tree, &user_data.gene_families, user_data.max_family_size, user_data.max_root_family_size,
+            my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, &user_data.rootdist, user_data.p_error_model);
         gmodel->write_probabilities(cout);
         p_model = gmodel;
     }
     else
     {
-        p_model = new base_model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_rootdist_map, p_error_model);
+        p_model = new base_model(user_data.p_lambda, user_data.p_tree, p_gene_families, user_data.max_family_size, user_data.max_root_family_size, &user_data.rootdist, user_data.p_error_model);
     }
 
     return std::vector<model *>{p_model};

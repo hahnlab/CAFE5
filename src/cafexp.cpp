@@ -43,6 +43,7 @@ input_parameters read_arguments(int argc, char *const argv[])
             break;
         case 's':
             // Number of fams simulated defaults to 0 if -f is not provided
+            my_input_parameters.is_simulating = true;
             if (optarg != NULL) { my_input_parameters.nsims = atoi(optarg); }
             break;
         case 'l':
@@ -96,7 +97,7 @@ action* get_executor(input_parameters& user_input, user_data& data, root_equilib
     if (!user_input.chisquare_compare.empty()) {
         return new chisquare_compare(user_input.chisquare_compare);
     }
-    if (user_input.is_simulating()) {
+    if (user_input.is_simulating) {
         return new simulator(user_input);
     }
     else
@@ -125,7 +126,7 @@ int cafexp(int argc, char *const argv[]) {
 
         // When computing or simulating, only base or gamma model is used. When estimating, base and gamma model are used (to do: compare base and gamma w/ LRT)
         // Build model takes care of -f
-        vector<model *> models = build_models(user_input, data.p_tree, data.p_lambda, &data.gene_families, data.max_family_size, data.max_root_family_size, data.p_error_model);
+        vector<model *> models = build_models(user_input, data);
 
         unique_ptr<action> act(get_executor(user_input, data, p_prior.get()));
         if (act)

@@ -31,11 +31,6 @@ struct option longopts[] = {
   { 0, 0, 0, 0 }
 };
 
-bool input_parameters::is_simulating() const
-{
-    return nsims != 0 || !rootdist.empty();
-}
-
 void input_parameters::check_input() {
     //! Options -l and -m cannot both specified.
     if (fixed_lambda > 0.0 && !fixed_multiple_lambdas.empty()) {
@@ -372,27 +367,6 @@ void read_error_model_file(std::istream& error_model_file, error_model *p_error_
         // std::vector<std::string> tokens = tokenize_str(line, '\t'); 
 }
 /* END: Reading in error model data */
-
-//! Populate famdist_map with root family distribution read from famdist_file_path
-/*!
-  This function is called by CAFExp's main function when "--simulate"/"-s" is specified 
-*/
-map<int, int>* read_rootdist(string rootdist_file_path) {
-
-    map<int, int> *p_rootdist_map = new map<int, int>();
-    ifstream rootdist_file(rootdist_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
-    if (!rootdist_file.is_open())
-        throw std::runtime_error("Failed to open file '" + rootdist_file_path + "'");
-    string line;
-    while (getline(rootdist_file, line)) {
-        istringstream ist(line);
-        int fam_size, fam_count;
-        ist >> fam_size >> fam_count;
-        (*p_rootdist_map)[fam_size] = fam_count;
-    }
-  
-  return p_rootdist_map;
-}
 
 /* START: Printing functions for simulation engine */
 //! Print simulations from provided root family distribution

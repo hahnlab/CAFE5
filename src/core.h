@@ -9,6 +9,7 @@
 class simulation_process;
 class inference_process;
 class reconstruction_process;
+class user_data;
 
 struct family_info_stash {
     family_info_stash() : family_id(0), lambda_multiplier(0.0), category_likelihood(0.0), family_likelihood(0.0), 
@@ -141,13 +142,7 @@ struct increase_decrease
 };
 
 
-std::vector<model *> build_models(const input_parameters& my_input_parameters, 
-    clade *p_tree, 
-    lambda *p_lambda, 
-    std::vector<gene_family>* p_gene_families, 
-    int max_family_size, 
-    int max_root_family_size,
-    error_model *p_error_model);
+std::vector<model *> build_models(const input_parameters& my_input_parameters, user_data& user_data);
 
 template <class T>
 void print_increases_decreases_by_family(std::ostream& ost, const std::vector<T>& printables, const std::vector<double>& pvalues)

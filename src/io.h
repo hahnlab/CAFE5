@@ -43,6 +43,7 @@ public:
     double fixed_lambda = 0.0;
     double fixed_alpha = 0.0;
     double poisson_lambda = 0.0;
+    bool is_simulating = false;
     int nsims = 0;
     int n_gamma_cats = 1;
     bool do_log = false;
@@ -50,7 +51,6 @@ public:
 
     //! Check calls
     void check_input();
-    bool is_simulating() const;
 };
 
 /* START: Reading in gene family data */
