@@ -171,12 +171,7 @@ double pvalue_calculator::operator()(const gene_family& gf)
 {
     int max = gf.get_max_size();
 
-    map<string, int> species_count;
-    for (auto& species : gf.get_species()) {
-        species_count[species] = gf.get_species_size(species);
-    }
-
-    likelihood_computer pruner(_max_root_family_size, _max_family_size, _p_lambda, species_count, *_p_matrix_cache, NULL);
+    likelihood_computer pruner(_max_root_family_size, _max_family_size, _p_lambda, gf, *_p_matrix_cache, NULL);
     _p_tree->apply_reverse_level_order(pruner);
     auto lh = pruner.get_likelihoods(_p_tree);
 

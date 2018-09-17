@@ -537,24 +537,8 @@ TEST(Inference, create_one_model_if_lambda_is_null)
 {
     input_parameters params;
     params.input_file_path = "foo";
-    clade c;
-    single_lambda lambda(0.02);
-    vector<gene_family> fams;
-    auto models = build_models(params, &c, &lambda, &fams, 10, 10, NULL);
-    LONGS_EQUAL(1, models.size());
-    CHECK(dynamic_cast<base_model *>(models[0]));
-    for (auto m : models)
-        delete m;
-}
-
-TEST(Inference, build_models_sets_error_model)
-{
-    input_parameters params;
-    params.input_file_path = "foo";
-    clade c;
-    single_lambda lambda(0.02);
-    vector<gene_family> fams;
-    auto models = build_models(params, &c, &lambda, &fams, 10, 10, NULL);
+    user_data data;
+    auto models = build_models(params, data);
     LONGS_EQUAL(1, models.size());
     CHECK(dynamic_cast<base_model *>(models[0]));
     for (auto m : models)
@@ -785,16 +769,16 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_correctly)
     ostringstream ost;
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:3):7";
-    map<string, int> species_count;
-    species_count["A"] = 3;
-    species_count["B"] = 6;
+    gene_family family;
+    family.set_species_size("A", 3);
+    family.set_species_size("B", 6);
 
     unique_ptr<clade> p_tree(parser.parse_newick());
 
     single_lambda lambda(0.03);
 
     matrix_cache cache(21);
-    likelihood_computer pruner(20, 20, &lambda, species_count, cache, NULL);
+    likelihood_computer pruner(20, 20, &lambda, family, cache, NULL);
     cache.precalculate_matrices({ 0.045 }, { 1.0,3.0,7.0 });
 
     clade *A = p_tree->find_descendant("A");
@@ -827,16 +811,16 @@ TEST(Inference, likelihood_computer_sets_root_nodes_correctly)
     ostringstream ost;
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:3):7";
-    map<string, int> species_count;
-    species_count["A"] = 3;
-    species_count["B"] = 6;
+    gene_family family;
+    family.set_species_size("A", 3);
+    family.set_species_size("B", 6);
 
     unique_ptr<clade> p_tree(parser.parse_newick());
 
     single_lambda lambda(0.03);
 
     matrix_cache cache(21);
-    likelihood_computer pruner(20, 20, &lambda, species_count, cache, NULL);
+    likelihood_computer pruner(20, 20, &lambda, family, cache, NULL);
     cache.precalculate_matrices({ 0.03 }, { 1.0,3.0,7.0 });
 
     clade *AB = p_tree->find_descendant("AB");
@@ -873,9 +857,10 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_from_error_model_if_provided
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:3):7";
 
-    map<string, int> species_count;
-    species_count["A"] = 3;
-    species_count["B"] = 6;
+    gene_family family;
+    family.set_species_size("A", 3);
+    family.set_species_size("B", 6);
+
     unique_ptr<clade> p_tree(parser.parse_newick());
 
     single_lambda lambda(0.03);
@@ -890,7 +875,7 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_from_error_model_if_provided
     error_model model;
     read_error_model_file(ist, &model);
 
-    likelihood_computer pruner(20, 20, &lambda, species_count, cache, &model);
+    likelihood_computer pruner(20, 20, &lambda, family, cache, &model);
 
     clade *A = p_tree->find_descendant("A");
     pruner(A);

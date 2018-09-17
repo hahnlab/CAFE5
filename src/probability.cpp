@@ -130,7 +130,8 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 */
 void likelihood_computer::operator()(clade *node) {
     if (node->is_leaf()) {
-        int species_size = _species_count[node->get_taxon_name()];
+        int species_size = _gene_family.get_species_size(node->get_taxon_name());
+
         _probabilities[node].resize(_max_parsed_family_size + 1); // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
         if (_p_error_model != NULL)
         {
@@ -219,11 +220,11 @@ std::vector<double> get_random_probabilities(clade *p_tree, int number_of_simula
 #pragma omp parallel for
     for (size_t i = 0; i<simulation.size(); ++i)
 	{
-        map<string, int> species_count;
+        gene_family species_count;
         for (auto& it : *simulation[i]) {
             if (it.first->is_leaf()) 
             { 
-                species_count[it.first->get_taxon_name()] = it.second; 
+                species_count.set_species_size(it.first->get_taxon_name(), it.second);
             }
         }
 		likelihood_computer pruner(root_family_size, max_family_size, p_lambda, species_count, cache, NULL);
