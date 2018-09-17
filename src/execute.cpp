@@ -144,6 +144,52 @@ double pvalue(double v, const vector<double>& conddist)
     return  idx / (double)conddist.size();
 }
 
+class pvalue_calculator
+{
+    int _max_family_size;
+    int _max_root_family_size;
+    lambda *_p_lambda; 
+    clade* _p_tree;
+    matrix_cache *_p_matrix_cache;
+    std::vector<std::vector<double> >* _p_conditional_distribution;
+public:
+    pvalue_calculator(int max_family_size, int max_root_family_size, lambda *p_lambda, clade* p_tree, matrix_cache *p_matrix_cache, std::vector<std::vector<double> >* p_conditional_distribution) :
+        _max_family_size(max_family_size), 
+        _max_root_family_size(max_root_family_size),
+        _p_lambda(p_lambda),
+        _p_tree(p_tree),
+        _p_matrix_cache(p_matrix_cache),
+        _p_conditional_distribution(p_conditional_distribution)
+    {
+
+    }
+
+    double operator()(const gene_family& gf);
+};
+
+double pvalue_calculator::operator()(const gene_family& gf)
+{
+    int max = gf.get_max_size();
+
+    map<string, int> species_count;
+    for (auto& species : gf.get_species()) {
+        species_count[species] = gf.get_species_size(species);
+    }
+
+    likelihood_computer pruner(_max_root_family_size, _max_family_size, _p_lambda, species_count, *_p_matrix_cache, NULL);
+    _p_tree->apply_reverse_level_order(pruner);
+    auto lh = pruner.get_likelihoods(_p_tree);
+
+    double observed_max_likelihood = pruner.max_likelihood(_p_tree);	// max value but do we need a posteriori value instead?
+
+    vector<double> pvalues(_max_root_family_size);
+    for (int s = 0; s < _max_root_family_size; s++)
+    {
+        pvalues[s] = pvalue(observed_max_likelihood, _p_conditional_distribution->at(s));
+    }
+    return *max_element(pvalues.begin(), pvalues.end());
+}
+
 // find_fast_families under base model through simulations (if we reject gamma)
 vector<double> estimator::compute_pvalues(int max_family_size, int max_root_family_size, int number_of_simulations, lambda *p_lambda, vector<gene_family>& families, clade* p_tree)
 {
@@ -157,28 +203,9 @@ vector<double> estimator::compute_pvalues(int max_family_size, int max_root_fami
     auto cd = get_conditional_distribution_matrix(p_tree, max_root_family_size, max_family_size, number_of_simulations, p_lambda, cache);
 
     vector<double> result(families.size());
-    transform(families.begin(), families.end(), result.begin(), [max_family_size, p_lambda, p_tree, &cache, &cd](gene_family& gf)->double {
-        int max = gf.get_max_size();
-        double max_root_family_size = rint(max*1.25);
 
-        map<string, int> species_count;
-        for (auto& species : gf.get_species()) {
-            species_count[species] = gf.get_species_size(species);
-        }
-
-        likelihood_computer pruner(max_root_family_size, max_family_size, p_lambda, species_count, cache, NULL);
-        p_tree->apply_reverse_level_order(pruner);
-        auto lh = pruner.get_likelihoods(p_tree);
-
-        double observed_max_likelihood = pruner.max_likelihood(p_tree);	// max value but do we need a posteriori value instead?
-
-        vector<double> pvalues(max_root_family_size);
-        for (int s = 0; s < max_root_family_size; s++)
-        {
-            pvalues[s] = pvalue(observed_max_likelihood, cd.at(s));
-        }
-        return *max_element(pvalues.begin(), pvalues.end());
-    });
+    pvalue_calculator calculator(max_family_size, max_root_family_size, p_lambda, p_tree, &cache, &cd);
+    transform(families.begin(), families.end(), result.begin(), calculator);
 
     cout << "done!\n";
 
