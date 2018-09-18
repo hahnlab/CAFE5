@@ -29,7 +29,7 @@ class branch_length_finder
 {
     std::set<double> _result;
 public:
-    void operator()(clade *c);
+    void operator()(const clade *c);
 
     std::set<double> result() const
     {
@@ -181,7 +181,7 @@ void print_increases_decreases_by_clade(std::ostream& ost, const std::vector<T>&
     auto rec = printables[0];
     auto order = rec->get_taxa();
 
-    map<clade *, pair<int, int>> increase_decrease_map;
+    clademap<pair<int, int>> increase_decrease_map;
 
     for (auto item : printables) {
         auto incdec = item->get_increases_decreases(order, 0.0);

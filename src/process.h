@@ -13,7 +13,7 @@ class root_equilibrium_distribution;
 class child_multiplier;
 class error_model;
 
-typedef std::map<clade *, int> trial;
+typedef std::map<const clade *, int> trial;
 
 class process {
 protected:

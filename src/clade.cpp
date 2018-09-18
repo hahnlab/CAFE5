@@ -1,7 +1,9 @@
-#include "io.h"
 #include "clade.h"
+
 #include "utils.h"
-#include <queue>
+#include "io.h"
+
+using namespace std;
 
 /* Recursive destructor */
 clade::~clade() {
@@ -78,7 +80,7 @@ vector<clade*> clade::find_internal_nodes() {
 
 
   /* Recursively find pointer to clade with provided taxon name */
-clade *clade::find_descendant(string some_taxon_name) {
+const clade *clade::find_descendant(string some_taxon_name) {
   descendant_finder finder(some_taxon_name);
   apply_prefix_order(finder);
   return finder.get_result();
@@ -106,7 +108,7 @@ clade *clade::find_descendant(string some_taxon_name) {
 /* Finds branch length of clade with provided taxon name. Does so by calling find_descendant(), which recursively searches the tree */
 double clade::find_branch_length(string some_taxon_name) {
 
-  clade *clade = find_descendant(some_taxon_name);
+  auto clade = find_descendant(some_taxon_name);
   if (clade == NULL || clade->is_root()) { return 0; } // guarding against root query
 
   cout << "Found matching clade" << endl;
@@ -199,7 +201,7 @@ class named_lambda_index_getter
 {
 public:
 	std::map<std::string, int> node_name_to_lambda_index;
-	void operator()(clade *c)
+	void operator()(const clade *c)
 	{
 		node_name_to_lambda_index[c->get_taxon_name()] = c->get_lambda_index()-1; // -1 is to adjust the index offset
 	}

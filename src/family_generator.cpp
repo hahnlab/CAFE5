@@ -17,7 +17,7 @@ std::uniform_real_distribution<> dis(0, 1); // draw random number from uniform d
 
   The birth-death probability calculations are done using a class (probability_calculator defined in probability.h.
 */
-void random_familysize_setter::operator()(clade *node) {
+void random_familysize_setter::operator()(const clade *node) {
 
     if (node->is_root()) { return; } // if node is root, we do nothing
 
@@ -69,7 +69,7 @@ void random_familysize_setter::operator()(clade *node) {
   Given a root gene family size, a lambda, simulates gene family counts for all nodes in the tree just once.
   Returns a trial, key = pointer to node, value = gene family size
 */
-trial * simulate_family_from_root_size(clade *tree, int root_family_size, int max_family_size, lambda * p_lambda, error_model *p_error_model) {
+trial * simulate_family_from_root_size(const clade *tree, int root_family_size, int max_family_size, lambda * p_lambda, error_model *p_error_model) {
     if (tree == NULL)
         throw runtime_error("No tree specified for simulation");
 
@@ -87,7 +87,7 @@ trial * simulate_family_from_root_size(clade *tree, int root_family_size, int ma
   Given a root gene family size, a lambda, and the number of trials, simulates gene family counts for all nodes in the tree (once per trial).
   Returns family_sizes map (= trial), key = pointer to node, value = gene family size
 */
-vector<trial *> simulate_families_from_root_size(clade *tree, int num_trials, int root_family_size, int max_family_size, lambda* p_lambda, error_model *p_error_model) {
+vector<trial *> simulate_families_from_root_size(const clade *tree, int num_trials, int root_family_size, int max_family_size, lambda* p_lambda, error_model *p_error_model) {
 
     vector<trial *> result(num_trials);
     generate(result.begin(), result.end(), [] { return new trial; });

@@ -24,7 +24,7 @@ public:
     virtual void update(double* values) = 0;
     virtual int count() const = 0;
     virtual std::string to_string() const = 0;
-    virtual double get_value_for_clade(clade *c) const = 0;
+    virtual double get_value_for_clade(const clade *c) const = 0;
     virtual bool is_valid() = 0;
     virtual lambda* clone() const = 0;
 };
@@ -49,7 +49,7 @@ public:
         return 1;
     }
     virtual std::string to_string() const;
-    virtual double get_value_for_clade(clade *c) const {
+    virtual double get_value_for_clade(const clade *c) const {
         return _lambda;
     }
     virtual bool is_valid() {
@@ -84,7 +84,7 @@ public:
         return _lambdas.size();
     }
     virtual std::string to_string() const;
-    virtual double get_value_for_clade(clade *c) const;
+    virtual double get_value_for_clade(const clade *c) const;
     virtual bool is_valid();
 
     std::vector<double> get_lambdas() const {

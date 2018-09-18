@@ -43,7 +43,7 @@ class estimator : public action
 {
     user_data& data;
     root_equilibrium_distribution *p_prior;
-    vector<double> compute_pvalues(int max_family_size, int max_root_family_size, int number_of_simulations, lambda *p_lambda, vector<gene_family>& families, clade* p_tree);
+    vector<double> compute_pvalues(int max_family_size, int max_root_family_size, int number_of_simulations, lambda *p_lambda, const vector<gene_family>& families, const clade* p_tree);
     const input_parameters &_user_input;
 public:
     estimator(user_data& d, root_equilibrium_distribution *dist, const input_parameters& ui) : data(d), p_prior(dist), _user_input(ui)

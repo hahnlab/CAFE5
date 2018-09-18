@@ -66,7 +66,7 @@ bool multiple_lambda::is_valid()
     return std::none_of(_lambdas.begin(), _lambdas.end(), [](double d) { return d < 0; });
 }
 
-double multiple_lambda::get_value_for_clade(clade *c) const {
+double multiple_lambda::get_value_for_clade(const clade *c) const {
     int index = _node_name_to_lambda_index.at(c->get_taxon_name());
     return _lambdas[index];
 }

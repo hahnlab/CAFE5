@@ -157,7 +157,7 @@ void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gen
                 if (taxon_name.back() == '\r')
                     taxon_name.pop_back();
 
-                clade *p_descendant = p_tree->find_descendant(taxon_name); // Searches (from root down) and grabs clade "taxon_name" root
+                auto p_descendant = p_tree->find_descendant(taxon_name); // Searches (from root down) and grabs clade "taxon_name" root
                 
                 if (p_descendant == NULL) { throw std::runtime_error(taxon_name + " not located in tree"); }
                 if (p_descendant->is_leaf()) { leaf_indices[index] = taxon_name; } // Only leaves matter for computation or estimation

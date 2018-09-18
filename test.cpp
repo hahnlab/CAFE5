@@ -345,17 +345,17 @@ TEST(Inference, branch_length_finder)
 
 TEST(Inference, increase_decrease)
 {
-    map<clade *, int> family_size;
-    map<clade *, family_size_change> result;
+    clademap<int> family_size;
+    clademap<family_size_change> result;
 
     newick_parser parser(false);
     parser.newick_string = "((A:1,B:3):7,(C:11,D:17):23);";
     unique_ptr<clade> p_tree(parser.parse_newick());
 
-    clade *a = p_tree->find_descendant("A");
-    clade *b = p_tree->find_descendant("B");
-    clade *ab = p_tree->find_descendant("AB");
-    clade *abcd = p_tree->find_descendant("ABCD");
+     auto a = p_tree->find_descendant("A");
+     auto b = p_tree->find_descendant("B");
+     auto ab = p_tree->find_descendant("AB");
+     auto abcd = p_tree->find_descendant("ABCD");
 
     family_size[a] = 2;
     family_size[b] = 4;
@@ -443,7 +443,7 @@ TEST(Inference, reconstruction_process_internal_node)
     process(p_tree->find_descendant("A"));
     process(p_tree->find_descendant("B"));
 
-    clade *internal_node = p_tree->find_descendant("AB");
+    auto internal_node = p_tree->find_descendant("AB");
     process(internal_node);
     auto L = process.get_L(internal_node);
 
@@ -781,7 +781,7 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_correctly)
     likelihood_computer pruner(20, 20, &lambda, family, cache, NULL);
     cache.precalculate_matrices({ 0.045 }, { 1.0,3.0,7.0 });
 
-    clade *A = p_tree->find_descendant("A");
+    auto A = p_tree->find_descendant("A");
     pruner(A);
     auto actual = pruner.get_likelihoods(A);
 
@@ -793,7 +793,7 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_correctly)
         DOUBLES_EQUAL(expected[i], actual[i], 0.0001);
     }
 
-    clade *B = p_tree->find_descendant("B");
+    auto B = p_tree->find_descendant("B");
     pruner(B);
     actual = pruner.get_likelihoods(B);
 
@@ -823,7 +823,7 @@ TEST(Inference, likelihood_computer_sets_root_nodes_correctly)
     likelihood_computer pruner(20, 20, &lambda, family, cache, NULL);
     cache.precalculate_matrices({ 0.03 }, { 1.0,3.0,7.0 });
 
-    clade *AB = p_tree->find_descendant("AB");
+    auto AB = p_tree->find_descendant("AB");
     try
     {
         pruner(AB);
@@ -877,7 +877,7 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_from_error_model_if_provided
 
     likelihood_computer pruner(20, 20, &lambda, family, cache, &model);
 
-    clade *A = p_tree->find_descendant("A");
+    auto A = p_tree->find_descendant("A");
     pruner(A);
     auto actual = pruner.get_likelihoods(A);
 
@@ -1031,15 +1031,15 @@ public:
     {
 
     }
-    std::vector<clade *> get_taxa()
+    std::vector<const clade *> get_taxa()
     {
         vector<string> taxa{ "A", "B", "AB" };
-        vector<clade*> result(3);
-        transform(taxa.begin(), taxa.end(), result.begin(), [this](string taxon)->clade * {
+        vector<const clade*> result(3);
+        transform(taxa.begin(), taxa.end(), result.begin(), [this](string taxon)->const clade * {
             return _p_tree->find_descendant(taxon);});
         return result;
     }
-    increase_decrease get_increases_decreases(std::vector<clade *>& order, double pvalue)
+    increase_decrease get_increases_decreases(std::vector<const clade *>& order, double pvalue)
     {
         increase_decrease result;
         result.gene_family_id = "myid";
@@ -1158,7 +1158,7 @@ TEST(Simulation, random_familysize_setter_without_error_model)
     single_lambda lambda(0.05);
     trial t;
     random_familysize_setter setter(&t, 10, &lambda, NULL);
-    clade *b = p_tree->find_descendant("B");
+    auto b = p_tree->find_descendant("B");
     setter(b);
 
     LONGS_EQUAL(0, t[b]);
@@ -1186,7 +1186,7 @@ TEST(Simulation, random_familysize_setter_with_error_model)
     single_lambda lambda(0.05);
     trial t;
     random_familysize_setter setter(&t, family_size, &lambda, &err);
-    clade *b = p_tree->find_descendant("B");
+    auto b = p_tree->find_descendant("B");
     setter(b);
 
     LONGS_EQUAL(0, t[b]);

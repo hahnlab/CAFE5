@@ -30,7 +30,7 @@ gamma_bundle::~gamma_bundle()
         delete r;
 }
 
-std::vector<clade *> gamma_bundle::get_taxa()
+std::vector<const clade *> gamma_bundle::get_taxa()
 {
     return _rec_processes[0]->get_taxa();
 }
@@ -88,7 +88,7 @@ void gamma_bundle::reconstruct(const vector<double>& _gamma_cat_probs)
     compute_increase_decrease(reconstruction, increase_decrease_map);
 }
 
-void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<clade *> order)
+void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<const clade *> order)
 {
     ost << _rec_processes[0]->get_family_id() << '\t';
     std::function<std::string()> f;
@@ -108,13 +108,13 @@ void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<clade *> 
     ost << endl;
 }
 
-gamma_increase_decrease gamma_bundle::get_increases_decreases(std::vector<clade *>& order, double pvalue)
+gamma_increase_decrease gamma_bundle::get_increases_decreases(std::vector<const clade *>& order, double pvalue)
 {
     gamma_increase_decrease result;
     result.change.resize(order.size());
     result.gene_family_id = _rec_processes[0]->get_family_id();
 
-    transform(order.begin(), order.end(), result.change.begin(), [this](clade *taxon)->family_size_change {
+    transform(order.begin(), order.end(), result.change.begin(), [this](const clade *taxon)->family_size_change {
         return taxon->is_root() ? Constant : increase_decrease_map.at(taxon);
     });
 

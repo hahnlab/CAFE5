@@ -54,8 +54,8 @@ class gamma_bundle {
     std::vector<inference_process *> _inf_processes;
     std::vector<reconstruction_process *> _rec_processes;
 
-    std::map<clade *, double> reconstruction;
-    std::map<clade *, family_size_change> increase_decrease_map;
+    clademap<double> reconstruction;
+    clademap<family_size_change> increase_decrease_map;
     std::vector<double> _category_likelihoods;
 
 public:
@@ -73,11 +73,11 @@ public:
 
     void set_values(matrix_cache *, root_equilibrium_distribution*);
 
-    void print_reconstruction(std::ostream& ost, std::vector<clade *> order);
+    void print_reconstruction(std::ostream& ost, std::vector<const clade *> order);
 
-    gamma_increase_decrease get_increases_decreases(std::vector<clade *>& order, double pvalue);
+    gamma_increase_decrease get_increases_decreases(std::vector<const clade *>& order, double pvalue);
 
-    std::vector<clade *> get_taxa();
+    std::vector<const clade *> get_taxa();
 
     std::vector<double> get_category_likelihoods() const
     {

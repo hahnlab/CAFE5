@@ -169,7 +169,7 @@ class lambda_counter
 {
 public:
     std::set<int> unique_lambdas;
-    void operator()(clade *p_node)
+    void operator()(const clade *p_node)
     {
         unique_lambdas.insert(p_node->get_lambda_index());
     }
@@ -239,7 +239,7 @@ void model::write_vital_statistics(std::ostream& ost, double final_likelihood)
         ost << "Epsilon: " << _p_error_model->get_epsilons()[0] << endl;
 }
 
-void branch_length_finder::operator()(clade *c)
+void branch_length_finder::operator()(const clade *c)
 {
     _result.insert(c->get_branch_length());
 }

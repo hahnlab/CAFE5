@@ -149,11 +149,11 @@ class pvalue_calculator
     int _max_family_size;
     int _max_root_family_size;
     lambda *_p_lambda; 
-    clade* _p_tree;
+    const clade* _p_tree;
     matrix_cache *_p_matrix_cache;
-    std::vector<std::vector<double> >* _p_conditional_distribution;
+    const std::vector<std::vector<double> >* _p_conditional_distribution;
 public:
-    pvalue_calculator(int max_family_size, int max_root_family_size, lambda *p_lambda, clade* p_tree, matrix_cache *p_matrix_cache, std::vector<std::vector<double> >* p_conditional_distribution) :
+    pvalue_calculator(int max_family_size, int max_root_family_size, lambda *p_lambda, const clade* p_tree, matrix_cache *p_matrix_cache, const std::vector<std::vector<double> >* p_conditional_distribution) :
         _max_family_size(max_family_size), 
         _max_root_family_size(max_root_family_size),
         _p_lambda(p_lambda),
@@ -186,7 +186,7 @@ double pvalue_calculator::operator()(const gene_family& gf)
 }
 
 // find_fast_families under base model through simulations (if we reject gamma)
-vector<double> estimator::compute_pvalues(int max_family_size, int max_root_family_size, int number_of_simulations, lambda *p_lambda, vector<gene_family>& families, clade* p_tree)
+vector<double> estimator::compute_pvalues(int max_family_size, int max_root_family_size, int number_of_simulations, lambda *p_lambda, const vector<gene_family>& families, const clade* p_tree)
 {
     cout << "Computing pvalues..." << flush;
 

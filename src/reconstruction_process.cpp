@@ -37,17 +37,17 @@ reconstruction_process::reconstruction_process(std::ostream & ost, lambda* lambd
 
 class child_multiplier
 {
-    std::map<clade *, std::vector<double> >& _L;
+    clademap<std::vector<double> >& _L;
     double value;
     int _j;
 public:
     bool write = false;
-    child_multiplier(std::map<clade *, std::vector<double> >& L, int j) : _L(L), _j(j)
+    child_multiplier(clademap<std::vector<double> >& L, int j) : _L(L), _j(j)
     {
         value = 1.0;
     }
 
-    void operator()(clade *c)
+    void operator()(const clade *c)
     {
         value *= _L[c][_j];
         if (write)
@@ -59,7 +59,7 @@ public:
     }
 };
 
-void reconstruction_process::reconstruct_leaf_node(clade * c, lambda * _lambda)
+void reconstruction_process::reconstruct_leaf_node(const clade * c, lambda * _lambda)
 {
     auto& C = all_node_Cs[c];
     auto& L = all_node_Ls[c];
@@ -81,7 +81,7 @@ void reconstruction_process::reconstruct_leaf_node(clade * c, lambda * _lambda)
     }
 }
 
-void reconstruction_process::reconstruct_root_node(clade * c)
+void reconstruction_process::reconstruct_root_node(const clade * c)
 {
     auto& L = all_node_Ls[c];
     auto& C = all_node_Cs[c];
@@ -117,7 +117,7 @@ void reconstruction_process::reconstruct_root_node(clade * c)
     }
 }
 
-void reconstruction_process::reconstruct_internal_node(clade * c, lambda * _lambda)
+void reconstruction_process::reconstruct_internal_node(const clade * c, lambda * _lambda)
 {
     auto& C = all_node_Cs[c];
     auto& L = all_node_Ls[c];
@@ -155,7 +155,7 @@ void reconstruction_process::reconstruct_internal_node(clade * c, lambda * _lamb
 }
 
 
-void reconstruction_process::operator()(clade *c)
+void reconstruction_process::operator()(const clade *c)
 {
     // all_node_Cs and all_node_Ls are hashtables where the keys are nodes and values are vectors of doubles
     unique_ptr<lambda> ml(_lambda->multiply(_lambda_multiplier));
@@ -176,10 +176,10 @@ void reconstruction_process::operator()(clade *c)
 
 class backtracker
 {
-    std::map<clade *, std::vector<int> >& _all_node_Cs;
-    std::map<clade *, int>& reconstructed_states;
+    std::map<const clade *, std::vector<int> >& _all_node_Cs;
+    std::map<const clade *, int>& reconstructed_states;
 public:
-    backtracker(std::map<clade *, int>& rc, std::map<clade *, std::vector<int> >& all_node_Cs, clade *root) : 
+    backtracker(std::map<const clade *, int>& rc, std::map<const clade *, std::vector<int> >& all_node_Cs, clade *root) : 
         _all_node_Cs(all_node_Cs),
         reconstructed_states(rc)
     {
@@ -209,16 +209,16 @@ void reconstruction_process::reconstruct()
     compute_increase_decrease(reconstructed_states, increase_decrease_map);
 }
 
-std::vector<clade *> reconstruction_process::get_taxa()
+std::vector<const clade *> reconstruction_process::get_taxa()
 {
-    vector<clade *> result;
+    vector<const clade *> result;
     for (auto& c : reconstructed_states)
         result.push_back(c.first);
 
     return result;
 }
 
-void reconstruction_process::print_reconstruction(std::ostream & ost, std::vector<clade *>& order)
+void reconstruction_process::print_reconstruction(std::ostream & ost, cladevector& order)
 {
     ost << _gene_family->id() << '\t';
     for (auto taxon : order)
@@ -227,14 +227,14 @@ void reconstruction_process::print_reconstruction(std::ostream & ost, std::vecto
     ost << endl;
 }
 
-increase_decrease reconstruction_process::get_increases_decreases(std::vector<clade *>& order, double pvalue)
+increase_decrease reconstruction_process::get_increases_decreases(cladevector& order, double pvalue)
 {
     increase_decrease result;
     result.change.resize(order.size());
     result.gene_family_id = _gene_family->id();
     result.pvalue = pvalue;
 
-    transform(order.begin(), order.end(), result.change.begin(), [this](clade *taxon)->family_size_change {
+    transform(order.begin(), order.end(), result.change.begin(), [this](const clade *taxon)->family_size_change {
         return increase_decrease_map[taxon];
     });
 
@@ -242,13 +242,13 @@ increase_decrease reconstruction_process::get_increases_decreases(std::vector<cl
 }
 
 
-std::map<clade *, double> reconstruction_process::get_weighted_averages(std::vector<reconstruction_process *> m, const vector<double>& _gamma_cat_probs)
+clademap<double> reconstruction_process::get_weighted_averages(std::vector<reconstruction_process *> m, const vector<double>& _gamma_cat_probs)
 {
-    vector<clade *> nodes;
+    vector<const clade *> nodes;
     for (auto& i : m[0]->reconstructed_states)
         nodes.push_back(i.first);
 
-    std::map<clade *, double> result;
+    clademap<double> result;
     for (auto node : nodes)
     {
         double val = 0.0;
@@ -278,11 +278,11 @@ bool parent_compare(double a, double b)
 }
 
 template <typename T>
-void compute_increase_decrease_t(std::map<clade *, T>& input, std::map<clade *, family_size_change>& output)
+void compute_increase_decrease_t(clademap<T>& input, clademap<family_size_change>& output)
 {
     for (auto &clade_state : input)
     {
-        clade *p_clade = clade_state.first;
+        auto p_clade = clade_state.first;
         T size = clade_state.second;
         if (!p_clade->is_root())
         {
@@ -297,12 +297,12 @@ void compute_increase_decrease_t(std::map<clade *, T>& input, std::map<clade *, 
     }
 }
 
-void compute_increase_decrease(std::map<clade *, int>& input, std::map<clade *, family_size_change>& output)
+void compute_increase_decrease(clademap<int>& input, std::map<const clade *, family_size_change>& output)
 {
     compute_increase_decrease_t(input, output);
 }
 
-void compute_increase_decrease(std::map<clade *, double>& input, std::map<clade *, family_size_change>& output)
+void compute_increase_decrease(clademap<double>& input, std::map<const clade *, family_size_change>& output)
 {
     compute_increase_decrease_t(input, output);
 }
