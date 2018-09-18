@@ -140,7 +140,7 @@ double gamma_bundle::get_lambda_likelihood(int family_id)
     return _inf_processes[family_id]->get_lambda_multiplier();
 }
 
-inference_process_factory::inference_process_factory(std::ostream & ost, lambda* lambda, clade *p_tree, int max_family_size,
+inference_process_factory::inference_process_factory(std::ostream & ost, lambda* lambda, const clade *p_tree, int max_family_size,
         int max_root_family_size, std::vector<int> rootdist) :
         _ost(ost), _lambda(lambda), _p_tree(p_tree),
         _max_family_size(max_family_size), _max_root_family_size(max_root_family_size),

@@ -12,12 +12,12 @@
 
 class base_lambda_optimizer : public optimizer_scorer
 {
-    clade *_p_tree;
+    const clade *_p_tree;
     lambda *_p_lambda;
     base_model *_p_model;
     root_equilibrium_distribution *_p_distribution;
 public:
-    base_lambda_optimizer(clade *p_tree, lambda *p_lambda, base_model* p_model, root_equilibrium_distribution *p_distribution) :
+    base_lambda_optimizer(const clade *p_tree, lambda *p_lambda, base_model* p_model, root_equilibrium_distribution *p_distribution) :
         _p_tree(p_tree),
         _p_lambda(p_lambda),
         _p_model(p_model),
@@ -38,7 +38,7 @@ public:
     bool quiet;
 };
 
-base_model::base_model(lambda* p_lambda, clade *p_tree, vector<gene_family> *p_gene_families,
+base_model::base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
     int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map, error_model *p_error_model) :
     model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_error_model)
 {
@@ -68,7 +68,7 @@ reconstruction_process* base_model::create_reconstruction_process(int family_num
 }
 
 
-vector<int> build_reference_list(vector<gene_family>& families)
+vector<int> build_reference_list(const vector<gene_family>& families)
 {
     vector<int> reff;
     const int num_families = families.size();
@@ -99,7 +99,7 @@ void base_model::start_inference_processes()
     processes.clear();
 
     processes.resize(_p_gene_families->size());
-    for (int i = 0; i < _p_gene_families->size(); ++i) {
+    for (int i = 0; i <_p_gene_families->size(); ++i) {
         if (references[i] == i)
             processes[i] = new inference_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec, _p_error_model); // if a single _lambda_multiplier, how do we do it?
     }

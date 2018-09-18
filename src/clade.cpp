@@ -130,39 +130,6 @@ void clade::_name_interior_clade() {
     _p_parent->_name_interior_clade();
 }
 
-/* Prints names of immediate descendants */
-void clade::print_immediate_descendants() {
-
-  cout << "Me: " << _taxon_name << " | Descendants: ";
-  for (auto i : _descendants) {
-    cout << i->_taxon_name << " ";
-  }
-  
-  cout << endl;
-}
-
-/* Recursively prints clade */
-void clade::print_clade() {
-
-  int depth = 0;
-  clade *p_ancestor = get_parent();
-  while (p_ancestor) {
-    depth++;
-    p_ancestor = p_ancestor->get_parent();
-  }
-  
-  string blanks(depth, ' '); // initializing string with the fill constructor (repeat ' ' depth many times, depth will be some integer), this blanks string will help us indent the printing
-
-  cout << blanks << "My name is: " << _taxon_name << ", subtending branch is: "  << _branch_length << ", Lambda index is: " << _lambda_index << endl;
-
-  /* Base case: it is a leaf */
-  if (_descendants.empty()) { return; }
-  
-  for (auto i : _descendants) {
-    i->print_clade();
-  }
-}
-
 bool clade::is_leaf() const {
 
   return _descendants.empty();

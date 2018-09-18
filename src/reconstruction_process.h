@@ -9,7 +9,7 @@ class matrix_cache;
 
 class reconstruction_process : public process {
 
-    gene_family *_gene_family;
+    const gene_family *_gene_family;
     matrix_cache *_p_calc;
 
     /// Filled out when reconstruct() is called (NULL before then)
@@ -27,10 +27,10 @@ class reconstruction_process : public process {
 public:
     void reconstruct();
 
-    reconstruction_process(std::ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree,
+    reconstruction_process(std::ostream & ost, lambda* lambda, double lambda_multiplier, const clade *p_tree,
         int max_family_size,
         int max_root_family_size, std::vector<int> rootdist,
-        gene_family *gf,
+        const gene_family *gf,
         matrix_cache *calc,
         root_equilibrium_distribution* p_prior);
 

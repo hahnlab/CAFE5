@@ -145,9 +145,7 @@ TEST(Inference, gamma)
     clade *p_tree = parser.parse_newick();
 
     std::vector<int> rootdist;
-    gamma_model core(&lambda, NULL, NULL, 0, 5, 0, 0, NULL, NULL);
-    core.set_gene_families(&families);
-    core.set_tree(p_tree);
+    gamma_model core(&lambda, p_tree, &families, 0, 5, 0, 0, NULL, NULL);
     core.set_max_sizes(148, 122);
 
     core.start_inference_processes();

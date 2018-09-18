@@ -63,10 +63,6 @@ class clade {
 
    std::string get_taxon_name() const { return _taxon_name; }
 
-   void print_immediate_descendants(); // for testing purposes as of now
-
-   void print_clade(); // for testing purposes as of now
-
    int get_gene_family_size(std::string family_id) const
    {
      if (_gene_family_sizes.find(family_id) == _gene_family_sizes.end())

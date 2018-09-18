@@ -25,10 +25,10 @@ std::ostream& operator<<(std::ostream& ost, family_size_change fsc)
 }
 
 
-reconstruction_process::reconstruction_process(std::ostream & ost, lambda* lambda, double lambda_multiplier, clade *p_tree,
+reconstruction_process::reconstruction_process(std::ostream & ost, lambda* lambda, double lambda_multiplier, const clade *p_tree,
     int max_family_size,
     int max_root_family_size, std::vector<int> rootdist,
-    gene_family *gf,
+    const gene_family *gf,
     matrix_cache *p_calc,
     root_equilibrium_distribution* p_prior) : _gene_family(gf), _p_calc(p_calc), _p_prior(p_prior),
     process(ost, lambda, lambda_multiplier, p_tree, max_family_size, max_root_family_size, rootdist)
@@ -176,10 +176,10 @@ void reconstruction_process::operator()(const clade *c)
 
 class backtracker
 {
-    std::map<const clade *, std::vector<int> >& _all_node_Cs;
-    std::map<const clade *, int>& reconstructed_states;
+    clademap<std::vector<int> >& _all_node_Cs;
+    clademap<int>& reconstructed_states;
 public:
-    backtracker(std::map<const clade *, int>& rc, std::map<const clade *, std::vector<int> >& all_node_Cs, clade *root) : 
+    backtracker(clademap<int>& rc, clademap<std::vector<int> >& all_node_Cs, const clade *root) : 
         _all_node_Cs(all_node_Cs),
         reconstructed_states(rc)
     {

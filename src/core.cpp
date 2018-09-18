@@ -49,8 +49,8 @@ std::ostream& operator<<(std::ostream& ost, const family_info_stash& r)
 }
 
 model::model(lambda* p_lambda,
-    clade *p_tree,
-    vector<gene_family> *p_gene_families,
+    const clade *p_tree,
+    const vector<gene_family> *p_gene_families,
     int max_family_size,
     int max_root_family_size,
     error_model *p_error_model) :
@@ -59,16 +59,6 @@ model::model(lambda* p_lambda,
 {
     if (_p_gene_families)
         references = build_reference_list(*_p_gene_families);
-}
-
-//! Set pointer to lambda in core class
-void model::set_tree(clade *p_tree) {
-    _p_tree = p_tree;
-}
-
-//! Set pointer to vector of gene family class instances
-void model::set_gene_families(std::vector<gene_family> *p_gene_families) {
-    _p_gene_families = p_gene_families;
 }
 
 //! Set max family sizes and max root family sizes for INFERENCE
@@ -143,28 +133,6 @@ void model::adjust_family(std::ostream& ost) {
     }
 }
 
-/* TODO: later this will become a member of the core class, which is the wrapper of the process class*/
-void model::print_parameter_values() {
-    
-    cout << endl << "You have set the following parameter values:" << endl;
-    
-    if (dynamic_cast<single_lambda*>(_p_lambda)->get_single_lambda() == 0.0) {
-        cout << "Lambda has not been specified." << endl;
-    }
-    else {
-        cout << "Lambda: " << _p_lambda << endl;
-    }
-    
-    if (_p_tree == NULL) {
-        cout << "A tree has not been specified." << endl;
-    }
-    else {
-        cout << "The tree is:" << endl;
-        _p_tree->print_clade();
-    }
-    
-}
-
 class lambda_counter
 {
 public:
@@ -197,11 +165,11 @@ void model::initialize_lambda(clade *p_lambda_tree)
 
 class depth_finder
 {
-    std::map<clade *, double>& _depths;
+    clademap<double>& _depths;
     double _depth;
 public:
-    depth_finder(std::map<clade *, double>& depths, double depth) : _depths(depths), _depth(depth) {}
-    void operator()(clade *c)
+    depth_finder(clademap<double>& depths, double depth) : _depths(depths), _depth(depth) {}
+    void operator()(const clade *c)
     {
         _depths[c] = _depth + c->get_branch_length();
         depth_finder dp(_depths, _depth + c->get_branch_length());
@@ -211,7 +179,7 @@ public:
 
 void model::print_node_depths(std::ostream& ost)
 {
-    std::map<clade *, double> depths;
+    clademap<double> depths;
     depth_finder dp(depths, 0);
     dp(_p_tree);
     

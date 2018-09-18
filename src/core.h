@@ -45,11 +45,11 @@ class model {
 protected:
     std::ostream & _ost; 
     lambda *_p_lambda; // TODO: multiple lambdas for different branches
-    clade *_p_tree;
+    const clade *_p_tree;
     int _max_family_size;
     int _max_root_family_size;
     int _total_n_families_sim;
-    vector<gene_family> * _p_gene_families;
+    const std::vector<gene_family>* _p_gene_families;
     vector<int> _rootdist_vec; // in case the user wants to use a specific root size distribution for all simulations
     vector<vector<int> > _rootdist_bins; // holds the distribution for each lambda bin
 
@@ -68,8 +68,8 @@ protected:
     error_model* _p_error_model;
 public:
     model(lambda* p_lambda,
-        clade *p_tree,
-        vector<gene_family> *p_gene_families,
+        const clade *p_tree,
+        const std::vector<gene_family>* p_gene_families,
         int max_family_size,
         int max_root_family_size,
         error_model *p_error_model);
@@ -81,11 +81,6 @@ public:
     }
     void initialize_lambda(clade *p_lambda_tree);
 
-    //! Setter methods
-    void set_tree(clade *p_tree);
-    
-    void set_gene_families(std::vector<gene_family> *p_gene_families);
-    
     void set_max_sizes(int max_family_size, int max_root_family_size);
     
     void set_rootdist_vec(std::vector<int> rootdist_vec);
@@ -107,9 +102,6 @@ public:
     
     virtual double infer_processes(root_equilibrium_distribution *prior) = 0;  // return vector of likelihoods
     
-    //! Printing methods
-    void print_parameter_values();
-    
     void adjust_family(ostream& ost);
 
     virtual std::string name() = 0;
@@ -129,7 +121,7 @@ public:
     }
 };
 
-std::vector<int> build_reference_list(std::vector<gene_family>& families);
+std::vector<int> build_reference_list(const std::vector<gene_family>& families);
 
 enum family_size_change { Increase, Decrease, Constant };
 std::ostream& operator<<(std::ostream& ost, family_size_change fsc);

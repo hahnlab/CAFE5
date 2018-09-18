@@ -67,10 +67,10 @@ class gamma_lambda_optimizer : public optimizer_scorer
 {
     gamma_model *_p_model;
     root_equilibrium_distribution *_p_distribution;
-    clade *_p_tree;
+    const clade *_p_tree;
     lambda *_p_lambda;
 public:
-    gamma_lambda_optimizer(clade *p_tree, lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution) :
+    gamma_lambda_optimizer(const clade *p_tree, lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution) :
         _p_tree(p_tree),
         _p_lambda(p_lambda),
         _p_model(p_model),

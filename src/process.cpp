@@ -27,7 +27,7 @@ itr select_randomly(itr start, itr end) {
 
 //using namespace std;
 
-simulation_process::simulation_process(std::ostream &ost, lambda* lambda, double lambda_multiplier, clade *p_tree, int max_family_size,
+simulation_process::simulation_process(std::ostream &ost, lambda* lambda, double lambda_multiplier, const clade *p_tree, int max_family_size,
     int max_root_family_size, std::vector<int> rootdist, int family_number, error_model* p_error_model ) : process(ost, lambda, lambda_multiplier, p_tree,
         max_family_size, max_root_family_size, rootdist), _p_error_model(p_error_model) {
 

@@ -94,7 +94,7 @@ public:
       return _species_size_map;
   }
 
-  bool species_size_match(gene_family& other) const
+  bool species_size_match(const gene_family& other) const
   {
       return _species_size_map == other._species_size_map;
   }
