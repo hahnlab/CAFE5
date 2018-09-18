@@ -22,8 +22,8 @@ Note that the _probabilities map stores the vectors of likelihoods from all node
 */
 class child_calculator {
 private:
-    std::map<clade *, std::vector<double> > _factors; //!< keys = pointers to clade objects (children of internal node), values = clade's contribution (factor) to the vector of likelihoods of the internal node
-    std::map<clade *, std::vector<double> >& _probabilities; //!< (member of likelihood_computer) keys = pointer to clade object (all nodes in the tree), values = clade's vector of likelihoods
+    std::map<const clade *, std::vector<double> > _factors; //!< keys = pointers to clade objects (children of internal node), values = clade's contribution (factor) to the vector of likelihoods of the internal node
+    std::map<const clade *, std::vector<double> >& _probabilities; //!< (member of likelihood_computer) keys = pointer to clade object (all nodes in the tree), values = clade's vector of likelihoods
     int _probabilities_vec_size; //!< size of vector that will store probabilities (likelihoods)
     const lambda* _lambda; //!< lambda used in likelihood computation
     int s_min_family_size; //!< parent min size (this is an index)
@@ -37,7 +37,7 @@ public:
     /*!
     Used once per internal node by likelihood_computer().
     */
-    child_calculator(int probabilities_vec_size, const lambda* lambda, const matrix_cache& calc, std::map<clade *, std::vector<double> >& probabilities, int s_min, int s_max, int c_min, int c_max) : _probabilities_vec_size(probabilities_vec_size), _lambda(lambda), _probabilities(probabilities),
+    child_calculator(int probabilities_vec_size, const lambda* lambda, const matrix_cache& calc, std::map<const clade *, std::vector<double> >& probabilities, int s_min, int s_max, int c_min, int c_max) : _probabilities_vec_size(probabilities_vec_size), _lambda(lambda), _probabilities(probabilities),
     s_min_family_size(s_min), s_max_family_size(s_max), c_min_family_size(c_min), c_max_family_size(c_max),
     _calc(calc) {}
 
@@ -49,13 +49,13 @@ public:
     The functor is called once on each child by likelihood_computer through apply_to_descendants().
     Note that depending on whether one or multiple lambdas are specified, the computation of the likelihood will be different. It is the abstract class lambda (which has a pure virtual method calculate_child_factor) that decides how to do it.
     */
-    void operator()(clade * child);
+    void operator()(const clade * child);
 
     //! Method.
     /*!
     Called by likelihood_computer after all children have been processed. It multiplies all factors together and updates the _probabilities map.
     */
-    void update_probabilities(clade *node);
+    void update_probabilities(const clade *node);
 };
 
 

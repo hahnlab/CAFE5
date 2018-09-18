@@ -15,7 +15,7 @@ using namespace std;
 
 /* START: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
-std::vector<double> single_lambda::calculate_child_factor(const matrix_cache& calc, clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const
+std::vector<double> single_lambda::calculate_child_factor(const matrix_cache& calc, const clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const
 {
     auto matrix = calc.get_matrix(child->get_branch_length(), _lambda);
 #if 0
@@ -34,7 +34,7 @@ std::string single_lambda::to_string() const
     return ost.str();
 }
 
-std::vector<double> multiple_lambda::calculate_child_factor(const matrix_cache& calc, clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const
+std::vector<double> multiple_lambda::calculate_child_factor(const matrix_cache& calc, const clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const
 {
 	std::string nodename = child->get_taxon_name();
 	int lambda_index = _node_name_to_lambda_index.at(nodename);

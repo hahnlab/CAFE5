@@ -9,7 +9,7 @@ Makes child_calculator a functor.
 The functor is called once on each child by likelihood_computer through apply_to_descendants().
 Note that depending on whether one or multiple lambdas are specified, the computation of the likelihood will be different. It is the abstract class lambda (which has a pure virtual method calculate_child_factor) that decides how to do it.
 */
-void child_calculator::operator()(clade * child) {
+void child_calculator::operator()(const clade * child) {
   if (_probabilities[child].empty())
   {
     throw std::runtime_error("Child node probabilities not calculated");
@@ -28,13 +28,13 @@ void child_calculator::operator()(clade * child) {
 /*!
 Called by likelihood_computer after all children have been processed. It multiplies all factors together and updates the _probabilities map.
 */
-void child_calculator::update_probabilities(clade *node) {
+void child_calculator::update_probabilities(const clade *node) {
   vector<double>& node_probs = _probabilities[node];
   node_probs.resize(_probabilities_vec_size);
 
   for (int i = 0; i < node_probs.size(); i++) {
     node_probs[i] = 1;
-    map<clade *, std::vector<double> >::iterator it = _factors.begin();
+    auto it = _factors.begin();
 
     for (; it != _factors.end(); it++) {
       node_probs[i] *= it->second[i];

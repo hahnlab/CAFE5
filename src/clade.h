@@ -95,7 +95,7 @@ class clade {
    // in the gene_families and nodes
    void init_gene_family_sizes(const vector<gene_family>& families);
 
-   template <typename func> void apply_to_descendants(func& f) {
+   template <typename func> void apply_to_descendants(func& f) const {
 
      // apply f to direct descendants
      // could replace with apply_prefix_order for functions f that recur through descendants

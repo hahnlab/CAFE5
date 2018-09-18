@@ -128,7 +128,7 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
   The operator () overload here allows likelihood_computer to be called as a function (i.e., it makes likelihood_computer a functor).
   This is what allows likelihood_computer to be called recursively in the pruning algorithm, through apply_reverse_level_order.
 */
-void likelihood_computer::operator()(clade *node) {
+void likelihood_computer::operator()(const clade *node) {
     if (node->is_leaf()) {
         int species_size = _gene_family.get_species_size(node->get_taxon_name());
 

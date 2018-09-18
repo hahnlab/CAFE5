@@ -29,7 +29,7 @@ double unifrnd();
 /// passing the root of the tree, to determine the overall probabilities for the tree.
 class likelihood_computer {
 private:
-    std::map<clade *, std::vector<double> > _probabilities; //!< represents probability of the node having various family sizes
+    std::map<const clade *, std::vector<double> > _probabilities; //!< represents probability of the node having various family sizes
     int _max_root_family_size;
 	int _max_parsed_family_size;
 	const lambda* _lambda;
@@ -48,13 +48,13 @@ public:
         _p_error_model(p_error_model) {
     }
   
-    void operator()(clade *node);
+    void operator()(const clade *node);
 
-    std::vector<double> get_likelihoods(clade *node) const { 
+    std::vector<double> get_likelihoods(const clade *node) const { 
         return _probabilities.at(node);
     }
 
-	double max_likelihood(clade *node) const
+	double max_likelihood(const clade *node) const
 	{
 		if (_probabilities.at(node).empty())
 			throw std::runtime_error("No probabilities calculated");
