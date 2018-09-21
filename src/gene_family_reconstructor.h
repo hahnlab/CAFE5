@@ -49,14 +49,12 @@ public:
 
     increase_decrease get_increases_decreases(cladevector& order, double pvalue);
 
-    clademap<int> get_reconstructed_states() const
+    cladevector get_nodes();
+    int get_reconstructed_value(const clade *node)
     {
-        return reconstructed_states;
+        return reconstructed_states[node];
     }
     void operator()(const clade *c);
-
-    static clademap<double> get_weighted_averages(std::vector<gene_family_reconstructor *> m,
-        const std::vector<double>& _gamma_cat_probs);
 
     std::string get_family_id() const;
 

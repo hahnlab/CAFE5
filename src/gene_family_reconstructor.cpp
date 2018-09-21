@@ -242,26 +242,6 @@ increase_decrease gene_family_reconstructor::get_increases_decreases(cladevector
 }
 
 
-clademap<double> gene_family_reconstructor::get_weighted_averages(std::vector<gene_family_reconstructor *> m, const vector<double>& _gamma_cat_probs)
-{
-    vector<const clade *> nodes;
-    for (auto& i : m[0]->reconstructed_states)
-        nodes.push_back(i.first);
-
-    clademap<double> result;
-    for (auto node : nodes)
-    {
-        double val = 0.0;
-        for (size_t i = 0; i<_gamma_cat_probs.size(); ++i)
-        {
-            val += _gamma_cat_probs[i] * double(m[i]->reconstructed_states[node]);
-        }
-        result[node] = val;
-    }
-
-    return result;
-}
-
 std::string gene_family_reconstructor::get_family_id() const
 {
     return _gene_family->id();
@@ -275,6 +255,13 @@ bool parent_compare(int a, int b)
 bool parent_compare(double a, double b)
 {
     return parent_compare(int(std::round(a)), int(std::round(b)));
+}
+
+cladevector gene_family_reconstructor::get_nodes()
+{
+    cladevector result(reconstructed_states.size());
+    std::transform(reconstructed_states.begin(), reconstructed_states.end(), result.begin(), [](std::pair<const clade *, int> v) { return v.first;  });
+    return result;
 }
 
 template <typename T>

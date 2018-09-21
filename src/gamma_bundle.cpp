@@ -76,6 +76,25 @@ bool gamma_bundle::prune(const vector<double>& _gamma_cat_probs, root_equilibriu
     return true;
 }
 
+clademap<double> get_weighted_averages(std::vector<gene_family_reconstructor *> m, const vector<double>& _gamma_cat_probs)
+{
+    auto nodes = m[0]->get_nodes();
+
+    clademap<double> result;
+    for (auto node : nodes)
+    {
+        double val = 0.0;
+        for (size_t i = 0; i<_gamma_cat_probs.size(); ++i)
+        {
+            val += _gamma_cat_probs[i] * double(m[i]->get_reconstructed_value(node));
+        }
+        result[node] = val;
+    }
+
+    return result;
+}
+
+
 void gamma_bundle::reconstruct(const vector<double>& _gamma_cat_probs)
 {
     for (int k = 0; k < _gamma_cat_probs.size(); ++k)
@@ -84,7 +103,7 @@ void gamma_bundle::reconstruct(const vector<double>& _gamma_cat_probs)
     }
 
     // multiply every reconstruction by gamma_cat_prob
-    reconstruction = gene_family_reconstructor::get_weighted_averages(_rec_processes, _gamma_cat_probs);
+    reconstruction = get_weighted_averages(_rec_processes, _gamma_cat_probs);
 
     compute_increase_decrease(reconstruction, increase_decrease_map);
 }
@@ -95,10 +114,9 @@ void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<const cla
     std::function<std::string()> f;
     for (auto proc : _rec_processes)
     {
-        auto s = proc->get_reconstructed_states();
         f = [&]() {f = []() { return "-"; }; return ""; };;
         for (auto taxon : order)
-            ost << f() << s[taxon];
+            ost << f() << proc->get_reconstructed_value(taxon);
         ost << '\t';
     }
 
