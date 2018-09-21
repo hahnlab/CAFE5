@@ -324,7 +324,7 @@ TEST(Inference, base_model_reconstruction)
     calc.precalculate_matrices(get_lambda_values(&sl), set<double>({ 1 }));
     uniform_distribution dist;
     dist.initialize({ 1,2,3,4,5,6 });
-    model.reconstruct_ancestral_states(&calc, &dist);
+    std::unique_ptr<reconstruction> rec(model.reconstruct_ancestral_states(&calc, &dist));
 
 }
 
@@ -984,21 +984,12 @@ class mock_model : public model {
     virtual void write_family_likelihoods(std::ostream & ost) override
     {
     }
-    virtual void reconstruct_ancestral_states(matrix_cache * p_calc, root_equilibrium_distribution * p_prior) override
-    {
-    }
-    virtual void print_reconstructed_states(std::ostream & ost) override
+    virtual reconstruction* reconstruct_ancestral_states(matrix_cache * p_calc, root_equilibrium_distribution * p_prior) override
     {
     }
     virtual optimizer_scorer * get_lambda_optimizer(root_equilibrium_distribution * p_distribution) override
     {
         return nullptr;
-    }
-    virtual void print_increases_decreases_by_family(std::ostream & ost, const std::vector<double>& pvalues) override
-    {
-    }
-    virtual void print_increases_decreases_by_clade(std::ostream & ost) override
-    {
     }
 public:
     mock_model() : model(NULL, NULL, NULL, 0, 0, NULL)

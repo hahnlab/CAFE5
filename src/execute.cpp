@@ -92,20 +92,6 @@ void estimator::estimate_lambda(std::vector<model *>& models, std::vector<gene_f
 
 }
 
-void estimator::write_results(std::vector<model *>& models, const input_parameters &my_input_parameters, std::vector<double>& pvalues)
-{
-    for (model* p_model : models) {
-        std::ofstream ofst(filename(p_model->name() + "_asr", my_input_parameters.output_prefix));
-        p_model->print_reconstructed_states(ofst);
-
-        std::ofstream family_results(filename(p_model->name() + "_family_results", my_input_parameters.output_prefix));
-        p_model->print_increases_decreases_by_family(family_results, pvalues);
-
-        std::ofstream clade_results(filename(p_model->name() + "_clade_results", my_input_parameters.output_prefix));
-        p_model->print_increases_decreases_by_clade(clade_results);
-    }
-}
-
 void estimator::execute(std::vector<model *>& models)
 {
     if (data.p_lambda == NULL)
@@ -117,14 +103,12 @@ void estimator::execute(std::vector<model *>& models)
     compute(models, &data.gene_families, p_prior, _user_input, data.max_family_size, data.max_root_family_size);
 
     matrix_cache cache(data.max_family_size + 1);
-    for (model* p_model : models) {
-        p_model->reconstruct_ancestral_states(&cache, p_prior);
-    }
-
     auto pvalues = compute_pvalues(data, 1000);
 
-    write_results(models, _user_input, pvalues);
-
+    for (model* p_model : models) {
+        std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(&cache, p_prior));
+        rec->write_results(p_model, _user_input.output_prefix, pvalues);
+    }
 }
 
 double pvalue(double v, const vector<double>& conddist)

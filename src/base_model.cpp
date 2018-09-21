@@ -38,6 +38,28 @@ public:
     bool quiet;
 };
 
+
+class base_model_reconstruction : public reconstruction
+{
+    void print_reconstructed_states(std::ostream& ost);
+    void print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues);
+    void print_increases_decreases_by_clade(std::ostream& ost);
+public:
+    base_model_reconstruction()
+    {
+        
+    }
+
+    ~base_model_reconstruction()
+    {
+        for (auto rec_proc : _rec_processes)
+            delete rec_proc;
+    }
+
+    vector<gene_family_reconstructor*> _rec_processes;
+
+};
+
 base_model::base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
     int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map, error_model *p_error_model) :
     model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_error_model)
@@ -54,8 +76,6 @@ base_model::~base_model()
     for (auto proc : processes)
         delete proc;
 
-    for (auto rec_proc : _rec_processes)
-        delete rec_proc;
 }
 
 simulation_process* base_model::create_simulation_process(int family_number) {
@@ -171,14 +191,14 @@ optimizer_scorer *base_model::get_epsilon_optimizer(root_equilibrium_distributio
     return new lambda_epsilon_simultaneous_optimizer(this, _p_error_model, p_distribution, _p_lambda, finder.longest());
 }
 
-void base_model::reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior)
+reconstruction* base_model::reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior)
 {
     cout << "Starting reconstruction processes for base model" << endl;
-    _rec_processes.clear();
+    base_model_reconstruction *result = new base_model_reconstruction();
 
     for (int i = 0; i < _p_gene_families->size(); ++i)
     {
-        _rec_processes.push_back(new gene_family_reconstructor(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size,
+        result->_rec_processes.push_back(new gene_family_reconstructor(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size,
             &_p_gene_families->at(i), p_calc, p_prior));
     }
 
@@ -191,25 +211,15 @@ void base_model::reconstruct_ancestral_states(matrix_cache *p_calc, root_equilib
     cout << "Base: reconstructing ancestral states - lambda = " << *_p_lambda << endl;
 #endif
 
-    for (auto p : _rec_processes)
+    for (auto p : result->_rec_processes)
     {
         p->reconstruct();
     }
 #ifndef SILENT
     cout << "Done!" << endl;
 #endif
-}
 
-void base_model::print_reconstructed_states(std::ostream& ost) {
-    ::print_reconstructed_states(ost, _rec_processes);
-}
-
-void base_model::print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues) {
-    ::print_increases_decreases_by_family(ost, _rec_processes, pvalues);
-}
-
-void base_model::print_increases_decreases_by_clade(std::ostream& ost) {
-    ::print_increases_decreases_by_clade(ost, _rec_processes);
+    return result;
 }
 
 std::vector<double> base_lambda_optimizer::initial_guesses()
@@ -296,3 +306,16 @@ void lambda_epsilon_simultaneous_optimizer::finalize(double *results)
     _p_lambda->update(results);
     _p_error_model->update_single_epsilon(results[_p_lambda->count()]);
 }
+
+void base_model_reconstruction::print_reconstructed_states(std::ostream& ost) {
+    ::print_reconstructed_states(ost, _rec_processes);
+}
+
+void base_model_reconstruction::print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues) {
+    ::print_increases_decreases_by_family(ost, _rec_processes, pvalues);
+}
+
+void base_model_reconstruction::print_increases_decreases_by_clade(std::ostream& ost) {
+    ::print_increases_decreases_by_clade(ost, _rec_processes);
+}
+

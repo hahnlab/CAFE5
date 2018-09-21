@@ -56,7 +56,7 @@ public:
 
     void estimate_lambda(std::vector<model *>& models, std::vector<gene_family> &gene_families, error_model *p_error_model, clade *p_tree, clade *p_lambda_tree, root_equilibrium_distribution *p_prior);
 
-    void write_results(std::vector<model *>& models, const input_parameters &my_input_parameters, std::vector<double>& pvalues);
+    void write_results(model *p_model, std::string output_prefix, std::vector<double>& pvalues);
 
 };
 

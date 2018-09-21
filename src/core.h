@@ -9,6 +9,7 @@
 class simulation_process;
 class inference_process;
 class gene_family_reconstructor;
+class reconstruction;
 class user_data;
 
 struct family_info_stash {
@@ -41,6 +42,19 @@ public:
 
 std::ostream& operator<<(std::ostream& ost, const family_info_stash& r);
 
+class reconstruction {
+    virtual void print_reconstructed_states(std::ostream& ost) = 0;
+    virtual void print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues) = 0;
+    virtual void print_increases_decreases_by_clade(std::ostream& ost) = 0;
+
+public:
+    void write_results(model *p_model, std::string output_prefix, std::vector<double>& pvalues);
+    virtual ~reconstruction()
+    {
+    }
+};
+
+
 class model {
 protected:
     std::ostream & _ost; 
@@ -59,7 +73,6 @@ protected:
 
     //! Simulations
     vector<simulation_process*> _sim_processes; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
-    vector<gene_family_reconstructor*> _rec_processes;
 
     void initialize_rootdist_if_necessary();
 
@@ -108,10 +121,7 @@ public:
     virtual void write_family_likelihoods(std::ostream& ost) = 0;
     virtual void write_vital_statistics(std::ostream& ost, double final_likelihood);
 
-    virtual void reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
-    virtual void print_reconstructed_states(std::ostream& ost) = 0;
-    virtual void print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues) = 0;
-    virtual void print_increases_decreases_by_clade(std::ostream& ost) = 0;
+    virtual reconstruction* reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
 
     virtual optimizer_scorer *get_lambda_optimizer(root_equilibrium_distribution* p_distribution) = 0;
     void print_node_depths(std::ostream& ost);

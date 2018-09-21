@@ -7,7 +7,6 @@
 class matrix_cache;
 
 class gene_family_reconstructor {
-
     const lambda* _lambda;
     const clade *_p_tree;
     const gene_family *_gene_family;

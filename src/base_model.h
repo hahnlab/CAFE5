@@ -26,11 +26,7 @@ public:
 
     virtual optimizer_scorer *get_lambda_optimizer(root_equilibrium_distribution* p_distribution);
 
-    virtual void reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
-
-    void print_reconstructed_states(std::ostream& ost);
-    void print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues);
-    void print_increases_decreases_by_clade(std::ostream& ost);
+    virtual reconstruction* reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
 
     optimizer_scorer *get_epsilon_optimizer(root_equilibrium_distribution* p_distribution);
 };

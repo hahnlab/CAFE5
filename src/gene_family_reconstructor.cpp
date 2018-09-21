@@ -319,3 +319,17 @@ std::ostream& operator<<(std::ostream & ost, const increase_decrease& val)
     return ost;
 }
 
+extern std::string filename(std::string base, std::string suffix);
+
+void reconstruction::write_results(model *p_model, std::string output_prefix, std::vector<double>& pvalues)
+{
+    std::ofstream ofst(filename(p_model->name() + "_asr", output_prefix));
+    print_reconstructed_states(ofst);
+
+    std::ofstream family_results(filename(p_model->name() + "_family_results", output_prefix));
+    print_increases_decreases_by_family(family_results, pvalues);
+
+    std::ofstream clade_results(filename(p_model->name() + "_clade_results", output_prefix));
+    print_increases_decreases_by_clade(clade_results);
+}
+
