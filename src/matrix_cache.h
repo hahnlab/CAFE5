@@ -60,7 +60,7 @@ public:
     }
 };
 
-std::vector<double> get_lambda_values(lambda *p_lambda);
+std::vector<double> get_lambda_values(const lambda *p_lambda);
 
 //! Computation of the probabilities of moving from a family size (parent) to another (child)
 /*!
