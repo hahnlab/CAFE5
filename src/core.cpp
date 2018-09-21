@@ -13,7 +13,7 @@
 #include "process.h"
 #include "poisson.h"
 #include "root_equilibrium_distribution.h"
-#include "reconstruction_process.h"
+#include "gene_family_reconstructor.h"
 #include "user_data.h"
 
 std::vector<model *> build_models(const input_parameters& my_input_parameters, user_data& user_data) {

@@ -5,7 +5,7 @@
 
 #include "base_model.h"
 #include "process.h"
-#include "reconstruction_process.h"
+#include "gene_family_reconstructor.h"
 #include "matrix_cache.h"
 
 #include "root_equilibrium_distribution.h"
@@ -61,12 +61,6 @@ base_model::~base_model()
 simulation_process* base_model::create_simulation_process(int family_number) {
     return new simulation_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, family_number, _p_error_model); // if a single _lambda_multiplier, how do we do it?
 }
-
-reconstruction_process* base_model::create_reconstruction_process(int family_number, matrix_cache *p_calc, root_equilibrium_distribution* p_prior) {
-    return new reconstruction_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec,
-        &_p_gene_families->at(family_number), p_calc, p_prior);
-}
-
 
 vector<int> build_reference_list(const vector<gene_family>& families)
 {
@@ -184,8 +178,10 @@ void base_model::reconstruct_ancestral_states(matrix_cache *p_calc, root_equilib
 
     for (int i = 0; i < _p_gene_families->size(); ++i)
     {
-        _rec_processes.push_back(create_reconstruction_process(i, p_calc, p_prior));
+        _rec_processes.push_back(new gene_family_reconstructor(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size,
+            &_p_gene_families->at(i), p_calc, p_prior));
     }
+
 
     branch_length_finder lengths;
     _p_tree->apply_prefix_order(lengths);

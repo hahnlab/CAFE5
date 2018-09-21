@@ -6,7 +6,8 @@
 #include <cmath>
 
 #include "gamma_bundle.h"
-#include "reconstruction_process.h"
+#include "process.h"
+#include "gene_family_reconstructor.h"
 #include "root_equilibrium_distribution.h"
 #include "clade.h"
 
@@ -83,7 +84,7 @@ void gamma_bundle::reconstruct(const vector<double>& _gamma_cat_probs)
     }
 
     // multiply every reconstruction by gamma_cat_prob
-    reconstruction = reconstruction_process::get_weighted_averages(_rec_processes, _gamma_cat_probs);
+    reconstruction = gene_family_reconstructor::get_weighted_averages(_rec_processes, _gamma_cat_probs);
 
     compute_increase_decrease(reconstruction, increase_decrease_map);
 }
@@ -154,8 +155,8 @@ inference_process* inference_process_factory::operator()(double lambda_multiplie
     return new inference_process(_ost, _lambda, lambda_multiplier, _p_tree, _max_family_size, _max_root_family_size, _family, _rootdist_vec, NULL); // if a single _lambda_multiplier, how do we do it?
 }
 
-reconstruction_process* inference_process_factory::create_reconstruction_process(double lambda_multiplier)
+gene_family_reconstructor* inference_process_factory::create_reconstruction_process(double lambda_multiplier)
 {
-    return new reconstruction_process(_ost, _lambda, lambda_multiplier, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, _family,
+    return new gene_family_reconstructor(_ost, _lambda, lambda_multiplier, _p_tree, _max_family_size, _max_root_family_size, _family,
         NULL, NULL);
 }

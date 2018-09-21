@@ -9,7 +9,8 @@
 #include "src/gamma_core.h"
 #include "src/root_equilibrium_distribution.h"
 #include "src/base_model.h"
-#include "src/reconstruction_process.h"
+#include "src/process.h"
+#include "src/gene_family_reconstructor.h"
 #include "src/matrix_cache.h"
 #include "src/gamma_bundle.h"
 #include "src/probability.h"
@@ -397,9 +398,8 @@ TEST(Inference, precalculate_matrices_calculates_all_lambdas_all_branchlengths)
     LONGS_EQUAL(12, calc.get_cache_size());
 }
 
-TEST(Inference, reconstruction_process)
+TEST(Inference, gene_family_reconstructor)
 {
-  vector<int> rootdist;
   single_lambda lambda(0.05);
   gene_family fam;
   fam.set_species_size("Mouse", 3);
@@ -408,7 +408,7 @@ TEST(Inference, reconstruction_process)
 
   matrix_cache calc(8);
   calc.precalculate_matrices({ .1 }, set<double>({ 7 }));
-  reconstruction_process process(cout, &lambda, 2.0, NULL, 7, 0, rootdist, &fam, &calc, NULL);
+  gene_family_reconstructor process(cout, &lambda, 2.0, NULL, 7, 0, &fam, &calc, NULL);
   process(&leaf);
   auto L = process.get_L(&leaf);
 
@@ -423,7 +423,6 @@ TEST(Inference, reconstruction_process)
 
 TEST(Inference, reconstruction_process_internal_node)
 {
-    vector<int> rootdist;
     single_lambda s_lambda(0.05);
     double multiplier = 2.0;
     gene_family fam;
@@ -436,7 +435,7 @@ TEST(Inference, reconstruction_process_internal_node)
     unique_ptr<lambda> m(s_lambda.multiply(multiplier));
     matrix_cache calc(25);
     calc.precalculate_matrices(get_lambda_values(m.get()), set<double>({ 1, 3, 7, 11, 17, 23 }));
-    reconstruction_process process(cout, &s_lambda, multiplier, NULL, 24, 24, rootdist, &fam, &calc, NULL);
+    gene_family_reconstructor process(cout, &s_lambda, multiplier, NULL, 24, 24, &fam, &calc, NULL);
 
     process(p_tree->find_descendant("A"));
     process(p_tree->find_descendant("B"));

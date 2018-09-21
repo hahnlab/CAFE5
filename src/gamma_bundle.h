@@ -2,7 +2,7 @@
 #define GAMMA_BUNDLE_H
 
 class inference_process;
-class reconstruction_process;
+class gene_family_reconstructor;
 class root_equilibrium_distribution;
 class matrix_cache;
 class lambda;
@@ -13,7 +13,7 @@ class gene_family;
 #include <iosfwd>
 #include <map>
 
-#include "reconstruction_process.h"
+#include "core.h"
 
 class inference_process_factory
 {
@@ -36,7 +36,7 @@ public:
 
     inference_process* operator()(double lambda_multiplier);
 
-    reconstruction_process* create_reconstruction_process(double lambda_multiplier);
+    gene_family_reconstructor* create_reconstruction_process(double lambda_multiplier);
 };
 
 struct gamma_increase_decrease
@@ -52,7 +52,7 @@ std::ostream& operator<<(std::ostream & ost, const gamma_increase_decrease& val)
 //! Should reconstruct values for all gamma category probabilities
 class gamma_bundle {
     std::vector<inference_process *> _inf_processes;
-    std::vector<reconstruction_process *> _rec_processes;
+    std::vector<gene_family_reconstructor *> _rec_processes;
 
     clademap<double> reconstruction;
     clademap<family_size_change> increase_decrease_map;

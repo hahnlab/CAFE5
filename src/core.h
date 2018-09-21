@@ -8,7 +8,7 @@
 
 class simulation_process;
 class inference_process;
-class reconstruction_process;
+class gene_family_reconstructor;
 class user_data;
 
 struct family_info_stash {
@@ -59,7 +59,7 @@ protected:
 
     //! Simulations
     vector<simulation_process*> _sim_processes; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
-    vector<reconstruction_process*> _rec_processes;
+    vector<gene_family_reconstructor*> _rec_processes;
 
     void initialize_rootdist_if_necessary();
 

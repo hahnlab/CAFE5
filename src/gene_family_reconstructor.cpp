@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include "reconstruction_process.h"
+#include "gene_family_reconstructor.h"
 #include "lambda.h"
 #include "io.h"
 #include "matrix_cache.h"
@@ -25,13 +25,13 @@ std::ostream& operator<<(std::ostream& ost, family_size_change fsc)
 }
 
 
-reconstruction_process::reconstruction_process(std::ostream & ost, lambda* lambda, double lambda_multiplier, const clade *p_tree,
+gene_family_reconstructor::gene_family_reconstructor(std::ostream & ost, lambda* lambda, double lambda_multiplier, const clade *p_tree,
     int max_family_size,
-    int max_root_family_size, std::vector<int> rootdist,
+    int max_root_family_size,
     const gene_family *gf,
     matrix_cache *p_calc,
-    root_equilibrium_distribution* p_prior) : _gene_family(gf), _p_calc(p_calc), _p_prior(p_prior),
-    process(ost, lambda, lambda_multiplier, p_tree, max_family_size, max_root_family_size, rootdist)
+    root_equilibrium_distribution* p_prior) : _gene_family(gf), _p_calc(p_calc), _p_prior(p_prior), _lambda(lambda), _p_tree(p_tree),
+    _max_family_size(max_family_size), _max_root_family_size(max_root_family_size), _lambda_multiplier(lambda_multiplier)
 {
 }
 
@@ -59,7 +59,7 @@ public:
     }
 };
 
-void reconstruction_process::reconstruct_leaf_node(const clade * c, lambda * _lambda)
+void gene_family_reconstructor::reconstruct_leaf_node(const clade * c, lambda * _lambda)
 {
     auto& C = all_node_Cs[c];
     auto& L = all_node_Ls[c];
@@ -81,12 +81,12 @@ void reconstruction_process::reconstruct_leaf_node(const clade * c, lambda * _la
     }
 }
 
-void reconstruction_process::reconstruct_root_node(const clade * c)
+void gene_family_reconstructor::reconstruct_root_node(const clade * c)
 {
     auto& L = all_node_Ls[c];
     auto& C = all_node_Cs[c];
 
-    L.resize(_max_root_family_size + 1);
+    L.resize(min(_max_family_size, _max_root_family_size) + 1);
     // At the root, we pick a single reconstructed state (step 4 of Pupko)
     C.resize(1);
 
@@ -117,7 +117,7 @@ void reconstruction_process::reconstruct_root_node(const clade * c)
     }
 }
 
-void reconstruction_process::reconstruct_internal_node(const clade * c, lambda * _lambda)
+void gene_family_reconstructor::reconstruct_internal_node(const clade * c, lambda * _lambda)
 {
     auto& C = all_node_Cs[c];
     auto& L = all_node_Ls[c];
@@ -155,7 +155,7 @@ void reconstruction_process::reconstruct_internal_node(const clade * c, lambda *
 }
 
 
-void reconstruction_process::operator()(const clade *c)
+void gene_family_reconstructor::operator()(const clade *c)
 {
     // all_node_Cs and all_node_Ls are hashtables where the keys are nodes and values are vectors of doubles
     unique_ptr<lambda> ml(_lambda->multiply(_lambda_multiplier));
@@ -198,7 +198,7 @@ public:
     }
 };
 
-void reconstruction_process::reconstruct()
+void gene_family_reconstructor::reconstruct()
 {
     // Pupko's joint reconstruction algorithm
     _p_tree->apply_reverse_level_order(*this);
@@ -209,7 +209,7 @@ void reconstruction_process::reconstruct()
     compute_increase_decrease(reconstructed_states, increase_decrease_map);
 }
 
-std::vector<const clade *> reconstruction_process::get_taxa()
+std::vector<const clade *> gene_family_reconstructor::get_taxa()
 {
     vector<const clade *> result;
     for (auto& c : reconstructed_states)
@@ -218,7 +218,7 @@ std::vector<const clade *> reconstruction_process::get_taxa()
     return result;
 }
 
-void reconstruction_process::print_reconstruction(std::ostream & ost, cladevector& order)
+void gene_family_reconstructor::print_reconstruction(std::ostream & ost, cladevector& order)
 {
     ost << _gene_family->id() << '\t';
     for (auto taxon : order)
@@ -227,7 +227,7 @@ void reconstruction_process::print_reconstruction(std::ostream & ost, cladevecto
     ost << endl;
 }
 
-increase_decrease reconstruction_process::get_increases_decreases(cladevector& order, double pvalue)
+increase_decrease gene_family_reconstructor::get_increases_decreases(cladevector& order, double pvalue)
 {
     increase_decrease result;
     result.change.resize(order.size());
@@ -242,7 +242,7 @@ increase_decrease reconstruction_process::get_increases_decreases(cladevector& o
 }
 
 
-clademap<double> reconstruction_process::get_weighted_averages(std::vector<reconstruction_process *> m, const vector<double>& _gamma_cat_probs)
+clademap<double> gene_family_reconstructor::get_weighted_averages(std::vector<gene_family_reconstructor *> m, const vector<double>& _gamma_cat_probs)
 {
     vector<const clade *> nodes;
     for (auto& i : m[0]->reconstructed_states)
@@ -262,7 +262,7 @@ clademap<double> reconstruction_process::get_weighted_averages(std::vector<recon
     return result;
 }
 
-std::string reconstruction_process::get_family_id() const
+std::string gene_family_reconstructor::get_family_id() const
 {
     return _gene_family->id();
 }

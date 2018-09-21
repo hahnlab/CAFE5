@@ -7,7 +7,7 @@
 #include "gamma.h"
 #include "process.h"
 #include "root_equilibrium_distribution.h"
-#include "reconstruction_process.h"
+#include "gene_family_reconstructor.h"
 #include "matrix_cache.h"
 #include "gamma_bundle.h"
 

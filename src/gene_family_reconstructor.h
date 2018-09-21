@@ -1,15 +1,20 @@
 #ifndef RECONSTRUCTION_PROCESS_H
 #define RECONSTRUCTION_PROCESS_H
 
-#include "process.h"
 #include "core.h"
 #include <map>
 
 class matrix_cache;
 
-class reconstruction_process : public process {
+class gene_family_reconstructor {
 
+    const lambda* _lambda;
+    const clade *_p_tree;
     const gene_family *_gene_family;
+
+    double _lambda_multiplier;
+    int _max_family_size;
+    int _max_root_family_size;
     matrix_cache *_p_calc;
 
     /// Filled out when reconstruct() is called (NULL before then)
@@ -18,7 +23,7 @@ class reconstruction_process : public process {
     void reconstruct_internal_node(const clade * c, lambda * sl);
     void reconstruct_leaf_node(const clade * c, lambda * sl);
     void reconstruct_root_node(const clade * c);
-    std::map<const clade *, std::vector<int> > all_node_Cs;
+    clademap<std::vector<int>> all_node_Cs;
 
     /// Ls hold a probability for each family size (values are probabilities of any given family size)
     clademap<std::vector<double>> all_node_Ls;
@@ -27,11 +32,11 @@ class reconstruction_process : public process {
 public:
     void reconstruct();
 
-    reconstruction_process(std::ostream & ost, lambda* lambda, double lambda_multiplier, const clade *p_tree,
+    gene_family_reconstructor(std::ostream & ost, lambda* lambda, double lambda_multiplier, const clade *p_tree,
         int max_family_size,
-        int max_root_family_size, std::vector<int> rootdist,
+        int max_root_family_size,
         const gene_family *gf,
-        matrix_cache *calc,
+        matrix_cache *p_calc,
         root_equilibrium_distribution* p_prior);
 
     void set_values(matrix_cache *calc, root_equilibrium_distribution* prior)
@@ -51,7 +56,7 @@ public:
     }
     void operator()(const clade *c);
 
-    static clademap<double> get_weighted_averages(std::vector<reconstruction_process *> m,
+    static clademap<double> get_weighted_averages(std::vector<gene_family_reconstructor *> m,
         const std::vector<double>& _gamma_cat_probs);
 
     std::string get_family_id() const;
