@@ -297,10 +297,16 @@ void compute_increase_decrease(clademap<double>& input, std::map<const clade *, 
 std::ostream& operator<<(std::ostream & ost, const increase_decrease& val)
 {
     ost << val.gene_family_id << '\t';
+    ost << val.pvalue << "\t";
     ost << (val.pvalue < 0.05 ? 'y' : 'n') << "\t";
     ostream_iterator<family_size_change> out_it(ost, "\t");
     copy(val.change.begin(), val.change.end(), out_it);
 
+    if (!val.category_likelihoods.empty())
+    {
+        ostream_iterator<double> out_it2(ost, "\t");
+        copy(val.category_likelihoods.begin(), val.category_likelihoods.end(), out_it2);
+    }
     ost << endl;
 
     return ost;

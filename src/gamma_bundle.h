@@ -39,15 +39,6 @@ public:
     gene_family_reconstructor* create_reconstruction_process(double lambda_multiplier);
 };
 
-struct gamma_increase_decrease
-{
-    std::vector<family_size_change> change;
-    std::string gene_family_id;
-    std::vector<double> category_likelihoods;
-};
-
-std::ostream& operator<<(std::ostream & ost, const gamma_increase_decrease& val);
-
 //! One gamma bundle per family
 //! Should reconstruct values for all gamma category probabilities
 class gamma_bundle {
@@ -75,7 +66,7 @@ public:
 
     void print_reconstruction(std::ostream& ost, std::vector<const clade *> order);
 
-    gamma_increase_decrease get_increases_decreases(std::vector<const clade *>& order, double pvalue);
+    increase_decrease get_increases_decreases(std::vector<const clade *>& order, double pvalue);
 
     std::vector<const clade *> get_taxa();
 

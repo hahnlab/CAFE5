@@ -127,11 +127,12 @@ void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<const cla
     ost << endl;
 }
 
-gamma_increase_decrease gamma_bundle::get_increases_decreases(std::vector<const clade *>& order, double pvalue)
+increase_decrease gamma_bundle::get_increases_decreases(std::vector<const clade *>& order, double pvalue)
 {
-    gamma_increase_decrease result;
+    increase_decrease result;
     result.change.resize(order.size());
     result.gene_family_id = _rec_processes[0]->get_family_id();
+    result.pvalue = pvalue;
 
     transform(order.begin(), order.end(), result.change.begin(), [this](const clade *taxon)->family_size_change {
         return taxon->is_root() ? Constant : increase_decrease_map.at(taxon);
@@ -139,19 +140,6 @@ gamma_increase_decrease gamma_bundle::get_increases_decreases(std::vector<const 
 
     result.category_likelihoods = _category_likelihoods;
     return result;
-}
-
-std::ostream& operator<<(std::ostream & ost, const gamma_increase_decrease& val)
-{
-    ost << val.gene_family_id << '\t';
-    ostream_iterator<family_size_change> out_it(ost, "\t");
-    copy(val.change.begin(), val.change.end(), out_it);
-
-    ostream_iterator<double> out_it2(ost, "\t");
-    copy(val.category_likelihoods.begin(), val.category_likelihoods.end(), out_it2);
-
-    ost << endl;
-    return ost;
 }
 
 double gamma_bundle::get_lambda_likelihood(int family_id)

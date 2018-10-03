@@ -375,18 +375,19 @@ TEST(Inference, increase_decrease_stream)
     id.pvalue = 0.02;
     id.change = vector<family_size_change>{ Decrease, Constant, Increase, Increase};
     ost << id;
-    STRCMP_EQUAL("1234\ty\td\tc\ti\ti\t\n", ost.str().c_str());
+    STRCMP_EQUAL("1234\t0.02\ty\td\tc\ti\ti\t\n", ost.str().c_str());
 }
 
 TEST(Inference, gamma_increase_decrease_stream)
 {
     ostringstream ost;
-    gamma_increase_decrease id;
+    increase_decrease id;
     id.gene_family_id = "1234";
     id.change = vector<family_size_change>{ Decrease, Constant, Increase, Increase };
     id.category_likelihoods = vector<double>{ .1,.2,.3,.4 };
+    id.pvalue = 0.02;
     ost << id;
-    STRCMP_EQUAL("1234\td\tc\ti\ti\t0.1\t0.2\t0.3\t0.4\t\n", ost.str().c_str());
+    STRCMP_EQUAL("1234\t0.02\ty\td\tc\ti\ti\t0.1\t0.2\t0.3\t0.4\t\n", ost.str().c_str());
 }
 
 TEST(Inference, precalculate_matrices_calculates_all_lambdas_all_branchlengths)
@@ -1055,8 +1056,8 @@ TEST(Inference, print_increases_decreases_by_family)
     pvalues.push_back(0.07);
     ostringstream ost;
     ::print_increases_decreases_by_family(ost, vec, pvalues);
-    STRCMP_CONTAINS("#FamilyID\t*\tA\tB\tAB", ost.str().c_str());
-    STRCMP_CONTAINS("myid\tn\ti\td\tc", ost.str().c_str());
+    STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA\tB\tAB", ost.str().c_str());
+    STRCMP_CONTAINS("myid\t0.07\tn\ti\td\tc", ost.str().c_str());
 }
 
 TEST(Inference, print_increases_decreases_by_clade)

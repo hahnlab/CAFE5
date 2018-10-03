@@ -141,6 +141,7 @@ struct increase_decrease
     std::string gene_family_id;
     double pvalue = 0.0;
     std::vector<family_size_change> change;
+    std::vector<double> category_likelihoods;
 };
 
 
@@ -161,7 +162,7 @@ void print_increases_decreases_by_family(std::ostream& ost, const std::vector<T>
     auto rec = printables[0];
     auto order = rec->get_taxa();
 
-    ost << "#FamilyID\t*\t";
+    ost << "#FamilyID\tpvalue\t*\t";
     for (auto& it : order) {
         ost << it->get_taxon_name() << "\t";
     }
