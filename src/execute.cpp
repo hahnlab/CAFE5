@@ -24,7 +24,7 @@ std::string filename(std::string base, std::string suffix)
     return base + (suffix.empty() ? "" : "_") + suffix + ".txt";
 }
 
-void estimator::compute(std::vector<model *>& models, std::vector<gene_family> *p_gene_families, root_equilibrium_distribution *p_prior, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
+void estimator::compute(std::vector<model *>& models, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
 {
     std::ofstream results_file(filename("results", my_input_parameters.output_prefix));
 
@@ -55,7 +55,7 @@ bool compare_result(const optimizer::result& a, const optimizer::result& b)
     return a.score < b.score;
 }
 
-void estimator::estimate_lambda(std::vector<model *>& models, std::vector<gene_family> &gene_families, error_model *p_error_model, clade *p_tree, clade *p_lambda_tree, root_equilibrium_distribution *p_prior)
+void estimator::estimate_lambda(std::vector<model *>& models, std::vector<gene_family> &gene_families, error_model *p_error_model, clade *p_tree, clade *p_lambda_tree)
 {
     if (p_tree == NULL)
     {
@@ -96,11 +96,11 @@ void estimator::execute(std::vector<model *>& models)
 {
     if (data.p_lambda == NULL)
     {
-        estimate_lambda(models, data.gene_families, data.p_error_model, data.p_tree, data.p_lambda_tree, p_prior);
+        estimate_lambda(models, data.gene_families, data.p_error_model, data.p_tree, data.p_lambda_tree);
         data.p_lambda = models[0]->get_lambda();
     }
 
-    compute(models, &data.gene_families, p_prior, _user_input, data.max_family_size, data.max_root_family_size);
+    compute(models, _user_input, data.max_family_size, data.max_root_family_size);
 
     matrix_cache cache(data.max_family_size + 1);
     auto pvalues = compute_pvalues(data, 1000);

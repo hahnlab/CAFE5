@@ -160,14 +160,14 @@ TEST(Inference, gamma)
 TEST(Inference, stash_stream)
 {
     family_info_stash stash;
-    stash.family_id = 1;
+    stash.family_id = "F01";
     stash.lambda_multiplier = 2.5;
     stash.family_likelihood = 3.7;
     stash.posterior_probability = 4.9;
 
     std::ostringstream ost;
     ost << stash;
-    STRCMP_EQUAL("1\t2.5\t0\t3.7\t4.9\tN/S", ost.str().c_str());
+    STRCMP_EQUAL("F01\t2.5\t0\t3.7\t4.9\tN/S", ost.str().c_str());
 
 }
 

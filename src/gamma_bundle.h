@@ -74,6 +74,8 @@ public:
     {
         return _category_likelihoods;
     }
+
+    std::string get_family_id() const;
 };
 
 #endif

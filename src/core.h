@@ -13,12 +13,12 @@ class reconstruction;
 class user_data;
 
 struct family_info_stash {
-    family_info_stash() : family_id(0), lambda_multiplier(0.0), category_likelihood(0.0), family_likelihood(0.0), 
+    family_info_stash() : lambda_multiplier(0.0), category_likelihood(0.0), family_likelihood(0.0), 
         posterior_probability(0.0), significant(false) {}
-    family_info_stash(int fam, double lam, double cat_lh, double fam_lh, double pp, bool signif) : 
+    family_info_stash(std::string fam, double lam, double cat_lh, double fam_lh, double pp, bool signif) : 
         family_id(fam), lambda_multiplier(lam), category_likelihood(cat_lh), family_likelihood(fam_lh),
         posterior_probability(pp), significant(signif) {}
-    int family_id;
+    std::string family_id;
     double lambda_multiplier;
     double category_likelihood;
     double family_likelihood;

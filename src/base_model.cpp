@@ -160,7 +160,8 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
         //        all_families_likelihood[i] = accumulate(full.begin(), full.end(), 0.0); // sum over all sizes (Felsenstein's approach)
         all_families_likelihood[i] = *max_element(full.begin(), full.end()); // get max (CAFE's approach)
                                                                              // cout << i << " contribution " << scientific << all_families_likelihood[i] << endl;
-        results[i] = family_info_stash(i, 0.0, 0.0, 0.0, all_families_likelihood[i], false);
+        
+        results[i] = family_info_stash(processes[i]->family_id(), 0.0, 0.0, 0.0, all_families_likelihood[i], false);
     }
     double final_likelihood = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families
 

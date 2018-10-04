@@ -178,7 +178,7 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
             pruning_results[i].resize(cat_likelihoods.size());
             for (size_t k = 0; k < cat_likelihoods.size(); ++k)
             {
-                pruning_results[i][k] = family_info_stash(i, bundle->get_lambda_likelihood(k), cat_likelihoods[k],
+                pruning_results[i][k] = family_info_stash(bundle->get_family_id(), bundle->get_lambda_likelihood(k), cat_likelihoods[k],
                     family_likelihood, posterior_probabilities[k], posterior_probabilities[k] > 0.95);
                 //            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
             }

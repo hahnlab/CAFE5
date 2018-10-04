@@ -36,6 +36,11 @@ std::vector<const clade *> gamma_bundle::get_taxa()
     return _rec_processes[0]->get_taxa();
 }
 
+string gamma_bundle::get_family_id() const
+{ 
+    return _inf_processes[0]->family_id();  
+}
+
 void gamma_bundle::clear()
 {
     for (size_t i = 0; i < _inf_processes.size(); ++i)
