@@ -69,35 +69,14 @@ void random_familysize_setter::operator()(const clade *node) {
   Given a root gene family size, a lambda, simulates gene family counts for all nodes in the tree just once.
   Returns a trial, key = pointer to node, value = gene family size
 */
-trial * simulate_family_from_root_size(const clade *tree, int root_family_size, int max_family_size, const lambda * p_lambda, error_model *p_error_model) {
+clademap<int> * simulate_family_from_root_size(const clade *tree, int root_family_size, int max_family_size, const lambda * p_lambda, error_model *p_error_model) {
     if (tree == NULL)
         throw runtime_error("No tree specified for simulation");
 
-    trial *result = new trial;
+    auto *result = new clademap<int>;
     random_familysize_setter rfs(result, max_family_size, p_lambda, p_error_model);
     (*result)[tree] = root_family_size;
     tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
-    
-    return result;
-}
-
-//! Simulate gene families from a single root family size 
-/*!
-  Wraps around random_familysize_setter, which is the main engine of the simulator.
-  Given a root gene family size, a lambda, and the number of trials, simulates gene family counts for all nodes in the tree (once per trial).
-  Returns family_sizes map (= trial), key = pointer to node, value = gene family size
-*/
-vector<trial *> simulate_families_from_root_size(const clade *tree, int num_trials, int root_family_size, int max_family_size, const lambda* p_lambda, error_model *p_error_model) {
-
-    vector<trial *> result(num_trials);
-    generate(result.begin(), result.end(), [] { return new trial; });
-
-#pragma omp parallel for
-    for (int t = 0; t < num_trials; ++t) {
-        random_familysize_setter rfs(result[t], max_family_size, p_lambda, p_error_model);
-        (*result[t])[tree] = root_family_size;
-        tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
-    }
     
     return result;
 }

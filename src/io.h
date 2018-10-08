@@ -20,15 +20,9 @@ class gene_family;
 
 clade *read_tree(std::string tree_file_path, bool lambda_tree);
 
-map<int, int> *read_rootdist(std::string famdist_file_path);
-
 void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gene_family> *p_gene_families);
 
 void read_error_model_file(std::istream& error_model_file, error_model *p_error_model);
-
-/* START: Printing functions for simulation engine */
-void print_simulation(std::vector<vector<trial *> >  &sim, std::ostream& ost);
-/* END: Printing functions for simulation engine*/
 
 struct input_parameters {
 public:	

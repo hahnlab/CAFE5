@@ -250,19 +250,6 @@ TEST(Probability, probability_of_matrix)
     CHECK(actual == expected);
 }
 
-TEST(Probability, simulate_families_from_root_size)
-{
-    newick_parser parser(false);
-    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-    unique_ptr<clade> p_tree(parser.parse_newick());
-
-    single_lambda lam(0.05);
-    auto trials = simulate_families_from_root_size(p_tree.get(), 3, 10, 10, &lam, NULL);
-    LONGS_EQUAL(3, trials.size());
-    for (auto t : trials)
-        delete t;
-}
-
 TEST(Probability, get_conditional_distribution_matrix)
 {
     newick_parser parser(false);

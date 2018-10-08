@@ -214,33 +214,31 @@ std::vector<int> * weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_
 
 std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, const lambda *p_lambda, const matrix_cache& cache, error_model *p_error_model)
 {
-	vector<trial *> simulation = simulate_families_from_root_size(p_tree, number_of_simulations, root_family_size, max_family_size, p_lambda, p_error_model);
-
-	vector<double> result(simulation.size());
+    vector<double> result(number_of_simulations);
 
 #pragma omp parallel for
-    for (size_t i = 0; i<simulation.size(); ++i)
-	{
+    for (size_t i = 0; i<result.size(); ++i)
+    {
+        clademap<int> sizes;
+        random_familysize_setter rfs(&sizes, max_family_size, p_lambda, p_error_model);
+        sizes[p_tree] = root_family_size;
+        p_tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
+
         gene_family species_count;
-        for (auto& it : *simulation[i]) {
-            if (it.first->is_leaf()) 
-            { 
+        for (auto& it : sizes) {
+            if (it.first->is_leaf())
+            {
                 species_count.set_species_size(it.first->get_taxon_name(), it.second);
             }
         }
-		likelihood_computer pruner(root_family_size, max_family_size, p_lambda, species_count, cache, NULL);
-		p_tree->apply_reverse_level_order(pruner);
-		result[i] = pruner.max_likelihood(p_tree);
-	}
+        likelihood_computer pruner(root_family_size, max_family_size, p_lambda, species_count, cache, NULL);
+        p_tree->apply_reverse_level_order(pruner);
+        result[i] = pruner.max_likelihood(p_tree);
+    }
 
     sort(result.begin(), result.end());
 
-    for (auto t : simulation)
-    {
-        delete t;
-    }
-
-	return result;
+    return result;
 }
 
 std::vector<std::vector<double> > get_conditional_distribution_matrix(const clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, const lambda * p_lambda, const matrix_cache& cache)

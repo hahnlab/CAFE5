@@ -1,5 +1,5 @@
 #include "clade.h"
-
+#include "gene_family.h"
 #include "utils.h"
 #include "io.h"
 
