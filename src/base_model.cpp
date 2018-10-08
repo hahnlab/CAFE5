@@ -7,6 +7,7 @@
 #include "process.h"
 #include "gene_family_reconstructor.h"
 #include "matrix_cache.h"
+#include "gene_family.h"
 
 #include "root_equilibrium_distribution.h"
 

@@ -2,9 +2,9 @@
 
 #include "gene_family_reconstructor.h"
 #include "lambda.h"
-#include "io.h"
 #include "matrix_cache.h"
 #include "root_equilibrium_distribution.h"
+#include "gene_family.h"
 
 std::ostream& operator<<(std::ostream& ost, family_size_change fsc)
 {

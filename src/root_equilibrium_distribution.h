@@ -3,8 +3,9 @@
 
 #include <vector>
 
+#include "gene_family.h"
+
 class clade;
-class gene_family;
 class input_parameters;
 
 class root_equilibrium_distribution

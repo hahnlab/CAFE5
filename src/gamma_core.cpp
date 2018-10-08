@@ -10,6 +10,7 @@
 #include "gene_family_reconstructor.h"
 #include "matrix_cache.h"
 #include "gamma_bundle.h"
+#include "gene_family.h"
 
 class gamma_model_reconstruction : public reconstruction
 {

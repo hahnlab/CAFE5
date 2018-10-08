@@ -61,6 +61,10 @@ model::model(lambda* p_lambda,
         references = build_reference_list(*_p_gene_families);
 }
 
+std::size_t model::get_gene_family_count() const {
+    return _p_gene_families->size();
+}
+
 //! Set max family sizes and max root family sizes for INFERENCE
 void model::set_max_sizes(int max_family_size, int max_root_family_size) {
     _max_family_size = max_family_size;

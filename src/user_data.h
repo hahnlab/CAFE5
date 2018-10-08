@@ -6,11 +6,12 @@
 #include <map>
 #include <string>
 
+#include "gene_family.h"
+
 class clade;
 class lambda;
 class error_model;
 class input_parameters;
-class gene_family;
 
 /// Class holding data defined by the user, or derived from data defined by the user
 class user_data {

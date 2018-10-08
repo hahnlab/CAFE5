@@ -9,6 +9,7 @@
 #include "probability.h"
 #include "matrix_cache.h"
 #include "child_calculator.h"
+#include "gene_family.h"
 
 /* Useful links
 1) http://www.rskey.org/gamma.htm # explanation for lgamma

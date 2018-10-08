@@ -6,6 +6,7 @@
 #include "clade.h"
 #include "fminsearch.h"
 #include "probability.h"
+#include "gene_family.h"
 
 using namespace std;
 

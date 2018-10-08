@@ -15,8 +15,8 @@ using namespace std;
 extern struct option longopts[];
 
 class clade;
-
 class error_model;
+class gene_family;
 
 clade *read_tree(std::string tree_file_path, bool lambda_tree);
 
@@ -52,54 +52,6 @@ public:
     //! Check calls
     void check_input();
 };
-
-/* START: Reading in gene family data */
-class gene_family {
-private:
-  std::string _id; //!< Gene family ID
-  std::string _desc; //!< Gene family description
-  int _max_family_size; //!< Gene family max size (largest observed gene count)
-  int _parsed_max_family_size; //!< Gene family max as in CAFE (used for setting matrices dimensions)
-  std::map<std::string, int> _species_size_map; //!< Map that stores each species gene family count: {sp1_name:count1, ...}
-
-public:
-  gene_family() { find_max_size(); } //!< Constructor for read user-provided input (sets _max_family_size and _parsed_max_family_size for this family)
-  
-  void set_desc(std::string desc) { _desc = desc; }
-  
-  void set_id(std::string id) { _id = id; }
-  
-  void set_species_size(std::string species, int gene_count) {
-      _species_size_map[species] = gene_count;
-  }
-
-  std::vector<std::string> get_species() const;
-
-  //! Find and set _max_family_size and _parsed_max_family_size for this family
-  void find_max_size();
-  
-  //! Getting max gene family size
-  int get_max_size() const { return _max_family_size; }
-
-  //! Getting parsed max gene family size
-  int get_parsed_max_size() { return _parsed_max_family_size; }
-
-  std::string id() const { return _id; }
-  
-  //! Mainly for debugging: In case one want to grab the gene count for a given species
-  int get_species_size(std::string species) const;
-
-  //! Returns true if every species size for both gene families are identical
-  std::map<std::string, int> get_species_map() const {
-      return _species_size_map;
-  }
-
-  bool species_size_match(const gene_family& other) const
-  {
-      return _species_size_map == other._species_size_map;
-  }
-};
-/* END: Reading in gene family data */
 
 /* START: Reading in error model file */
 class error_model {

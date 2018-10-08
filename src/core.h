@@ -126,9 +126,7 @@ public:
     virtual optimizer_scorer *get_lambda_optimizer(root_equilibrium_distribution* p_distribution) = 0;
     void print_node_depths(std::ostream& ost);
 
-    std::size_t get_gene_family_count() const {
-        return _p_gene_families->size();
-    }
+    std::size_t get_gene_family_count() const;
 };
 
 std::vector<int> build_reference_list(const std::vector<gene_family>& families);

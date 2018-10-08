@@ -10,6 +10,7 @@
 #include "gene_family_reconstructor.h"
 #include "root_equilibrium_distribution.h"
 #include "clade.h"
+#include "gene_family.h"
 
 using namespace std;
 

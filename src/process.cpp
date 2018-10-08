@@ -7,6 +7,7 @@
 #include "clade.h"
 #include "probability.h"
 #include "core.h"
+#include "gene_family.h"
 
 /* START: Drawing random root size from uniform */
 template<typename itr, typename random_generator>
