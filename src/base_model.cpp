@@ -147,7 +147,7 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
 
     // prune all the families with the same lambda
 #pragma omp parallel for
-    for (int i = 0; i < processes.size(); ++i) {
+    for (int i = 0; i < _p_gene_families->size(); ++i) {
 
         auto& partial_likelihood = partial_likelihoods[references[i]];
         std::vector<double> full(partial_likelihood.size());
@@ -162,7 +162,7 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
         all_families_likelihood[i] = *max_element(full.begin(), full.end()); // get max (CAFE's approach)
                                                                              // cout << i << " contribution " << scientific << all_families_likelihood[i] << endl;
         
-        results[i] = family_info_stash(processes[i]->family_id(), 0.0, 0.0, 0.0, all_families_likelihood[i], false);
+        results[i] = family_info_stash(_p_gene_families->at(i).id(), 0.0, 0.0, 0.0, all_families_likelihood[i], false);
     }
     double final_likelihood = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families
 

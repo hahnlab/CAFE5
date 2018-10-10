@@ -243,7 +243,12 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
 
 std::vector<std::vector<double> > get_conditional_distribution_matrix(const clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, const lambda * p_lambda, const matrix_cache& cache)
 {
-	std::vector<std::vector<double> > matrix(root_family_size);
+    // sanity check to verify the matrix multiplications won't cause memory corruption
+    int s = cache.get_matrix_size();
+    if (s < root_family_size || s < max_family_size)
+        throw runtime_error("Precalculated matrices too small");
+    
+    std::vector<std::vector<double> > matrix(root_family_size);
 	for (int i = 0; i < root_family_size; ++i)
 	{
 		matrix[i] = get_random_probabilities(p_tree, number_of_simulations, root_family_size, max_family_size, p_lambda, cache, NULL);

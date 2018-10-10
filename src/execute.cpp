@@ -102,9 +102,9 @@ void estimator::execute(std::vector<model *>& models)
 
     compute(models, _user_input, data.max_family_size, data.max_root_family_size);
 
-    matrix_cache cache(data.max_family_size + 1);
     auto pvalues = compute_pvalues(data, 1000);
 
+    matrix_cache cache(data.max_family_size + 1);
     for (model* p_model : models) {
         std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(&cache, p_prior));
         rec->write_results(p_model, _user_input.output_prefix, pvalues);
@@ -169,7 +169,7 @@ vector<double> estimator::compute_pvalues(const user_data& data, int number_of_s
 {
     cout << "Computing pvalues..." << flush;
 
-    matrix_cache cache(data.max_family_size + 1);
+    matrix_cache cache(max(data.max_family_size, data.max_root_family_size) + 1);
     branch_length_finder lengths;
     data.p_tree->apply_prefix_order(lengths);
     cache.precalculate_matrices(get_lambda_values(data.p_lambda), lengths.result());

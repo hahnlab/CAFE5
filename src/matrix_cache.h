@@ -80,6 +80,10 @@ public:
         return _matrix_cache.size();
     }
 
+    int get_matrix_size() const {
+        return _matrix_size;
+    }
+
     matrix_cache(int matrix_size) : _matrix_size(matrix_size) {}
     ~matrix_cache();
 };
