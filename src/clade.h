@@ -5,6 +5,7 @@
 #include <stack>
 #include <queue>
 #include <string>
+#include <functional>
 
 class gene_family;
 
@@ -25,8 +26,6 @@ class clade {
    clade *_p_parent; // needs to be pointer; instance creates infinite loop
 
    std::vector<clade*> _descendants; // same as above
-
-   std::map<std::string, int> _gene_family_sizes; // key is id of gene family, value is size at this node
 
    /* methods */
    void _name_interior_clade();
@@ -55,26 +54,17 @@ class clade {
 
    int get_lambda_index() const;
 
-   std::vector<clade*> find_internal_nodes();
+   std::vector<const clade*> find_internal_nodes() const;
    
-   const clade *find_descendant(std::string some_taxon_name);
+   const clade *find_descendant(std::string some_taxon_name) const;
 
    double find_branch_length(std::string some_taxon_name);
 
    std::string get_taxon_name() const { return _taxon_name; }
 
-   int get_gene_family_size(std::string family_id) const
-   {
-     if (_gene_family_sizes.find(family_id) == _gene_family_sizes.end())
-       return 0;
-     return _gene_family_sizes.at(family_id);
-   }
+   void write_newick(std::ostream& ost, std::function<std::string(const clade *c)> textwriter) const;
 
    std::map<std::string, int> get_lambda_index_map();
-
-   // TODO: Is this the best way to do this? It means we have redundant data 
-   // in the gene_families and nodes
-   void init_gene_family_sizes(const std::vector<gene_family>& families);
 
    template <typename func> void apply_to_descendants(func& f) const {
 

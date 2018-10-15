@@ -6,6 +6,8 @@
 
 class matrix_cache;
 
+/// Given a gene gamily and a tree, reconstructs the most likely values at each node on tree. Used in the base model to calculate values for each
+/// gene family. Also used in a gamma bundle, one for each gamma category. Differences are represented by the lambda multiplier.
 class gene_family_reconstructor {
     const lambda* _lambda;
     const clade *_p_tree;
@@ -38,12 +40,19 @@ public:
         matrix_cache *p_calc,
         root_equilibrium_distribution* p_prior);
 
+    /// used to copy known values into the reconstructor
+    gene_family_reconstructor(const gene_family *family, const clade *p_tree, clademap<int> states) {
+        _gene_family = family;
+        reconstructed_states = states;
+        _p_tree = p_tree;
+    }
+
     void set_values(matrix_cache *calc, root_equilibrium_distribution* prior)
     {
         _p_prior = prior;
         _p_calc = calc;
     }
-    std::vector<const clade *> get_taxa();
+    cladevector get_taxa() const;
 
     void print_reconstruction(std::ostream & ost, cladevector& order);
 
@@ -56,16 +65,35 @@ public:
     }
     void operator()(const clade *c);
 
-    std::string get_family_id() const;
-
     std::vector<double> get_L(const clade *c) const
     {
         return all_node_Ls.at(c);
     }
+    std::string get_reconstructed_states(const clade *node) const;
+
+
+
 };
 
 void compute_increase_decrease(clademap<int>& input, clademap<family_size_change>& output);
 void compute_increase_decrease(clademap<double>& input, clademap<family_size_change>& output);
 std::ostream& operator<<(std::ostream & ost, const increase_decrease& val);
+
+template<class T>
+string newick_node(const clade *node, const cladevector& order, const T *reconstructor)
+{
+    auto node_id = distance(order.begin(), find(order.begin(), order.end(), node));
+    ostringstream ost;
+    if (node->is_leaf())
+        ost << node->get_taxon_name();
+    else
+    {
+        ost << node_id;
+    }
+    ost << "_" << reconstructor->get_reconstructed_states(node);
+    if (!node->is_root())
+        ost << ':' << node->get_branch_length();
+    return ost.str();
+}
 
 #endif

@@ -14,7 +14,9 @@
 
 using namespace std;
 
-gamma_bundle::gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers)
+gamma_bundle::gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers, const clade *p_tree, const gene_family *p_gene_family)
+    : _p_tree(p_tree),
+    _p_gene_family(p_gene_family)
 {
     std::transform(lambda_multipliers.begin(), lambda_multipliers.end(), std::back_inserter(_inf_processes), factory);
     for (auto p : _inf_processes)
@@ -34,7 +36,7 @@ gamma_bundle::~gamma_bundle()
 
 std::vector<const clade *> gamma_bundle::get_taxa()
 {
-    return _rec_processes[0]->get_taxa();
+    return _p_tree->find_internal_nodes();
 }
 
 string gamma_bundle::get_family_id() const
@@ -114,34 +116,50 @@ void gamma_bundle::reconstruct(const vector<double>& _gamma_cat_probs)
     compute_increase_decrease(reconstruction, increase_decrease_map);
 }
 
-void gamma_bundle::print_reconstruction(std::ostream& ost, std::vector<const clade *> order)
+string gamma_bundle::get_reconstructed_states(const clade *node) const
 {
-    ost << _rec_processes[0]->get_family_id() << '\t';
-    std::function<std::string()> f;
-    for (auto proc : _rec_processes)
+    std::ostringstream ost;
+
+    if (node->is_leaf())
     {
-        f = [&]() {f = []() { return "-"; }; return ""; };;
-        for (auto taxon : order)
-            ost << f() << proc->get_reconstructed_value(taxon);
-        ost << '\t';
+        ost << _p_gene_family->get_species_size(node->get_taxon_name());
     }
+    else
+    {
+        for (auto r : _rec_processes)
+            ost << r->get_reconstructed_value(node) << '_';
 
-    f = [&]() {f = []() { return "-"; }; return ""; };
-    for (auto taxon : order)
-        ost << f() << std::round(reconstruction[taxon]);
-
-    ost << endl;
+        ost << std::round(reconstruction.at(node));
+    }
+    return ost.str();
 }
 
-increase_decrease gamma_bundle::get_increases_decreases(std::vector<const clade *>& order, double pvalue)
+void gamma_bundle::print_reconstruction(std::ostream & ost, cladevector& order)
+{
+    string family_id = _p_gene_family->id();
+
+    auto f = [order, this](const clade *node) { 
+        return newick_node(node, order, this);
+    };
+    
+    ost << "  TREE " << family_id << " = ";
+    _p_tree->write_newick(ost, f);
+
+    ost << ';' << endl;
+}
+
+increase_decrease gamma_bundle::get_increases_decreases(cladevector& order, double pvalue)
 {
     increase_decrease result;
     result.change.resize(order.size());
-    result.gene_family_id = _rec_processes[0]->get_family_id();
+    result.gene_family_id = _p_gene_family->id();
     result.pvalue = pvalue;
 
     transform(order.begin(), order.end(), result.change.begin(), [this](const clade *taxon)->family_size_change {
-        return taxon->is_root() ? Constant : increase_decrease_map.at(taxon);
+        if (taxon->is_leaf() || taxon->is_root())
+            return Constant;
+        else
+            return increase_decrease_map.at(taxon);
     });
 
     result.category_likelihoods = _category_likelihoods;

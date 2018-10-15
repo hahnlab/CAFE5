@@ -48,10 +48,21 @@ class gamma_bundle {
     clademap<double> reconstruction;
     clademap<family_size_change> increase_decrease_map;
     std::vector<double> _category_likelihoods;
+    const clade *_p_tree;
+    const gene_family *_p_gene_family;
 
 public:
-    gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers);
+    gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers, const clade *p_tree, const gene_family *p_gene_family);
     ~gamma_bundle();
+
+    /// used to copy known values into the reconstructor
+    gamma_bundle(std::vector<gene_family_reconstructor *> vgfc, clademap<double> rc, clademap<family_size_change> idm, 
+        const clade *p_tree, const gene_family *p_gene_family) :
+        _rec_processes(vgfc),
+        increase_decrease_map(idm),
+        reconstruction(rc),
+        _p_tree(p_tree),
+        _p_gene_family(p_gene_family) {}
 
     void clear();
 
@@ -64,9 +75,9 @@ public:
 
     void set_values(matrix_cache *, root_equilibrium_distribution*);
 
-    void print_reconstruction(std::ostream& ost, std::vector<const clade *> order);
+    void print_reconstruction(std::ostream& ost, cladevector& order);
 
-    increase_decrease get_increases_decreases(std::vector<const clade *>& order, double pvalue);
+    increase_decrease get_increases_decreases(cladevector& order, double pvalue);
 
     std::vector<const clade *> get_taxa();
 
@@ -76,6 +87,7 @@ public:
     }
 
     std::string get_family_id() const;
+    std::string get_reconstructed_states(const clade *node) const;
 };
 
 #endif

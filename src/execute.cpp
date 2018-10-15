@@ -82,7 +82,6 @@ void estimator::estimate_lambda(std::vector<model *>& models, std::vector<gene_f
         for (model* p_model : models) {
             p_model->initialize_lambda(p_lambda_tree);
 
-            p_tree->init_gene_family_sizes(gene_families);
             unique_ptr<optimizer_scorer> scorer(p_model->get_lambda_optimizer(p_prior));
             optimizer opt(scorer.get());
             auto result = opt.optimize();

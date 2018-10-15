@@ -12,21 +12,6 @@
 #include "gamma_bundle.h"
 #include "gene_family.h"
 
-class gamma_model_reconstruction : public reconstruction
-{
-    const std::vector<double>& _lambda_multipliers;
-    const vector<gamma_bundle *>& _family_bundles;
-    void print_reconstructed_states(std::ostream& ost);
-    void print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues);
-    void print_increases_decreases_by_clade(std::ostream& ost);
-public:
-    gamma_model_reconstruction(const std::vector<double>& lambda_multipliers, const vector<gamma_bundle *>& family_bundles) :
-        _lambda_multipliers(lambda_multipliers), _family_bundles(family_bundles)
-    {
-
-    }
-};
-
 gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
     int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map, error_model* p_error_model) :
     model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_error_model) {
@@ -96,7 +81,7 @@ void gamma_model::start_inference_processes() {
     for (auto i = _p_gene_families->begin(); i != _p_gene_families->end(); ++i)
     {
         factory.set_gene_family(&(*i));
-        _family_bundles.push_back(new gamma_bundle(factory, _lambda_multipliers));
+        _family_bundles.push_back(new gamma_bundle(factory, _lambda_multipliers, _p_tree, &(*i)));
     }
 }
 
@@ -282,16 +267,26 @@ double gamma_lambda_optimizer::calculate_score(double *values)
 
 void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost)
 {
-    std::function<std::string()> f = [&]() {f = []() { return "\t"; }; return ""; };
+    if (_family_bundles.empty())
+        return;
 
-    ost << "&Lambda multipliers: ";
-    for (auto& i : _lambda_multipliers)
+    auto rec = _family_bundles[0];
+    auto order = rec->get_taxa();
+
+    ost << "#NEXUS\nBEGIN TREES;\n";
+    for (auto item : _family_bundles)
     {
-        ost << f() << i;
+        item->print_reconstruction(ost, order);
     }
-    ost << endl;
+    ost << "END;\n\n";
 
-    ::print_reconstructed_states(ost, _family_bundles);
+    ost << "BEGIN LAMBDA_MULTIPLIERS;\n";
+    for (auto& lm : _lambda_multipliers)
+    {
+        ost << "  " << lm << ";\n";
+    }
+    ost << "END;\n";
+    ost << endl;
 }
 
 void gamma_model_reconstruction::print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues)

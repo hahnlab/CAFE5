@@ -39,28 +39,6 @@ public:
     bool quiet;
 };
 
-
-class base_model_reconstruction : public reconstruction
-{
-    void print_reconstructed_states(std::ostream& ost);
-    void print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues);
-    void print_increases_decreases_by_clade(std::ostream& ost);
-public:
-    base_model_reconstruction()
-    {
-        
-    }
-
-    ~base_model_reconstruction()
-    {
-        for (auto rec_proc : _rec_processes)
-            delete rec_proc;
-    }
-
-    vector<gene_family_reconstructor*> _rec_processes;
-
-};
-
 base_model::base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
     int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map, error_model *p_error_model) :
     model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_error_model)
@@ -309,8 +287,25 @@ void lambda_epsilon_simultaneous_optimizer::finalize(double *results)
     _p_error_model->update_single_epsilon(results[_p_lambda->count()]);
 }
 
+base_model_reconstruction::~base_model_reconstruction()
+{
+    for (auto rec_proc : _rec_processes)
+        delete rec_proc;
+}
+
 void base_model_reconstruction::print_reconstructed_states(std::ostream& ost) {
-    ::print_reconstructed_states(ost, _rec_processes);
+    if (_rec_processes.empty())
+        return;
+
+    auto rec = _rec_processes[0];
+    auto order = rec->get_taxa();
+
+    ost << "#NEXUS\nBEGIN TREES;\n";
+    for (auto item : _rec_processes)
+    {
+        item->print_reconstruction(ost, order);
+    }
+    ost << "END;\n";
 }
 
 void base_model_reconstruction::print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues) {

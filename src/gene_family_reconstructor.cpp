@@ -209,22 +209,29 @@ void gene_family_reconstructor::reconstruct()
     compute_increase_decrease(reconstructed_states, increase_decrease_map);
 }
 
-std::vector<const clade *> gene_family_reconstructor::get_taxa()
+std::string gene_family_reconstructor::get_reconstructed_states(const clade *node) const
 {
-    vector<const clade *> result;
-    for (auto& c : reconstructed_states)
-        result.push_back(c.first);
-
-    return result;
+    int value = node->is_leaf() ? _gene_family->get_species_size(node->get_taxon_name()) : reconstructed_states.at(node);
+    return to_string(value);
 }
+
+cladevector gene_family_reconstructor::get_taxa() const
+{
+    return _p_tree->find_internal_nodes();
+}
+
+
 
 void gene_family_reconstructor::print_reconstruction(std::ostream & ost, cladevector& order)
 {
-    ost << _gene_family->id() << '\t';
-    for (auto taxon : order)
-        ost << reconstructed_states[taxon] << '\t';
+    auto f = [order, this](const clade *node) { 
+        return newick_node(node, order, this); 
+    };
 
-    ost << endl;
+    ost << "  TREE " << _gene_family->id() << " = ";
+    _p_tree->write_newick(ost, f);
+
+    ost << ';' << endl;
 }
 
 increase_decrease gene_family_reconstructor::get_increases_decreases(cladevector& order, double pvalue)
@@ -239,12 +246,6 @@ increase_decrease gene_family_reconstructor::get_increases_decreases(cladevector
     });
 
     return result;
-}
-
-
-std::string gene_family_reconstructor::get_family_id() const
-{
-    return _gene_family->id();
 }
 
 bool parent_compare(int a, int b)
@@ -284,12 +285,12 @@ void compute_increase_decrease_t(clademap<T>& input, clademap<family_size_change
     }
 }
 
-void compute_increase_decrease(clademap<int>& input, std::map<const clade *, family_size_change>& output)
+void compute_increase_decrease(clademap<int>& input, clademap<family_size_change>& output)
 {
     compute_increase_decrease_t(input, output);
 }
 
-void compute_increase_decrease(clademap<double>& input, std::map<const clade *, family_size_change>& output)
+void compute_increase_decrease(clademap<double>& input, clademap<family_size_change>& output)
 {
     compute_increase_decrease_t(input, output);
 }

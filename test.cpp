@@ -386,10 +386,35 @@ TEST(Inference, precalculate_matrices_calculates_all_lambdas_all_branchlengths)
     LONGS_EQUAL(12, calc.get_cache_size());
 }
 
-TEST(Inference, gene_family_reconstructor)
+TEST_GROUP(Reconstruction)
+{
+    gene_family fam;
+    unique_ptr<clade> p_tree;
+    cladevector order;
+
+    void setup()
+    {
+        newick_parser parser(false);
+        parser.newick_string = "((A:1,B:3):7,(C:11,D:17):23);";
+        p_tree.reset(parser.parse_newick());
+
+        fam.set_id("Family5");
+        fam.set_species_size("A", 11);
+        fam.set_species_size("B", 2);
+        fam.set_species_size("C", 5);
+        fam.set_species_size("D", 6);
+
+        vector<string> nodes{ "A", "B", "C", "D", "AB", "CD", "ABCD" };
+        order.resize(nodes.size());
+        const clade *t = p_tree.get();
+        transform(nodes.begin(), nodes.end(), order.begin(), [t](string s) { return t->find_descendant(s); });
+
+    }
+};
+
+TEST(Reconstruction, gene_family_reconstructor)
 {
   single_lambda lambda(0.05);
-  gene_family fam;
   fam.set_species_size("Mouse", 3);
 
   clade leaf("Mouse", 7);
@@ -408,18 +433,143 @@ TEST(Inference, gene_family_reconstructor)
   DOUBLES_EQUAL(0.193072, L[3], 0.0001);
 }
 
+TEST(Reconstruction, gene_family_reconstructor_print_reconstruction)
+{
+    auto a = p_tree->find_descendant("A");
+    // cladevector order({ p_tree.get(), a });
+    clademap<int> values;
+    values[p_tree.get()] = 7;
+    values[p_tree->find_descendant("AB")] = 8;
+    values[p_tree->find_descendant("CD")] = 6;
 
-TEST(Inference, reconstruction_process_internal_node)
+    gene_family_reconstructor gfc(&fam, p_tree.get(), values);
+    ostringstream ost;
+
+    gfc.print_reconstruction(ost, order);
+    STRCMP_EQUAL("  TREE Family5 = ((A_11:1,B_2:3)4_8:7,(C_5:11,D_6:17)5_6:23)6_7;\n", ost.str().c_str());
+}
+
+TEST(Reconstruction, gamma_bundle_print_reconstruction_prints_value_for_each_category_and_a_summation)
+{
+    auto a = p_tree->find_descendant("A");
+    clademap<int> values;
+    values[p_tree.get()] = 7;
+
+    clademap<double> values2;
+    values2[p_tree.get()] = 7;
+    values2[p_tree->find_descendant("AB")] = 8;
+    values2[p_tree->find_descendant("CD")] = 6;
+
+    auto gfc = new gene_family_reconstructor(&fam, p_tree.get(), values);
+    vector<gene_family_reconstructor *> v{ gfc };
+
+    ostringstream ost;
+    gamma_bundle bundle(v, values2, clademap<family_size_change>(), p_tree.get(), &fam);
+    bundle.print_reconstruction(ost, order);
+    STRCMP_EQUAL("  TREE Family5 = ((A_11:1,B_2:3)4_0_8:7,(C_5:11,D_6:17)5_0_6:23)6_7_7;\n", ost.str().c_str());
+
+}
+
+TEST(Reconstruction, gamma_bundle_get_increases_decreases)
+{
+    auto a = p_tree->find_descendant("A");
+    auto ab = p_tree->find_descendant("AB");
+    order = { p_tree.get(), a, ab };
+
+    clademap<int> values;
+    values[p_tree.get()] = 7;
+    values[a] = 11;
+    values[ab] = 13;
+
+    clademap<double> values2;
+    values2[p_tree.get()] = 7;
+    values2[a] = 11;
+    values2[ab] = 13;
+
+    auto gfc = new gene_family_reconstructor(&fam, p_tree.get(), values);
+    vector<gene_family_reconstructor *> v{ gfc };
+    clademap<family_size_change> c;
+    c[ab] = Decrease;
+
+    ostringstream ost;
+    gamma_bundle bundle(v, values2, c, p_tree.get(), &fam);
+    auto actual = bundle.get_increases_decreases(order, 0.05);
+    DOUBLES_EQUAL(0.05, actual.pvalue, 0.000001);
+    LONGS_EQUAL(3, actual.change.size());
+    LONGS_EQUAL(Constant, actual.change[0]);
+    LONGS_EQUAL(Constant, actual.change[1]);
+    LONGS_EQUAL(Decrease, actual.change[2]);
+}
+
+TEST(Reconstruction, gamma_model_reconstruction)
+{
+    auto a = p_tree->find_descendant("A");
+
+    clademap<int> values;
+    values[p_tree.get()] = 7;
+    values[p_tree->find_descendant("AB")] = 8;
+    values[p_tree->find_descendant("CD")] = 6;
+
+    clademap<double> values2;
+    values2[p_tree.get()] = 7;
+    values2[p_tree->find_descendant("AB")] = 8;
+    values2[p_tree->find_descendant("CD")] = 6;
+
+    auto gfc = new gene_family_reconstructor(&fam, p_tree.get(), values);
+    vector<gene_family_reconstructor *> v{ gfc };
+    gamma_bundle bundle(v, values2, clademap<family_size_change>(), p_tree.get(), &fam);
+    vector<gamma_bundle *> bundles{ &bundle };
+
+    vector<double> multipliers{ 0.13, 1.4 };
+    gamma_model_reconstruction gmr(multipliers, bundles);
+    std::ostringstream ost;
+    gmr.print_reconstructed_states(ost);
+
+    STRCMP_CONTAINS("#NEXUS", ost.str().c_str());
+    STRCMP_CONTAINS("BEGIN TREES;", ost.str().c_str());
+    STRCMP_CONTAINS("  TREE Family5 = ((A_11:1,B_2:3)1_8_8:7,(C_5:11,D_6:17)2_6_6:23)0_7_7;", ost.str().c_str());
+    STRCMP_CONTAINS("END;", ost.str().c_str());
+
+    STRCMP_CONTAINS("BEGIN LAMBDA_MULTIPLIERS;", ost.str().c_str());
+    STRCMP_CONTAINS("  0.13;", ost.str().c_str());
+    STRCMP_CONTAINS("  1.4;", ost.str().c_str());
+    STRCMP_CONTAINS("END;", ost.str().c_str());
+}
+
+TEST(Reconstruction, print_reconstructed_states_empty)
+{
+    base_model_reconstruction bmr;
+    ostringstream ost;
+    bmr.print_reconstructed_states(ost);
+    STRCMP_EQUAL("", ost.str().c_str());
+}
+
+TEST(Reconstruction, print_reconstructed_states_no_print)
+{
+    auto a = p_tree->find_descendant("A");
+
+    clademap<int> values;
+    values[p_tree.get()] = 7;
+    values[p_tree->find_descendant("AB")] = 8;
+    values[p_tree->find_descendant("CD")] = 6;
+
+    base_model_reconstruction bmr;
+    bmr._rec_processes.push_back(new gene_family_reconstructor(&fam, p_tree.get(), values));
+    ostringstream ost;
+    bmr.print_reconstructed_states(ost);
+    STRCMP_CONTAINS("#NEXUS", ost.str().c_str());
+    STRCMP_CONTAINS("BEGIN TREES;", ost.str().c_str());
+    STRCMP_CONTAINS("  TREE Family5 = ((A_11:1,B_2:3)1_8:7,(C_5:11,D_6:17)2_6:23)0_7;", ost.str().c_str());
+    STRCMP_CONTAINS("END;", ost.str().c_str());
+}
+
+TEST(Reconstruction, reconstruction_process_internal_node)
 {
     single_lambda s_lambda(0.05);
     double multiplier = 2.0;
-    gene_family fam;
     fam.set_species_size("A", 3);
     fam.set_species_size("B", 6);
 
-    newick_parser parser(false);
-    parser.newick_string = "((A:1,B:3):7,(C:11,D:17):23);";
-    unique_ptr<clade> p_tree(parser.parse_newick());
     unique_ptr<lambda> m(s_lambda.multiply(multiplier));
     matrix_cache calc(25);
     calc.precalculate_matrices(get_lambda_values(m.get()), set<double>({ 1, 3, 7, 11, 17, 23 }));
@@ -451,7 +601,7 @@ TEST(Inference, gamma_bundle_prune)
     single_lambda lambda(0.005);
     inference_process_factory factory(cout, &lambda, p_tree.get(), 10, 8, {2,2,2});
     factory.set_gene_family(&fam);
-    gamma_bundle bundle(factory, { 0.1, 0.5 });
+    gamma_bundle bundle(factory, { 0.1, 0.5 }, p_tree.get(), &fam);
     uniform_distribution dist;
     dist.initialize({ 1,2,3,4,5,4,3,2,1 });
     matrix_cache cache(11);
@@ -477,7 +627,7 @@ TEST(Inference, gamma_bundle_prune_returns_false_if_saturated)
     single_lambda lambda(0.9);
     inference_process_factory factory(cout, &lambda, p_tree.get(), 10, 8, { 2,2,2 });
     factory.set_gene_family(&fam);
-    gamma_bundle bundle(factory, { 0.1, 0.5 });
+    gamma_bundle bundle(factory, { 0.1, 0.5 }, p_tree.get(), &fam);
     uniform_distribution dist;
     dist.initialize({ 1,2,3,4,5,4,3,2,1 });
     matrix_cache cache(11);

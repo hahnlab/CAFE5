@@ -201,27 +201,5 @@ void print_increases_decreases_by_clade(std::ostream& ost, const std::vector<T>&
         ost << it.second.first << "/" << it.second.second << endl;
     }
 }
-
-template <class T>
-void print_reconstructed_states(std::ostream& ost, const std::vector<T>& printables)
-{
-    if (printables.empty())
-    {
-        ost << "No reconstructions recorded\n";
-        return;
-    }
-
-    auto rec = printables[0];
-    auto order = rec->get_taxa();
-    for (auto& it : order) {
-        ost << "#" << it->get_taxon_name() << "\n";
-    }
-
-    for (auto item : printables)
-    {
-        item->print_reconstruction(ost, order);
-    }
-}
-
 #endif /* CORE_H */
 

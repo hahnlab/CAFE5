@@ -67,4 +67,22 @@ public:
 };
 
 
+
+class base_model_reconstruction : public reconstruction
+{
+    void print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues);
+    void print_increases_decreases_by_clade(std::ostream& ost);
+public:
+    base_model_reconstruction()
+    {
+
+    }
+
+    ~base_model_reconstruction();
+
+    vector<gene_family_reconstructor*> _rec_processes;
+
+    void print_reconstructed_states(std::ostream& ost);
+};
+
 #endif

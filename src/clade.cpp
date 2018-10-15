@@ -59,9 +59,9 @@ void clade::add_leaf_names(vector<string> &vector_names) {
 }
 
 /* Recursively finds internal nodes, and returns vector of clades */
-vector<clade*> clade::find_internal_nodes() {
+vector<const clade*> clade::find_internal_nodes() const {
 
-  vector<clade*> internal_nodes;
+  vector<const clade*> internal_nodes;
 
   /* Base case: returns empty vector */
   if (is_leaf()) { return internal_nodes; }
@@ -80,29 +80,10 @@ vector<clade*> clade::find_internal_nodes() {
 
 
   /* Recursively find pointer to clade with provided taxon name */
-const clade *clade::find_descendant(string some_taxon_name) {
+const clade *clade::find_descendant(string some_taxon_name) const {
   descendant_finder finder(some_taxon_name);
   apply_prefix_order(finder);
   return finder.get_result();
-#if 0
-  cout << "Searching for descendant " << some_taxon_name << " in " << get_taxon_name() << endl;
-
-  /* Base case: found some_taxon name and is not root */
-  if (_taxon_name == some_taxon_name) { return this; }
-
-  /* If reached (wrong) leaf */
-  else if (is_leaf()) { return NULL; }
-
-  else {
-    for (_desc_it = _descendants.begin(), _desc_end = _descendants.end(); _desc_it != _desc_end; _desc_it++) {
-    clade *p_descendant_to_find = (*_desc_it)->find_descendant(some_taxon_name); // recursion
-
-    if (p_descendant_to_find != NULL) { return p_descendant_to_find; } // recursion is only manifested if finds provided taxon name
-
-    return NULL; // otherwise returns NULL
-    }
-  }
-#endif
 }
   
 /* Finds branch length of clade with provided taxon name. Does so by calling find_descendant(), which recursively searches the tree */
@@ -149,21 +130,6 @@ void print_clade_name(clade *clade) {
   cout << clade->get_taxon_name() << " (length of subtending branch: " << clade->get_branch_length() << ")" << endl;
 }
 
-void clade::init_gene_family_sizes(const vector<gene_family>& families)
-{
-  if (is_leaf())
-  {
-    vector<string> species_names = families[0].get_species();
-    for (int i = 0; i<families.size(); ++i)
-    {
-      const gene_family& f = families[i];
-      this->_gene_family_sizes[f.id()] = f.get_species_size(this->get_taxon_name());
-    }
-  }
-  for (int i = 0; i < _descendants.size(); ++i)
-    _descendants[i]->init_gene_family_sizes(families);
-}
-
 class named_lambda_index_getter
 {
 public:
@@ -179,6 +145,25 @@ std::map<std::string, int> clade::get_lambda_index_map()
 	named_lambda_index_getter m;
 	apply_prefix_order(m);
 	return m.node_name_to_lambda_index;
+}
+
+void clade::write_newick(ostream& ost, std::function<std::string(const clade *c)> textwriter) const
+{
+    if (is_leaf()) {
+        ost << textwriter(this);
+    }
+    else {
+        ost << '(';
+
+        // some nonsense to supress trailing comma
+        for (int i = 0; i< _descendants.size() - 1; i++) {
+            _descendants[i]->write_newick(ost, textwriter);
+            ost << ',';
+        }
+
+        _descendants[_descendants.size() - 1]->write_newick(ost, textwriter);
+        ost << ')' << textwriter(this);
+    }
 }
 
 
