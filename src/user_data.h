@@ -5,9 +5,11 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <memory>
 
 #include "gene_family.h"
 
+class root_equilibrium_distribution;
 class clade;
 class lambda;
 class error_model;
@@ -20,9 +22,10 @@ public:
     int max_root_family_size = -1; //!<  The maximum family size for which probabilities will be calculated at the root of the tree
 
     clade *p_tree = NULL; // instead of new clade(), o.w. mem leak
-    lambda *p_lambda;
+    lambda *p_lambda = NULL;
     clade *p_lambda_tree = NULL;
     error_model *p_error_model = NULL;
+    std::unique_ptr<root_equilibrium_distribution> p_prior;
     std::vector<gene_family> gene_families;
     std::map<int, int> rootdist;
 

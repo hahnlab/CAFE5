@@ -36,7 +36,7 @@ void estimator::compute(std::vector<model *>& models, const input_parameters &my
         models[i]->start_inference_processes();
 
         cout << endl << "Inferring processes for " << models[i]->name() << " model" << endl;
-        double result = models[i]->infer_processes(p_prior);
+        double result = models[i]->infer_processes(data.p_prior.get());
         models[i]->write_vital_statistics(results_file, result);
 
         models[i]->write_family_likelihoods(likelihoods_file);
@@ -55,49 +55,47 @@ bool compare_result(const optimizer::result& a, const optimizer::result& b)
     return a.score < b.score;
 }
 
-void estimator::estimate_lambda(std::vector<model *>& models, std::vector<gene_family> &gene_families, error_model *p_error_model, clade *p_tree, clade *p_lambda_tree)
+void estimator::estimate_missing_variables(std::vector<model *>& models, user_data& data)
 {
-    if (p_tree == NULL)
+    if (data.p_tree == NULL)
     {
         throw runtime_error("No tree specified for lambda estimation");
     }
-    if (p_error_model)
-    {   // we only support base model epsilon optimizing at the moment
-        base_model *b = dynamic_cast<base_model *>(models[0]);
-        b->initialize_lambda(p_lambda_tree);
-        unique_ptr<optimizer_scorer> scorer(b->get_epsilon_optimizer(p_prior));
-        optimizer opt(scorer.get());
-        vector<optimizer::result> results;
-        for (double epsilon = 0.05; epsilon < .5; epsilon += .1)
-        {
-            p_error_model->update_single_epsilon(epsilon);
-            results.push_back(opt.optimize());
-        }
-        auto best = min_element(results.begin(), results.end(), compare_result);
-        scorer->finalize(&best->values[0]);
-        cout << "Final score: " << best->score << ", Lambda: " << best->values[0] << ", Epsilon: " << best->values[1] * 2 << endl;
-    }
-    else
-    {
-        for (model* p_model : models) {
-            p_model->initialize_lambda(p_lambda_tree);
+    for (model* p_model : models) {
 
-            unique_ptr<optimizer_scorer> scorer(p_model->get_lambda_optimizer(p_prior));
-            optimizer opt(scorer.get());
+        unique_ptr<optimizer_scorer> scorer(p_model->get_lambda_optimizer(data));
+        if (scorer.get() == nullptr)
+            continue;   // nothing to be optimized
+
+        optimizer opt(scorer.get());
+
+        if (data.p_error_model)
+        {
+            // try several different initialization points and optimize them
+            vector<optimizer::result> results;
+            for (double epsilon = 0.05; epsilon < .5; epsilon += .1)
+            {
+                data.p_error_model->update_single_epsilon(epsilon);
+                results.push_back(opt.optimize());
+            }
+            auto best = min_element(results.begin(), results.end(), compare_result);
+            scorer->finalize(&best->values[0]);
+            cout << "Final score: " << best->score << ", Lambda: " << best->values[0] << ", Epsilon: " << best->values[1] * 2 << endl;
+        }
+        else
+        {
             auto result = opt.optimize();
             scorer->finalize(&result.values[0]);
         }
     }
+    if (data.p_lambda == nullptr)
+        data.p_lambda = models[0]->get_lambda();
 
 }
 
 void estimator::execute(std::vector<model *>& models)
 {
-    if (data.p_lambda == NULL)
-    {
-        estimate_lambda(models, data.gene_families, data.p_error_model, data.p_tree, data.p_lambda_tree);
-        data.p_lambda = models[0]->get_lambda();
-    }
+    estimate_missing_variables(models, data);
 
     compute(models, _user_input, data.max_family_size, data.max_root_family_size);
 
@@ -105,7 +103,7 @@ void estimator::execute(std::vector<model *>& models)
 
     matrix_cache cache(data.max_family_size + 1);
     for (model* p_model : models) {
-        std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(&cache, p_prior));
+        std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(&cache, data.p_prior.get()));
         rec->write_results(p_model, _user_input.output_prefix, pvalues);
     }
 }

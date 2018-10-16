@@ -24,11 +24,9 @@ public:
 
     virtual void write_family_likelihoods(std::ostream& ost);
 
-    virtual optimizer_scorer *get_lambda_optimizer(root_equilibrium_distribution* p_distribution);
+    virtual optimizer_scorer *get_lambda_optimizer(user_data& data);
 
     virtual reconstruction* reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
-
-    optimizer_scorer *get_epsilon_optimizer(root_equilibrium_distribution* p_distribution);
 };
 
 /// optimize lambdas and epsilons together

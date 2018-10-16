@@ -271,13 +271,14 @@ TEST(Inference, gamma_model_initial_guesses)
     single_lambda sl(0.05);
 
     gamma_model model(&sl, p_tree, NULL, 0, 5, 4, 0.7, NULL, NULL);
-    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(NULL));
+    user_data data;
+    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(2, guesses.size());
     DOUBLES_EQUAL(0.218321, guesses[0], 0.0001);
     DOUBLES_EQUAL(0.565811, guesses[1], 0.0001);
-
    delete p_tree;
+   delete model.get_lambda();
 }
 
 TEST(Inference, base_model_initial_guesses)
@@ -288,10 +289,12 @@ TEST(Inference, base_model_initial_guesses)
     single_lambda sl(0.05);
 
     base_model model(&sl, tree.get(), NULL, 0, 5, NULL, NULL);
-    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(NULL));
+    user_data data;
+    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(1, guesses.size());
     DOUBLES_EQUAL(0.565811, guesses[0], 0.0001);
+    delete model.get_lambda();
 }
 
 TEST(Inference, base_model_reconstruction)
@@ -754,8 +757,12 @@ TEST(Probability, base_model_get_epsilon_optimizer)
     std::vector<gene_family> fams;
     single_lambda lambda(0.001);
     base_model model(&lambda, p_tree.get(), &fams, 10, 10, NULL, &err);
-    unique_ptr<optimizer_scorer> opt(model.get_epsilon_optimizer(NULL));
-    CHECK(opt.get() != NULL);
+    user_data data;
+    data.p_error_model = &err;
+    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
+    CHECK(opt);
+    CHECK(dynamic_cast<lambda_epsilon_simultaneous_optimizer*>(opt.get()) != NULL);
+    delete model.get_lambda();
 }
 
 TEST(Probability, error_model_get_epsilon)
@@ -1125,7 +1132,7 @@ class mock_model : public model {
     virtual reconstruction* reconstruct_ancestral_states(matrix_cache * p_calc, root_equilibrium_distribution * p_prior) override
     {
     }
-    virtual optimizer_scorer * get_lambda_optimizer(root_equilibrium_distribution * p_distribution) override
+    virtual optimizer_scorer * get_lambda_optimizer(user_data& data) override
     {
         return nullptr;
     }
@@ -1326,11 +1333,11 @@ TEST(Simulation, executor)
 {
     input_parameters params;
     user_data ud;
-    unique_ptr<action> act(get_executor(params, ud, NULL));
+    unique_ptr<action> act(get_executor(params, ud));
     CHECK(dynamic_cast<const estimator *>(act.get()))
 
     params.chisquare_compare = true;
-    unique_ptr<action> act2(get_executor(params, ud, NULL));
+    unique_ptr<action> act2(get_executor(params, ud));
     CHECK(dynamic_cast<const chisquare_compare *>(act2.get()))
 }
 

@@ -11,6 +11,7 @@
 #include "matrix_cache.h"
 #include "gamma_bundle.h"
 #include "gene_family.h"
+#include "user_data.h"
 
 gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
     int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map, error_model* p_error_model) :
@@ -195,9 +196,14 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     return final_likelihood;
 }
 
-optimizer_scorer *gamma_model::get_lambda_optimizer(root_equilibrium_distribution* p_distribution)
+optimizer_scorer *gamma_model::get_lambda_optimizer(user_data& data)
 {
-    return new gamma_lambda_optimizer(_p_tree, _p_lambda, this, p_distribution);
+    if (data.p_lambda != NULL)  // already have a lambda, nothing we want to optimize
+        return nullptr;
+
+    initialize_lambda(data.p_lambda_tree);
+
+    return new gamma_lambda_optimizer(_p_tree, _p_lambda, this, data.p_prior.get());
 }
 
 reconstruction* gamma_model::reconstruct_ancestral_states(matrix_cache *calc, root_equilibrium_distribution*prior)

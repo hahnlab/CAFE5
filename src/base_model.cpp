@@ -8,6 +8,7 @@
 #include "gene_family_reconstructor.h"
 #include "matrix_cache.h"
 #include "gene_family.h"
+#include "user_data.h"
 
 #include "root_equilibrium_distribution.h"
 
@@ -156,20 +157,27 @@ void base_model::write_family_likelihoods(std::ostream& ost)
     }
 }
 
-optimizer_scorer *base_model::get_lambda_optimizer(root_equilibrium_distribution* p_distribution)
+optimizer_scorer *base_model::get_lambda_optimizer(user_data& data)
 {
-    return new base_lambda_optimizer(_p_tree, _p_lambda, this, p_distribution);
+    if (data.p_lambda != NULL)  // already have a lambda, nothing we want to optimize
+        return nullptr;
+
+    initialize_lambda(data.p_lambda_tree);
+
+    if (data.p_error_model)
+    {
+        branch_length_finder finder;
+        _p_tree->apply_prefix_order(finder);
+
+        return new lambda_epsilon_simultaneous_optimizer(this, _p_error_model, data.p_prior.get(), _p_lambda, finder.longest());
+    }
+    else
+    {
+        return new base_lambda_optimizer(_p_tree, _p_lambda, this, data.p_prior.get());
+    }
 }
 
 #define EPSILON_RANGES
-
-optimizer_scorer *base_model::get_epsilon_optimizer(root_equilibrium_distribution* p_distribution)
-{
-    branch_length_finder finder;
-    _p_tree->apply_prefix_order(finder);
-
-    return new lambda_epsilon_simultaneous_optimizer(this, _p_error_model, p_distribution, _p_lambda, finder.longest());
-}
 
 reconstruction* base_model::reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior)
 {

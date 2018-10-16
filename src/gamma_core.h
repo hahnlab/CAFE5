@@ -40,7 +40,7 @@ public:
 
     double infer_processes(root_equilibrium_distribution *prior);
 
-    virtual optimizer_scorer *get_lambda_optimizer(root_equilibrium_distribution* p_distribution);
+    virtual optimizer_scorer *get_lambda_optimizer(user_data& data);
 
     virtual std::string name() {
         return "Gamma";

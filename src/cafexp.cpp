@@ -92,7 +92,7 @@ input_parameters read_arguments(int argc, char *const argv[])
 
 void init_lgamma_cache();
 
-action* get_executor(input_parameters& user_input, user_data& data, root_equilibrium_distribution *dist)
+action* get_executor(input_parameters& user_input, user_data& data)
 {
     if (!user_input.chisquare_compare.empty()) {
         return new chisquare_compare(user_input.chisquare_compare);
@@ -102,7 +102,7 @@ action* get_executor(input_parameters& user_input, user_data& data, root_equilib
     }
     else
     {
-        return new estimator(data, dist, user_input);
+        return new estimator(data, user_input);
     }
 
     return NULL;
@@ -122,13 +122,13 @@ int cafexp(int argc, char *const argv[]) {
         user_data data;
         data.read_datafiles(user_input);
 
-        unique_ptr<root_equilibrium_distribution> p_prior(root_eq_dist_factory(user_input, &data.gene_families));
+        data.p_prior.reset(root_eq_dist_factory(user_input, &data.gene_families));
 
         // When computing or simulating, only base or gamma model is used. When estimating, base and gamma model are used (to do: compare base and gamma w/ LRT)
         // Build model takes care of -f
         vector<model *> models = build_models(user_input, data);
 
-        unique_ptr<action> act(get_executor(user_input, data, p_prior.get()));
+        unique_ptr<action> act(get_executor(user_input, data));
         if (act)
         {
             act->execute(models);

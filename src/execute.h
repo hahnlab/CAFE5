@@ -42,11 +42,10 @@ public:
 class estimator : public action
 {
     user_data& data;
-    root_equilibrium_distribution *p_prior;
     vector<double> compute_pvalues(const user_data& data, int number_of_simulations);
     const input_parameters &_user_input;
 public:
-    estimator(user_data& d, root_equilibrium_distribution *dist, const input_parameters& ui) : data(d), p_prior(dist), _user_input(ui)
+    estimator(user_data& d, const input_parameters& ui) : data(d), _user_input(ui)
     {
 
     }
@@ -54,9 +53,9 @@ public:
 
     void compute(std::vector<model *>& models, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size);
 
-    void estimate_lambda(std::vector<model *>& models, std::vector<gene_family> &gene_families, error_model *p_error_model, clade *p_tree, clade *p_lambda_tree);
+    void estimate_missing_variables(std::vector<model *>& models, user_data& data);
 };
 
-action* get_executor(input_parameters& user_input, user_data& data, root_equilibrium_distribution *dist);
+action* get_executor(input_parameters& user_input, user_data& data);
 
 #endif /* EXECUTE_H */
