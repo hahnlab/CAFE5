@@ -216,7 +216,8 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
 {
     vector<double> result(number_of_simulations);
 
-#pragma omp parallel for
+    // TODO: This is slow so it should be done in parallel. Care will have to be taken
+    // that stl containers that are added to are thread-safe.
     for (size_t i = 0; i<result.size(); ++i)
     {
         clademap<int> sizes;
