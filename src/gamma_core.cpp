@@ -140,7 +140,7 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     vector<double> all_bundles_likelihood(_family_bundles.size());
 
     bool success = true;
-    matrix_cache calc(_max_family_size + 1);
+    matrix_cache calc(max(_max_root_family_size, _max_family_size) + 1);
     branch_length_finder lengths;
     _p_tree->apply_prefix_order(lengths);
     //_lambda_multipliers
