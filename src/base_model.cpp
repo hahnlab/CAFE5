@@ -1,6 +1,5 @@
 #include <cmath>
 #include <numeric>
-#include <iomanip>
 #include <limits>
 
 #include "base_model.h"
@@ -9,36 +8,8 @@
 #include "matrix_cache.h"
 #include "gene_family.h"
 #include "user_data.h"
-
 #include "root_equilibrium_distribution.h"
-
-class base_lambda_optimizer : public optimizer_scorer
-{
-    const clade *_p_tree;
-    lambda *_p_lambda;
-    base_model *_p_model;
-    root_equilibrium_distribution *_p_distribution;
-public:
-    base_lambda_optimizer(const clade *p_tree, lambda *p_lambda, base_model* p_model, root_equilibrium_distribution *p_distribution) :
-        _p_tree(p_tree),
-        _p_lambda(p_lambda),
-        _p_model(p_model),
-        _p_distribution(p_distribution),
-        quiet(false)
-    {
-    }
-
-    std::vector<double> initial_guesses();
-
-    virtual double calculate_score(double *values);
-
-    virtual void finalize(double *results)
-    {
-        _p_lambda->update(results);
-    }
-
-    bool quiet;
-};
+#include "optimizer_scorer.h"
 
 base_model::base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
     int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map, error_model *p_error_model) :
@@ -169,11 +140,11 @@ optimizer_scorer *base_model::get_lambda_optimizer(user_data& data)
         branch_length_finder finder;
         _p_tree->apply_prefix_order(finder);
 
-        return new lambda_epsilon_simultaneous_optimizer(this, _p_error_model, data.p_prior.get(), _p_lambda, finder.longest());
+        return new lambda_epsilon_optimizer(this, _p_error_model, data.p_prior.get(), _p_lambda, finder.longest());
     }
     else
     {
-        return new base_lambda_optimizer(_p_tree, _p_lambda, this, data.p_prior.get());
+        return new lambda_optimizer(_p_tree, _p_lambda, this, data.p_prior.get());
     }
 }
 
@@ -208,91 +179,6 @@ reconstruction* base_model::reconstruct_ancestral_states(matrix_cache *p_calc, r
 #endif
 
     return result;
-}
-
-std::vector<double> base_lambda_optimizer::initial_guesses()
-{
-    branch_length_finder finder;
-    _p_tree->apply_prefix_order(finder);
-    std::vector<double> result(_p_lambda->count());
-    for (auto& i : result)
-    {
-        i = 1.0 / finder.longest() * unifrnd();
-    }
-    return result;
-}
-
-double base_lambda_optimizer::calculate_score(double *values)
-{
-    _p_lambda->update(values);
-
-    if (!quiet)
-        cout << "Lambda: " << *_p_lambda << std::endl;
-
-    _p_model->start_inference_processes();
-
-    double score = _p_model->infer_processes(_p_distribution);
-
-    if (!quiet)
-        std::cout << "Score (-lnL): " << setw(15) << setprecision(14) << score << std::endl;
-
-    return score;
-}
-
-std::vector<double> lambda_epsilon_simultaneous_optimizer::initial_guesses()
-{
-    std::vector<double> result(_p_lambda->count());
-    for (auto& i : result)
-    {
-        i = 1.0 / _longest_branch * unifrnd();
-    }
-
-    current_guesses = _p_error_model->get_epsilons();
-    result.insert(result.end(), current_guesses.begin(), current_guesses.end());
-
-    return result;
-
-}
-
-double lambda_epsilon_simultaneous_optimizer::calculate_score(double *values)
-{
-    double * lambdas = values;
-    double * epsilons = values + _p_lambda->count();
-
-    if (*epsilons < 0 || *epsilons > .5)
-    {
-        return std::numeric_limits<double>::max();
-    }
-
-    _p_lambda->update(lambdas);
-    map<double, double> replacements;
-    for (size_t i = 0; i < current_guesses.size(); ++i)
-    {
-        replacements[current_guesses[i]] = epsilons[i];
-        current_guesses[i] = epsilons[i];
-    }
-
-    _p_error_model->replace_epsilons(&replacements);
-
-    if (!quiet)
-    {
-        cout << "Calculating probability: epsilon=" << _p_error_model->get_epsilons().back()*2.0 << ", " << "lambda=" << *_p_lambda << std::endl;
-    }
-
-    _p_model->start_inference_processes();
-
-    double score = _p_model->infer_processes(_p_distribution);
-
-    if (!quiet)
-        cout << " Score with above error models: " << score << endl;
-
-    return score;
-}
-
-void lambda_epsilon_simultaneous_optimizer::finalize(double *results)
-{
-    _p_lambda->update(results);
-    _p_error_model->update_single_epsilon(results[_p_lambda->count()]);
 }
 
 base_model_reconstruction::~base_model_reconstruction()

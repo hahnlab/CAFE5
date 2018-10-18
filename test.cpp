@@ -1,6 +1,7 @@
 
 #include <numeric>
 #include <cmath>
+#include <getopt.h>
 
 #include "CppUTest/TestHarness.h"
 #include "CppUTest/CommandLineTestRunner.h"
@@ -17,6 +18,7 @@
 #include "src/family_generator.h"
 #include "src/execute.h"
 #include "src/user_data.h"
+#include "src/optimizer_scorer.h"
 
 TEST_GROUP(GeneFamilies)
 {
@@ -41,6 +43,72 @@ TEST_GROUP(Probability)
 TEST_GROUP(Clade)
 {
 };
+
+TEST_GROUP(Options)
+{
+    char *values[100];
+    int argc;
+
+    void initialize(vector<string> arguments)
+    {
+        optind = 0;
+        argc = arguments.size();
+        for (size_t i = 0; i < arguments.size(); ++i)
+        {
+            values[i] = strdup(arguments[i].c_str());
+        }
+    }
+
+    void teardown()
+    {
+        for (size_t i = 0; i < argc; ++i)
+        {
+            free(values[i]);
+        }
+    }
+};
+
+input_parameters read_arguments(int argc, char *const argv[]);
+
+TEST(Options, input_short)
+{
+    initialize({ "cafexp", "-ifile" });
+
+    auto actual = read_arguments(argc, values);
+    STRCMP_EQUAL("file", actual.input_file_path.c_str());
+}
+
+TEST(Options, input_long)
+{
+    initialize({ "cafexp", "--infile", "file" });
+
+    auto actual = read_arguments(argc, values);
+    STRCMP_EQUAL("file", actual.input_file_path.c_str());
+}
+
+TEST(Options, input_short_space_separated)
+{
+    initialize({ "cafexp", "-i", "file" });
+
+    auto actual = read_arguments(argc, values);
+    STRCMP_EQUAL("file", actual.input_file_path.c_str());
+}
+
+TEST(Options, simulate_long)
+{
+    initialize({ "cafexp", "--simulate=1000" });
+
+    auto actual = read_arguments(argc, values);
+    CHECK_EQUAL(1000, actual.nsims);
+}
+
+TEST(Options, simulate_short)
+{
+    initialize({ "cafexp", "-s1000" });
+
+    auto actual = read_arguments(argc, values);
+    CHECK_EQUAL(1000, actual.nsims);
+}
 
 TEST(GeneFamilies, read_gene_families_reads_cafe_files)
 {
@@ -263,25 +331,7 @@ TEST(Probability, get_conditional_distribution_matrix)
     LONGS_EQUAL(10, cd_matrix.size());
 }
 
-TEST(Inference, gamma_model_initial_guesses)
-{
-    newick_parser parser(false);
-    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-    clade *p_tree = parser.parse_newick();
-    single_lambda sl(0.05);
-
-    gamma_model model(&sl, p_tree, NULL, 0, 5, 4, 0.7, NULL, NULL);
-    user_data data;
-    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
-    auto guesses = opt->initial_guesses();
-    LONGS_EQUAL(2, guesses.size());
-    DOUBLES_EQUAL(0.218321, guesses[0], 0.0001);
-    DOUBLES_EQUAL(0.565811, guesses[1], 0.0001);
-   delete p_tree;
-   delete model.get_lambda();
-}
-
-TEST(Inference, base_model_initial_guesses)
+TEST(Inference, base_optimizer_guesses_lambda_only)
 {
     newick_parser parser(false);
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
@@ -295,6 +345,74 @@ TEST(Inference, base_model_initial_guesses)
     LONGS_EQUAL(1, guesses.size());
     DOUBLES_EQUAL(0.565811, guesses[0], 0.0001);
     delete model.get_lambda();
+}
+
+TEST(Inference, base_optimizer_guesses_lambda_and_unique_epsilons)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    error_model err;
+    err.set_probs(0, { .0, .7, .3 });
+    err.set_probs(1, { .4, .2, .4 });
+    std::vector<gene_family> fams;
+    single_lambda lambda(0.001);
+    base_model model(&lambda, p_tree.get(), &fams, 10, 10, NULL, &err);
+    user_data data;
+    data.p_error_model = &err;
+    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
+    CHECK(opt);
+    CHECK(dynamic_cast<lambda_epsilon_optimizer*>(opt.get()) != NULL);
+#ifdef FALSE_MEMORY_LEAK_FIXED
+    auto guesses = opt->initial_guesses();
+    LONGS_EQUAL(3, guesses.size());
+    DOUBLES_EQUAL(0.0808301, guesses[0], 0.0001);
+    DOUBLES_EQUAL(0.3, guesses[1], 0.0001);
+    DOUBLES_EQUAL(0.4, guesses[2], 0.0001);
+    vector<double>().swap(guesses);
+#endif
+    delete model.get_lambda();
+}
+
+
+TEST(Inference, gamma_optimizer_guesses_lambda_and_alpha)
+{
+    newick_parser parser(false);
+    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
+    clade *p_tree = parser.parse_newick();
+    single_lambda sl(0.05);
+
+    gamma_model model(&sl, p_tree, NULL, 0, 5, 4, -1, NULL, NULL);
+    user_data data;
+
+    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
+    CHECK(opt);
+    auto guesses = opt->initial_guesses();
+    LONGS_EQUAL(2, guesses.size());
+    DOUBLES_EQUAL(0.218321, guesses[0], 0.0001);
+    DOUBLES_EQUAL(0.565811, guesses[1], 0.0001);
+    vector<double>().swap(guesses);
+   delete p_tree;
+   delete model.get_lambda();
+}
+
+TEST(Inference, gamma_optimizer_guesses_alpha_if_lambda_provided)
+{
+    newick_parser parser(false);
+    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    single_lambda sl(0.05);
+
+    gamma_model model(&sl, p_tree.get(), NULL, 0, 5, 4, 0.7, NULL, NULL);
+    user_data data;
+    data.p_lambda = &sl;
+    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
+    CHECK(opt);
+    auto guesses = opt->initial_guesses();
+    LONGS_EQUAL(1, guesses.size());
+    DOUBLES_EQUAL(0.565811, guesses[0], 0.0001);
+    vector<double>().swap(guesses);
 }
 
 TEST(Inference, base_model_reconstruction)
@@ -743,26 +861,6 @@ TEST(Probability, error_model_set_probs)
     DOUBLES_EQUAL(0.2, vec[0], 0.00001);
     DOUBLES_EQUAL(0.6, vec[1], 0.00001);
     DOUBLES_EQUAL(0.2, vec[2], 0.00001);
-}
-
-TEST(Probability, base_model_get_epsilon_optimizer)
-{
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
-
-    error_model err;
-    err.set_probs(0, { .0, .7, .3 });
-    err.set_probs(1, { .4, .2, .4 });
-    std::vector<gene_family> fams;
-    single_lambda lambda(0.001);
-    base_model model(&lambda, p_tree.get(), &fams, 10, 10, NULL, &err);
-    user_data data;
-    data.p_error_model = &err;
-    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
-    CHECK(opt);
-    CHECK(dynamic_cast<lambda_epsilon_simultaneous_optimizer*>(opt.get()) != NULL);
-    delete model.get_lambda();
 }
 
 TEST(Probability, error_model_get_epsilon)
@@ -1224,7 +1322,7 @@ TEST(Inference, print_increases_decreases_by_clade)
     STRCMP_CONTAINS("B\t0/1", ost.str().c_str());
 }
 
-TEST(Inference, lambda_epsilon_simultaneous_optimizer)
+TEST(Inference, lambda_epsilon_optimizer)
 {
     const double initial_epsilon = 0.01;
     error_model err;
@@ -1234,7 +1332,7 @@ TEST(Inference, lambda_epsilon_simultaneous_optimizer)
     mock_model model;
 
     single_lambda lambda(0.05);
-    lambda_epsilon_simultaneous_optimizer optimizer(&model, &err, NULL, &lambda, 10);
+    lambda_epsilon_optimizer optimizer(&model, &err, NULL, &lambda, 10);
     optimizer.initial_guesses();
     vector<double> values = { 0.05, 0.06 };
     optimizer.calculate_score(&values[0]);
@@ -1249,7 +1347,14 @@ TEST(Inference, lambda_epsilon_simultaneous_optimizer)
     CHECK(expected == actual);
 }
 
-TEST(Inference, gamma_lambda_optimizer)
+TEST(Inference, gamma_optimizer)
+{
+    gamma_optimizer optimizer(NULL, NULL);
+    auto initial = optimizer.initial_guesses();
+    DOUBLES_EQUAL(0.565811, initial[0], 0.00001);
+}
+
+TEST(Inference, gamma_lambd_optimizer)
 {
     // TODO: Add families and a tree to the Inference test group, since they are required for pretty much everything
     // Remove p_tree pointer from gamma_lambda_optimizer as it is only used to find the longest branch length

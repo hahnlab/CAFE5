@@ -29,42 +29,6 @@ public:
     virtual reconstruction* reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
 };
 
-/// optimize lambdas and epsilons together
-class lambda_epsilon_simultaneous_optimizer : public optimizer_scorer
-{
-    error_model* _p_error_model;
-    lambda *_p_lambda;
-    model *_p_model;
-    root_equilibrium_distribution *_p_distribution;
-
-    double _longest_branch;
-    std::vector<double> current_guesses;
-public:
-    lambda_epsilon_simultaneous_optimizer(model* p_model,
-        error_model *p_error_model,
-        root_equilibrium_distribution* p_distribution,
-        lambda *p_lambda,
-        double longest_branch) :
-        _p_model(p_model),
-        _p_error_model(p_error_model),
-        _p_distribution(p_distribution),
-        _p_lambda(p_lambda),
-        _longest_branch(longest_branch)
-    {
-#ifdef SILENT
-        quiet = true;
-#endif
-    }
-
-    std::vector<double> initial_guesses();
-
-    virtual double calculate_score(double *values);
-    virtual void finalize(double *results);
-
-    bool quiet = false;
-};
-
-
 
 class base_model_reconstruction : public reconstruction
 {

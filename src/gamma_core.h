@@ -63,35 +63,6 @@ public:
     }
 };
 
-class gamma_lambda_optimizer : public optimizer_scorer
-{
-    gamma_model *_p_model;
-    root_equilibrium_distribution *_p_distribution;
-    const clade *_p_tree;
-    lambda *_p_lambda;
-public:
-    gamma_lambda_optimizer(const clade *p_tree, lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution) :
-        _p_tree(p_tree),
-        _p_lambda(p_lambda),
-        _p_model(p_model),
-        _p_distribution(p_distribution)
-    {
-
-    }
-
-    std::vector<double> initial_guesses();
-
-    double calculate_score(double *values);
-
-    /// results consists of the desired number of lambdas and one alpha value
-    void finalize(double *results) {
-        _p_lambda->update(results);
-        double alpha = results[_p_lambda->count()];
-        _p_model->set_alpha(alpha, _p_model->get_gene_family_count());
-    }
-
-};
-
 class gamma_model_reconstruction : public reconstruction
 {
     const std::vector<double>& _lambda_multipliers;

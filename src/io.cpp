@@ -36,31 +36,31 @@ struct option longopts[] = {
 void input_parameters::check_input() {
     //! Options -l and -m cannot both specified.
     if (fixed_lambda > 0.0 && !fixed_multiple_lambdas.empty()) {
-        throw runtime_error("Options -l and -m are mutually exclusive. Exiting...");
+        throw runtime_error("Options -l and -m are mutually exclusive.");
     }
 
     //! Option -m requires a lambda tree (-y)
     if (!fixed_multiple_lambdas.empty() && lambda_tree_file_path.empty()) {
-        throw runtime_error("You must specify a lambda tree (-y) if you fix multiple lambda values (-m). Exiting...");
+        throw runtime_error("Multiple lambda values (-m) specified with no lambda tree (-y)");
     }
     
     //! Options -l and -i have to be both specified (if estimating and not simulating).
     if (fixed_lambda > 0.0 && input_file_path.empty() && nsims != 0) {
-        throw runtime_error("Options -l and -i must both be provided an argument. Exiting...");
+        throw runtime_error("Options -l and -i must both be provided an argument.");
     }
     
     //! The number of simulated families is specified either through -s, or through -f. Cannot be both. 
     if (nsims > 0 && !rootdist.empty()) {
-        throw runtime_error("Option -s cannot be provided an argument if -f is specified. Exiting...");
+        throw runtime_error("Option -s cannot be provided an argument if -f is specified.");
     }
     
     //! Options -i and -f cannot be both specified. Either one or the other is used to specify the root eq freq distr'n.
     if (!input_file_path.empty() && !rootdist.empty()) {
-        throw runtime_error("Options -i and -f are mutually exclusive. Exiting...");
+        throw runtime_error("Options -i and -f are mutually exclusive.");
     }
 
-    if (fixed_alpha != 0.0 && n_gamma_cats == 1) {
-        throw runtime_error("You have to specify both alpha and # of gamma categories to infer parameter values. Exiting...");
+    if (fixed_alpha >= 0.0 && n_gamma_cats == 1) {
+        throw runtime_error("Alpha specified with 1 gamma category.");
     }
 }
 

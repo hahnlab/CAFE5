@@ -98,14 +98,7 @@ public:
 
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
-class optimizer_scorer {
-public:
-    virtual std::vector<double> initial_guesses() = 0;
-
-    virtual double calculate_score(double *values) = 0;
-
-    virtual void finalize(double *result) = 0;
-};
+class optimizer_scorer;
 
 class optimizer {
     FMinSearch* pfm;

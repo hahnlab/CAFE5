@@ -35,7 +35,7 @@ public:
     std::string chisquare_compare;
     std::string rootdist;
     double fixed_lambda = 0.0;
-    double fixed_alpha = 0.0;
+    double fixed_alpha = -1.0;
     double poisson_lambda = 0.0;
     bool is_simulating = false;
     int nsims = 0;

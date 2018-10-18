@@ -10,6 +10,7 @@
 #include "probability.h"
 #include "core.h"
 #include "matrix_cache.h"
+#include "optimizer_scorer.h"
 
 using namespace std;
 
