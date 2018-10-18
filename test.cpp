@@ -146,6 +146,7 @@ TEST(Options, must_not_specify_rootdist_when_simulating)
     {
         input_parameters params;
         params.is_simulating = true;
+        params.nsims = 5;
         params.rootdist = "foo.txt";
         params.check_input();
         CHECK(false);

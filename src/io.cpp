@@ -50,7 +50,7 @@ void input_parameters::check_input() {
     }
     
     //! The number of simulated families is specified either through -s, or through -f. Cannot be both. 
-    if (is_simulating && !rootdist.empty()) {
+    if (is_simulating && nsims > 0 && !rootdist.empty()) {
         throw runtime_error("Option -s cannot be provided an argument if -f is specified.");
     }
     
