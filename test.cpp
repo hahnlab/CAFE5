@@ -110,6 +110,52 @@ TEST(Options, simulate_short)
     CHECK_EQUAL(1000, actual.nsims);
 }
 
+TEST(Options, cannot_have_space_before_optional_parameter)
+{
+    try
+    {
+        initialize({ "cafexp", "-s", "1000" });
+
+        auto actual = read_arguments(argc, values);
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("Unrecognized parameter: '1000'", err.what());
+    }
+}
+
+TEST(Options, must_specify_lambda_and_input_file_for_estimator)
+{
+    try
+    {
+        input_parameters params;
+        params.fixed_lambda = 0.05;
+        params.check_input();
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("Options -l and -i must both be provided an argument.", err.what());
+    }
+}
+
+TEST(Options, must_not_specify_rootdist_when_simulating)
+{
+    try
+    {
+        input_parameters params;
+        params.is_simulating = true;
+        params.rootdist = "foo.txt";
+        params.check_input();
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("Option -s cannot be provided an argument if -f is specified.", err.what());
+    }
+}
+
 TEST(GeneFamilies, read_gene_families_reads_cafe_files)
 {
     std::string str = "Desc\tFamily ID\tA\tB\tC\tD\n\t (null)1\t5\t10\t2\t6\n\t (null)2\t5\t10\t2\t6\n\t (null)3\t5\t10\t2\t6\n\t (null)4\t5\t10\t2\t6";

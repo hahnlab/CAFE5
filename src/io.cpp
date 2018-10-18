@@ -45,12 +45,12 @@ void input_parameters::check_input() {
     }
     
     //! Options -l and -i have to be both specified (if estimating and not simulating).
-    if (fixed_lambda > 0.0 && input_file_path.empty() && nsims != 0) {
+    if (fixed_lambda > 0.0 && input_file_path.empty() && !is_simulating) {
         throw runtime_error("Options -l and -i must both be provided an argument.");
     }
     
     //! The number of simulated families is specified either through -s, or through -f. Cannot be both. 
-    if (nsims > 0 && !rootdist.empty()) {
+    if (is_simulating && !rootdist.empty()) {
         throw runtime_error("Option -s cannot be provided an argument if -f is specified.");
     }
     

@@ -18,7 +18,7 @@ input_parameters read_arguments(int argc, char *const argv[])
 
     while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:l:m:k:a:s::g::p::r:", longopts, NULL)) != -1) {
         // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
-        if (optind == prev_arg + 2 && *optarg == '-') {
+        if (optind == prev_arg + 2 && optarg && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
             exit(EXIT_FAILURE);
             // args = ':';
@@ -83,6 +83,11 @@ input_parameters read_arguments(int argc, char *const argv[])
             throw std::runtime_error(string("Unrecognized parameter: '") + (char)args + "'");
             
         }
+    }
+
+    if (optind < argc)
+    {
+        throw std::runtime_error(string("Unrecognized parameter: '") + argv[optind] + "'");
     }
 
     my_input_parameters.check_input(); // seeing if options are not mutually exclusive              
