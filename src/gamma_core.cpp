@@ -89,6 +89,11 @@ void gamma_model::start_inference_processes() {
 
 //! Populate _processes (vector of processes)
 simulation_process* gamma_model::create_simulation_process(int family_number) {
+
+    if (_gamma_cats.empty())
+    {
+        set_alpha(unifrnd(), _total_n_families_sim);        
+    }
     double lambda_bin = _gamma_cats[family_number];
 
     single_lambda *sl = dynamic_cast<single_lambda *>(_p_lambda);

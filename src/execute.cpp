@@ -200,24 +200,7 @@ void chisquare_compare::execute(std::vector<model *>&)
 
 void simulator::execute(std::vector<model *>& models)
 {
-    if (models.empty())
-        throw std::runtime_error("Not enough information to specify a model");
-
-    if (_user_input.rootdist.empty())
-    {
-        throw std::runtime_error("No root distribution specified"); // cannot simulate without a rootdist (TODO)
-    }
-
-    // -s is provided an argument (-f is not), using -i to obtain root eq freq distr'n
-    if (_user_input.nsims != 0) {
-        throw std::runtime_error("A specified number of simulations with a root distribution is not supported");
-        // place holder for estimating poisson lambda if -p, or using uniform as root eq freq distr'n
-    }
-
-    // -f is provided (-s does not have an argument), not using -i
-    else if (!_user_input.rootdist.empty()) {
-        simulate(models, _user_input);
-    }
+    simulate(models, _user_input);
 }
 
 /// Simulate
@@ -228,11 +211,11 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
 
     for (int i = 0; i < models.size(); ++i) {
 
-        cout << "Simulating " << models[i]->get_total_n_families_sim() << " families for model " << models[i]->name() << endl;
-
         // lambda_multipliers and lambda_bins will not be harcoded in the future
         if (my_input_parameters.rootdist.empty())
             models[i]->set_total_n_families_sim(my_input_parameters.nsims);
+
+        cout << "Simulating " << models[i]->get_total_n_families_sim() << " families for model " << models[i]->name() << endl;
 
         models[i]->start_sim_processes();
 
