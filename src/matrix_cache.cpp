@@ -19,6 +19,13 @@ bool matrix::is_zero() const
     return *max_element(values.begin(), values.end()) == 0;
 }
 
+/// every element is 0 other than probability of 0 to 0
+bool matrix::is_zero_except_00() const
+{
+    return *max_element(values.begin()+1, values.end()) == 0;
+}
+
+
 //! Take in a matrix and a vector, compute product, return it
 /*!
 This function returns a likelihood vector by multiplying an initial likelihood vector and a transition probability matrix.
@@ -156,4 +163,12 @@ void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, con
     }
 }
 
+void matrix_cache::warn_on_saturation(std::ostream& ost)
+{
+    for (auto& kv : _matrix_cache)
+    {
+        if (kv.second->is_zero_except_00())
+            ost << "WARNING: Saturated branch using lambda " << kv.first.lambda() << " on branch length " << kv.first.branch_length() << endl;
+    }
+}
 

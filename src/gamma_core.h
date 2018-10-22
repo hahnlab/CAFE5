@@ -10,7 +10,7 @@ private:
 
     std::vector<double> _gamma_cat_probs; // each item is the probability of belonging to a given gamma category
 
-    std::vector<int> _gamma_cats; // each item is an index to a gamma category, from 0 to n_cat; vector must be of length = _total_n_families
+    category_selector _gamma_cats;
 
     double _alpha;
 
@@ -61,6 +61,9 @@ public:
     std::size_t get_lambda_multiplier_count() const {
         return _lambda_multipliers.size();
     }
+
+    void prepare_matrices_for_simulation(matrix_cache& cache);
+
 };
 
 class gamma_model_reconstruction : public reconstruction

@@ -5,16 +5,12 @@
 #include <assert.h>
 #include <numeric>
 
-#include "clade.h"
 #include "core.h"
-#include "base_model.h"
-#include "gamma_core.h"
-#include "family_generator.h"
-#include "process.h"
-#include "poisson.h"
-#include "root_equilibrium_distribution.h"
-#include "gene_family_reconstructor.h"
 #include "user_data.h"
+#include "matrix_cache.h"
+#include "gamma_core.h"
+#include "base_model.h"
+#include "process.h"
 
 std::vector<model *> build_models(const input_parameters& my_input_parameters, user_data& user_data) {
 
@@ -81,36 +77,51 @@ void model::set_total_n_families_sim(int total_n_families_sim) {
     _total_n_families_sim = total_n_families_sim;
 }
 
-void model::start_sim_processes() {
-
-    for (int i = 0; i < _total_n_families_sim; ++i) {
-        _sim_processes.push_back(create_simulation_process(i));
-    }
-
-    // cout << _sim_processes.size() << " processes have been started." << endl;
-}
-
 //! Run simulations in all processes, in series... (TODO: in parallel!)
-void model::simulate_processes() {
+void model::simulate_processes(std::vector<trial *>& results) {
+
+    int max_size;
+    if (_rootdist_vec.empty())
+        max_size = 100;
+    else
+        max_size = 2 * *std::max_element(_rootdist_vec.begin(), _rootdist_vec.end());
+
+    matrix_cache cache(max_size);
+    prepare_matrices_for_simulation(cache);
+
+    cout << "Matrices complete\n";
+    cache.warn_on_saturation(cerr);
+
+    vector<simulation_process *> sim_processes(_total_n_families_sim);
+    results.resize(_total_n_families_sim);
+
     for (int i = 0; i < _total_n_families_sim; ++i) {
-        _sim_processes[i]->run_simulation();
+        sim_processes[i] = create_simulation_process(i);
+    }
+
+    for (int i = 0; i < _total_n_families_sim; ++i) {
+        results[i] = sim_processes[i]->run_simulation(cache);
     }
 }
 
-void model::print_processes(std::ostream& ost) {
+void model::print_processes(std::ostream& ost, const std::vector<trial *>& results) {
 
-    if (_sim_processes.empty())
+    if (results.empty())
     {
         cerr << "No simulations created" << endl;
         return;
     }
-    trial *sim = _sim_processes[0]->get_simulation();
+    trial *sim = results[0];
     for (trial::iterator it = sim->begin(); it != sim->end(); ++it) {
           ost << "#" << it->first->get_taxon_name() << "\n";
     }
 
     for (int i = 0; i < _total_n_families_sim; ++i) {
-        _sim_processes[i]->print_simulation(ost, i);
+        // Printing gene counts
+        for (trial::iterator it = results[i]->begin(); it != results[i]->end(); ++it) {
+            ost << it->second << "\t";
+        }
+        ost << endl;
     }
 }
 
@@ -122,19 +133,6 @@ void model::initialize_rootdist_if_necessary()
         std::fill(_rootdist_vec.begin(), _rootdist_vec.end(), 1);
     }
 
-}
-
-//! Print processes' simulations
-void model::adjust_family(std::ostream& ost) {
-    
-    // Printing header
-    for (trial::iterator it = _sim_processes[0]->get_simulation()->begin(); it != _sim_processes[0]->get_simulation()->end(); ++it) {
-	ost << "#" << it->first->get_taxon_name() << endl;
-    }
-    
-    for (int i = 0; i < _total_n_families_sim; ++i) {
-        _sim_processes[i]->print_simulation(cout, i);
-    }
 }
 
 class lambda_counter
@@ -213,7 +211,8 @@ void model::write_vital_statistics(std::ostream& ost, double final_likelihood)
 
 void branch_length_finder::operator()(const clade *c)
 {
-    _result.insert(c->get_branch_length());
+    if (c->get_branch_length() > 0.0)
+        _result.insert(c->get_branch_length());
 }
 
 double branch_length_finder::longest() const

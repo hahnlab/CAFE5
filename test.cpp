@@ -286,16 +286,6 @@ TEST(Inference, stash_stream)
 
 }
 
-TEST(Simulation, gamma_cats)
-{
-    std::vector<gene_family> families;
-    std::ostringstream ost;
-    vector<int> rootdist_vec;
-
-    gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL, NULL);
-    model.start_sim_processes();
-}
-
 TEST(Probability, probability_of_some_values)
 {
     matrix_cache calc(0);
@@ -372,10 +362,19 @@ TEST(Probability, get_conditional_distribution_matrix)
     unique_ptr<clade> p_tree(parser.parse_newick());
 
     single_lambda lam(0.05);
-    matrix_cache cache(11);
+    matrix_cache cache(15);
     cache.precalculate_matrices(vector<double>{0.05}, set<double>{1});
-    auto cd_matrix = get_conditional_distribution_matrix(p_tree.get(), 10, 10, 3, &lam, cache);
+    auto cd_matrix = get_conditional_distribution_matrix(p_tree.get(), 10, 12, 3, &lam, cache);
     LONGS_EQUAL(10, cd_matrix.size());
+}
+
+TEST(Probability, category_selector)
+{
+    category_selector cs;
+    CHECK(cs.empty());
+    cs.weighted_cat_draw(5, { 0.2, 0.6 });
+    CHECK_FALSE(cs.empty());
+    // TODO: Find some way to test the random_device effectively
 }
 
 TEST(Inference, base_optimizer_guesses_lambda_only)
@@ -491,7 +490,7 @@ TEST(Inference, branch_length_finder)
     clade *p_tree = parser.parse_newick();
     p_tree->apply_prefix_order(finder);
     LONGS_EQUAL(finder.longest(), 23);
-    auto expected = set<double>{ 0, 1, 3, 7, 11, 17, 23 };
+    auto expected = set<double>{ 1, 3, 7, 11, 17, 23 };
     CHECK(finder.result() == expected);
     delete p_tree;
 
@@ -1009,6 +1008,23 @@ TEST(Probability, read_error_model)
     DOUBLES_EQUAL(0.2, vec[2], 0.00001);
 }
 
+TEST(Probability, matrix_cache_warns_on_saturation)
+{
+    matrix_cache m(10);
+    m.precalculate_matrices({ 0.05, 0.01 }, { 25 });
+    ostringstream ost;
+    m.warn_on_saturation(ost);
+    STRCMP_EQUAL("WARNING: Saturated branch using lambda 0.05 on branch length 25\n", ost.str().c_str());
+}
+
+TEST(Probability, matrix_is_zero_except_00)
+{
+    matrix_cache c(10);
+    c.precalculate_matrices({ 0.05, 0.01 }, { 25 });
+    CHECK(c.get_matrix(25, 0.05).is_zero_except_00());
+    CHECK_FALSE(c.get_matrix(25, 0.01).is_zero_except_00());
+}
+
 TEST(Inference, build_reference_list)
 {
     std::string str = "Desc\tFamily ID\tA\tB\n"
@@ -1290,6 +1306,11 @@ public:
     {
         _p_lambda = lambda;
     }
+
+    // Inherited via model
+    virtual void prepare_matrices_for_simulation(matrix_cache & cache) override
+    {
+    }
 };
 
 TEST(Inference, model_vitals)
@@ -1432,6 +1453,30 @@ TEST(Simulation, simulation_process_max_family_size_is_twice_max_rootdist)
     LONGS_EQUAL(22,p.get_max_family_size_to_simulate());
 }
 
+TEST(Simulation, base_prepare_matrices_for_simulation_creates_matrix_for_each_branch)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    single_lambda lam(0.05);
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    base_model b(&lam, p_tree.get(), NULL, 0, 0, NULL, NULL);
+    matrix_cache m(25);
+    b.prepare_matrices_for_simulation(m);
+    LONGS_EQUAL(3, m.get_cache_size());
+}
+
+TEST(Simulation, gamma_prepare_matrices_for_simulation_creates_matrix_for_each_branch_and_category)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    single_lambda lam(0.05);
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    gamma_model g(&lam, p_tree.get(), NULL, 0, 0, 2, 0.5, NULL, NULL);
+    matrix_cache m(25);
+    g.prepare_matrices_for_simulation(m);
+    LONGS_EQUAL(6, m.get_cache_size());
+}
+
 TEST(Simulation, random_familysize_setter_without_error_model)
 {
     srand(10);
@@ -1442,7 +1487,9 @@ TEST(Simulation, random_familysize_setter_without_error_model)
 
     single_lambda lambda(0.05);
     trial t;
-    random_familysize_setter setter(&t, 10, &lambda, NULL);
+    matrix_cache cache(12);
+    cache.precalculate_matrices({ 0.05 }, { 3 });
+    random_familysize_setter setter(&t, 10, &lambda, NULL, cache);
     auto b = p_tree->find_descendant("B");
     setter(b);
 
@@ -1451,6 +1498,17 @@ TEST(Simulation, random_familysize_setter_without_error_model)
     t[p_tree.get()] = 5;
     setter(b);
     LONGS_EQUAL(5, t[b]);
+}
+
+TEST(Simulation, random_familysize_setter_select_size)
+{
+    matrix_cache cache(50);
+    cache.precalculate_matrices({ 0.05, 0.02 }, { 10, 20 });
+    random_familysize_setter setter(NULL, 50, NULL, NULL, cache);
+    LONGS_EQUAL(2, setter.select_size(5, 0.05, 10, 0.1));
+    LONGS_EQUAL(8, setter.select_size(8, 0.05, 10, 0.5));
+    LONGS_EQUAL(15, setter.select_size(8, 0.02, 20, 0.99));
+//    CHECK(FALSE);
 }
 
 TEST(Simulation, random_familysize_setter_with_error_model)
@@ -1470,7 +1528,9 @@ TEST(Simulation, random_familysize_setter_with_error_model)
 
     single_lambda lambda(0.05);
     trial t;
-    random_familysize_setter setter(&t, family_size, &lambda, &err);
+    matrix_cache cache(20);
+    cache.precalculate_matrices({ 0.05 }, { 3 });
+    random_familysize_setter setter(&t, family_size, &lambda, &err, cache);
     auto b = p_tree->find_descendant("B");
     setter(b);
 

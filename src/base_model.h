@@ -27,6 +27,8 @@ public:
     virtual optimizer_scorer *get_lambda_optimizer(user_data& data);
 
     virtual reconstruction* reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
+
+    virtual void prepare_matrices_for_simulation(matrix_cache& cache);
 };
 
 

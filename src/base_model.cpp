@@ -181,6 +181,13 @@ reconstruction* base_model::reconstruct_ancestral_states(matrix_cache *p_calc, r
     return result;
 }
 
+void base_model::prepare_matrices_for_simulation(matrix_cache& cache)
+{
+    branch_length_finder lengths;
+    _p_tree->apply_prefix_order(lengths);
+    cache.precalculate_matrices(get_lambda_values(_p_lambda), lengths.result());
+}
+
 base_model_reconstruction::~base_model_reconstruction()
 {
     for (auto rec_proc : _rec_processes)

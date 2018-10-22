@@ -14,6 +14,7 @@
 #include "base_model.h"
 #include "user_data.h"
 #include "optimizer_scorer.h"
+#include "process.h"
 
 double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 24.01409824083091, -1.231739572450155, 1.208650973866179e-3,
@@ -217,14 +218,13 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
 
         cout << "Simulating " << models[i]->get_total_n_families_sim() << " families for model " << models[i]->name() << endl;
 
-        models[i]->start_sim_processes();
-
-        models[i]->simulate_processes();
+        std::vector<trial *> results;
+        models[i]->simulate_processes(results);
 
         string fname = filename("simulation", my_input_parameters.output_prefix);
         std::ofstream ofst(fname);
         cout << "Writing to " << fname << endl;
-        models[i]->print_processes(ofst);
+        models[i]->print_processes(ofst, results);
     }
 }
 

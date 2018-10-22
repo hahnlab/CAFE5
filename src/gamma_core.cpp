@@ -22,7 +22,6 @@ gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_famil
     
     _gamma_cat_probs.resize(n_gamma_cats);
     _lambda_multipliers.resize(n_gamma_cats);
-    _gamma_cats.resize(_rootdist_vec.size());
     set_alpha(fixed_alpha, _rootdist_vec.size());
 
     _total_n_families_sim = _rootdist_vec.size();
@@ -58,9 +57,6 @@ void gamma_model::set_alpha(double alpha, int n_families) {
     if (_gamma_cat_probs.size() > 1)
         get_gamma(_gamma_cat_probs, _lambda_multipliers, alpha); // passing vectors by reference
 
-    vector<int>* cats = weighted_cat_draw(n_families, _gamma_cat_probs);
-    _gamma_cats = *cats;
-    delete cats;
 }
 
 void gamma_model::write_probabilities(ostream& ost)
@@ -92,9 +88,10 @@ simulation_process* gamma_model::create_simulation_process(int family_number) {
 
     if (_gamma_cats.empty())
     {
-        set_alpha(unifrnd(), _total_n_families_sim);        
+        set_alpha(unifrnd(), _total_n_families_sim);
+        _gamma_cats.weighted_cat_draw(_total_n_families_sim, _gamma_cat_probs);
     }
-    double lambda_bin = _gamma_cats[family_number];
+    double lambda_bin = _gamma_cats.draw(family_number);
 
     single_lambda *sl = dynamic_cast<single_lambda *>(_p_lambda);
     if (sl)
@@ -125,6 +122,18 @@ std::vector<double> gamma_model::get_posterior_probabilities(std::vector<double>
     return posterior_probabilities;
 }
 
+void gamma_model::prepare_matrices_for_simulation(matrix_cache& cache)
+{
+    branch_length_finder lengths;
+    _p_tree->apply_prefix_order(lengths);
+    //_lambda_multipliers
+    for (auto multiplier : _lambda_multipliers)
+    {
+        unique_ptr<lambda> mult(_p_lambda->multiply(multiplier));
+        cache.precalculate_matrices(get_lambda_values(mult.get()), lengths.result());
+    }
+}
+
 //! Infer bundle
 double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
 
@@ -147,14 +156,7 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
 
     bool success = true;
     matrix_cache calc(max(_max_root_family_size, _max_family_size) + 1);
-    branch_length_finder lengths;
-    _p_tree->apply_prefix_order(lengths);
-    //_lambda_multipliers
-    for (auto multiplier : _lambda_multipliers)
-    {
-        unique_ptr<lambda> mult(_p_lambda->multiply(multiplier));
-        calc.precalculate_matrices(get_lambda_values(mult.get()), lengths.result());
-    }
+    prepare_matrices_for_simulation(calc);
 
     vector<vector<family_info_stash>> pruning_results(_family_bundles.size());
 #pragma omp parallel for

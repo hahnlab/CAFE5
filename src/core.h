@@ -12,6 +12,8 @@ class gene_family_reconstructor;
 class reconstruction;
 class user_data;
 
+typedef clademap<int> trial;
+
 struct family_info_stash {
     family_info_stash() : lambda_multiplier(0.0), category_likelihood(0.0), family_likelihood(0.0), 
         posterior_probability(0.0), significant(false) {}
@@ -70,10 +72,6 @@ protected:
     /// Used to track gene families with identical species counts
     std::vector<int> references;
 
-
-    //! Simulations
-    vector<simulation_process*> _sim_processes; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
-
     void initialize_rootdist_if_necessary();
 
     std::vector<family_info_stash> results;
@@ -102,21 +100,19 @@ public:
     int get_total_n_families_sim() const { return _total_n_families_sim; }
     
     //! Simulation methods
-    void start_sim_processes();
-
     virtual simulation_process* create_simulation_process(int family_number) = 0;
 
-    void simulate_processes();
+    void simulate_processes(std::vector<trial *>& results);
 
-    void print_processes(std::ostream& ost);
+    void print_processes(std::ostream& ost, const std::vector<trial *>& results);
+
+    virtual void prepare_matrices_for_simulation(matrix_cache& cache) = 0;
 
     //! Inference methods
     virtual void start_inference_processes() = 0;
     
     virtual double infer_processes(root_equilibrium_distribution *prior) = 0;  // return vector of likelihoods
     
-    void adjust_family(ostream& ost);
-
     virtual std::string name() = 0;
     virtual void write_family_likelihoods(std::ostream& ost) = 0;
     virtual void write_vital_statistics(std::ostream& ost, double final_likelihood);

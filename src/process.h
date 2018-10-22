@@ -63,7 +63,6 @@ public:
 };
 
 class simulation_process : public process {
-	trial *_my_simulation;
     error_model *_p_error_model;
 	int _max_family_size_sim;
 public:
@@ -71,11 +70,9 @@ public:
 		int max_root_family_size, std::vector<int> rootdist, int family_number, error_model *p_error_model);
 
 
-	void run_simulation();
+	trial* run_simulation(const matrix_cache& cache);
 
 	void print_simulation(std::ostream & ost, int index);
-
-	trial * get_simulation();
 
     int get_max_family_size_to_simulate() const;
 };

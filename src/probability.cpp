@@ -188,27 +188,25 @@ std::vector<int> uniform_dist(int n_draws, int min, int max) {
 
 /* START: Weighted draw from vector */
 //! Draw ints or doubles from n_draws equal intervals using specified weights.
-std::vector<int> * weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_probs) {
+void category_selector::weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_probs) {
     std::random_device rd;
     std::mt19937 gen(rd()); // seeding random number engine
 
     // creating equal-sized intervals (n_draws of them)
-    std::vector<double> intervals(gamma_cat_probs.size()+1);
+    std::vector<double> intervals(gamma_cat_probs.size() + 1);
     for (int i = 0; i != intervals.size(); ++i) {
-        intervals[i] = i ;
+        intervals[i] = i;
         //std::cout << i << " ith interval" << std::endl;
     }
-    
+
     std::piecewise_constant_distribution<double> d(intervals.begin(), intervals.end(), gamma_cat_probs.begin());
-    std::vector<int> *p_gamma_cats = new std::vector<int>(n_draws);
-    
+
+    _gamma_cats.resize(n_draws);
     // now drawing
     for (int i = 0; i < n_draws; ++i) {
-        (*p_gamma_cats)[i] = d(gen);
+        _gamma_cats[i] = d(gen);
         //cout << (*p_gamma_cats)[i] << ", ";
     }
-    
-    return p_gamma_cats;
 }
 /* END: Weighted draw from vector */
 
@@ -221,7 +219,7 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
     for (size_t i = 0; i<result.size(); ++i)
     {
         clademap<int> sizes;
-        random_familysize_setter rfs(&sizes, max_family_size, p_lambda, p_error_model);
+        random_familysize_setter rfs(&sizes, max_family_size, p_lambda, p_error_model, cache);
         sizes[p_tree] = root_family_size;
         p_tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
 

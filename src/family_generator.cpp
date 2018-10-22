@@ -24,23 +24,14 @@ void random_familysize_setter::operator()(const clade *node) {
                                    /* Drawing random number from uniform */
                                    //  std::default_random_engine gen(static_cast<long unsigned int>(time(0)));
                                    // double rnd = dis(gen);
-    double rnd = unifrnd();                          
-    double cumul = 0;
     int parent_family_size = (*_p_tth_trial)[node->get_parent()];
     int c = 0; // c is the family size we will go to
 
     double lambda = _p_lambda->get_value_for_clade(node);
+    double branch_length = node->get_branch_length();
 
-    if (parent_family_size > 0) {
-        for (; c < _max_family_size - 1; c++) { // Ben: why -1
-            double prob = the_probability_of_going_from_parent_fam_size_to_c(lambda, node->get_branch_length(), parent_family_size, c);
-            cumul += prob;
+    c = select_size(parent_family_size, lambda, branch_length, unifrnd());
 
-            if (cumul >= rnd) {
-                break;
-            }
-        }   
-    }
     if (node->is_leaf() && _p_error_model != NULL)
     {
         if (c >= _p_error_model->get_max_count())
@@ -63,18 +54,41 @@ void random_familysize_setter::operator()(const clade *node) {
     (*_p_tth_trial)[node] = c;
 }
 
+/// returns the index of the item for which the cumulative sum of probabilities of a smaller size is less than rnd
+int random_familysize_setter::select_size(int parent_family_size, double lambda, double branch_length, double rnd)
+{
+    int c = 0;
+    double cumul = 0;
+    if (parent_family_size > 0) {
+        auto m = _cache.get_matrix(branch_length, lambda);
+        if (m.is_zero_except_00())  // saturated, return an invalid value
+            return -1;
+
+        for (; c < _max_family_size - 1; c++) { // Ben: why -1
+            double prob = m.get(parent_family_size, c);
+            //double prob = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, parent_family_size, c);
+            cumul += prob;
+
+            if (cumul >= rnd) {
+                break;
+            }
+        }
+    }
+    return c;
+}
+
 //! Simulate one gene family from a single root family size 
 /*!
   Wraps around random_familysize_setter, which is the main engine of the simulator.
   Given a root gene family size, a lambda, simulates gene family counts for all nodes in the tree just once.
   Returns a trial, key = pointer to node, value = gene family size
 */
-clademap<int> * simulate_family_from_root_size(const clade *tree, int root_family_size, int max_family_size, const lambda * p_lambda, error_model *p_error_model) {
+clademap<int> * simulate_family_from_root_size(const clade *tree, int root_family_size, int max_family_size, const lambda * p_lambda, error_model *p_error_model, const matrix_cache& cache) {
     if (tree == NULL)
         throw runtime_error("No tree specified for simulation");
 
     auto *result = new clademap<int>;
-    random_familysize_setter rfs(result, max_family_size, p_lambda, p_error_model);
+    random_familysize_setter rfs(result, max_family_size, p_lambda, p_error_model, cache);
     (*result)[tree] = root_family_size;
     tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
     

@@ -57,12 +57,12 @@ int simulation_process::get_max_family_size_to_simulate() const
 }
 
 //! Run process' simulation
-void simulation_process::run_simulation() {
+trial* simulation_process::run_simulation(const matrix_cache& cache) {
     if (_lambda == NULL)
         throw std::runtime_error("No lambda specified for simulation");
 
-    lambda *multiplier = _lambda->multiply(_lambda_multiplier);
-	_my_simulation = simulate_family_from_root_size(_p_tree, _root_size, _max_family_size_sim, multiplier, _p_error_model);
+    unique_ptr<lambda> multiplier(_lambda->multiply(_lambda_multiplier));
+	return simulate_family_from_root_size(_p_tree, _root_size, _max_family_size_sim, multiplier.get(), _p_error_model, cache);
 }
 
 //! Computes likelihoods for the given tree and a single family. Uses a lambda value based on the provided lambda
@@ -83,20 +83,3 @@ std::string inference_process::family_id() const
 {
     return _p_gene_family->id();
 }
-
-//! Printing process' simulation
-void simulation_process::print_simulation(std::ostream & ost, int index) {
-
-    // Printing gene counts
-	for (trial::iterator it = _my_simulation->begin(); it != _my_simulation->end(); ++it) {
-		ost << it->second << "\t";
-	}
-
-	ost << _lambda_multiplier << '\t' << index << endl;
-}
-
-//! Return simulation
-trial * simulation_process::get_simulation() {
-	return _my_simulation;
-}
-
