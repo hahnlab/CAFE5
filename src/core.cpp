@@ -72,34 +72,40 @@ void model::set_rootdist_vec(std::vector<int> rootdist_vec) {
     _rootdist_vec = rootdist_vec;
 }
 
-//! Set total number of families to simulate
-void model::set_total_n_families_sim(int total_n_families_sim) {
-    _total_n_families_sim = total_n_families_sim;
-}
-
 //! Run simulations in all processes, in series... (TODO: in parallel!)
 void model::simulate_processes(std::vector<trial *>& results) {
 
     int max_size;
     if (_rootdist_vec.empty())
+    {
         max_size = 100;
+    }
     else
+    {
         max_size = 2 * *std::max_element(_rootdist_vec.begin(), _rootdist_vec.end());
+        results.resize(_rootdist_vec.size());
+    }
+
+#ifndef SILENT
+    cout << "Simulating " << results.size() << " families for model " << name() << endl;
+#endif
+
+    initialize_simulations(results.size());
+    vector<unique_ptr<simulation_process>> sim_processes(results.size());
+
+    for (size_t i = 0; i < sim_processes.size(); ++i) {
+        sim_processes[i].reset(create_simulation_process(i));
+    }
 
     matrix_cache cache(max_size);
     prepare_matrices_for_simulation(cache);
 
+#ifndef SILENT
     cout << "Matrices complete\n";
     cache.warn_on_saturation(cerr);
+#endif
 
-    vector<simulation_process *> sim_processes(_total_n_families_sim);
-    results.resize(_total_n_families_sim);
-
-    for (int i = 0; i < _total_n_families_sim; ++i) {
-        sim_processes[i] = create_simulation_process(i);
-    }
-
-    for (int i = 0; i < _total_n_families_sim; ++i) {
+    for (size_t i = 0; i < sim_processes.size(); ++i) {
         results[i] = sim_processes[i]->run_simulation(cache);
     }
 }
@@ -116,9 +122,9 @@ void model::print_processes(std::ostream& ost, const std::vector<trial *>& resul
           ost << "#" << it->first->get_taxon_name() << "\n";
     }
 
-    for (int i = 0; i < _total_n_families_sim; ++i) {
+    for (auto& t : results) {
         // Printing gene counts
-        for (trial::iterator it = results[i]->begin(); it != results[i]->end(); ++it) {
+        for (trial::iterator it = t->begin(); it != t->end(); ++it) {
             ost << it->second << "\t";
         }
         ost << endl;

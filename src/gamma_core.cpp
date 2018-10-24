@@ -23,8 +23,6 @@ gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_famil
     _gamma_cat_probs.resize(n_gamma_cats);
     _lambda_multipliers.resize(n_gamma_cats);
     set_alpha(fixed_alpha, _rootdist_vec.size());
-
-    _total_n_families_sim = _rootdist_vec.size();
 }
 
 gamma_model::~gamma_model()
@@ -83,27 +81,15 @@ void gamma_model::start_inference_processes() {
     }
 }
 
+void gamma_model::initialize_simulations(size_t count)
+{
+    set_alpha(unifrnd(), count);
+    _gamma_cats.weighted_cat_draw(count, _gamma_cat_probs);
+}
+
 //! Populate _processes (vector of processes)
 simulation_process* gamma_model::create_simulation_process(int family_number) {
-
-    if (_gamma_cats.empty())
-    {
-        set_alpha(unifrnd(), _total_n_families_sim);
-        _gamma_cats.weighted_cat_draw(_total_n_families_sim, _gamma_cat_probs);
-    }
     double lambda_bin = _gamma_cats.draw(family_number);
-
-    single_lambda *sl = dynamic_cast<single_lambda *>(_p_lambda);
-    if (sl)
-    {
-        branch_length_finder lengths;
-        _p_tree->apply_prefix_order(lengths);
-        if (lengths.longest() * _lambda_multipliers[lambda_bin] * sl->get_single_lambda() > 1.0)
-        {
-            cerr << "WARNING: Probable saturation (branch length " << lengths.longest();
-            cerr << " lambda " << sl->get_single_lambda() << " multiplier " << _lambda_multipliers[lambda_bin] << endl;
-        }
-    }
 
     return new simulation_process(_ost, _p_lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, family_number, _p_error_model); // if a single _lambda_multiplier, how do we do it?
 }

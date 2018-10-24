@@ -18,7 +18,6 @@ base_model::base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_
     if (p_rootdist_map != NULL)
     {
         _rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
-        _total_n_families_sim = _rootdist_vec.size();
     }
 }
 

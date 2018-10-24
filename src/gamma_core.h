@@ -64,6 +64,8 @@ public:
 
     void prepare_matrices_for_simulation(matrix_cache& cache);
 
+    void initialize_simulations(size_t count);
+
 };
 
 class gamma_model_reconstruction : public reconstruction

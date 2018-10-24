@@ -212,13 +212,8 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
 
     for (int i = 0; i < models.size(); ++i) {
 
-        // lambda_multipliers and lambda_bins will not be harcoded in the future
-        if (my_input_parameters.rootdist.empty())
-            models[i]->set_total_n_families_sim(my_input_parameters.nsims);
+        std::vector<trial *> results(my_input_parameters.nsims);
 
-        cout << "Simulating " << models[i]->get_total_n_families_sim() << " families for model " << models[i]->name() << endl;
-
-        std::vector<trial *> results;
         models[i]->simulate_processes(results);
 
         string fname = filename("simulation", my_input_parameters.output_prefix);

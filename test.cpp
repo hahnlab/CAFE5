@@ -1274,7 +1274,7 @@ class mock_model : public model {
     // Inherited via model
     virtual simulation_process * create_simulation_process(int family_number) override
     {
-        return nullptr;
+        return new simulation_process(cout, _p_lambda, 1.0, _p_tree, 0, 0, vector<int>(), family_number, NULL);
     }
     virtual void start_inference_processes() override
     {
@@ -1306,12 +1306,40 @@ public:
     {
         _p_lambda = lambda;
     }
+    void set_tree(clade * tree)
+    {
+        _p_tree = tree;
+    }
 
     // Inherited via model
     virtual void prepare_matrices_for_simulation(matrix_cache & cache) override
     {
+        branch_length_finder lengths;
+        _p_tree->apply_prefix_order(lengths);
+        cache.precalculate_matrices(get_lambda_values(_p_lambda), lengths.result());
     }
 };
+
+TEST(Simulation, simulate_processes_sets_roots_less_than_100_without_rootdist)
+{
+    srand(10);
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    single_lambda lam(0.05);
+    vector<trial *> results(3);
+    mock_model model;
+    model.set_lambda(&lam);
+    model.set_tree(p_tree.get());
+    model.simulate_processes(results);
+    LONGS_EQUAL(3, results.size());
+    CHECK(results[0]->at(p_tree.get()) < 100);
+    CHECK(results[1]->at(p_tree.get()) < 100);
+    CHECK(results[2]->at(p_tree.get()) < 100);
+    for (auto r : results)
+        delete r;
+}
 
 TEST(Inference, model_vitals)
 {

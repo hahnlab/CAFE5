@@ -36,7 +36,6 @@ simulation_process::simulation_process(std::ostream &ost, lambda* lambda, double
     if (_rootdist_vec.empty()) {
         _max_family_size_sim = 100;
 
-        cout << "Max family size to simulate: " << _max_family_size_sim << endl;
         _rootdist_vec.resize(_max_family_size_sim);
 
         for (size_t i = 0; i < _rootdist_vec.size(); ++i)

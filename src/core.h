@@ -64,7 +64,6 @@ protected:
     const clade *_p_tree;
     int _max_family_size;
     int _max_root_family_size;
-    int _total_n_families_sim;
     const std::vector<gene_family>* _p_gene_families;
     vector<int> _rootdist_vec; // in case the user wants to use a specific root size distribution for all simulations
     vector<vector<int> > _rootdist_bins; // holds the distribution for each lambda bin
@@ -96,9 +95,6 @@ public:
     
     void set_rootdist_vec(std::vector<int> rootdist_vec);
     
-    void set_total_n_families_sim(int total_n_families_sim);
-    int get_total_n_families_sim() const { return _total_n_families_sim; }
-    
     //! Simulation methods
     virtual simulation_process* create_simulation_process(int family_number) = 0;
 
@@ -123,6 +119,8 @@ public:
     void print_node_depths(std::ostream& ost);
 
     std::size_t get_gene_family_count() const;
+
+    virtual void initialize_simulations(size_t count) {}
 };
 
 std::vector<int> build_reference_list(const std::vector<gene_family>& families);
