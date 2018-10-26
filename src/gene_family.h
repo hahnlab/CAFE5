@@ -5,6 +5,8 @@
 #include <map>
 #include <vector>
 
+class clade;
+
 class gene_family {
 private:
     std::string _id; //!< Gene family ID
@@ -40,5 +42,9 @@ public:
     {
         return _species_size_map == other._species_size_map;
     }
+
+    /// returns true if the family exists at the root of the given tree, according to their parsimony reconstruction.
+    bool exists_at_root(const clade *p_tree) const;
+
 };
 #endif

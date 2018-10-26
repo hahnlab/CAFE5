@@ -1235,6 +1235,36 @@ TEST(Clade, get_branch_length_throws_from_lambda_tree)
 
 }
 
+TEST(Clade, exists_at_root_returns_false_if_not_all_children_exist)
+{
+    newick_parser parser(false);
+    parser.newick_string= " ((((cat:68.710687,horse:68.710687):4.566771,cow:73.277458):20.722542,(((((chimp:4.444178,human:4.444178):6.682660,orang:11.126837):2.285866,gibbon:13.412704):7.211528,(macaque:4.567239,baboon:4.567239):16.056993):16.060691,marmoset:36.684923):57.315077)mancat:38.738115,(rat:36.302467,mouse:36.302467):96.435648)";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    istringstream ist(
+    "Desc\tFamily ID\tcat\thorse\tcow\tchimp\thuman\torang\tgibbon\tmacaque\tbaboon\tmarmoset\trat\tmouse\n"
+ "(null)\t1\t0\t0\t0\t1\t1\t0\t0\t0\t0\t0\t0\t0\n"
+ "(null)\t2\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t1\t1\n");
+
+    vector<gene_family> families;
+    read_gene_families(ist, p_tree.get(), &families);
+    CHECK_FALSE(families[0].exists_at_root(p_tree.get()));
+    CHECK_FALSE(families[1].exists_at_root(p_tree.get()));
+}
+
+TEST(Clade, exists_at_root_returns_true_if_all_children_exist)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    gene_family family;
+    family.set_species_size("A", 3);
+    family.set_species_size("B", 6);
+
+    CHECK(family.exists_at_root(p_tree.get()));
+}
+
 TEST(Inference, multiple_lambda_returns_correct_values)
 {
     ostringstream ost;

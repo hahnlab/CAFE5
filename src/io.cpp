@@ -30,6 +30,7 @@ struct option longopts[] = {
   { "simulate", optional_argument, NULL, 's' },
   { "chisquare_compare", required_argument, NULL, 'r' },
   { "log", optional_argument, NULL, 'g'},
+  { "exclude", no_argument, NULL, 'x' },
   { 0, 0, 0, 0 }
 };
 

@@ -16,7 +16,7 @@ input_parameters read_arguments(int argc, char *const argv[])
     int args; // getopt_long returns int or char
     int prev_arg;
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:l:m:k:a:s::g::p::r:", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:l:m:k:a:s::g::p::r:x", longopts, NULL)) != -1) {
         // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && optarg && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -75,6 +75,9 @@ input_parameters read_arguments(int argc, char *const argv[])
         case 'g':
             my_input_parameters.do_log = true;
             break;
+        case 'x':
+            my_input_parameters.exclude_zero_root_families = true;
+            break;
         case ':':   // missing argument
             fprintf(stderr, "%s: option `-%c' requires an argument",
                 argv[0], optopt);
@@ -126,6 +129,16 @@ int cafexp(int argc, char *const argv[]) {
 
         user_data data;
         data.read_datafiles(user_input);
+
+        if (user_input.exclude_zero_root_families)
+        {
+            auto rem = std::remove_if(data.gene_families.begin(), data.gene_families.end(), [&data](const gene_family& fam) {
+                return !fam.exists_at_root(data.p_tree);
+            });
+
+            cout << "Excluding " << data.gene_families.end() - rem << " families" << endl;
+            data.gene_families.erase(rem, data.gene_families.end());
+        }
 
         data.p_prior.reset(root_eq_dist_factory(user_input, &data.gene_families));
 

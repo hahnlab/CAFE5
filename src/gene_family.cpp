@@ -1,7 +1,9 @@
 #include <algorithm>
+#include <set>
 
 #include "gene_family.h"
 #include "utils.h"
+#include "clade.h"
 
 using namespace std;
 
@@ -42,5 +44,30 @@ vector<std::string> gene_family::get_species() const {
     transform(_species_size_map.begin(), _species_size_map.end(), species_names.begin(), do_get_species<string, int>); // Transform performs an operation on all elements of a container (here, the operation is the template)
 
     return species_names;
+}
+
+/// returns true if the family exists at the root, according to their parsimony reconstruction.
+bool gene_family::exists_at_root(const clade *p_tree) const
+{
+    set<const clade *> exists;
+    auto existence = [&](const clade *pc) {
+        if (pc->is_leaf())
+        {
+            int sz = get_species_size(pc->get_taxon_name());
+            if (sz > 0)
+                exists.insert(pc);
+        }
+        else
+        {
+            bool exists_at_all_children = true;
+            auto does_child_exist = [&](const clade *child) { exists_at_all_children &= exists.find(child) != exists.end(); };
+            pc->apply_to_descendants(does_child_exist);
+            if (exists_at_all_children)
+                exists.insert(pc);
+        }
+    };
+    p_tree->apply_reverse_level_order(existence);
+
+    return exists.find(p_tree) != exists.end();
 }
 
