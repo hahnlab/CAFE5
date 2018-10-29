@@ -50,24 +50,31 @@ vector<std::string> gene_family::get_species() const {
 bool gene_family::exists_at_root(const clade *p_tree) const
 {
     set<const clade *> exists;
+    auto registered = [&exists](const clade *c) {
+        return exists.find(c) != exists.end();
+    };
     auto existence = [&](const clade *pc) {
         if (pc->is_leaf())
         {
             int sz = get_species_size(pc->get_taxon_name());
             if (sz > 0)
-                exists.insert(pc);
-        }
-        else
-        {
-            bool exists_at_all_children = true;
-            auto does_child_exist = [&](const clade *child) { exists_at_all_children &= exists.find(child) != exists.end(); };
-            pc->apply_to_descendants(does_child_exist);
-            if (exists_at_all_children)
-                exists.insert(pc);
+            {
+                auto p = pc;
+                do
+                {
+                    exists.insert(p);
+                    //cout << "Registering node " << p->get_taxon_name() << endl;
+                    p = p->get_parent();
+                } while (p && !registered(p));
+            }
         }
     };
     p_tree->apply_reverse_level_order(existence);
 
-    return exists.find(p_tree) != exists.end();
+    bool exists_at_all_children = true;
+    auto does_child_exist = [&](const clade *child) { exists_at_all_children &= registered(child); };
+    p_tree->apply_to_descendants(does_child_exist);
+
+    return exists_at_all_children;
 }
 
