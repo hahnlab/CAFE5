@@ -1082,6 +1082,7 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_correctly)
 
     matrix_cache cache(21);
     likelihood_computer pruner(20, 20, &lambda, family, cache, NULL);
+    pruner.initialize_memory(p_tree.get());
     cache.precalculate_matrices({ 0.045 }, { 1.0,3.0,7.0 });
 
     auto A = p_tree->find_descendant("A");
@@ -1124,19 +1125,11 @@ TEST(Inference, likelihood_computer_sets_root_nodes_correctly)
 
     matrix_cache cache(21);
     likelihood_computer pruner(20, 20, &lambda, family, cache, NULL);
+    pruner.initialize_memory(p_tree.get());
+
     cache.precalculate_matrices({ 0.03 }, { 1.0,3.0,7.0 });
 
     auto AB = p_tree->find_descendant("AB");
-    try
-    {
-        pruner(AB);
-        CHECK(false);   
-    }
-    catch (runtime_error& err)
-    {
-        STRCMP_EQUAL("Child node probabilities not calculated", err.what());
-    }
-
     pruner(p_tree->find_descendant("A"));
     pruner(p_tree->find_descendant("B"));
     pruner(AB);
@@ -1179,6 +1172,7 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_from_error_model_if_provided
     read_error_model_file(ist, &model);
 
     likelihood_computer pruner(20, 20, &lambda, family, cache, &model);
+    pruner.initialize_memory(p_tree.get());
 
     auto A = p_tree->find_descendant("A");
     pruner(A);

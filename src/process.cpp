@@ -73,6 +73,7 @@ std::vector<double> inference_process::prune(matrix_cache& calc) {
     unique_ptr<lambda> multiplier(_lambda->multiply(_lambda_multiplier));
 
 	likelihood_computer pruner(_max_root_family_size, _max_family_size, multiplier.get(), *_p_gene_family, calc, _p_error_model); // likelihood_computer has a pointer to a gene family as a member, that's why &(*p_gene_families)[0]
+    pruner.initialize_memory(_p_tree);
 	_p_tree->apply_reverse_level_order(pruner);
 
 	return pruner.get_likelihoods(_p_tree); // likelihood of the whole tree = multiplication of likelihood of all nodes

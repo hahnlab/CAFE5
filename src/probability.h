@@ -63,6 +63,8 @@ public:
 		return *std::max_element(_probabilities.at(node).begin(), _probabilities.at(node).end());
 	}
 
+    void initialize_memory(const clade *p_tree);
+
 };
 
 /* END: Likelihood computation ---------------------- */

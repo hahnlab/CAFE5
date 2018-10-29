@@ -150,6 +150,7 @@ double pvalue_calculator::operator()(const gene_family& gf)
     int max = gf.get_max_size();
 
     likelihood_computer pruner(_max_root_family_size, _max_family_size, _p_lambda, gf, *_p_matrix_cache, NULL);
+    pruner.initialize_memory(_p_tree);
     _p_tree->apply_reverse_level_order(pruner);
     auto lh = pruner.get_likelihoods(_p_tree);
 
