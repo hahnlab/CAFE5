@@ -110,7 +110,11 @@ void model::simulate_processes(std::vector<trial *>& results) {
     }
 }
 
-void model::print_processes(std::ostream& ost, const std::vector<trial *>& results) {
+void model::print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<trial *>& results) {
+
+    std::vector<const clade *> order;
+    auto fn = [&order](const clade *c) { order.push_back(c); };
+    _p_tree->apply_reverse_level_order(fn);
 
     if (results.empty())
     {
@@ -118,14 +122,29 @@ void model::print_processes(std::ostream& ost, const std::vector<trial *>& resul
         return;
     }
     trial *sim = results[0];
-    for (trial::iterator it = sim->begin(); it != sim->end(); ++it) {
-          ost << "#" << it->first->get_taxon_name() << "\n";
-    }
 
-    for (auto& t : results) {
+    ost << "DESC\tFID";
+    for (size_t i = 0; i < order.size(); ++i)
+    {
+        if (order[i]->is_leaf())
+            ost << '\t' << order[i]->get_taxon_name();
+        else if (include_internal_nodes)
+            ost << '\t' << i;
+
+    }
+    ost << endl;
+
+    for (size_t j = 0; j < results.size(); ++j) {
+        auto& fam = *results[j];
         // Printing gene counts
-        for (trial::iterator it = t->begin(); it != t->end(); ++it) {
-            ost << it->second << "\t";
+        ost << "NULL\tsimfam" << j;
+        for (size_t i = 0; i < order.size(); ++i)
+        {
+            if (order[i]->is_leaf() || include_internal_nodes)
+            {
+                ost << '\t';
+                ost << fam[order[i]];
+            }
         }
         ost << endl;
     }

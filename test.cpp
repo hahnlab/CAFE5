@@ -1365,6 +1365,51 @@ TEST(Simulation, simulate_processes_sets_roots_less_than_100_without_rootdist)
         delete r;
 }
 
+
+TEST(Simulation, print_process_prints_in_order)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    mock_model model;
+    model.set_tree(p_tree.get());
+    std::ostringstream ost;
+    trial t;
+    t[p_tree->find_descendant("B")] = 4;
+    t[p_tree->find_descendant("A")] = 2;
+    t[p_tree->find_descendant("AB")] = 6;
+
+    vector<trial*> my_trials({ &t });
+
+    model.print_simulations(ost, true, my_trials);
+    STRCMP_CONTAINS("DESC\tFID\tB\tA\t2", ost.str().c_str());
+    STRCMP_CONTAINS("NULL\tsimfam0\t4\t2\t6", ost.str().c_str());
+
+}
+
+TEST(Simulation, print_process_can_print_without_internal_nodes)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    mock_model model;
+    model.set_tree(p_tree.get());
+    std::ostringstream ost;
+    trial t;
+    t[p_tree->find_descendant("B")] = 4;
+    t[p_tree->find_descendant("A")] = 2;
+    t[p_tree->find_descendant("AB")] = 6;
+
+    vector<trial*> my_trials({ &t });
+
+    model.print_simulations(ost, false, my_trials);
+    STRCMP_CONTAINS("DESC\tFID\tB\tA\n", ost.str().c_str());
+    STRCMP_CONTAINS("NULL\tsimfam0\t4\t2\n", ost.str().c_str());
+
+}
+
 TEST(Inference, model_vitals)
 {
     mock_model model;

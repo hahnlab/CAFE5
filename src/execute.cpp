@@ -217,10 +217,15 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
 
         models[i]->simulate_processes(results);
 
+        string truth_fname = filename("simulation_truth", my_input_parameters.output_prefix);
+        std::ofstream ofst(truth_fname);
+        cout << "Writing to " << truth_fname << endl;
+        models[i]->print_simulations(ofst, true, results);
+
         string fname = filename("simulation", my_input_parameters.output_prefix);
-        std::ofstream ofst(fname);
+        std::ofstream ofst2(fname);
         cout << "Writing to " << fname << endl;
-        models[i]->print_processes(ofst, results);
+        models[i]->print_simulations(ofst2, false, results);
     }
 }
 

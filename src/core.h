@@ -100,7 +100,7 @@ public:
 
     void simulate_processes(std::vector<trial *>& results);
 
-    void print_processes(std::ostream& ost, const std::vector<trial *>& results);
+    void print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<trial *>& results);
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache) = 0;
 
