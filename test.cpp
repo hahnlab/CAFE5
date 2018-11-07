@@ -96,7 +96,7 @@ TEST(Options, input_short_space_separated)
 
 TEST(Options, simulate_long)
 {
-    initialize({ "cafexp", "--simulate=1000" });
+    initialize({ "cafexp", "--simulate=1000", "-l", "0.05" });
 
     auto actual = read_arguments(argc, values);
     CHECK_EQUAL(1000, actual.nsims);
@@ -104,7 +104,7 @@ TEST(Options, simulate_long)
 
 TEST(Options, simulate_short)
 {
-    initialize({ "cafexp", "-s1000" });
+    initialize({ "cafexp", "-s1000", "-l", "0.05"});
 
     auto actual = read_arguments(argc, values);
     CHECK_EQUAL(1000, actual.nsims);
@@ -138,6 +138,31 @@ TEST(Options, must_specify_lambda_and_input_file_for_estimator)
     {
         STRCMP_EQUAL("Options -l and -i must both be provided an argument.", err.what());
     }
+}
+
+TEST(Options, must_specify_lambda_for_simulation)
+{
+    try
+    {
+        input_parameters params;
+        params.is_simulating = true;
+        params.check_input();
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("Cannot simulate without initial lambda values", err.what());
+    }
+}
+
+TEST(Options, check_input_does_not_throw_when_simulating_with_multiple_lambdas)
+{
+    input_parameters params;
+    params.is_simulating = true;
+    params.fixed_multiple_lambdas = "0.01,0.05";
+    params.lambda_tree_file_path = "./tree";
+    params.check_input();
+    CHECK(true);
 }
 
 TEST(Options, must_not_specify_rootdist_when_simulating)

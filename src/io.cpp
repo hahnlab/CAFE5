@@ -55,6 +55,11 @@ void input_parameters::check_input() {
         throw runtime_error("Option -s cannot be provided an argument if -f is specified.");
     }
     
+    //! The number of simulated families is specified either through -s, or through -f. Cannot be both. 
+    if (is_simulating && fixed_lambda <= 0.0 && fixed_multiple_lambdas.empty()) {
+        throw runtime_error("Cannot simulate without initial lambda values");
+    }
+
     //! Options -i and -f cannot be both specified. Either one or the other is used to specify the root eq freq distr'n.
     if (!input_file_path.empty() && !rootdist.empty()) {
         throw runtime_error("Options -i and -f are mutually exclusive.");
