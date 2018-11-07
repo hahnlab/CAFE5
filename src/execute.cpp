@@ -35,7 +35,7 @@ void estimator::compute(std::vector<model *>& models, const input_parameters &my
     std::vector<double> model_likelihoods(models.size());
     for (int i = 0; i < models.size(); ++i) {
         cout << endl << "Starting inference processes for " << models[i]->name() << " model" << endl;
-        models[i]->start_inference_processes();
+        models[i]->start_inference_processes(models[i]->get_lambda());
 
         cout << endl << "Inferring processes for " << models[i]->name() << " model" << endl;
         double result = models[i]->infer_processes(data.p_prior.get());

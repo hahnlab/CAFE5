@@ -238,7 +238,7 @@ TEST(Inference, infer_processes)
     clade *p_tree = parser.parse_newick();
 
     base_model core(&lambda, p_tree, &families, 56, 30, NULL, NULL);
-    core.start_inference_processes();
+    core.start_inference_processes(&lambda);
 
 
     uniform_distribution frq;
@@ -289,7 +289,7 @@ TEST(Inference, gamma)
     gamma_model core(&lambda, p_tree, &families, 0, 5, 0, 0, NULL, NULL);
     core.set_max_sizes(148, 122);
 
-    core.start_inference_processes();
+    core.start_inference_processes(&lambda);
     uniform_distribution frq;
     double actual = core.infer_processes(&frq);
     // DOUBLES_EQUAL(56.3469, actual, .0001);
@@ -1325,7 +1325,7 @@ class mock_model : public model {
     {
         return new simulation_process(cout, _p_lambda, 1.0, _p_tree, 0, 0, vector<int>(), family_number, NULL);
     }
-    virtual void start_inference_processes() override
+    virtual void start_inference_processes(lambda *) override
     {
     }
     virtual double infer_processes(root_equilibrium_distribution * prior) override

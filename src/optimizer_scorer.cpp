@@ -28,7 +28,7 @@ double lambda_optimizer::calculate_score(double *values)
     if (!quiet)
         std::cout << "Lambda: " << *_p_lambda << std::endl;
 
-    _p_model->start_inference_processes();
+    _p_model->start_inference_processes(_p_lambda);
 
     double score = _p_model->infer_processes(_p_distribution);
 
@@ -78,7 +78,7 @@ double lambda_epsilon_optimizer::calculate_score(double *values)
         std::cout << "Calculating probability: epsilon=" << _p_error_model->get_epsilons().back()*2.0 << ", " << "lambda=" << *_p_lambda << std::endl;
     }
 
-    _p_model->start_inference_processes();
+    _p_model->start_inference_processes(_p_lambda);
 
     double score = _p_model->infer_processes(_p_distribution);
 
@@ -113,7 +113,7 @@ double gamma_optimizer::calculate_score(double * values)
 
     std::cout << "Attempting alpha: " << alpha << std::endl;
 
-    _p_model->start_inference_processes();
+    _p_model->start_inference_processes(_p_model->get_lambda());
 
     return _p_model->infer_processes(_p_distribution);
 }

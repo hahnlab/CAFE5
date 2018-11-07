@@ -36,7 +36,7 @@ public:
     virtual simulation_process* create_simulation_process(const user_data& data, int family_number);
 
     //! Inference methods
-    void start_inference_processes();
+    void start_inference_processes(lambda *);
 
     double infer_processes(root_equilibrium_distribution *prior);
 

@@ -56,7 +56,7 @@ vector<int> build_reference_list(const vector<gene_family>& families)
     return reff;
 }
 
-void base_model::start_inference_processes()
+void base_model::start_inference_processes(lambda *p_lambda)
 {
     for (auto proc : processes)
         delete proc;
@@ -65,7 +65,7 @@ void base_model::start_inference_processes()
     processes.resize(_p_gene_families->size());
     for (int i = 0; i <_p_gene_families->size(); ++i) {
         if (references[i] == i)
-            processes[i] = new inference_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec, _p_error_model); // if a single _lambda_multiplier, how do we do it?
+            processes[i] = new inference_process(_ost, p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec, _p_error_model); // if a single _lambda_multiplier, how do we do it?
     }
 }
 

@@ -105,7 +105,7 @@ public:
     virtual void prepare_matrices_for_simulation(matrix_cache& cache) = 0;
 
     //! Inference methods
-    virtual void start_inference_processes() = 0;
+    virtual void start_inference_processes(lambda *) = 0;
     
     virtual double infer_processes(root_equilibrium_distribution *prior) = 0;  // return vector of likelihoods
     

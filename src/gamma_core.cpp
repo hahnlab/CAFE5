@@ -70,10 +70,10 @@ void gamma_model::write_probabilities(ostream& ost)
     ost << endl;
 }
 
-void gamma_model::start_inference_processes() {
+void gamma_model::start_inference_processes(lambda *p_lambda) {
 
     _family_bundles.clear();
-    inference_process_factory factory(_ost, _p_lambda, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec);
+    inference_process_factory factory(_ost, p_lambda, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec);
     for (auto i = _p_gene_families->begin(); i != _p_gene_families->end(); ++i)
     {
         factory.set_gene_family(&(*i));
@@ -265,7 +265,7 @@ double gamma_lambda_optimizer::calculate_score(double *values)
 
     cout << "Attempting lambda: " << *_p_lambda << ", alpha: " << alpha << std::endl;
 
-    _p_model->start_inference_processes();
+    _p_model->start_inference_processes(_p_lambda);
 
     return _p_model->infer_processes(_p_distribution);
 }
