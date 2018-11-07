@@ -27,10 +27,10 @@ class lambda_optimizer : public optimizer_scorer
 {
     const clade *_p_tree;
     lambda *_p_lambda;
-    base_model *_p_model;
+    model *_p_model;
     root_equilibrium_distribution *_p_distribution;
 public:
-    lambda_optimizer(const clade *p_tree, lambda *p_lambda, base_model* p_model, root_equilibrium_distribution *p_distribution) :
+    lambda_optimizer(const clade *p_tree, lambda *p_lambda, model* p_model, root_equilibrium_distribution *p_distribution) :
         _p_tree(p_tree),
         _p_lambda(p_lambda),
         _p_model(p_model),

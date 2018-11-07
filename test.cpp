@@ -452,9 +452,8 @@ TEST(Inference, gamma_optimizer_guesses_lambda_and_alpha)
     newick_parser parser(false);
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
     clade *p_tree = parser.parse_newick();
-    single_lambda sl(0.05);
 
-    gamma_model model(&sl, p_tree, NULL, 0, 5, 4, -1, NULL, NULL);
+    gamma_model model(NULL, p_tree, NULL, 0, 5, 4, -1, NULL, NULL);
     user_data data;
 
     unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
@@ -468,22 +467,65 @@ TEST(Inference, gamma_optimizer_guesses_lambda_and_alpha)
    delete model.get_lambda();
 }
 
+TEST(Inference, gamma_optimizer_guesses_lambda_if_alpha_provided)
+{
+    newick_parser parser(false);
+    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, 0.25, NULL, NULL);
+
+    user_data data;
+
+    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
+
+    CHECK(opt);
+    CHECK(dynamic_cast<lambda_optimizer *>(opt.get()));
+
+    auto guesses = opt->initial_guesses();
+    LONGS_EQUAL(1, guesses.size());
+    DOUBLES_EQUAL(0.565811, guesses[0], 0.0001);
+    vector<double>().swap(guesses);
+    delete model.get_lambda();
+}
+
 TEST(Inference, gamma_optimizer_guesses_alpha_if_lambda_provided)
 {
     newick_parser parser(false);
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
     unique_ptr<clade> p_tree(parser.parse_newick());
-    single_lambda sl(0.05);
 
-    gamma_model model(&sl, p_tree.get(), NULL, 0, 5, 4, 0.7, NULL, NULL);
+    gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, -1, NULL, NULL);
+
     user_data data;
+    single_lambda sl(0.05);
     data.p_lambda = &sl;
+
     unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
+
     CHECK(opt);
+    CHECK(dynamic_cast<gamma_optimizer *>(opt.get()));
+
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(1, guesses.size());
     DOUBLES_EQUAL(0.565811, guesses[0], 0.0001);
     vector<double>().swap(guesses);
+    delete model.get_lambda();
+}
+
+TEST(Inference, gamma_optimizer_optimizes_nothing_if_lambda_and_alpha_provided)
+{
+    newick_parser parser(false);
+    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, .25, NULL, NULL);
+
+    user_data data;
+    single_lambda sl(0.05);
+    data.p_lambda = &sl;
+
+    CHECK(model.get_lambda_optimizer(data) == nullptr);
 }
 
 TEST(Inference, base_model_reconstruction)

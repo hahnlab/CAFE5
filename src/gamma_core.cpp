@@ -192,17 +192,27 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
 
 optimizer_scorer *gamma_model::get_lambda_optimizer(user_data& data)
 {
-    if (data.p_lambda == NULL && _alpha > 0.0)
-        return nullptr; // nothing to optimize
+    bool estimate_lambda = data.p_lambda == NULL;
+    bool estimate_alpha = _alpha <= 0.0;
 
-    if (data.p_lambda == NULL)  
+    if (estimate_lambda && estimate_alpha)
     {
         initialize_lambda(data.p_lambda_tree);
         return new gamma_lambda_optimizer(_p_tree, _p_lambda, this, data.p_prior.get());
     }
+    else if (estimate_lambda && !estimate_alpha)
+    {
+        initialize_lambda(data.p_lambda_tree);
+        return new lambda_optimizer(_p_tree, _p_lambda, this, data.p_prior.get());
+    }
+    else if (!estimate_lambda && estimate_alpha)
+    {
+        _p_lambda = data.p_lambda->clone();
+        return new gamma_optimizer(this, data.p_prior.get());
+    }
     else
     {
-        return new gamma_optimizer(this, data.p_prior.get());
+        return nullptr;
     }
 }
 
