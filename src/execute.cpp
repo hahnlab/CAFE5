@@ -215,7 +215,7 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
 
         std::vector<trial *> results(my_input_parameters.nsims);
 
-        models[i]->simulate_processes(results);
+        models[i]->simulate_processes(data, results);
 
         string truth_fname = filename("simulation_truth", my_input_parameters.output_prefix);
         std::ofstream ofst(truth_fname);

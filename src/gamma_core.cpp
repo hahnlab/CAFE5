@@ -88,10 +88,10 @@ void gamma_model::initialize_simulations(size_t count)
 }
 
 //! Populate _processes (vector of processes)
-simulation_process* gamma_model::create_simulation_process(int family_number) {
+simulation_process* gamma_model::create_simulation_process(const user_data& data, int family_number) {
     double lambda_bin = _gamma_cats.draw(family_number);
 
-    return new simulation_process(_ost, _p_lambda, _lambda_multipliers[lambda_bin], _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, family_number, _p_error_model); // if a single _lambda_multiplier, how do we do it?
+    return new simulation_process(_ost, data.p_lambda, _lambda_multipliers[lambda_bin], data.p_tree, data.max_family_size, data.max_root_family_size, _rootdist_vec, family_number, data.p_error_model); // if a single _lambda_multiplier, how do we do it?
 }
 
 std::vector<double> gamma_model::get_posterior_probabilities(std::vector<double> cat_likelihoods)

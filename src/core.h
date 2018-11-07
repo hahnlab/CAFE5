@@ -96,9 +96,9 @@ public:
     void set_rootdist_vec(std::vector<int> rootdist_vec);
     
     //! Simulation methods
-    virtual simulation_process* create_simulation_process(int family_number) = 0;
+    virtual simulation_process* create_simulation_process(const user_data& data, int family_number) = 0;
 
-    void simulate_processes(std::vector<trial *>& results);
+    void simulate_processes(const user_data& data, std::vector<trial *>& results);
 
     void print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<trial *>& results);
 

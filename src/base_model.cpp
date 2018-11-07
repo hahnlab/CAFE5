@@ -28,8 +28,8 @@ base_model::~base_model()
 
 }
 
-simulation_process* base_model::create_simulation_process(int family_number) {
-    return new simulation_process(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec, family_number, _p_error_model); // if a single _lambda_multiplier, how do we do it?
+simulation_process* base_model::create_simulation_process(const user_data& data, int family_number) {
+    return new simulation_process(_ost, data.p_lambda, 1.0, data.p_tree, data.max_family_size, data.max_root_family_size, _rootdist_vec, family_number, data.p_error_model); // if a single _lambda_multiplier, how do we do it?
 }
 
 vector<int> build_reference_list(const vector<gene_family>& families)

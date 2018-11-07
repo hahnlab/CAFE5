@@ -103,10 +103,10 @@ void init_lgamma_cache();
 action* get_executor(input_parameters& user_input, user_data& data)
 {
     if (!user_input.chisquare_compare.empty()) {
-        return new chisquare_compare(user_input.chisquare_compare);
+        return new chisquare_compare(data, user_input);
     }
     if (user_input.is_simulating) {
-        return new simulator(user_input);
+        return new simulator(data, user_input);
     }
     else
     {

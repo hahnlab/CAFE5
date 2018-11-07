@@ -73,7 +73,7 @@ void model::set_rootdist_vec(std::vector<int> rootdist_vec) {
 }
 
 //! Run simulations in all processes, in series... (TODO: in parallel!)
-void model::simulate_processes(std::vector<trial *>& results) {
+void model::simulate_processes(const user_data& data, std::vector<trial *>& results) {
 
     int max_size;
     if (_rootdist_vec.empty())
@@ -94,7 +94,7 @@ void model::simulate_processes(std::vector<trial *>& results) {
     vector<unique_ptr<simulation_process>> sim_processes(results.size());
 
     for (size_t i = 0; i < sim_processes.size(); ++i) {
-        sim_processes[i].reset(create_simulation_process(i));
+        sim_processes[i].reset(create_simulation_process(data, i));
     }
 
     matrix_cache cache(max_size);

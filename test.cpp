@@ -1321,7 +1321,7 @@ public:
 
 class mock_model : public model {
     // Inherited via model
-    virtual simulation_process * create_simulation_process(int family_number) override
+    virtual simulation_process * create_simulation_process(const user_data& data, int family_number) override
     {
         return new simulation_process(cout, _p_lambda, 1.0, _p_tree, 0, 0, vector<int>(), family_number, NULL);
     }
@@ -1379,9 +1379,10 @@ TEST(Simulation, simulate_processes_sets_roots_less_than_100_without_rootdist)
     single_lambda lam(0.05);
     vector<trial *> results(3);
     mock_model model;
+    user_data data;
     model.set_lambda(&lam);
     model.set_tree(p_tree.get());
-    model.simulate_processes(results);
+    model.simulate_processes(data, results);
     LONGS_EQUAL(3, results.size());
     CHECK(results[0]->at(p_tree.get()) < 100);
     CHECK(results[1]->at(p_tree.get()) < 100);
