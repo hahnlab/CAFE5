@@ -26,7 +26,8 @@ std::vector<model *> build_models(const input_parameters& my_input_parameters, u
     {
         auto gmodel = new gamma_model(user_data.p_lambda, user_data.p_tree, &user_data.gene_families, user_data.max_family_size, user_data.max_root_family_size,
             my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, &user_data.rootdist, user_data.p_error_model);
-        gmodel->write_probabilities(cout);
+        if (my_input_parameters.fixed_alpha >= 0)
+            gmodel->write_probabilities(cout);
         p_model = gmodel;
     }
     else
@@ -70,84 +71,6 @@ void model::set_max_sizes(int max_family_size, int max_root_family_size) {
 //! Set root distribution vector
 void model::set_rootdist_vec(std::vector<int> rootdist_vec) {
     _rootdist_vec = rootdist_vec;
-}
-
-//! Run simulations in all processes, in series... (TODO: in parallel!)
-void model::simulate_processes(const user_data& data, std::vector<trial *>& results) {
-
-    int max_size;
-    if (_rootdist_vec.empty())
-    {
-        max_size = 100;
-    }
-    else
-    {
-        max_size = 2 * *std::max_element(_rootdist_vec.begin(), _rootdist_vec.end());
-        results.resize(_rootdist_vec.size());
-    }
-
-#ifndef SILENT
-    cout << "Simulating " << results.size() << " families for model " << name() << endl;
-#endif
-
-    initialize_simulations(results.size());
-    vector<unique_ptr<simulation_process>> sim_processes(results.size());
-
-    for (size_t i = 0; i < sim_processes.size(); ++i) {
-        sim_processes[i].reset(create_simulation_process(data, i));
-    }
-
-    matrix_cache cache(max_size);
-    prepare_matrices_for_simulation(cache);
-
-#ifndef SILENT
-    cout << "Matrices complete\n";
-    cache.warn_on_saturation(cerr);
-#endif
-
-    for (size_t i = 0; i < sim_processes.size(); ++i) {
-        results[i] = sim_processes[i]->run_simulation(cache);
-    }
-}
-
-void model::print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<trial *>& results) {
-
-    std::vector<const clade *> order;
-    auto fn = [&order](const clade *c) { order.push_back(c); };
-    _p_tree->apply_reverse_level_order(fn);
-
-    if (results.empty())
-    {
-        cerr << "No simulations created" << endl;
-        return;
-    }
-    trial *sim = results[0];
-
-    ost << "DESC\tFID";
-    for (size_t i = 0; i < order.size(); ++i)
-    {
-        if (order[i]->is_leaf())
-            ost << '\t' << order[i]->get_taxon_name();
-        else if (include_internal_nodes)
-            ost << '\t' << i;
-
-    }
-    ost << endl;
-
-    for (size_t j = 0; j < results.size(); ++j) {
-        auto& fam = *results[j];
-        // Printing gene counts
-        ost << "NULL\tsimfam" << j;
-        for (size_t i = 0; i < order.size(); ++i)
-        {
-            if (order[i]->is_leaf() || include_internal_nodes)
-            {
-                ost << '\t';
-                ost << fam[order[i]];
-            }
-        }
-        ost << endl;
-    }
 }
 
 void model::initialize_rootdist_if_necessary()
@@ -232,6 +155,18 @@ void model::write_vital_statistics(std::ostream& ost, double final_likelihood)
     ost << "Lambda: " << *get_lambda() << endl;
     if (_p_error_model)
         ost << "Epsilon: " << _p_error_model->get_epsilons()[0] << endl;
+}
+
+int model::get_max_simulation_size() const
+{
+    if (_rootdist_vec.empty())
+    {
+        return 100;
+    }
+    else
+    {
+        return 2 * *std::max_element(_rootdist_vec.begin(), _rootdist_vec.end());
+    }
 }
 
 void branch_length_finder::operator()(const clade *c)

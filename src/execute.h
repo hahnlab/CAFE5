@@ -1,6 +1,8 @@
 #ifndef EXECUTE_H
 #define EXECUTE_H
 
+#include <vector>
+
 #include "io.h"
 
 struct input_parameters;
@@ -9,6 +11,8 @@ class matrix_cache;
 class model;
 class root_equilibrium_distribution;
 class user_data;
+
+typedef clademap<int> trial;
 
 class action
 {
@@ -33,6 +37,9 @@ public:
 
     }
     virtual void execute(std::vector<model *>& models);
+    void print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<trial *>& results);
+    void simulate_processes(model *p_model, std::vector<trial *>& results);
+
 };
 
 class chisquare_compare : public action

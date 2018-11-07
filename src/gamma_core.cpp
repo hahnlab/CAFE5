@@ -274,6 +274,7 @@ double gamma_lambda_optimizer::calculate_score(double *values)
     _p_model->set_alpha(alpha, _p_model->get_gene_family_count());
 
     cout << "Attempting lambda: " << *_p_lambda << ", alpha: " << alpha << std::endl;
+    _p_model->write_probabilities(cout);
 
     _p_model->start_inference_processes(_p_lambda);
 

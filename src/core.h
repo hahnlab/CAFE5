@@ -98,10 +98,6 @@ public:
     //! Simulation methods
     virtual simulation_process* create_simulation_process(const user_data& data, int family_number) = 0;
 
-    void simulate_processes(const user_data& data, std::vector<trial *>& results);
-
-    void print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<trial *>& results);
-
     virtual void prepare_matrices_for_simulation(matrix_cache& cache) = 0;
 
     //! Inference methods
@@ -121,6 +117,12 @@ public:
     std::size_t get_gene_family_count() const;
 
     virtual void initialize_simulations(size_t count) {}
+
+    int get_max_simulation_size() const;
+
+    std::size_t get_rootdist_size() const {
+        return _rootdist_vec.size();
+    }
 };
 
 std::vector<int> build_reference_list(const std::vector<gene_family>& families);

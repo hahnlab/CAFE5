@@ -72,8 +72,6 @@ public:
 
 	trial* run_simulation(const matrix_cache& cache);
 
-	void print_simulation(std::ostream & ost, int index);
-
     int get_max_family_size_to_simulate() const;
 };
 

@@ -205,27 +205,113 @@ void simulator::execute(std::vector<model *>& models)
     simulate(models, _user_input);
 }
 
+void simulator::simulate_processes(model *p_model, std::vector<trial *>& results) {
+
+    int max_size = p_model->get_max_simulation_size();
+    size_t rootdist_sz = p_model->get_rootdist_size();
+    if (rootdist_sz > 0)
+    {
+        results.resize(rootdist_sz);
+    }
+    else
+    {
+        results.resize(_user_input.nsims);
+    }
+
+#ifndef SILENT
+    cout << "Simulating " << results.size() << " families for model " << p_model->name() << endl;
+#endif
+
+    p_model->initialize_simulations(results.size());
+    vector<unique_ptr<simulation_process>> sim_processes(results.size());
+
+    for (size_t i = 0; i < sim_processes.size(); ++i) {
+        sim_processes[i].reset(p_model->create_simulation_process(data, i));
+    }
+
+    matrix_cache cache(max_size);
+    p_model->prepare_matrices_for_simulation(cache);
+
+#ifndef SILENT
+    cout << "Matrices complete\n";
+    cache.warn_on_saturation(cerr);
+#endif
+
+    for (size_t i = 0; i < sim_processes.size(); ++i) {
+        results[i] = sim_processes[i]->run_simulation(cache);
+    }
+}
+
+
 /// Simulate
 /// \callgraph
 void simulator::simulate(std::vector<model *>& models, const input_parameters &my_input_parameters)
 {
     cout << "Simulating with " << models.size() << " model(s)" << endl;
 
+    std::vector<const clade *> order;
+    auto fn = [&order](const clade *c) { order.push_back(c); };
+    data.p_tree->apply_reverse_level_order(fn);
+
     for (int i = 0; i < models.size(); ++i) {
 
-        std::vector<trial *> results(my_input_parameters.nsims);
+        std::vector<trial *> results;
 
-        models[i]->simulate_processes(data, results);
+        simulate_processes(models[i], results);
 
         string truth_fname = filename("simulation_truth", my_input_parameters.output_prefix);
         std::ofstream ofst(truth_fname);
         cout << "Writing to " << truth_fname << endl;
-        models[i]->print_simulations(ofst, true, results);
+        print_simulations(ofst, true, results);
 
         string fname = filename("simulation", my_input_parameters.output_prefix);
         std::ofstream ofst2(fname);
         cout << "Writing to " << fname << endl;
-        models[i]->print_simulations(ofst2, false, results);
+        print_simulations(ofst2, false, results);
     }
 }
+
+
+void simulator::print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<trial *>& results) {
+
+    std::vector<const clade *> order;
+    auto fn = [&order](const clade *c) { order.push_back(c); };
+    data.p_tree->apply_reverse_level_order(fn);
+
+    if (results.empty())
+    {
+        cerr << "No simulations created" << endl;
+        return;
+    }
+    trial *sim = results[0];
+
+    ost << "DESC\tFID";
+    for (size_t i = 0; i < order.size(); ++i)
+    {
+        if (order[i]->is_leaf())
+            ost << '\t' << order[i]->get_taxon_name();
+        else if (include_internal_nodes)
+            ost << '\t' << i;
+
+    }
+    ost << endl;
+
+    for (size_t j = 0; j < results.size(); ++j) {
+        auto& fam = *results[j];
+        // Printing gene counts
+        ost << "NULL\tsimfam" << j;
+        for (size_t i = 0; i < order.size(); ++i)
+        {
+            if (order[i]->is_leaf() || include_internal_nodes)
+            {
+                ost << '\t';
+                ost << fam[order[i]];
+            }
+        }
+        ost << endl;
+    }
+}
+
+
+
 

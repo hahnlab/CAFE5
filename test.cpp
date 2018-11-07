@@ -1419,12 +1419,17 @@ TEST(Simulation, simulate_processes_sets_roots_less_than_100_without_rootdist)
     unique_ptr<clade> p_tree(parser.parse_newick());
 
     single_lambda lam(0.05);
-    vector<trial *> results(3);
     mock_model model;
     user_data data;
     model.set_lambda(&lam);
     model.set_tree(p_tree.get());
-    model.simulate_processes(data, results);
+    input_parameters params;
+    params.nsims = 3;
+    simulator sim(data, params);
+    
+    vector<trial *> results;
+    sim.simulate_processes(&model, results);
+
     LONGS_EQUAL(3, results.size());
     CHECK(results[0]->at(p_tree.get()) < 100);
     CHECK(results[1]->at(p_tree.get()) < 100);
@@ -1440,8 +1445,6 @@ TEST(Simulation, print_process_prints_in_order)
     parser.newick_string = "(A:1,B:3):7";
     unique_ptr<clade> p_tree(parser.parse_newick());
 
-    mock_model model;
-    model.set_tree(p_tree.get());
     std::ostringstream ost;
     trial t;
     t[p_tree->find_descendant("B")] = 4;
@@ -1450,7 +1453,12 @@ TEST(Simulation, print_process_prints_in_order)
 
     vector<trial*> my_trials({ &t });
 
-    model.print_simulations(ost, true, my_trials);
+    user_data data;
+    data.p_tree = p_tree.get();
+    input_parameters params;
+    simulator sim(data, params);
+    sim.print_simulations(ost, true, my_trials);
+
     STRCMP_CONTAINS("DESC\tFID\tB\tA\t2", ost.str().c_str());
     STRCMP_CONTAINS("NULL\tsimfam0\t4\t2\t6", ost.str().c_str());
 
@@ -1462,8 +1470,6 @@ TEST(Simulation, print_process_can_print_without_internal_nodes)
     parser.newick_string = "(A:1,B:3):7";
     unique_ptr<clade> p_tree(parser.parse_newick());
 
-    mock_model model;
-    model.set_tree(p_tree.get());
     std::ostringstream ost;
     trial t;
     t[p_tree->find_descendant("B")] = 4;
@@ -1472,7 +1478,11 @@ TEST(Simulation, print_process_can_print_without_internal_nodes)
 
     vector<trial*> my_trials({ &t });
 
-    model.print_simulations(ost, false, my_trials);
+    user_data data;
+    data.p_tree = p_tree.get();
+    input_parameters params;
+    simulator sim(data, params);
+    sim.print_simulations(ost, false, my_trials);
     STRCMP_CONTAINS("DESC\tFID\tB\tA\n", ost.str().c_str());
     STRCMP_CONTAINS("NULL\tsimfam0\t4\t2\n", ost.str().c_str());
 
