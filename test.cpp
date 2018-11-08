@@ -278,7 +278,7 @@ TEST(Inference, uniform_distribution)
 TEST(Inference, gamma_set_alpha)
 {
     gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL, NULL);
-    model.set_alpha(0.5, 3);
+    model.set_alpha(0.5);
 }
 
 TEST(Inference, gamma_adjust_family_gamma_membership)
@@ -1391,7 +1391,7 @@ class mock_model : public model {
     // Inherited via model
     virtual simulation_process * create_simulation_process(const user_data& data, const root_distribution&, int family_number) override
     {
-        return new simulation_process(cout, _p_lambda, 1.0, _p_tree, 0, 100, family_number, NULL);
+        return new simulation_process(1.0, 0, 50);
     }
     virtual void start_inference_processes(lambda *) override
     {
@@ -1437,33 +1437,53 @@ public:
     }
 };
 
-TEST(Simulation, simulate_processes_sets_roots_less_than_100_without_rootdist)
+TEST(Simulation, base_create_simulation_process_sets_roots_less_than_100_without_rootdist)
 {
-    srand(10);
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:3):7";
     unique_ptr<clade> p_tree(parser.parse_newick());
 
     single_lambda lam(0.05);
-    mock_model model;
-    user_data data;
-    model.set_lambda(&lam);
-    model.set_tree(p_tree.get());
-    input_parameters params;
-    params.nsims = 3;
-    simulator sim(data, params);
-    
-    vector<trial *> results;
-    sim.simulate_processes(&model, results);
 
-    LONGS_EQUAL(3, results.size());
-    CHECK(results[0]->at(p_tree.get()) < 100);
-    CHECK(results[1]->at(p_tree.get()) < 100);
-    CHECK(results[2]->at(p_tree.get()) < 100);
-    for (auto r : results)
-        delete r;
+    base_model base(NULL, NULL, {}, 0, 0, NULL, NULL);
+    root_distribution rd;
+    rd.vectorize_increasing(100);
+
+    user_data data;
+    data.p_lambda = &lam;
+    data.p_tree = p_tree.get();
+
+    for (int i = 0; i<50; ++i)
+    {
+        unique_ptr<simulation_process> sim(base.create_simulation_process(data, rd, 0 ));
+        CHECK(sim->get_root_size() < 100);
+    }
 }
 
+
+TEST(Simulation, gamma_create_simulation_process_sets_roots_less_than_100_without_rootdist)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    single_lambda lam(0.05);
+
+    gamma_model gamma(NULL, NULL, {}, 0, 0, 3, 0, NULL, NULL);
+    gamma.initialize_simulations(100);
+    root_distribution rd;
+    rd.vectorize_increasing(100);
+
+    user_data data;
+    data.p_lambda = &lam;
+    data.p_tree = p_tree.get();
+
+    for (int i = 0; i<50; ++i)
+    {
+        unique_ptr<simulation_process> sim(gamma.create_simulation_process(data, rd, 0));
+        CHECK(sim->get_root_size() < 100);
+    }
+}
 
 TEST(Simulation, print_process_prints_in_order)
 {
@@ -1512,6 +1532,20 @@ TEST(Simulation, print_process_can_print_without_internal_nodes)
     STRCMP_CONTAINS("DESC\tFID\tB\tA\n", ost.str().c_str());
     STRCMP_CONTAINS("NULL\tsimfam0\t4\t2\n", ost.str().c_str());
 
+}
+
+TEST(Simulation, gamma_model_initialize_simulations_sets_random_alpha_if_not_set)
+{
+    gamma_model m(NULL, NULL, NULL, 0, 5, 0, -1, NULL, NULL);
+    m.initialize_simulations(5);
+    CHECK(m.get_alpha() > 0);
+}
+
+TEST(Simulation, gamma_model_initialize_simulations_keeps_alpha_if_set)
+{
+    gamma_model m(NULL, NULL, NULL, 0, 5, 0, 0.7, NULL, NULL);
+    m.initialize_simulations(5);
+    DOUBLES_EQUAL(0.7, m.get_alpha(), 0.000000001);
 }
 
 TEST(Inference, model_vitals)

@@ -224,7 +224,7 @@ void simulator::simulate_processes(model *p_model, std::vector<trial *>& results
 #endif
 
     p_model->initialize_simulations(results.size());
-    vector<unique_ptr<simulation_process>> sim_processes(results.size());
+    vector<unique_ptr<simulation_process>> family_simulations(results.size());
 
     root_distribution rd;
 
@@ -234,8 +234,8 @@ void simulator::simulate_processes(model *p_model, std::vector<trial *>& results
     else {
         rd.vectorize(data.rootdist);
     }
-    for (size_t i = 0; i < sim_processes.size(); ++i) {
-        sim_processes[i].reset(p_model->create_simulation_process(data, rd, i));
+    for (size_t i = 0; i < family_simulations.size(); ++i) {
+        family_simulations[i].reset(p_model->create_simulation_process(data, rd, i));
     }
 
     matrix_cache cache(max_size);
@@ -246,8 +246,8 @@ void simulator::simulate_processes(model *p_model, std::vector<trial *>& results
     cache.warn_on_saturation(cerr);
 #endif
 
-    for (size_t i = 0; i < sim_processes.size(); ++i) {
-        results[i] = sim_processes[i]->run_simulation(cache);
+    for (size_t i = 0; i < family_simulations.size(); ++i) {
+        results[i] = family_simulations[i]->run(data, cache);
     }
 }
 

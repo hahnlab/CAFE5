@@ -28,7 +28,8 @@ public:
     //! Gamma methods
 
     //! Setters
-    void set_alpha(double alpha, int n_families);
+    void set_alpha(double alpha);
+    double get_alpha() const { return _alpha;  }
 
     void write_probabilities(std::ostream& ost);
 

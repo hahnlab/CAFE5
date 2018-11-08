@@ -13,6 +13,7 @@ class root_equilibrium_distribution;
 class child_multiplier;
 class error_model;
 class root_distribution;
+class user_data;
 
 typedef std::map<const clade *, int> trial;
 
@@ -60,15 +61,16 @@ public:
     std::string family_id() const;
 };
 
-class simulation_process : public process {
-    error_model *_p_error_model;
-	int _max_family_size_sim;
+class simulation_process {
+    double _lambda_multiplier;
+    int _max_family_size_sim;
     int _root_size; // will be drawn from _rootdist_vec by process itself
 public:
-	simulation_process(std::ostream &ost, lambda* lambda, double lambda_multiplier, const clade *p_tree,
-        int max_root_family_size, int max_family_size_sim, int root_size, error_model* p_error_model);
+	simulation_process(double lambda_multiplier, int max_family_size_sim, int root_size);
 
-	trial* run_simulation(const matrix_cache& cache);
+	trial* run(const user_data& data, const matrix_cache& cache);
+
+    int get_root_size() const { return _root_size; }
 };
 
 #endif

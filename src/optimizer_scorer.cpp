@@ -98,7 +98,7 @@ void lambda_epsilon_optimizer::finalize(double *results)
 void gamma_lambda_optimizer::finalize(double *results) {
     _p_lambda->update(results);
     double alpha = results[_p_lambda->count()];
-    _p_model->set_alpha(alpha, _p_model->get_gene_family_count());
+    _p_model->set_alpha(alpha);
 }
 
 std::vector<double> gamma_optimizer::initial_guesses()
@@ -109,7 +109,7 @@ std::vector<double> gamma_optimizer::initial_guesses()
 double gamma_optimizer::calculate_score(double * values)
 {
     double alpha = *values;
-    _p_model->set_alpha(alpha, _p_model->get_gene_family_count());
+    _p_model->set_alpha(alpha);
 
     std::cout << "Attempting alpha: " << alpha << std::endl;
 
@@ -120,7 +120,7 @@ double gamma_optimizer::calculate_score(double * values)
 
 void gamma_optimizer::finalize(double * result)
 {
-    _p_model->set_alpha(*result, _p_model->get_gene_family_count());
+    _p_model->set_alpha(*result);
 }
 
 void lambda_optimizer::finalize(double *results)

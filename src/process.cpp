@@ -9,32 +9,31 @@
 #include "core.h"
 #include "gene_family.h"
 #include "root_distribution.h"
+#include "user_data.h"
 
 //using namespace std;
 
-simulation_process::simulation_process(std::ostream &ost, lambda* lambda, double lambda_multiplier, const clade *p_tree,
-    int max_root_family_size, int max_family_size_sim, int root_size, error_model* p_error_model ) : 
-        process(ost, lambda, lambda_multiplier, p_tree, max_root_family_size), 
-        _p_error_model(p_error_model),
+simulation_process::simulation_process(double lambda_multiplier, int max_family_size_sim, int root_size) : 
         _max_family_size_sim(max_family_size_sim),
-        _root_size(root_size)
+        _root_size(root_size),
+        _lambda_multiplier(lambda_multiplier)
 {
 }
 
 //! Run process' simulation
-trial* simulation_process::run_simulation(const matrix_cache& cache) {
+trial* simulation_process::run(const user_data& data, const matrix_cache& cache) {
 
-    if (_lambda == NULL)
+    if (data.p_lambda == NULL)
         throw std::runtime_error("No lambda specified for simulation");
 
-    unique_ptr<lambda> multiplier(_lambda->multiply(_lambda_multiplier));
-    if (_p_tree == NULL)
+    if (data.p_tree == NULL)
         throw runtime_error("No tree specified for simulation");
 
     auto *result = new trial();
-    random_familysize_setter rfs(result, _max_family_size_sim, multiplier.get(), _p_error_model, cache);
-    (*result)[_p_tree] = _root_size;
-    _p_tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
+    unique_ptr<lambda> multiplier(data.p_lambda->multiply(_lambda_multiplier));
+    random_familysize_setter rfs(result, _max_family_size_sim, multiplier.get(), data.p_error_model, cache);
+    (*result)[data.p_tree] = _root_size;
+    data.p_tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
 
     return result;
 }

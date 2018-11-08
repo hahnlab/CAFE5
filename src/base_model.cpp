@@ -43,7 +43,7 @@ simulation_process* base_model::create_simulation_process(const user_data& data,
         root_size = rootdist.at(family_number);
     }
 
-    return new simulation_process(_ost, data.p_lambda, 1.0, data.p_tree, data.max_root_family_size, max_family_size_sim, root_size, data.p_error_model); // if a single _lambda_multiplier, how do we do it?
+    return new simulation_process(1.0, max_family_size_sim, root_size); 
 }
 
 vector<int> build_reference_list(const vector<gene_family>& families)

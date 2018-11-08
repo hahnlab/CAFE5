@@ -24,7 +24,7 @@ gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_famil
     
     _gamma_cat_probs.resize(n_gamma_cats);
     _lambda_multipliers.resize(n_gamma_cats);
-    set_alpha(fixed_alpha, _root_distribution.size());
+    set_alpha(fixed_alpha);
 }
 
 gamma_model::~gamma_model()
@@ -51,7 +51,7 @@ void gamma_model::write_family_likelihoods(std::ostream& ost)
 }
 
 //! Set alpha for gamma distribution
-void gamma_model::set_alpha(double alpha, int n_families) {
+void gamma_model::set_alpha(double alpha) {
 
     _alpha = alpha;
     if (_gamma_cat_probs.size() > 1)
@@ -85,7 +85,13 @@ void gamma_model::start_inference_processes(lambda *p_lambda) {
 
 void gamma_model::initialize_simulations(size_t count)
 {
-    set_alpha(unifrnd(), count);
+    if (_alpha <= 0)
+    {
+#ifndef SILENT
+        cerr << "No alpha set for simulation. Setting randomly\n";
+#endif
+        set_alpha(unifrnd());
+    }
     _gamma_cats.weighted_cat_draw(count, _gamma_cat_probs);
 }
 
@@ -105,7 +111,7 @@ simulation_process* gamma_model::create_simulation_process(const user_data& data
     }
 
 
-    return new simulation_process(_ost, data.p_lambda, _lambda_multipliers[lambda_bin], data.p_tree, data.max_root_family_size, max_family_size_sim, root_size, data.p_error_model); // if a single _lambda_multiplier, how do we do it?
+    return new simulation_process(_lambda_multipliers[lambda_bin], max_family_size_sim, root_size); 
 }
 
 std::vector<double> gamma_model::get_posterior_probabilities(std::vector<double> cat_likelihoods)
@@ -285,7 +291,7 @@ double gamma_lambda_optimizer::calculate_score(double *values)
     _p_lambda->update(values);
 
     double alpha = values[_p_lambda->count()];
-    _p_model->set_alpha(alpha, _p_model->get_gene_family_count());
+    _p_model->set_alpha(alpha);
 
     cout << "Attempting lambda: " << *_p_lambda << ", alpha: " << alpha << std::endl;
     _p_model->write_probabilities(cout);
