@@ -5,12 +5,14 @@
 
 #include "clade.h"
 #include "probability.h"
+#include "root_distribution.h"
 
 class simulation_process;
 class inference_process;
 class gene_family_reconstructor;
 class reconstruction;
 class user_data;
+class root_distribution;
 
 typedef clademap<int> trial;
 
@@ -65,7 +67,7 @@ protected:
     int _max_family_size;
     int _max_root_family_size;
     const std::vector<gene_family>* _p_gene_families;
-    vector<int> _rootdist_vec; // in case the user wants to use a specific root size distribution for all simulations
+    root_distribution _root_distribution; // in case the user wants to use a specific root size distribution for all simulations
     vector<vector<int> > _rootdist_bins; // holds the distribution for each lambda bin
 
     /// Used to track gene families with identical species counts
@@ -93,10 +95,8 @@ public:
 
     void set_max_sizes(int max_family_size, int max_root_family_size);
     
-    void set_rootdist_vec(std::vector<int> rootdist_vec);
-    
     //! Simulation methods
-    virtual simulation_process* create_simulation_process(const user_data& data, int family_number) = 0;
+    virtual simulation_process* create_simulation_process(const user_data& data, const root_distribution& rootdist, int family_number) = 0;
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache) = 0;
 
@@ -121,7 +121,7 @@ public:
     int get_max_simulation_size() const;
 
     std::size_t get_rootdist_size() const {
-        return _rootdist_vec.size();
+        return _root_distribution.size();
     }
 };
 

@@ -13,16 +13,18 @@
 #include "gene_family.h"
 #include "user_data.h"
 #include "optimizer_scorer.h"
+#include "root_distribution.h"
 
 gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
     int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map, error_model* p_error_model) :
     model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_error_model) {
+
     if (p_rootdist_map != NULL)
-        _rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
+        _root_distribution.vectorize(*p_rootdist_map); // in vector form
     
     _gamma_cat_probs.resize(n_gamma_cats);
     _lambda_multipliers.resize(n_gamma_cats);
-    set_alpha(fixed_alpha, _rootdist_vec.size());
+    set_alpha(fixed_alpha, _root_distribution.size());
 }
 
 gamma_model::~gamma_model()
@@ -73,7 +75,7 @@ void gamma_model::write_probabilities(ostream& ost)
 void gamma_model::start_inference_processes(lambda *p_lambda) {
 
     _family_bundles.clear();
-    inference_process_factory factory(_ost, p_lambda, _p_tree, _max_family_size, _max_root_family_size, _rootdist_vec);
+    inference_process_factory factory(_ost, p_lambda, _p_tree, _max_family_size, _max_root_family_size);
     for (auto i = _p_gene_families->begin(); i != _p_gene_families->end(); ++i)
     {
         factory.set_gene_family(&(*i));
@@ -88,10 +90,22 @@ void gamma_model::initialize_simulations(size_t count)
 }
 
 //! Populate _processes (vector of processes)
-simulation_process* gamma_model::create_simulation_process(const user_data& data, int family_number) {
+simulation_process* gamma_model::create_simulation_process(const user_data& data, const root_distribution& rootdist, int family_number) {
     double lambda_bin = _gamma_cats.draw(family_number);
+    int max_family_size_sim;
+    int root_size;
 
-    return new simulation_process(_ost, data.p_lambda, _lambda_multipliers[lambda_bin], data.p_tree, data.max_family_size, data.max_root_family_size, _rootdist_vec, family_number, data.p_error_model); // if a single _lambda_multiplier, how do we do it?
+    if (data.rootdist.empty()) {
+        max_family_size_sim = 100;
+        root_size = rootdist.select_randomly(); // getting a random root size from the provided (core's) root distribution
+    }
+    else {
+        max_family_size_sim = 2 * rootdist.max();
+        root_size = rootdist.at(family_number);
+    }
+
+
+    return new simulation_process(_ost, data.p_lambda, _lambda_multipliers[lambda_bin], data.p_tree, data.max_root_family_size, max_family_size_sim, root_size, data.p_error_model); // if a single _lambda_multiplier, how do we do it?
 }
 
 std::vector<double> gamma_model::get_posterior_probabilities(std::vector<double> cat_likelihoods)
@@ -137,7 +151,7 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     using namespace std;
     initialize_rootdist_if_necessary();
 
-    prior->initialize(_rootdist_vec);
+    prior->initialize(&_root_distribution);
     vector<double> all_bundles_likelihood(_family_bundles.size());
 
     bool success = true;

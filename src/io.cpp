@@ -50,16 +50,22 @@ void input_parameters::check_input() {
         throw runtime_error("Options -l and -i must both be provided an argument.");
     }
     
-    //! The number of simulated families is specified either through -s, or through -f. Cannot be both. 
-    if (is_simulating && nsims > 0 && !rootdist.empty()) {
-        throw runtime_error("Option -s cannot be provided an argument if -f is specified.");
-    }
-    
-    //! The number of simulated families is specified either through -s, or through -f. Cannot be both. 
-    if (is_simulating && fixed_lambda <= 0.0 && fixed_multiple_lambdas.empty()) {
-        throw runtime_error("Cannot simulate without initial lambda values");
-    }
+    if (is_simulating)
+    {
+        //! The number of simulated families is specified either through -s, or through -f. Cannot be both. 
+        if (nsims > 0 && !rootdist.empty()) {
+            throw runtime_error("Option -s cannot be provided an argument if -f is specified.");
+        }
 
+        // Must specify a lambda
+        if (fixed_lambda <= 0.0 && fixed_multiple_lambdas.empty()) {
+            throw runtime_error("Cannot simulate without initial lambda values");
+        }
+
+        if (fixed_alpha <= 0.0 && this->n_gamma_cats > 1) {
+            throw runtime_error("Cannot simulate gamma clusters without an alpha value");
+        }
+    }
     //! Options -i and -f cannot be both specified. Either one or the other is used to specify the root eq freq distr'n.
     if (!input_file_path.empty() && !rootdist.empty()) {
         throw runtime_error("Options -i and -f are mutually exclusive.");

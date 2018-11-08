@@ -19,6 +19,7 @@
 #include "src/execute.h"
 #include "src/user_data.h"
 #include "src/optimizer_scorer.h"
+#include "src/root_distribution.h"
 
 TEST_GROUP(GeneFamilies)
 {
@@ -155,6 +156,23 @@ TEST(Options, must_specify_lambda_for_simulation)
     }
 }
 
+TEST(Options, must_specify_alpha_for_gamma_simulation)
+{
+    try
+    {
+        input_parameters params;
+        params.is_simulating = true;
+        params.fixed_lambda = 0.05;
+        params.n_gamma_cats = 3;
+        params.check_input();
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("Cannot simulate gamma clusters without an alpha value", err.what());
+    }
+}
+
 TEST(Options, check_input_does_not_throw_when_simulating_with_multiple_lambdas)
 {
     input_parameters params;
@@ -250,10 +268,10 @@ TEST(Inference, infer_processes)
 
 TEST(Inference, uniform_distribution)
 {
-    std::vector<int> rd(10);
-    std::fill(rd.begin(), rd.end(), 1);
+    root_distribution rd;
+    rd.vectorize_uniform(10);
     uniform_distribution ef;
-    ef.initialize(rd);
+    ef.initialize(&rd);
     DOUBLES_EQUAL(.1, ef.compute(5), 0.0001);
 }
 
@@ -543,8 +561,10 @@ TEST(Inference, base_model_reconstruction)
 
     matrix_cache calc(6);
     calc.precalculate_matrices(get_lambda_values(&sl), set<double>({ 1 }));
+    root_distribution rd;
+    rd.vectorize_increasing(6);
     uniform_distribution dist;
-    dist.initialize({ 1,2,3,4,5,6 });
+    dist.initialize(&rd);
     std::unique_ptr<reconstruction> rec(model.reconstruct_ancestral_states(&calc, &dist));
 
 }
@@ -833,11 +853,14 @@ TEST(Inference, gamma_bundle_prune)
     fam.set_species_size("B", 6);
     unique_ptr<clade> p_tree(parser.parse_newick());
     single_lambda lambda(0.005);
-    inference_process_factory factory(cout, &lambda, p_tree.get(), 10, 8, {2,2,2});
+    inference_process_factory factory(cout, &lambda, p_tree.get(), 10, 8);
     factory.set_gene_family(&fam);
     gamma_bundle bundle(factory, { 0.1, 0.5 }, p_tree.get(), &fam);
+
+    root_distribution rd;
+    rd.vector({ 1,2,3,4,5,4,3,2,1 });
     uniform_distribution dist;
-    dist.initialize({ 1,2,3,4,5,4,3,2,1 });
+    dist.initialize(&rd);
     matrix_cache cache(11);
     multiple_lambda ml(map<string, int>(), {0.0005, 0.0025});
     cache.precalculate_matrices(get_lambda_values(&ml), set<double>{1, 3, 7});
@@ -859,11 +882,14 @@ TEST(Inference, gamma_bundle_prune_returns_false_if_saturated)
     fam.set_species_size("B", 6);
     unique_ptr<clade> p_tree(parser.parse_newick());
     single_lambda lambda(0.9);
-    inference_process_factory factory(cout, &lambda, p_tree.get(), 10, 8, { 2,2,2 });
+    inference_process_factory factory(cout, &lambda, p_tree.get(), 10, 8);
     factory.set_gene_family(&fam);
     gamma_bundle bundle(factory, { 0.1, 0.5 }, p_tree.get(), &fam);
+
+    root_distribution rd;
+    rd.vector({ 1,2,3,4,5,4,3,2,1 });
     uniform_distribution dist;
-    dist.initialize({ 1,2,3,4,5,4,3,2,1 });
+    dist.initialize(&rd);
     matrix_cache cache(11);
     cache.precalculate_matrices({ 0.09, 0.45 }, set<double>{1, 3, 7});
 
@@ -1119,7 +1145,7 @@ TEST(Inference, prune)
     unique_ptr<clade> p_tree(parser.parse_newick());
 
     single_lambda lambda(0.03);
-    inference_process process(ost, &lambda, 1.5, p_tree.get(), 20, 20, &fam, { 1,2,3 }, NULL);
+    inference_process process(ost, &lambda, 1.5, p_tree.get(), 20, 20, &fam, NULL);
     matrix_cache cache(21);
     cache.precalculate_matrices({ 0.045 }, { 1.0,3.0,7.0 });
     auto actual = process.prune(cache);
@@ -1363,9 +1389,9 @@ public:
 
 class mock_model : public model {
     // Inherited via model
-    virtual simulation_process * create_simulation_process(const user_data& data, int family_number) override
+    virtual simulation_process * create_simulation_process(const user_data& data, const root_distribution&, int family_number) override
     {
-        return new simulation_process(cout, _p_lambda, 1.0, _p_tree, 0, 0, vector<int>(), family_number, NULL);
+        return new simulation_process(cout, _p_lambda, 1.0, _p_tree, 0, 100, family_number, NULL);
     }
     virtual void start_inference_processes(lambda *) override
     {
@@ -1621,13 +1647,6 @@ TEST(Inference, gamma_lambd_optimizer)
     optimizer.calculate_score(&values[0]);
 }
 
-TEST(Simulation, simulation_process_max_family_size_is_twice_max_rootdist)
-{
-    vector<int> rootdist{ 3, 5, 9, 11, 4 };
-    simulation_process p(cout, NULL, 1, NULL, 0, 0, rootdist, 0, NULL);
-    LONGS_EQUAL(22,p.get_max_family_size_to_simulate());
-}
-
 TEST(Simulation, base_prepare_matrices_for_simulation_creates_matrix_for_each_branch)
 {
     newick_parser parser(false);
@@ -1726,6 +1745,55 @@ TEST(Simulation, executor)
     params.chisquare_compare = true;
     unique_ptr<action> act2(get_executor(params, ud));
     CHECK(dynamic_cast<const chisquare_compare *>(act2.get()))
+}
+
+TEST(Simulation, rootdist_vectorize_creates_matching_vector)
+{
+    root_distribution rd;
+    std::map<int, int> m;
+    m[2] = 3;
+    rd.vectorize(m);
+    CHECK(rd.size() == 3);
+    CHECK(rd.at(0) == 2);
+    CHECK(rd.at(1) == 2);
+    CHECK(rd.at(2) == 2);
+}
+
+TEST(Simulation, rootdist_vectorize_uniform_creates_uniform_vector)
+{
+    root_distribution rd;
+    rd.vectorize_uniform(5);
+    CHECK(rd.size() == 5);
+    CHECK(rd.at(0) == 1);
+    CHECK(rd.at(1) == 1);
+    CHECK(rd.at(2) == 1);
+    CHECK(rd.at(3) == 1);
+    CHECK(rd.at(4) == 1);
+}
+
+TEST(Simulation, rootdist_vectorize_increasing_creates_increasing_vector)
+{
+    root_distribution rd;
+    rd.vectorize_increasing(5);
+    CHECK(rd.size() == 5);
+    CHECK(rd.at(0) == 0);
+    CHECK(rd.at(1) == 1);
+    CHECK(rd.at(2) == 2);
+    CHECK(rd.at(3) == 3);
+    CHECK(rd.at(4) == 4);
+}
+
+TEST(Simulation, rootdist_max_and_sum)
+{
+    root_distribution rd;
+    std::map<int, int> m;
+
+    m[2] = 3;
+    m[4] = 1;
+    m[8] = 1;
+    rd.vectorize(m);
+    CHECK(rd.max() == 8);
+    CHECK(rd.sum() == 18);  // three twos, one four and one eight
 }
 
 void init_lgamma_cache();

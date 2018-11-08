@@ -33,7 +33,7 @@ public:
     void write_probabilities(std::ostream& ost);
 
     //! Simulation methods
-    virtual simulation_process* create_simulation_process(const user_data& data, int family_number);
+    virtual simulation_process* create_simulation_process(const user_data& data, const root_distribution& rootdist, int family_number);
 
     //! Inference methods
     void start_inference_processes(lambda *);

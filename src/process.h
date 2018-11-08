@@ -12,6 +12,7 @@ class matrix_cache;
 class root_equilibrium_distribution;
 class child_multiplier;
 class error_model;
+class root_distribution;
 
 typedef std::map<const clade *, int> trial;
 
@@ -21,16 +22,12 @@ protected:
 	lambda* _lambda;
 	double _lambda_multiplier;
 	const clade *_p_tree;
-	int _max_family_size;
 	int _max_root_family_size;
-	std::vector<int> _rootdist_vec; // distribution of relative values. probability can be found by dividing a single value by the total of all values
-	int _root_size; // will be drawn from _rootdist_vec by process itself
 
-	process(std::ostream & ost, lambda* lambda, double lambda_multiplier, const clade *p_tree, int max_family_size,
-		int max_root_family_size, std::vector<int> rootdist) :
+	process(std::ostream & ost, lambda* lambda, double lambda_multiplier, const clade *p_tree, int max_root_family_size) :
 		_ost(ost), _lambda(lambda), _lambda_multiplier(lambda_multiplier), _p_tree(p_tree),
-		_max_family_size(max_family_size), _max_root_family_size(max_root_family_size),
-		_rootdist_vec(rootdist) {}
+		_max_root_family_size(max_root_family_size)
+		{}
 public:
     double get_lambda_multiplier() const {
         return _lambda_multiplier;
@@ -41,6 +38,7 @@ public:
 class inference_process : public process {
 	const gene_family *_p_gene_family;
     const error_model *_p_error_model;
+    int _max_family_size;
 public:
 	inference_process(std::ostream & ost, 
         lambda* lambda, 
@@ -49,10 +47,10 @@ public:
         int max_family_size,
 		int max_root_family_size, 
         const gene_family *fam, 
-        std::vector<int> rootdist,
         error_model *p_error_model) : 
         process(ost, lambda, lambda_multiplier, p_tree,
-			max_family_size, max_root_family_size, rootdist),
+			max_root_family_size),
+            _max_family_size(max_family_size),
             _p_error_model(p_error_model),
             _p_gene_family(fam) 
     {
@@ -65,14 +63,12 @@ public:
 class simulation_process : public process {
     error_model *_p_error_model;
 	int _max_family_size_sim;
+    int _root_size; // will be drawn from _rootdist_vec by process itself
 public:
-	simulation_process(std::ostream & ost, lambda* lambda, double lambda_multiplier, const clade *p_tree, int max_family_size,
-		int max_root_family_size, std::vector<int> rootdist, int family_number, error_model *p_error_model);
-
+	simulation_process(std::ostream &ost, lambda* lambda, double lambda_multiplier, const clade *p_tree,
+        int max_root_family_size, int max_family_size_sim, int root_size, error_model* p_error_model);
 
 	trial* run_simulation(const matrix_cache& cache);
-
-    int get_max_family_size_to_simulate() const;
 };
 
 #endif

@@ -172,17 +172,17 @@ double gamma_bundle::get_lambda_likelihood(int family_id)
 }
 
 inference_process_factory::inference_process_factory(std::ostream & ost, lambda* lambda, const clade *p_tree, int max_family_size,
-        int max_root_family_size, std::vector<int> rootdist) :
+        int max_root_family_size) :
         _ost(ost), _lambda(lambda), _p_tree(p_tree),
         _max_family_size(max_family_size), _max_root_family_size(max_root_family_size),
-        _rootdist_vec(rootdist), _family(NULL)
+        _family(NULL)
 {
 
 }
 
 inference_process* inference_process_factory::operator()(double lambda_multiplier)
 {
-    return new inference_process(_ost, _lambda, lambda_multiplier, _p_tree, _max_family_size, _max_root_family_size, _family, _rootdist_vec, NULL); // if a single _lambda_multiplier, how do we do it?
+    return new inference_process(_ost, _lambda, lambda_multiplier, _p_tree, _max_family_size, _max_root_family_size, _family, NULL); // if a single _lambda_multiplier, how do we do it?
 }
 
 gene_family_reconstructor* inference_process_factory::create_reconstruction_process(double lambda_multiplier)

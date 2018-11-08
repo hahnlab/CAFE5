@@ -11,8 +11,6 @@ class lambda;
 class matrix_cache;
 class error_model;
 
-clademap<int>* simulate_family_from_root_size(const clade *tree, int root_family_size, int max_family_size, const lambda * p_lambda, error_model *p_error_model, const matrix_cache& cache);
-
 class random_familysize_setter {
 private:
     clademap<int> *_p_tth_trial;

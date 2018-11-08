@@ -8,7 +8,7 @@ class matrix_cache;
 
 class base_model : public model {
     std::vector<inference_process *> processes;
-    virtual simulation_process* create_simulation_process(const user_data& data, int family_number);
+    virtual simulation_process* create_simulation_process(const user_data& data, const root_distribution& rootdist, int family_number);
 public:
     //! Computation or estimation constructor
     base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,

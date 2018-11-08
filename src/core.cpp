@@ -68,17 +68,11 @@ void model::set_max_sizes(int max_family_size, int max_root_family_size) {
     _max_root_family_size = max_root_family_size;
 }
 
-//! Set root distribution vector
-void model::set_rootdist_vec(std::vector<int> rootdist_vec) {
-    _rootdist_vec = rootdist_vec;
-}
-
 void model::initialize_rootdist_if_necessary()
 {
-    if (_rootdist_vec.empty())
+    if (_root_distribution.empty())
     {
-        _rootdist_vec.resize(_max_root_family_size);
-        std::fill(_rootdist_vec.begin(), _rootdist_vec.end(), 1);
+        _root_distribution.vectorize_uniform(_max_root_family_size);
     }
 
 }
@@ -159,13 +153,13 @@ void model::write_vital_statistics(std::ostream& ost, double final_likelihood)
 
 int model::get_max_simulation_size() const
 {
-    if (_rootdist_vec.empty())
+    if (_root_distribution.empty())
     {
         return 100;
     }
     else
     {
-        return 2 * *std::max_element(_rootdist_vec.begin(), _rootdist_vec.end());
+        return 2 * _root_distribution.max();
     }
 }
 

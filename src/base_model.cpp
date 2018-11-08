@@ -10,6 +10,7 @@
 #include "user_data.h"
 #include "root_equilibrium_distribution.h"
 #include "optimizer_scorer.h"
+#include "root_distribution.h"
 
 base_model::base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
     int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map, error_model *p_error_model) :
@@ -17,7 +18,7 @@ base_model::base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_
 {
     if (p_rootdist_map != NULL)
     {
-        _rootdist_vec = vectorize_map(p_rootdist_map); // in vector form
+        _root_distribution.vectorize(*p_rootdist_map); // in vector form
     }
 }
 
@@ -28,8 +29,21 @@ base_model::~base_model()
 
 }
 
-simulation_process* base_model::create_simulation_process(const user_data& data, int family_number) {
-    return new simulation_process(_ost, data.p_lambda, 1.0, data.p_tree, data.max_family_size, data.max_root_family_size, _rootdist_vec, family_number, data.p_error_model); // if a single _lambda_multiplier, how do we do it?
+simulation_process* base_model::create_simulation_process(const user_data& data, const root_distribution& rootdist, int family_number) {
+    int max_family_size_sim;
+    int root_size;
+
+    if (data.rootdist.empty()) {
+        max_family_size_sim = 100;
+
+        root_size = rootdist.select_randomly(); // getting a random root size from the provided (core's) root distribution
+    }
+    else {
+        max_family_size_sim = 2 * rootdist.max();
+        root_size = rootdist.at(family_number);
+    }
+
+    return new simulation_process(_ost, data.p_lambda, 1.0, data.p_tree, data.max_root_family_size, max_family_size_sim, root_size, data.p_error_model); // if a single _lambda_multiplier, how do we do it?
 }
 
 vector<int> build_reference_list(const vector<gene_family>& families)
@@ -65,7 +79,7 @@ void base_model::start_inference_processes(lambda *p_lambda)
     processes.resize(_p_gene_families->size());
     for (int i = 0; i <_p_gene_families->size(); ++i) {
         if (references[i] == i)
-            processes[i] = new inference_process(_ost, p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _rootdist_vec, _p_error_model); // if a single _lambda_multiplier, how do we do it?
+            processes[i] = new inference_process(_ost, p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _p_error_model); // if a single _lambda_multiplier, how do we do it?
     }
 }
 
@@ -76,7 +90,7 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
     }
 
     initialize_rootdist_if_necessary();
-    prior->initialize(_rootdist_vec);
+    prior->initialize(&_root_distribution);
 
     results.resize(processes.size());
     std::vector<double> all_families_likelihood(processes.size());

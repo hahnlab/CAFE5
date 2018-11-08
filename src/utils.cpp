@@ -118,19 +118,6 @@ ostream& operator<<(ostream& ost, const vector<vector<double> >& matrix)
   return ost;
 }
 
-//! Used when simulating gene families (-s)
-std::vector<int> vectorize_map(const map<int, int> *p_root_dist) {
-    std::vector<int> vectorized_map;
-    
-    for (auto it = p_root_dist->begin(); it != p_root_dist->end(); ++it) {
-        for (int i=0; i < it->second; ++i) {
-            vectorized_map.push_back(it->first);
-        }
-    }
-    
-    return vectorized_map;
-}
-
 //! Split string into vector of strings given delimiter
 std::vector<std::string> tokenize_str(std::string some_string, char some_delim) {
     std::istringstream ist(some_string);

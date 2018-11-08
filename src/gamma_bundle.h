@@ -22,13 +22,11 @@ class inference_process_factory
     const clade *_p_tree;
     int _max_family_size;
     int _max_root_family_size;
-    std::vector<int> _rootdist_vec; // distribution of relative values. probability can be found by dividing a single value by the total of all values
-    int _root_size; // will be drawn from _rootdist_vec by process itself
     const gene_family *_family;
 public:
 
     inference_process_factory(std::ostream & ost, lambda* lambda, const clade *p_tree, int max_family_size,
-        int max_root_family_size, std::vector<int> rootdist);
+        int max_root_family_size);
 
     void set_gene_family(const gene_family *family) {
         _family = family;

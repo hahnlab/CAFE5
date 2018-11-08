@@ -77,20 +77,3 @@ int random_familysize_setter::select_size(int parent_family_size, double lambda,
     return c;
 }
 
-//! Simulate one gene family from a single root family size 
-/*!
-  Wraps around random_familysize_setter, which is the main engine of the simulator.
-  Given a root gene family size, a lambda, simulates gene family counts for all nodes in the tree just once.
-  Returns a trial, key = pointer to node, value = gene family size
-*/
-clademap<int> * simulate_family_from_root_size(const clade *tree, int root_family_size, int max_family_size, const lambda * p_lambda, error_model *p_error_model, const matrix_cache& cache) {
-    if (tree == NULL)
-        throw runtime_error("No tree specified for simulation");
-
-    auto *result = new clademap<int>;
-    random_familysize_setter rfs(result, max_family_size, p_lambda, p_error_model, cache);
-    (*result)[tree] = root_family_size;
-    tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
-    
-    return result;
-}

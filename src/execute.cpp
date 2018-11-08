@@ -15,6 +15,7 @@
 #include "user_data.h"
 #include "optimizer_scorer.h"
 #include "process.h"
+#include "root_distribution.h"
 
 double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 24.01409824083091, -1.231739572450155, 1.208650973866179e-3,
@@ -225,8 +226,16 @@ void simulator::simulate_processes(model *p_model, std::vector<trial *>& results
     p_model->initialize_simulations(results.size());
     vector<unique_ptr<simulation_process>> sim_processes(results.size());
 
+    root_distribution rd;
+
+    if (data.rootdist.empty()) {
+        rd.vectorize_increasing(100);
+    }
+    else {
+        rd.vectorize(data.rootdist);
+    }
     for (size_t i = 0; i < sim_processes.size(); ++i) {
-        sim_processes[i].reset(p_model->create_simulation_process(data, i));
+        sim_processes[i].reset(p_model->create_simulation_process(data, rd, i));
     }
 
     matrix_cache cache(max_size);

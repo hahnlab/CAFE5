@@ -39,9 +39,6 @@ bool max_value(const std::pair<T, U> & p1, const std::pair<T, U> & p2) {
     return p1.second < p2.second;
 }
 
-//! Used when simulating gene families (-s)
-std::vector<int> vectorize_map(const std::map<int, int> *p_root_dist);
-
 //! Split string into vector of strings given delimiter
 std::vector<std::string> tokenize_str(std::string some_string, char some_delim);
 #endif
