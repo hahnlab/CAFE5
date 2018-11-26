@@ -88,6 +88,11 @@ public:
     
     virtual ~model() {}
     
+    void set_families(const std::vector<gene_family>* p_gene_families)
+    {
+        _p_gene_families = p_gene_families;
+    }
+
     lambda * get_lambda() const {
         return _p_lambda;
     }

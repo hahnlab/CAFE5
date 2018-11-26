@@ -31,6 +31,7 @@ struct option longopts[] = {
   { "chisquare_compare", required_argument, NULL, 'r' },
   { "log", optional_argument, NULL, 'g'},
   { "exclude", no_argument, NULL, 'x' },
+  { "lambda_per_family", no_argument, NULL, 'b' },
   { 0, 0, 0, 0 }
 };
 
@@ -66,6 +67,16 @@ void input_parameters::check_input() {
             throw runtime_error("Cannot simulate gamma clusters without an alpha value");
         }
     }
+
+
+    if (lambda_per_family)
+    {
+        if (input_file_path.empty())
+            throw runtime_error("No family file provided");
+        if (tree_file_path.empty())
+            throw runtime_error("No tree file provided");
+    }
+
     //! Options -i and -f cannot be both specified. Either one or the other is used to specify the root eq freq distr'n.
     if (!input_file_path.empty() && !rootdist.empty()) {
         throw runtime_error("Options -i and -f are mutually exclusive.");

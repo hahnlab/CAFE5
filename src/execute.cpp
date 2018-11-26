@@ -96,18 +96,50 @@ void estimator::estimate_missing_variables(std::vector<model *>& models, user_da
 
 }
 
+void estimator::estimate_lambda_per_family(model *p_model, ostream& ost)
+{
+    vector<lambda*> result(data.gene_families.size());
+    std::transform(data.gene_families.begin(), data.gene_families.end(), result.begin(),
+        [this, p_model](gene_family& fam)
+    {
+        vector<gene_family> v({ fam });
+        vector<model *> models{ p_model };
+        p_model->set_families(&v);
+        data.p_lambda = nullptr;
+        estimate_missing_variables(models, data);
+        return p_model->get_lambda();
+    });
+    std::transform(data.gene_families.begin(), data.gene_families.end(), result.begin(),
+        ostream_iterator<string>(ost, "\n"),
+        [](const gene_family& fam, lambda* lambda)
+    {
+        return fam.id() + '\t' + lambda->to_string();
+    });
+    for (auto r : result) delete r; // TODO: use unique_ptrs in result for exception safety
+
+}
+
 void estimator::execute(std::vector<model *>& models)
 {
-    estimate_missing_variables(models, data);
+    if (_user_input.lambda_per_family)
+    {
+        auto p_model = models[0];   // no support for multiple models
+        std::ofstream results_file(filename(p_model->name() + "_lambda_per_family", _user_input.output_prefix));
+        estimate_lambda_per_family(p_model, results_file);
+    }
+    else
+    {
+        estimate_missing_variables(models, data);
 
-    compute(models, _user_input, data.max_family_size, data.max_root_family_size);
+        compute(models, _user_input, data.max_family_size, data.max_root_family_size);
 
-    auto pvalues = compute_pvalues(data, 1000);
+        auto pvalues = compute_pvalues(data, 1000);
 
-    matrix_cache cache(data.max_family_size + 1);
-    for (model* p_model : models) {
-        std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(&cache, data.p_prior.get()));
-        rec->write_results(p_model, _user_input.output_prefix, pvalues);
+        matrix_cache cache(data.max_family_size + 1);
+        for (model* p_model : models) {
+            std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(&cache, data.p_prior.get()));
+            rec->write_results(p_model, _user_input.output_prefix, pvalues);
+        }
     }
 }
 
@@ -320,7 +352,3 @@ void simulator::print_simulations(std::ostream& ost, bool include_internal_nodes
         ost << endl;
     }
 }
-
-
-
-

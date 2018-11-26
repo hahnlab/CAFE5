@@ -67,6 +67,7 @@ public:
     void compute(std::vector<model *>& models, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size);
 
     void estimate_missing_variables(std::vector<model *>& models, user_data& data);
+    void estimate_lambda_per_family(model *p_model, std::ostream& ost);
 };
 
 action* get_executor(input_parameters& user_input, user_data& data);

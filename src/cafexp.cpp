@@ -16,7 +16,7 @@ input_parameters read_arguments(int argc, char *const argv[])
     int args; // getopt_long returns int or char
     int prev_arg;
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:l:m:k:a:s::g::p::r:x", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:l:m:k:a:s::g::p::r:xb", longopts, NULL)) != -1) {
         // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && optarg && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -26,6 +26,9 @@ input_parameters read_arguments(int argc, char *const argv[])
         }
 
         switch (args) {
+        case 'b':
+            my_input_parameters.lambda_per_family = true;
+            break;
         case 'i':
             my_input_parameters.input_file_path = optarg;
             break;
@@ -105,7 +108,7 @@ action* get_executor(input_parameters& user_input, user_data& data)
     if (!user_input.chisquare_compare.empty()) {
         return new chisquare_compare(data, user_input);
     }
-    if (user_input.is_simulating) {
+    else if (user_input.is_simulating) {
         return new simulator(data, user_input);
     }
     else

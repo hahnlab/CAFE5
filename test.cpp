@@ -2,6 +2,7 @@
 #include <numeric>
 #include <cmath>
 #include <getopt.h>
+#include <sstream>
 
 #include "CppUTest/TestHarness.h"
 #include "CppUTest/CommandLineTestRunner.h"
@@ -197,6 +198,37 @@ TEST(Options, must_not_specify_rootdist_when_simulating)
     catch (runtime_error& err)
     {
         STRCMP_EQUAL("Option -s cannot be provided an argument if -f is specified.", err.what());
+    }
+}
+
+TEST(Options, per_family_must_provide_families)
+{
+    try
+    {
+        input_parameters params;
+        params.lambda_per_family = true;
+        params.check_input();
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("No family file provided", err.what());
+    }
+}
+
+TEST(Options, per_family_must_provide_tree)
+{
+    try
+    {
+        input_parameters params;
+        params.lambda_per_family = true;
+        params.input_file_path = "/tmp/test";
+        params.check_input();
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("No tree file provided", err.what());
     }
 }
 
@@ -1412,7 +1444,10 @@ class mock_model : public model {
     }
     virtual optimizer_scorer * get_lambda_optimizer(user_data& data) override
     {
-        return nullptr;
+        initialize_lambda(data.p_lambda_tree);
+        auto result = new lambda_optimizer(_p_tree, _p_lambda, this, data.p_prior.get());
+        result->quiet = true;
+        return result;
     }
 public:
     mock_model() : model(NULL, NULL, NULL, 0, 0, NULL)
@@ -1657,7 +1692,46 @@ TEST(Inference, gamma_optimizer)
     DOUBLES_EQUAL(0.565811, initial[0], 0.00001);
 }
 
-TEST(Inference, gamma_lambd_optimizer)
+TEST(GeneFamilies, model_set_families)
+{
+    mock_model m;
+
+    vector<gene_family> fams;
+    m.set_families(&fams);
+    LONGS_EQUAL(0, m.get_gene_family_count());
+
+    fams.resize(5);
+    LONGS_EQUAL(5, m.get_gene_family_count());
+}
+
+TEST(Inference, lambda_per_family)
+{
+    user_data ud;
+    
+    ud.max_root_family_size = 10;
+    ud.max_family_size = 10;
+    ud.gene_families.resize(1);
+
+    gene_family& family = ud.gene_families[0];
+    family.set_id("test");
+    family.set_species_size("A", 3);
+    family.set_species_size("B", 6);
+    input_parameters params;
+    params.lambda_per_family = true;
+
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    ud.p_tree = p_tree.get();
+    estimator v(ud, params);
+
+    mock_model m;
+    m.set_tree(ud.p_tree);
+    ostringstream ost;
+    v.estimate_lambda_per_family(&m, ost);
+    STRCMP_EQUAL("test\t0.080830104582544\n", ost.str().c_str());
+}
+TEST(Inference, gamma_lambda_optimizer)
 {
     // TODO: Add families and a tree to the Inference test group, since they are required for pretty much everything
     // Remove p_tree pointer from gamma_lambda_optimizer as it is only used to find the longest branch length
