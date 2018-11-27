@@ -10,8 +10,6 @@ private:
 
     std::vector<double> _gamma_cat_probs; // each item is the probability of belonging to a given gamma category
 
-    category_selector _gamma_cats;
-
     double _alpha;
 
     vector<gamma_bundle *> _family_bundles; // as of now, each process will be ONE simulation (i.e., simulate ONE gene family) under ONE lambda multiplier
@@ -33,8 +31,8 @@ public:
 
     void write_probabilities(std::ostream& ost);
 
-    //! Simulation methods
-    virtual simulation_process* create_simulation_process(const user_data& data, const root_distribution& rootdist, int family_number);
+    //! Randomly select one of the multipliers to apply to the sim
+    virtual lambda* get_simulation_lambda(const user_data& data) override;
 
     //! Inference methods
     void start_inference_processes(lambda *);
@@ -64,8 +62,6 @@ public:
     }
 
     void prepare_matrices_for_simulation(matrix_cache& cache);
-
-    void initialize_simulations(size_t count);
 
 };
 

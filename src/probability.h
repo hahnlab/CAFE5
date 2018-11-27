@@ -73,19 +73,6 @@ public:
 std::vector<int> uniform_dist(int n_draws, int min, int max);
 /* END: Uniform distribution - */
 
-class category_selector
-{
-    std::vector<int> _gamma_cats; // each item is an index to a gamma category, from 0 to n_cat; vector must be of length = _total_n_families
-public:
-    /* START: Weighted draw from vector */
-    //! Draw ints or doubles from n_draws equal intervals using specified weights.
-    void weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_probs);
-
-    bool empty() const { return _gamma_cats.empty(); }
-
-    int draw(int n) { return _gamma_cats[n]; }
-};
-
 std::vector<std::vector<double> > get_conditional_distribution_matrix(const clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, const lambda *p_lambda, const matrix_cache& cache);
 
 #endif

@@ -313,8 +313,6 @@ std::ostream& operator<<(std::ostream & ost, const increase_decrease& val)
     return ost;
 }
 
-extern std::string filename(std::string base, std::string suffix);
-
 void reconstruction::write_results(model *p_model, std::string output_prefix, std::vector<double>& pvalues)
 {
     std::ofstream ofst(filename(p_model->name() + "_asr", output_prefix));

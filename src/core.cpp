@@ -163,6 +163,12 @@ int model::get_max_simulation_size() const
     }
 }
 
+
+lambda* model::get_simulation_lambda(const user_data& data)
+{
+    return data.p_lambda->clone();
+}
+
 void branch_length_finder::operator()(const clade *c)
 {
     if (c->get_branch_length() > 0.0)

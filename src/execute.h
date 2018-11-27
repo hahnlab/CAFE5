@@ -11,7 +11,8 @@ class matrix_cache;
 class model;
 class root_equilibrium_distribution;
 class user_data;
-
+class simulation_data;
+    
 typedef clademap<int> trial;
 
 class action
@@ -26,20 +27,6 @@ public:
 
     }
     virtual ~action() {}
-};
-
-class simulator : public action
-{
-    void simulate(std::vector<model *>& models, const input_parameters &my_input_parameters);
-public:
-    simulator(user_data& d, const input_parameters& ui) : action(d, ui)
-    {
-
-    }
-    virtual void execute(std::vector<model *>& models);
-    void print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<trial *>& results);
-    void simulate_processes(model *p_model, std::vector<trial *>& results);
-
 };
 
 class chisquare_compare : public action

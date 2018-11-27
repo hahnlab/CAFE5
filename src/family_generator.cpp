@@ -6,9 +6,6 @@
 #include "family_generator.h"
 #include "matrix_cache.h"
 
-std::default_random_engine gen(12);
-std::uniform_real_distribution<> dis(0, 1); // draw random number from uniform distribution
-
 //! Set the family size of a node to a random value, using parent's family size
 /*!
   Starting from 0, the gene family size of the child (c) is increased until the cumulative probability of c (given the gene family size s of the parent) exceeds a random draw from a uniform distribution. When this happens, the last c becomes the child's gene family size.

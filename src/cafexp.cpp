@@ -1,8 +1,12 @@
-#include <getopt.h>
 #include <map>
+#include <random>
+
+#include <getopt.h>
 
 #include "io.h"
 #include "execute.h"
+#include "simulator.h"
+
 #include "user_data.h"
 #include "root_equilibrium_distribution.h"
 #include "core.h"

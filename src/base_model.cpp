@@ -11,6 +11,7 @@
 #include "root_equilibrium_distribution.h"
 #include "optimizer_scorer.h"
 #include "root_distribution.h"
+#include "simulator.h"
 
 base_model::base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
     int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map, error_model *p_error_model) :
@@ -27,23 +28,6 @@ base_model::~base_model()
     for (auto proc : processes)
         delete proc;
 
-}
-
-simulation_process* base_model::create_simulation_process(const user_data& data, const root_distribution& rootdist, int family_number) {
-    int max_family_size_sim;
-    int root_size;
-
-    if (data.rootdist.empty()) {
-        max_family_size_sim = 100;
-
-        root_size = rootdist.select_randomly(); // getting a random root size from the provided (core's) root distribution
-    }
-    else {
-        max_family_size_sim = 2 * rootdist.max();
-        root_size = rootdist.at(family_number);
-    }
-
-    return new simulation_process(1.0, max_family_size_sim, root_size); 
 }
 
 vector<int> build_reference_list(const vector<gene_family>& families)
@@ -165,7 +149,10 @@ optimizer_scorer *base_model::get_lambda_optimizer(user_data& data)
 
 reconstruction* base_model::reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior)
 {
+#ifndef SILENT
     cout << "Starting reconstruction processes for base model" << endl;
+#endif
+
     base_model_reconstruction *result = new base_model_reconstruction();
 
     for (int i = 0; i < _p_gene_families->size(); ++i)

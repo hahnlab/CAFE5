@@ -2,6 +2,7 @@
 #include <numeric>
 #include <iomanip>
 #include <cmath>
+#include <random>
 
 #include "gamma_core.h"
 #include "gamma.h"
@@ -14,6 +15,9 @@
 #include "user_data.h"
 #include "optimizer_scorer.h"
 #include "root_distribution.h"
+#include "simulator.h"
+
+extern mt19937 randomizer_engine;
 
 gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
     int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map, error_model* p_error_model) :
@@ -83,35 +87,12 @@ void gamma_model::start_inference_processes(lambda *p_lambda) {
     }
 }
 
-void gamma_model::initialize_simulations(size_t count)
+//! Randomly select one of the multipliers to apply to the sim
+lambda* gamma_model::get_simulation_lambda(const user_data& data)
 {
-    if (_alpha <= 0)
-    {
-#ifndef SILENT
-        cerr << "No alpha set for simulation. Setting randomly\n";
-#endif
-        set_alpha(unifrnd());
-    }
-    _gamma_cats.weighted_cat_draw(count, _gamma_cat_probs);
-}
+    discrete_distribution<int> dist(_gamma_cat_probs.begin(), _gamma_cat_probs.end());
 
-//! Populate _processes (vector of processes)
-simulation_process* gamma_model::create_simulation_process(const user_data& data, const root_distribution& rootdist, int family_number) {
-    double lambda_bin = _gamma_cats.draw(family_number);
-    int max_family_size_sim;
-    int root_size;
-
-    if (data.rootdist.empty()) {
-        max_family_size_sim = 100;
-        root_size = rootdist.select_randomly(); // getting a random root size from the provided (core's) root distribution
-    }
-    else {
-        max_family_size_sim = 2 * rootdist.max();
-        root_size = rootdist.at(family_number);
-    }
-
-
-    return new simulation_process(_lambda_multipliers[lambda_bin], max_family_size_sim, root_size); 
+    return data.p_lambda->multiply(_lambda_multipliers[dist(randomizer_engine)]);
 }
 
 std::vector<double> gamma_model::get_posterior_probabilities(std::vector<double> cat_likelihoods)
@@ -145,12 +126,16 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
 
     if (!_p_lambda->is_valid())
     {
+#ifndef SILENT
         std::cout << "-lnL: " << log(0) << std::endl;
+#endif
         return -log(0);
     }
     if (_alpha < 0)
     {
+#ifndef SILENT
         std::cout << "-lnL: " << log(0) << std::endl;
+#endif
         return -log(0);
     }
 
@@ -205,7 +190,9 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     }
     double final_likelihood = -accumulate(all_bundles_likelihood.begin(), all_bundles_likelihood.end(), 0.0);
 
+#ifndef SILENT
     std::cout << "-lnL: " << final_likelihood << std::endl;
+#endif
 
     return final_likelihood;
 }
@@ -264,43 +251,6 @@ reconstruction* gamma_model::reconstruct_ancestral_states(matrix_cache *calc, ro
 
     return result;
 }
-
-std::vector<double> gamma_lambda_optimizer::initial_guesses()
-{
-    double alpha = unifrnd();
-
-    std::vector<double> x(_p_model->get_gamma_cat_probs_count());
-    std::vector<double> y(_p_model->get_lambda_multiplier_count());
-    get_gamma(x, y, alpha); // passing vectors by reference
-
-    double largest_multiplier = *max_element(y.begin(), y.end());
-    branch_length_finder finder;
-    _p_tree->apply_prefix_order(finder);
-    //double result = 1.0 / finder.result() * unifrnd();
-    std::vector<double> lambdas(_p_lambda->count());
-    const double longest_branch = finder.longest();
-    generate(lambdas.begin(), lambdas.end(), [longest_branch, largest_multiplier] { return 1.0 / (longest_branch*largest_multiplier) * unifrnd(); });
-
-    lambdas.push_back(alpha);
-    return lambdas;
-
-}
-
-double gamma_lambda_optimizer::calculate_score(double *values)
-{
-    _p_lambda->update(values);
-
-    double alpha = values[_p_lambda->count()];
-    _p_model->set_alpha(alpha);
-
-    cout << "Attempting lambda: " << *_p_lambda << ", alpha: " << alpha << std::endl;
-    _p_model->write_probabilities(cout);
-
-    _p_model->start_inference_processes(_p_lambda);
-
-    return _p_model->infer_processes(_p_distribution);
-}
-
 
 void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost)
 {

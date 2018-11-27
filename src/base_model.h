@@ -28,8 +28,6 @@ public:
     virtual reconstruction* reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache);
-
-    virtual simulation_process* create_simulation_process(const user_data& data, const root_distribution& rootdist, int family_number);
 };
 
 

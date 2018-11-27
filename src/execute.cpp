@@ -1,31 +1,17 @@
 #include <cmath>
 #include <set>
 
-#include "utils.h"
-#include "io.h"
 #include "execute.h"
-#include "probability.h"
-#include "lambda.h"
 #include "core.h"
-#include "gamma_core.h"
-#include "root_equilibrium_distribution.h"
-#include "chisquare.h"
-#include "matrix_cache.h"
-#include "base_model.h"
 #include "user_data.h"
+#include "chisquare.h"
 #include "optimizer_scorer.h"
-#include "process.h"
-#include "root_distribution.h"
+#include "matrix_cache.h"
 
 double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 24.01409824083091, -1.231739572450155, 1.208650973866179e-3,
 -5.395239384953e-6 };
 
-
-std::string filename(std::string base, std::string suffix)
-{
-    return base + (suffix.empty() ? "" : "_") + suffix + ".txt";
-}
 
 void estimator::compute(std::vector<model *>& models, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
 {
@@ -233,122 +219,3 @@ void chisquare_compare::execute(std::vector<model *>&)
     cout << "PValue = " << 1.0 - chi2cdf(2 * (chis[1] - chis[0]), degrees_of_freedom) << std::endl;
 }
 
-void simulator::execute(std::vector<model *>& models)
-{
-    simulate(models, _user_input);
-}
-
-void simulator::simulate_processes(model *p_model, std::vector<trial *>& results) {
-
-    int max_size = p_model->get_max_simulation_size();
-    size_t rootdist_sz = p_model->get_rootdist_size();
-    if (rootdist_sz > 0)
-    {
-        results.resize(rootdist_sz);
-    }
-    else
-    {
-        results.resize(_user_input.nsims);
-    }
-
-#ifndef SILENT
-    cout << "Simulating " << results.size() << " families for model " << p_model->name() << endl;
-#endif
-
-    p_model->initialize_simulations(results.size());
-    vector<unique_ptr<simulation_process>> family_simulations(results.size());
-
-    root_distribution rd;
-
-    if (data.rootdist.empty()) {
-        rd.vectorize_increasing(100);
-    }
-    else {
-        rd.vectorize(data.rootdist);
-    }
-    for (size_t i = 0; i < family_simulations.size(); ++i) {
-        family_simulations[i].reset(p_model->create_simulation_process(data, rd, i));
-    }
-
-    matrix_cache cache(max_size);
-    p_model->prepare_matrices_for_simulation(cache);
-
-#ifndef SILENT
-    cout << "Matrices complete\n";
-    cache.warn_on_saturation(cerr);
-#endif
-
-    for (size_t i = 0; i < family_simulations.size(); ++i) {
-        results[i] = family_simulations[i]->run(data, cache);
-    }
-}
-
-
-/// Simulate
-/// \callgraph
-void simulator::simulate(std::vector<model *>& models, const input_parameters &my_input_parameters)
-{
-    cout << "Simulating with " << models.size() << " model(s)" << endl;
-
-    std::vector<const clade *> order;
-    auto fn = [&order](const clade *c) { order.push_back(c); };
-    data.p_tree->apply_reverse_level_order(fn);
-
-    for (int i = 0; i < models.size(); ++i) {
-
-        std::vector<trial *> results;
-
-        simulate_processes(models[i], results);
-
-        string truth_fname = filename("simulation_truth", my_input_parameters.output_prefix);
-        std::ofstream ofst(truth_fname);
-        cout << "Writing to " << truth_fname << endl;
-        print_simulations(ofst, true, results);
-
-        string fname = filename("simulation", my_input_parameters.output_prefix);
-        std::ofstream ofst2(fname);
-        cout << "Writing to " << fname << endl;
-        print_simulations(ofst2, false, results);
-    }
-}
-
-
-void simulator::print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<trial *>& results) {
-
-    std::vector<const clade *> order;
-    auto fn = [&order](const clade *c) { order.push_back(c); };
-    data.p_tree->apply_reverse_level_order(fn);
-
-    if (results.empty())
-    {
-        cerr << "No simulations created" << endl;
-        return;
-    }
-    trial *sim = results[0];
-
-    ost << "DESC\tFID";
-    for (size_t i = 0; i < order.size(); ++i)
-    {
-        if (order[i]->is_leaf())
-            ost << '\t' << order[i]->get_taxon_name();
-        else if (include_internal_nodes)
-            ost << '\t' << i;
-
-    }
-    ost << endl;
-
-    for (size_t j = 0; j < results.size(); ++j) {
-        auto& fam = *results[j];
-        // Printing gene counts
-        ost << "NULL\tsimfam" << j;
-        for (size_t i = 0; i < order.size(); ++i)
-        {
-            if (order[i]->is_leaf() || include_internal_nodes)
-            {
-                ost << '\t';
-                ost << fam[order[i]];
-            }
-        }
-        ost << endl;
-    }
-}

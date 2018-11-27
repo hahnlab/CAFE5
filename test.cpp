@@ -3,6 +3,7 @@
 #include <cmath>
 #include <getopt.h>
 #include <sstream>
+#include <random>
 
 #include "CppUTest/TestHarness.h"
 #include "CppUTest/CommandLineTestRunner.h"
@@ -21,6 +22,9 @@
 #include "src/user_data.h"
 #include "src/optimizer_scorer.h"
 #include "src/root_distribution.h"
+#include "src/simulator.h"
+
+std::mt19937 randomizer_engine(10); // seeding random number engine
 
 TEST_GROUP(GeneFamilies)
 {
@@ -441,15 +445,6 @@ TEST(Probability, get_conditional_distribution_matrix)
     cache.precalculate_matrices(vector<double>{0.05}, set<double>{1});
     auto cd_matrix = get_conditional_distribution_matrix(p_tree.get(), 10, 12, 3, &lam, cache);
     LONGS_EQUAL(10, cd_matrix.size());
-}
-
-TEST(Probability, category_selector)
-{
-    category_selector cs;
-    CHECK(cs.empty());
-    cs.weighted_cat_draw(5, { 0.2, 0.6 });
-    CHECK_FALSE(cs.empty());
-    // TODO: Find some way to test the random_device effectively
 }
 
 TEST(Inference, base_optimizer_guesses_lambda_only)
@@ -1407,12 +1402,17 @@ class mock_optimizer : public optimizer_scorer
     {
         return std::vector<double>{_initial};
     }
-    virtual double calculate_score(double * values) override
+    virtual void prepare_calculation(double * values) override
     {
-        return 0.0;
     }
+    virtual void report_precalculation() override
+    {
+    }
+
 public:
-    mock_optimizer(double initial) : _initial(initial)
+    mock_optimizer(double initial) : 
+        optimizer_scorer(NULL, NULL, NULL),
+        _initial(initial)
     {
 
     }
@@ -1421,10 +1421,6 @@ public:
 
 class mock_model : public model {
     // Inherited via model
-    virtual simulation_process * create_simulation_process(const user_data& data, const root_distribution&, int family_number) override
-    {
-        return new simulation_process(1.0, 0, 50);
-    }
     virtual void start_inference_processes(lambda *) override
     {
     }
@@ -1472,51 +1468,17 @@ public:
     }
 };
 
-TEST(Simulation, base_create_simulation_process_sets_roots_less_than_100_without_rootdist)
+TEST(Simulation, select_root_size_returns_less_than_100_without_rootdist)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
-
-    single_lambda lam(0.05);
-
-    base_model base(NULL, NULL, {}, 0, 0, NULL, NULL);
     root_distribution rd;
     rd.vectorize_increasing(100);
 
     user_data data;
-    data.p_lambda = &lam;
-    data.p_tree = p_tree.get();
 
     for (int i = 0; i<50; ++i)
     {
-        unique_ptr<simulation_process> sim(base.create_simulation_process(data, rd, 0 ));
-        CHECK(sim->get_root_size() < 100);
-    }
-}
-
-
-TEST(Simulation, gamma_create_simulation_process_sets_roots_less_than_100_without_rootdist)
-{
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
-
-    single_lambda lam(0.05);
-
-    gamma_model gamma(NULL, NULL, {}, 0, 0, 3, 0, NULL, NULL);
-    gamma.initialize_simulations(100);
-    root_distribution rd;
-    rd.vectorize_increasing(100);
-
-    user_data data;
-    data.p_lambda = &lam;
-    data.p_tree = p_tree.get();
-
-    for (int i = 0; i<50; ++i)
-    {
-        unique_ptr<simulation_process> sim(gamma.create_simulation_process(data, rd, 0));
-        CHECK(sim->get_root_size() < 100);
+        int root_size = select_root_size(data, rd, 0);
+        CHECK(root_size < 100);
     }
 }
 
@@ -1569,18 +1531,14 @@ TEST(Simulation, print_process_can_print_without_internal_nodes)
 
 }
 
-TEST(Simulation, gamma_model_initialize_simulations_sets_random_alpha_if_not_set)
+TEST(Simulation, gamma_model_get_simulation_lambda_selects_random_multiplier_based_on_alpha)
 {
-    gamma_model m(NULL, NULL, NULL, 0, 5, 0, -1, NULL, NULL);
-    m.initialize_simulations(5);
-    CHECK(m.get_alpha() > 0);
-}
-
-TEST(Simulation, gamma_model_initialize_simulations_keeps_alpha_if_set)
-{
-    gamma_model m(NULL, NULL, NULL, 0, 5, 0, 0.7, NULL, NULL);
-    m.initialize_simulations(5);
-    DOUBLES_EQUAL(0.7, m.get_alpha(), 0.000000001);
+    gamma_model m(NULL, NULL, NULL, 0, 5, 3, 0.7, NULL, NULL);
+    user_data data;
+    single_lambda lam(0.05);
+    data.p_lambda = &lam;
+    unique_ptr<single_lambda> new_lam(dynamic_cast<single_lambda *>(m.get_simulation_lambda(data)));
+    DOUBLES_EQUAL(0.00574028, new_lam->get_single_lambda(), 0.0000001);
 }
 
 TEST(Inference, model_vitals)
@@ -1687,7 +1645,8 @@ TEST(Inference, lambda_epsilon_optimizer)
 
 TEST(Inference, gamma_optimizer)
 {
-    gamma_optimizer optimizer(NULL, NULL);
+    gamma_model m(NULL, NULL, NULL, 0, 0, 0, 0, NULL, NULL);
+    gamma_optimizer optimizer(&m, NULL);
     auto initial = optimizer.initial_guesses();
     DOUBLES_EQUAL(0.565811, initial[0], 0.00001);
 }

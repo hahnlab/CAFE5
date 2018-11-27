@@ -7,7 +7,7 @@
 #include "probability.h"
 #include "root_distribution.h"
 
-class simulation_process;
+class simulation_data;
 class inference_process;
 class gene_family_reconstructor;
 class reconstruction;
@@ -101,7 +101,7 @@ public:
     void set_max_sizes(int max_family_size, int max_root_family_size);
     
     //! Simulation methods
-    virtual simulation_process* create_simulation_process(const user_data& data, const root_distribution& rootdist, int family_number) = 0;
+    virtual lambda* get_simulation_lambda(const user_data& data);
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache) = 0;
 
@@ -120,8 +120,6 @@ public:
     void print_node_depths(std::ostream& ost);
 
     std::size_t get_gene_family_count() const;
-
-    virtual void initialize_simulations(size_t count) {}
 
     int get_max_simulation_size() const;
 
@@ -202,5 +200,12 @@ void print_increases_decreases_by_clade(std::ostream& ost, const std::vector<T>&
         ost << it.second.first << "/" << it.second.second << endl;
     }
 }
+
+inline std::string filename(std::string base, std::string suffix)
+{
+    return base + (suffix.empty() ? "" : "_") + suffix + ".txt";
+}
+
+
 #endif /* CORE_H */
 

@@ -46,11 +46,13 @@ double unifrnd() {
   return result;
 }
 
+#define GAMMA_CACHE_SIZE 1024
+
 vector<double> lgamma_cache;
 void init_lgamma_cache()
 {
-    lgamma_cache.resize(512);
-    for (int i = 0; i < 512; ++i)
+    lgamma_cache.resize(GAMMA_CACHE_SIZE);
+    for (int i = 0; i < GAMMA_CACHE_SIZE; ++i)
     {
         lgamma_cache[i] = lgamma(i);
     }
@@ -58,7 +60,7 @@ void init_lgamma_cache()
 
 inline double lgamma2(double n)
 {
-    if (n < 512 && (n - int(n) < 0.00000000001))
+    if (n < GAMMA_CACHE_SIZE && (n - int(n) < 0.00000000001))
         return lgamma_cache.at(int(n));
 
     return lgamma(n);
@@ -228,30 +230,6 @@ std::vector<int> uniform_dist(int n_draws, int min, int max) {
         
     return uniform_vec;
 }
-
-/* START: Weighted draw from vector */
-//! Draw ints or doubles from n_draws equal intervals using specified weights.
-void category_selector::weighted_cat_draw(int n_draws, std::vector<double> gamma_cat_probs) {
-    std::random_device rd;
-    std::mt19937 gen(rd()); // seeding random number engine
-
-    // creating equal-sized intervals (n_draws of them)
-    std::vector<double> intervals(gamma_cat_probs.size() + 1);
-    for (int i = 0; i != intervals.size(); ++i) {
-        intervals[i] = i;
-        //std::cout << i << " ith interval" << std::endl;
-    }
-
-    std::piecewise_constant_distribution<double> d(intervals.begin(), intervals.end(), gamma_cat_probs.begin());
-
-    _gamma_cats.resize(n_draws);
-    // now drawing
-    for (int i = 0; i < n_draws; ++i) {
-        _gamma_cats[i] = d(gen);
-        //cout << (*p_gamma_cats)[i] << ", ";
-    }
-}
-/* END: Weighted draw from vector */
 
 std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, const lambda *p_lambda, const matrix_cache& cache, error_model *p_error_model)
 {

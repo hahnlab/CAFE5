@@ -61,16 +61,4 @@ public:
     std::string family_id() const;
 };
 
-class simulation_process {
-    double _lambda_multiplier;
-    int _max_family_size_sim;
-    int _root_size; // will be drawn from _rootdist_vec by process itself
-public:
-	simulation_process(double lambda_multiplier, int max_family_size_sim, int root_size);
-
-	trial* run(const user_data& data, const matrix_cache& cache);
-
-    int get_root_size() const { return _root_size; }
-};
-
 #endif
