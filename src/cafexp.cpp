@@ -126,7 +126,6 @@ action* get_executor(input_parameters& user_input, user_data& data)
 /// The main function. Evaluates arguments, calls processes
 /// \callgraph
 int cafexp(int argc, char *const argv[]) {
-    srand(10);
     map<int, int>* p_rootdist_map = NULL; // for sims
 
     init_lgamma_cache();

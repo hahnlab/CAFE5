@@ -98,10 +98,8 @@ optimizer::result optimizer::optimize()
         pfm->chi = 50;				// expansion
         pfm->delta = 0.4;
     }
-	pfm->tolx = 1e-6;
-	pfm->tolf = 1e-6;
-    pfm->maxiters = 25;
-	fminsearch_min(pfm, &initial[0]);
+
+    fminsearch_min(pfm, &initial[0]);
     double *re = fminsearch_get_minX(pfm);
 
     result r;

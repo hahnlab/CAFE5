@@ -1,5 +1,6 @@
 #include <iomanip>
 #include <iostream>
+#include <random>
 
 #include "optimizer_scorer.h"
 #include "clade.h"
@@ -7,6 +8,8 @@
 #include "base_model.h"
 #include "gamma_core.h"
 #include "gamma.h"
+
+extern std::mt19937 randomizer_engine;
 
 using namespace std;
 
@@ -37,9 +40,10 @@ std::vector<double> lambda_optimizer::initial_guesses()
     branch_length_finder finder;
     _p_tree->apply_prefix_order(finder);
     std::vector<double> result(_p_lambda->count());
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
     for (auto& i : result)
     {
-        i = 1.0 / finder.longest() * unifrnd();
+        i = 1.0 / finder.longest() * distribution(randomizer_engine);
     }
     return result;
 }
@@ -56,10 +60,12 @@ void lambda_optimizer::report_precalculation()
 
 std::vector<double> lambda_epsilon_optimizer::initial_guesses()
 {
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+
     std::vector<double> result(_p_lambda->count());
     for (auto& i : result)
     {
-        i = 1.0 / _longest_branch * unifrnd();
+        i = 1.0 / _longest_branch * distribution(randomizer_engine);
     }
 
     current_guesses = _p_error_model->get_epsilons();
@@ -105,7 +111,8 @@ gamma_optimizer::gamma_optimizer(gamma_model* p_model, root_equilibrium_distribu
 
 std::vector<double> gamma_optimizer::initial_guesses()
 {
-    return std::vector<double>({ unifrnd() });
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    return std::vector<double>({ distribution(randomizer_engine) });
 }
 
 void gamma_optimizer::prepare_calculation(double * values)
@@ -139,7 +146,8 @@ gamma_lambda_optimizer::gamma_lambda_optimizer(const clade *p_tree, lambda *p_la
 
 std::vector<double> gamma_lambda_optimizer::initial_guesses()
 {
-    double alpha = unifrnd();
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    double alpha = distribution(randomizer_engine);
 
     std::vector<double> x(_p_gamma_model->get_gamma_cat_probs_count());
     std::vector<double> y(_p_gamma_model->get_lambda_multiplier_count());
@@ -151,7 +159,9 @@ std::vector<double> gamma_lambda_optimizer::initial_guesses()
     //double result = 1.0 / finder.result() * unifrnd();
     std::vector<double> lambdas(_p_lambda->count());
     const double longest_branch = finder.longest();
-    generate(lambdas.begin(), lambdas.end(), [longest_branch, largest_multiplier] { return 1.0 / (longest_branch*largest_multiplier) * unifrnd(); });
+    generate(lambdas.begin(), lambdas.end(), [longest_branch, largest_multiplier, &distribution] { 
+        return 1.0 / (longest_branch*largest_multiplier) * distribution(randomizer_engine);
+    });
 
     lambdas.push_back(alpha);
     return lambdas;

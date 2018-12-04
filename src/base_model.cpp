@@ -1,6 +1,7 @@
 #include <cmath>
 #include <numeric>
 #include <limits>
+#include <random>
 
 #include "base_model.h"
 #include "process.h"
@@ -12,6 +13,8 @@
 #include "optimizer_scorer.h"
 #include "root_distribution.h"
 #include "simulator.h"
+
+extern mt19937 randomizer_engine;
 
 base_model::base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
     int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map, error_model *p_error_model) :
@@ -186,6 +189,17 @@ void base_model::prepare_matrices_for_simulation(matrix_cache& cache)
     branch_length_finder lengths;
     _p_tree->apply_prefix_order(lengths);
     cache.precalculate_matrices(get_lambda_values(_p_lambda), lengths.result());
+}
+
+lambda* base_model::get_simulation_lambda(const user_data& data)
+{
+    return data.p_lambda->multiply(simulation_lambda_multiplier);
+}
+
+void base_model::perturb_lambda()
+{
+    normal_distribution<double> dist(1.0, 0.3);
+    simulation_lambda_multiplier = dist(randomizer_engine);
 }
 
 base_model_reconstruction::~base_model_reconstruction()

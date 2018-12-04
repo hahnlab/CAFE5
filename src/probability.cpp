@@ -38,14 +38,6 @@ double gammaln(double a)
 */
 
 
-/* START: Math tools --------------------- */
-/* Old C implementation necessary for set_node_familysize_random. Now using uniform_real_distribution()
-*/
-double unifrnd() {
-  double result = rand() / (RAND_MAX + 1.0); // rand() returns an int from 0 to RAND_MAX (which is defined in std); the +1.0 is there probably so that we do not draw exactly 1.
-  return result;
-}
-
 #define GAMMA_CACHE_SIZE 1024
 
 vector<double> lgamma_cache;

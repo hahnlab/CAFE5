@@ -61,7 +61,14 @@ public:
         return _lambda_multipliers.size();
     }
 
+    std::vector<double> get_lambda_multipliers() const {
+        return _lambda_multipliers;
+    }
+
     void prepare_matrices_for_simulation(matrix_cache& cache);
+
+    //! modify lambda multiplier slightly for a better simulation
+    void perturb_lambda();
 
 };
 

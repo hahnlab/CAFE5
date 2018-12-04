@@ -34,12 +34,16 @@ TEST_GROUP(Inference)
 {
     void setup()
     {
-        srand(10);
+        randomizer_engine.seed(10);
     }
 };
 
 TEST_GROUP(Simulation)
 {
+    void setup()
+    {
+        randomizer_engine.seed(10);
+    }
 };
 
 TEST_GROUP(Probability)
@@ -459,7 +463,7 @@ TEST(Inference, base_optimizer_guesses_lambda_only)
     unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(1, guesses.size());
-    DOUBLES_EQUAL(0.565811, guesses[0], 0.0001);
+    DOUBLES_EQUAL(0.298761, guesses[0], 0.0001);
     delete model.get_lambda();
 }
 
@@ -505,8 +509,8 @@ TEST(Inference, gamma_optimizer_guesses_lambda_and_alpha)
     CHECK(opt);
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(2, guesses.size());
-    DOUBLES_EQUAL(0.218321, guesses[0], 0.0001);
-    DOUBLES_EQUAL(0.565811, guesses[1], 0.0001);
+    DOUBLES_EQUAL(0.149987, guesses[0], 0.0001);
+    DOUBLES_EQUAL(0.298761, guesses[1], 0.0001);
     vector<double>().swap(guesses);
    delete p_tree;
    delete model.get_lambda();
@@ -529,7 +533,7 @@ TEST(Inference, gamma_optimizer_guesses_lambda_if_alpha_provided)
 
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(1, guesses.size());
-    DOUBLES_EQUAL(0.565811, guesses[0], 0.0001);
+    DOUBLES_EQUAL(0.298761, guesses[0], 0.0001);
     vector<double>().swap(guesses);
     delete model.get_lambda();
 }
@@ -553,7 +557,7 @@ TEST(Inference, gamma_optimizer_guesses_alpha_if_lambda_provided)
 
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(1, guesses.size());
-    DOUBLES_EQUAL(0.565811, guesses[0], 0.0001);
+    DOUBLES_EQUAL(0.298761, guesses[0], 0.0001);
     vector<double>().swap(guesses);
     delete model.get_lambda();
 }
@@ -1648,7 +1652,7 @@ TEST(Inference, gamma_optimizer)
     gamma_model m(NULL, NULL, NULL, 0, 0, 0, 0, NULL, NULL);
     gamma_optimizer optimizer(&m, NULL);
     auto initial = optimizer.initial_guesses();
-    DOUBLES_EQUAL(0.565811, initial[0], 0.00001);
+    DOUBLES_EQUAL(0.298761, initial[0], 0.00001);
 }
 
 TEST(GeneFamilies, model_set_families)
@@ -1688,7 +1692,7 @@ TEST(Inference, lambda_per_family)
     m.set_tree(ud.p_tree);
     ostringstream ost;
     v.estimate_lambda_per_family(&m, ost);
-    STRCMP_EQUAL("test\t0.080830104582544\n", ost.str().c_str());
+    STRCMP_EQUAL("test\t0.042680165523241\n", ost.str().c_str());
 }
 TEST(Inference, gamma_lambda_optimizer)
 {
@@ -1740,8 +1744,6 @@ TEST(Simulation, gamma_prepare_matrices_for_simulation_creates_matrix_for_each_b
 
 TEST(Simulation, random_familysize_setter_without_error_model)
 {
-    srand(10);
-
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:3):7";
     unique_ptr<clade> p_tree(parser.parse_newick());
@@ -1774,8 +1776,6 @@ TEST(Simulation, random_familysize_setter_select_size)
 
 TEST(Simulation, random_familysize_setter_with_error_model)
 {
-    srand(10);
-
     const int family_size = 10;
     const double initial_epsilon = 0.2;
     error_model err;
@@ -1799,7 +1799,7 @@ TEST(Simulation, random_familysize_setter_with_error_model)
 
     t[p_tree.get()] = 5;
     setter(b);
-    LONGS_EQUAL(4, t[b]);
+    LONGS_EQUAL(6, t[b]);
 }
 
 TEST(Simulation, executor)
@@ -1861,6 +1861,40 @@ TEST(Simulation, rootdist_max_and_sum)
     rd.vectorize(m);
     CHECK(rd.max() == 8);
     CHECK(rd.sum() == 18);  // three twos, one four and one eight
+}
+
+TEST(Simulation, simulate_processes)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    single_lambda lam(0.05);
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    mock_model m;
+    m.set_tree(p_tree.get());
+    m.set_lambda(&lam);
+
+    user_data ud;
+    ud.p_tree = p_tree.get();
+    ud.p_lambda = &lam;
+    input_parameters ip;
+    ip.nsims = 100;
+    simulator sim(ud, ip);
+    vector<trial *> results;
+    sim.simulate_processes(&m, results);
+    LONGS_EQUAL(100, results.size());
+
+    for (auto r : results) delete r;
+}
+
+TEST(Simulation, gamma_model_perturb_lambda)
+{
+    gamma_model model(NULL, NULL, NULL, 0, 5, 3, 0.7, NULL, NULL);
+    model.perturb_lambda();
+    auto multipliers = model.get_lambda_multipliers();
+    LONGS_EQUAL(3, multipliers.size());
+    DOUBLES_EQUAL(0.112844, multipliers[0], 0.00001);
+    DOUBLES_EQUAL(1.05493, multipliers[1], 0.00001);
+    DOUBLES_EQUAL(2.06751, multipliers[2], 0.00001);
 }
 
 void init_lgamma_cache();

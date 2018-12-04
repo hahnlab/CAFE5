@@ -1,5 +1,6 @@
 #include <vector>
 #include <cmath>
+#include <random>
 
 #include "poisson.h"
 #include "utils.h"
@@ -7,6 +8,8 @@
 #include "fminsearch.h"
 #include "probability.h"
 #include "gene_family.h"
+
+extern std::mt19937 randomizer_engine;
 
 using namespace std;
 
@@ -66,7 +69,8 @@ vector<double> find_poisson_lambda(vector<gene_family> gene_families)
   pfm->tolx = 1e-6;
   pfm->tolf = 1e-6;
 
-  double my_random = unifrnd();
+  std::uniform_real_distribution<double> distribution(0.0, 1.0);
+  double my_random = distribution(randomizer_engine);
 
   fminsearch_min(pfm, &my_random);
 

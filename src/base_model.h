@@ -8,6 +8,8 @@ class matrix_cache;
 
 class base_model : public model {
     std::vector<inference_process *> processes;
+    double simulation_lambda_multiplier = 1.0;
+
 public:
     //! Computation or estimation constructor
     base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
@@ -28,6 +30,11 @@ public:
     virtual reconstruction* reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache);
+
+    virtual lambda* get_simulation_lambda(const user_data& data);
+
+    void perturb_lambda();
+
 };
 
 

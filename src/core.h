@@ -126,6 +126,9 @@ public:
     std::size_t get_rootdist_size() const {
         return _root_distribution.size();
     }
+
+    virtual void perturb_lambda() {}
+
 };
 
 std::vector<int> build_reference_list(const std::vector<gene_family>& families);

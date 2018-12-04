@@ -6,6 +6,8 @@
 #include "family_generator.h"
 #include "matrix_cache.h"
 
+extern std::mt19937 randomizer_engine;
+
 //! Set the family size of a node to a random value, using parent's family size
 /*!
   Starting from 0, the gene family size of the child (c) is increased until the cumulative probability of c (given the gene family size s of the parent) exceeds a random draw from a uniform distribution. When this happens, the last c becomes the child's gene family size.
@@ -27,7 +29,9 @@ void random_familysize_setter::operator()(const clade *node) {
     double lambda = _p_lambda->get_value_for_clade(node);
     double branch_length = node->get_branch_length();
 
-    c = select_size(parent_family_size, lambda, branch_length, unifrnd());
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+
+    c = select_size(parent_family_size, lambda, branch_length, distribution(randomizer_engine));
 
     if (node->is_leaf() && _p_error_model != NULL)
     {
@@ -37,7 +41,7 @@ void random_familysize_setter::operator()(const clade *node) {
         }
         auto probs = _p_error_model->get_probs(c);
        
-        double rnd = unifrnd();
+        double rnd = distribution(randomizer_engine);
         if (rnd < probs[0])
         {
             c--;

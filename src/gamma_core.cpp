@@ -121,6 +121,37 @@ void gamma_model::prepare_matrices_for_simulation(matrix_cache& cache)
     }
 }
 
+void gamma_model::perturb_lambda()
+{
+    // reset the mutlipliers back to their initial values based on the alpha
+    get_gamma(_gamma_cat_probs, _lambda_multipliers, _alpha);
+
+    auto new_multipliers = _lambda_multipliers;
+    for (int i = 0; i < _lambda_multipliers.size(); ++i)
+    {
+        double stddev;
+        if (i == 0)
+        {
+            stddev = _lambda_multipliers[0] / 3.0;
+        }
+        else if (i == _lambda_multipliers.size() - 1)
+        {
+            stddev = (_lambda_multipliers[i] - _lambda_multipliers[i - 1]) / 3.0;
+        }
+        else
+        {
+            stddev = (_lambda_multipliers[i + 1] - _lambda_multipliers[i - 1]) / 6.0;
+        }
+        normal_distribution<double> dist(_lambda_multipliers[i], stddev);
+        new_multipliers[i] = dist(randomizer_engine);
+    }
+    _lambda_multipliers.swap(new_multipliers);
+
+#ifndef SILENT
+    write_probabilities(cout);
+#endif
+}
+
 //! Infer bundle
 double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
 

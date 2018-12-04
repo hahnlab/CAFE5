@@ -74,18 +74,24 @@ void simulator::simulate_processes(model *p_model, std::vector<trial *>& results
         rd.vectorize(data.rootdist);
     }
 
-    matrix_cache cache(max_size);
-    p_model->prepare_matrices_for_simulation(cache);
+    for (int i = 0; i < results.size(); i+=50)
+    {
+        p_model->perturb_lambda();
+
+        matrix_cache cache(max_size);
+        p_model->prepare_matrices_for_simulation(cache);
 
 #ifndef SILENT
-    cout << "Matrices complete\n";
-    cache.warn_on_saturation(cerr);
+        cout << "Matrices complete\n";
+        cache.warn_on_saturation(cerr);
 #endif
-    int n = 0;
+        int n = 0;
 
-    generate(results.begin(), results.end(), [this, p_model, &rd, &cache, &n]() mutable {
-        return create_trial(p_model, rd, n++, data, cache);
-    });
+        auto end_it = i + 50 > results.size() ? results.end() : results.begin() + i + 50;
+        generate(results.begin()+i, end_it, [this, p_model, &rd, &cache, &n]() mutable {
+            return create_trial(p_model, rd, n++, data, cache);
+        });
+    }
 }
 
 
