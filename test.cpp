@@ -5,8 +5,6 @@
 #include <sstream>
 #include <random>
 
-#include "CppUTest/TestHarness.h"
-#include "CppUTest/CommandLineTestRunner.h"
 #include "src/io.h"
 #include "src/core.h"
 #include "src/gamma_core.h"
@@ -23,6 +21,10 @@
 #include "src/optimizer_scorer.h"
 #include "src/root_distribution.h"
 #include "src/simulator.h"
+
+// these need to be at the end to stop weird STL errors
+#include "CppUTest/TestHarness.h"
+#include "CppUTest/CommandLineTestRunner.h"
 
 std::mt19937 randomizer_engine(10); // seeding random number engine
 

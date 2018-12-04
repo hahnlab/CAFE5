@@ -1,0 +1,17 @@
+language: cpp
+sudo: required
+dist: xenial
+compiler:
+- gcc
+# - clang  # Don't compile in clang until openmp errors can be resolved
+before_install:
+- sudo apt-get install cpputest doxygen graphviz
+script:
+- cd $TRAVIS_BUILD_DIR
+- autoconf
+- ./configure
+- make
+- make test
+- test/runtests
+notifications:
+  slack: hahnlab-cafe:qWd7TTjmDiENiF99zgek98Rr
