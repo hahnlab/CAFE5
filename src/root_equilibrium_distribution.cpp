@@ -5,7 +5,7 @@
 #include "root_equilibrium_distribution.h"
 #include "poisson.h"
 #include "io.h"
-
+#include "lambda.h" // for definition of optimizer :/
 
 float uniform_distribution::compute(int val) const
 {
@@ -17,9 +17,15 @@ float uniform_distribution::compute(int val) const
 
 ::poisson_distribution::poisson_distribution(std::vector<gene_family> *p_gene_families)
 {
-    vector<double> root_poisson_lambda = find_poisson_lambda(*p_gene_families);
-    _poisson_lambda = root_poisson_lambda[0];
-    cout << "Estimated poisson lambda: " << _poisson_lambda << std::endl;
+    poisson_scorer scorer(*p_gene_families);
+    optimizer opt(&scorer);
+
+    auto result = opt.optimize();
+
+    cout << "Empirical Prior Estimation Result : (" << result.num_iterations << " iterations)" << endl;
+    cout << "Poisson lambda: " << result.values[0] << " &  Score: " << result.score << endl;
+
+    _poisson_lambda = result.values[0];
 }
 
 void ::poisson_distribution::initialize(const root_distribution* root_distribution)

@@ -36,63 +36,42 @@ vector<double> get_prior_rfsize_poisson_lambda(int min_family_size, int max_fami
   return prior_rfsize;
 }
 
-class poisson_scorer : public optimizer_scorer
+poisson_scorer::poisson_scorer(const vector<gene_family>& gene_families)
 {
-    vector<int> sizes;
-public:
-    poisson_scorer(const vector<gene_family>& gene_families)
+    for (auto &fam : gene_families)
     {
-        for (auto &fam : gene_families)
-        {
-            for (auto species : fam.get_species())
-                if (fam.get_species_size(species) > 0)
-                    sizes.push_back(fam.get_species_size(species) - 1);
-        }
+        for (auto species : fam.get_species())
+            if (fam.get_species_size(species) > 0)
+                leaf_family_sizes.push_back(fam.get_species_size(species) - 1);
     }
-
-    // Inherited via optimizer_scorer
-    virtual std::vector<double> initial_guesses() override
-    {
-        std::uniform_real_distribution<double> distribution(0.0, 1.0);
-        double my_random = distribution(randomizer_engine);
-        return std::vector<double>{my_random};
-    }
-    virtual double calculate_score(double * values) override
-    {
-        lnLPoisson(values, &sizes);
-    }
-
-    double lnLPoisson(double* plambda, void* data)
-    {
-        int i = 0;
-        double score = 0;
-        double lambda = plambda[0];
-        std::vector<int> *p_leaf_family_sizes = (std::vector<int> *)data;
-        for (i = 0; i<p_leaf_family_sizes->size(); i++) {
-            int x = p_leaf_family_sizes->at(i);
-            double ll = poisspdf((double)x, lambda);
-            if (std::isnan(ll)) {
-                ll = 0;
-            }
-            score += log(ll);
-        }
-
-        return -score;
-    }
-
-
-};
-
-vector<double> find_poisson_lambda(vector<gene_family> gene_families)
-{
-    poisson_scorer scorer(gene_families);
-    optimizer opt(&scorer);
-    
-    auto result = opt.optimize();
-
-    cout << "Empirical Prior Estimation Result : (" << result.num_iterations << " iterations)" << endl;
-    cout << "Poisson lambda: " << result.values[0] << " &  Score: " << result.score << endl;
-
-    return result.values;
 }
 
+// Inherited via optimizer_scorer
+std::vector<double> poisson_scorer::initial_guesses()
+{
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    double my_random = distribution(randomizer_engine);
+    return std::vector<double>{my_random};
+}
+
+double poisson_scorer::calculate_score(double * values)
+{
+    lnLPoisson(values);
+}
+
+double poisson_scorer::lnLPoisson(double* plambda)
+{
+    int i = 0;
+    double score = 0;
+    double lambda = plambda[0];
+    for (i = 0; i<leaf_family_sizes.size(); i++) {
+        int x = leaf_family_sizes.at(i);
+        double ll = poisspdf((double)x, lambda);
+        if (std::isnan(ll)) {
+            ll = 0;
+        }
+        score += log(ll);
+    }
+
+    return -score;
+}

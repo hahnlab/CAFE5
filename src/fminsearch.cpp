@@ -4,7 +4,7 @@
 #include <cstring>
 
 #include "fminsearch.h"
-
+#include "optimizer_scorer.h"
 const double MAX_DOUBLE = std::numeric_limits<double>::max();
 
 // TODO: If fminsearch is slow, replacing this with a single array might be more efficient
@@ -41,14 +41,13 @@ FMinSearch* fminsearch_new()
 	pfm->delta = 0.05;
 	pfm->zero_delta = 0.00025;
 	pfm->maxiters = 10000;
-	pfm->args = NULL;
 	return pfm;
 }
 
-FMinSearch* fminsearch_new_with_eq(math_func eq, int Xsize, void* args)
+FMinSearch* fminsearch_new_with_eq(optimizer_scorer* eq, int Xsize)
 {
 	FMinSearch* pfm = fminsearch_new();
-	fminsearch_set_equation(pfm,eq,Xsize,args);
+	fminsearch_set_equation(pfm,eq,Xsize);
 	return pfm;
 }
 
@@ -75,11 +74,11 @@ void fminsearch_free(FMinSearch* pfm)
 	pfm = NULL;
 }
 
-void fminsearch_set_equation(FMinSearch* pfm, math_func eq, int Xsize, void* args)
+void fminsearch_set_equation(FMinSearch* pfm, optimizer_scorer* eq, int Xsize)
 {
 	if ( pfm->N != Xsize )
 	{
-		if ( pfm->eq ) fminsearch_clear_memory(pfm);
+		if ( pfm->scorer ) fminsearch_clear_memory(pfm);
 		pfm->v = (double**)calloc_2dim(Xsize+1, Xsize, sizeof(double));
 		pfm->vsort = (double**)calloc_2dim(Xsize+1, Xsize, sizeof(double));
 		pfm->fv = (double*)calloc(Xsize+1, sizeof(double));
@@ -88,10 +87,9 @@ void fminsearch_set_equation(FMinSearch* pfm, math_func eq, int Xsize, void* arg
 		pfm->x_tmp = (double*)calloc(Xsize, sizeof(double));
 		pfm->idx = (int*)calloc(Xsize+1,sizeof(int));
 	}
-	pfm->eq = eq;
+	pfm->scorer = eq;
 	pfm->N = Xsize;
 	pfm->N1 = Xsize + 1;
-	pfm->args = args;
 }
 
 
@@ -205,7 +203,7 @@ void __fminsearch_min_init(FMinSearch* pfm, double* X0)
                 }
             }
 		}
-		pfm->fv[i] = pfm->eq(pfm->v[i], pfm->args);
+		pfm->fv[i] = pfm->scorer->calculate_score(pfm->v[i]);
 	}
 	__fminsearch_sort(pfm);
 }
@@ -231,7 +229,7 @@ double __fminsearch_x_reflection(FMinSearch* pfm)
 	{
 		pfm->x_r[i] = pfm->x_mean[i] + pfm->rho * ( pfm->x_mean[i] - pfm->v[pfm->N][i] );
 	}
-	return pfm->eq(pfm->x_r, pfm->args);
+	return pfm->scorer->calculate_score(pfm->x_r);
 }
 
 
@@ -242,7 +240,7 @@ double __fminsearch_x_expansion(FMinSearch* pfm)
 	{
 		pfm->x_tmp[i] = pfm->x_mean[i] + pfm->chi * ( pfm->x_r[i] - pfm->x_mean[i] );
 	}
-	return pfm->eq(pfm->x_tmp, pfm->args);
+	return pfm->scorer->calculate_score(pfm->x_tmp);
 }
 
 double __fminsearch_x_contract_outside(FMinSearch* pfm)
@@ -252,7 +250,7 @@ double __fminsearch_x_contract_outside(FMinSearch* pfm)
 	{
 		pfm->x_tmp[i] = pfm->x_mean[i] + pfm->psi * ( pfm->x_r[i] - pfm->x_mean[i] );
 	}
-	return pfm->eq(pfm->x_tmp, pfm->args);
+	return pfm->scorer->calculate_score(pfm->x_tmp);
 }
 
 double __fminsearch_x_contract_inside(FMinSearch* pfm)
@@ -262,7 +260,7 @@ double __fminsearch_x_contract_inside(FMinSearch* pfm)
 	{
 		pfm->x_tmp[i] = pfm->x_mean[i] + pfm->psi * ( pfm->x_mean[i] - pfm->v[pfm->N][i] );
 	}
-	return pfm->eq(pfm->x_tmp, pfm->args);
+	return pfm->scorer->calculate_score(pfm->x_tmp);
 }
 
 void __fminsearch_x_shrink(FMinSearch* pfm)
@@ -274,7 +272,7 @@ void __fminsearch_x_shrink(FMinSearch* pfm)
 		{
 			pfm->v[i][j] = pfm->v[0][j] + pfm->sigma * ( pfm->v[i][j] - pfm->v[0][j] );
 		}
-		pfm->fv[i] = pfm->eq(pfm->v[i], pfm->args);
+		pfm->fv[i] = pfm->scorer->calculate_score(pfm->v[i]);
 	}
 	__fminsearch_sort(pfm);
 }

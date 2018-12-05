@@ -74,12 +74,6 @@ double multiple_lambda::get_value_for_clade(const clade *c) const {
 
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
-double fn_calc_score(double* p_lambda, void* args)
-{
-    inference_optimizer_scorer *opt = reinterpret_cast<inference_optimizer_scorer*>(args);
-    opt->calculate_score(p_lambda);
-}
-
 optimizer::optimizer(optimizer_scorer *p_scorer) : _p_scorer(p_scorer)
 {
 #ifdef SILENT
@@ -91,7 +85,7 @@ optimizer::optimizer(optimizer_scorer *p_scorer) : _p_scorer(p_scorer)
 optimizer::result optimizer::optimize()
 {
     auto initial = _p_scorer->initial_guesses();
-    fminsearch_set_equation(pfm, fn_calc_score, initial.size(), _p_scorer);
+    fminsearch_set_equation(pfm, _p_scorer, initial.size());
     if (explode)
     {
         pfm->rho = 1.5;				// reflection

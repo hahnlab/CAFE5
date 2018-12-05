@@ -1721,7 +1721,7 @@ TEST(Inference, gamma_lambda_optimizer)
     optimizer.calculate_score(&values[0]);
 }
 
-TEST(Inference, find_poisson_lambda)
+TEST(Inference, poisson_scorer_optimizes_correct_value)
 {
     vector<gene_family> families;
     gene_family fam;
@@ -1729,8 +1729,12 @@ TEST(Inference, find_poisson_lambda)
     fam.set_species_size("B", 2);
     families.push_back(fam);
 
-    auto values = find_poisson_lambda(families);
-    DOUBLES_EQUAL(0.5, values[0], 0.0000001)
+    poisson_scorer scorer(families);
+    optimizer opt(&scorer);
+
+    auto result = opt.optimize();
+
+    DOUBLES_EQUAL(0.5, result.values[0], 0.0000001)
 }
 
 TEST(Simulation, base_prepare_matrices_for_simulation_creates_matrix_for_each_branch)

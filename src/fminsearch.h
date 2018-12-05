@@ -1,7 +1,7 @@
 #ifndef FMINSEARCH_H
 #define FMINSEARCH_H
 
-typedef double(*math_func)(double* x, void* args);
+class optimizer_scorer;
 
 struct FMinSearch
 {
@@ -21,13 +21,12 @@ struct FMinSearch
   double* x_tmp;
   int*    idx;
 
-  void* args;
-  math_func eq;
+  optimizer_scorer* scorer;
 };
 
 FMinSearch* fminsearch_new();
-FMinSearch* fminsearch_new_with_eq(math_func eq, int Xsize, void* args);
-void fminsearch_set_equation(FMinSearch* pfm, math_func eq, int Xsize, void* args);
+FMinSearch* fminsearch_new_with_eq(optimizer_scorer* eq, int Xsize);
+void fminsearch_set_equation(FMinSearch* pfm, optimizer_scorer* eq, int Xsize);
 int fminsearch_min(FMinSearch* pfm, double* X0);
 double* fminsearch_get_minX(FMinSearch* pfm);
 double fminsearch_get_minF(FMinSearch* pfm);
