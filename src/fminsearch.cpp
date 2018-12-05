@@ -225,7 +225,7 @@ void __fminsearch_x_mean(FMinSearch* pfm)
 }
 
 double __fminsearch_x_reflection(FMinSearch* pfm)
-{
+{   
 	int i;
 	for ( i = 0 ; i < pfm->N ; i++ )
 	{

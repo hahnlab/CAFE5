@@ -76,7 +76,7 @@ double multiple_lambda::get_value_for_clade(const clade *c) const {
 
 double fn_calc_score(double* p_lambda, void* args)
 {
-    optimizer_scorer *opt = reinterpret_cast<optimizer_scorer*>(args);
+    inference_optimizer_scorer *opt = reinterpret_cast<inference_optimizer_scorer*>(args);
     opt->calculate_score(p_lambda);
 }
 
@@ -105,6 +105,8 @@ optimizer::result optimizer::optimize()
     result r;
     r.score = fminsearch_get_minF(pfm);
     r.values.resize(initial.size());
+    r.num_iterations = pfm->iters;
+
     copy(re, re + initial.size(), r.values.begin());
     if (!quiet)
     {

@@ -13,7 +13,7 @@ extern std::mt19937 randomizer_engine;
 
 using namespace std;
 
-double optimizer_scorer::calculate_score(double *values)
+double inference_optimizer_scorer::calculate_score(double *values)
 {
     prepare_calculation(values);
 
@@ -103,7 +103,7 @@ void lambda_epsilon_optimizer::finalize(double *results)
 }
 
 gamma_optimizer::gamma_optimizer(gamma_model* p_model, root_equilibrium_distribution* prior) :
-    optimizer_scorer(p_model->get_lambda(), p_model, prior),
+    inference_optimizer_scorer(p_model->get_lambda(), p_model, prior),
     _p_gamma_model(p_model)
 {
 
@@ -137,7 +137,7 @@ void lambda_optimizer::finalize(double *results)
 }
 
 gamma_lambda_optimizer::gamma_lambda_optimizer(const clade *p_tree, lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution) :
-    optimizer_scorer(p_lambda, p_model, p_distribution),
+    inference_optimizer_scorer(p_lambda, p_model, p_distribution),
     _p_tree(p_tree),
     _p_gamma_model(p_model)
 {

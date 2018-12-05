@@ -21,6 +21,7 @@
 #include "src/optimizer_scorer.h"
 #include "src/root_distribution.h"
 #include "src/simulator.h"
+#include "src/poisson.h"
 
 // these need to be at the end to stop weird STL errors
 #include "CppUTest/TestHarness.h"
@@ -462,7 +463,7 @@ TEST(Inference, base_optimizer_guesses_lambda_only)
 
     base_model model(&sl, tree.get(), NULL, 0, 5, NULL, NULL);
     user_data data;
-    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
+    unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(1, guesses.size());
     DOUBLES_EQUAL(0.298761, guesses[0], 0.0001);
@@ -483,7 +484,7 @@ TEST(Inference, base_optimizer_guesses_lambda_and_unique_epsilons)
     base_model model(&lambda, p_tree.get(), &fams, 10, 10, NULL, &err);
     user_data data;
     data.p_error_model = &err;
-    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
+    unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
     CHECK(opt);
     CHECK(dynamic_cast<lambda_epsilon_optimizer*>(opt.get()) != NULL);
 #ifdef FALSE_MEMORY_LEAK_FIXED
@@ -507,7 +508,7 @@ TEST(Inference, gamma_optimizer_guesses_lambda_and_alpha)
     gamma_model model(NULL, p_tree, NULL, 0, 5, 4, -1, NULL, NULL);
     user_data data;
 
-    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
+    unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
     CHECK(opt);
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(2, guesses.size());
@@ -528,7 +529,7 @@ TEST(Inference, gamma_optimizer_guesses_lambda_if_alpha_provided)
 
     user_data data;
 
-    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
+    unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
 
     CHECK(opt);
     CHECK(dynamic_cast<lambda_optimizer *>(opt.get()));
@@ -552,7 +553,7 @@ TEST(Inference, gamma_optimizer_guesses_alpha_if_lambda_provided)
     single_lambda sl(0.05);
     data.p_lambda = &sl;
 
-    unique_ptr<optimizer_scorer> opt(model.get_lambda_optimizer(data));
+    unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
 
     CHECK(opt);
     CHECK(dynamic_cast<gamma_optimizer *>(opt.get()));
@@ -1400,7 +1401,7 @@ TEST(Inference, multiple_lambda_returns_correct_values)
     DOUBLES_EQUAL(.011, ml.get_value_for_clade(p_tree->find_descendant("B")), 0.0001);
 }
 
-class mock_optimizer : public optimizer_scorer
+class mock_optimizer : public inference_optimizer_scorer
 {
     double _initial;
     // Inherited via optimizer
@@ -1417,7 +1418,7 @@ class mock_optimizer : public optimizer_scorer
 
 public:
     mock_optimizer(double initial) : 
-        optimizer_scorer(NULL, NULL, NULL),
+        inference_optimizer_scorer(NULL, NULL, NULL),
         _initial(initial)
     {
 
@@ -1444,7 +1445,7 @@ class mock_model : public model {
     virtual reconstruction* reconstruct_ancestral_states(matrix_cache * p_calc, root_equilibrium_distribution * p_prior) override
     {
     }
-    virtual optimizer_scorer * get_lambda_optimizer(user_data& data) override
+    virtual inference_optimizer_scorer * get_lambda_optimizer(user_data& data) override
     {
         initialize_lambda(data.p_lambda_tree);
         auto result = new lambda_optimizer(_p_tree, _p_lambda, this, data.p_prior.get());
@@ -1718,6 +1719,18 @@ TEST(Inference, gamma_lambda_optimizer)
     gamma_lambda_optimizer optimizer(p_tree.get(), &lambda, &m, &frq);
     vector<double> values{ 0.01, 0.25 };
     optimizer.calculate_score(&values[0]);
+}
+
+TEST(Inference, find_poisson_lambda)
+{
+    vector<gene_family> families;
+    gene_family fam;
+    fam.set_species_size("A", 1);
+    fam.set_species_size("B", 2);
+    families.push_back(fam);
+
+    auto values = find_poisson_lambda(families);
+    DOUBLES_EQUAL(0.5, values[0], 0.0000001)
 }
 
 TEST(Simulation, base_prepare_matrices_for_simulation_creates_matrix_for_each_branch)

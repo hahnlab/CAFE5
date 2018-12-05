@@ -52,7 +52,7 @@ void estimator::estimate_missing_variables(std::vector<model *>& models, user_da
     }
     for (model* p_model : models) {
 
-        unique_ptr<optimizer_scorer> scorer(p_model->get_lambda_optimizer(data));
+        unique_ptr<inference_optimizer_scorer> scorer(p_model->get_lambda_optimizer(data));
         if (scorer.get() == nullptr)
             continue;   // nothing to be optimized
 

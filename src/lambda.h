@@ -109,6 +109,7 @@ public:
     struct result {
         std::vector<double> values;
         double score;
+        int num_iterations;
     };
 
     result optimize();

@@ -10,9 +10,17 @@ class root_equilibrium_distribution;
 class clade;
 class base_model;
 
-
 /// Base class for use by the optimizer
 class optimizer_scorer {
+public:
+    virtual ~optimizer_scorer() {}
+
+    virtual std::vector<double> initial_guesses() = 0;
+
+    virtual double calculate_score(double *values) = 0;
+};
+
+class inference_optimizer_scorer : public optimizer_scorer {
 protected:
     virtual void prepare_calculation(double *values) = 0;
     virtual void report_precalculation() = 0;
@@ -22,7 +30,7 @@ protected:
     root_equilibrium_distribution *_p_distribution;
 
 public:
-    optimizer_scorer(lambda *p_lambda, model* p_model, root_equilibrium_distribution *p_distribution) :
+    inference_optimizer_scorer(lambda *p_lambda, model* p_model, root_equilibrium_distribution *p_distribution) :
         _p_lambda(p_lambda),
         _p_model(p_model),
         _p_distribution(p_distribution),
@@ -33,11 +41,9 @@ public:
 #endif
     }
 
-    virtual ~optimizer_scorer() {}
+    virtual ~inference_optimizer_scorer() {}
 
-    virtual std::vector<double> initial_guesses() = 0;
-
-    double calculate_score(double *values);
+    double calculate_score(double *values) ;
 
     virtual void finalize(double *result) = 0;
 
@@ -45,7 +51,7 @@ public:
 };
 
 /// 
-class lambda_optimizer : public optimizer_scorer
+class lambda_optimizer : public inference_optimizer_scorer
 {
     const clade *_p_tree;
     virtual void prepare_calculation(double *values) override;
@@ -53,7 +59,7 @@ class lambda_optimizer : public optimizer_scorer
 
 public:
     lambda_optimizer(const clade *p_tree, lambda *p_lambda, model* p_model, root_equilibrium_distribution *p_distribution) :
-        optimizer_scorer(p_lambda, p_model, p_distribution),
+        inference_optimizer_scorer(p_lambda, p_model, p_distribution),
         _p_tree(p_tree)
     {
     }
@@ -66,7 +72,7 @@ public:
 
 
 /// optimize lambdas and epsilons together
-class lambda_epsilon_optimizer : public optimizer_scorer
+class lambda_epsilon_optimizer : public inference_optimizer_scorer
 {
     error_model* _p_error_model;
     double _longest_branch;
@@ -77,7 +83,7 @@ public:
         root_equilibrium_distribution* p_distribution,
         lambda *p_lambda,
         double longest_branch) :
-        optimizer_scorer(p_lambda, p_model, p_distribution),
+        inference_optimizer_scorer(p_lambda, p_model, p_distribution),
         _p_error_model(p_error_model),
         _longest_branch(longest_branch)
     {
@@ -93,7 +99,7 @@ public:
 
 class gamma_model;
 
-class gamma_lambda_optimizer : public optimizer_scorer
+class gamma_lambda_optimizer : public inference_optimizer_scorer
 {
     gamma_model *_p_gamma_model;
     const clade *_p_tree;
@@ -108,7 +114,7 @@ public:
     void finalize(double *results);
 };
 
-class gamma_optimizer : public optimizer_scorer {
+class gamma_optimizer : public inference_optimizer_scorer {
     gamma_model *_p_gamma_model;
 public:
     virtual void prepare_calculation(double *values) override;
