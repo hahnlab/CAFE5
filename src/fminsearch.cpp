@@ -1,8 +1,8 @@
 #include <limits>
 #include <stdlib.h>
-#include <math.h>
 #include <cstring>
 #include <algorithm>
+#include <cmath>
 
 #include "fminsearch.h"
 #include "optimizer_scorer.h"
@@ -184,7 +184,7 @@ void __fminsearch_min_init(FMinSearch* pfm, double* X0)
 	{
 		for ( j = 0 ; j < pfm->N ; j++ )
 		{
-            if ( i > 1 && isinf(pfm->fv[i-1])) {
+            if ( i > 1 && std::isinf(pfm->fv[i-1])) {
                 if ( (i - 1)  == j )
                 {
                     pfm->v[i][j] = X0[j] ? ( 1 + pfm->delta*100 ) * X0[j] : pfm->zero_delta;
