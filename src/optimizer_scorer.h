@@ -53,14 +53,12 @@ public:
 /// 
 class lambda_optimizer : public inference_optimizer_scorer
 {
-    const clade *_p_tree;
-    virtual void prepare_calculation(double *values) override;
-    virtual void report_precalculation() override;
+    double _longest_branch;
 
 public:
-    lambda_optimizer(const clade *p_tree, lambda *p_lambda, model* p_model, root_equilibrium_distribution *p_distribution) :
+    lambda_optimizer(lambda *p_lambda, model* p_model, root_equilibrium_distribution *p_distribution, double longest_branch) :
         inference_optimizer_scorer(p_lambda, p_model, p_distribution),
-        _p_tree(p_tree)
+        _longest_branch(longest_branch)
     {
     }
 
@@ -68,6 +66,8 @@ public:
 
     virtual void finalize(double *results);
 
+    virtual void prepare_calculation(double *values) override;
+    virtual void report_precalculation() override;
 };
 
 
@@ -75,17 +75,18 @@ public:
 class lambda_epsilon_optimizer : public inference_optimizer_scorer
 {
     error_model* _p_error_model;
-    double _longest_branch;
     std::vector<double> current_guesses;
+    lambda_optimizer _lambda_optimizer;
 public:
-    lambda_epsilon_optimizer(model* p_model,
+    lambda_epsilon_optimizer(
+        model* p_model,
         error_model *p_error_model,
         root_equilibrium_distribution* p_distribution,
         lambda *p_lambda,
         double longest_branch) :
         inference_optimizer_scorer(p_lambda, p_model, p_distribution),
-        _p_error_model(p_error_model),
-        _longest_branch(longest_branch)
+        _lambda_optimizer(p_lambda, p_model, p_distribution, longest_branch),
+        _p_error_model(p_error_model)
     {
     }
 
@@ -99,21 +100,6 @@ public:
 
 class gamma_model;
 
-class gamma_lambda_optimizer : public inference_optimizer_scorer
-{
-    gamma_model *_p_gamma_model;
-    const clade *_p_tree;
-    virtual void prepare_calculation(double *values) override;
-    virtual void report_precalculation() override;
-public:
-    gamma_lambda_optimizer(const clade *p_tree, lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution);
-
-    std::vector<double> initial_guesses();
-
-    /// results consists of the desired number of lambdas and one alpha value
-    void finalize(double *results);
-};
-
 class gamma_optimizer : public inference_optimizer_scorer {
     gamma_model *_p_gamma_model;
 public:
@@ -124,6 +110,25 @@ public:
     virtual std::vector<double> initial_guesses() override;
     virtual void finalize(double * result) override;
     gamma_optimizer(gamma_model* p_model, root_equilibrium_distribution* prior);
+
+    double get_alpha() const;
+    double get_largest_multiplier(double alpha) const;
+};
+
+class gamma_lambda_optimizer : public inference_optimizer_scorer
+{
+    virtual void prepare_calculation(double *values) override;
+    virtual void report_precalculation() override;
+    gamma_optimizer _gamma_optimizer;
+    lambda_optimizer _lambda_optimizer;
+    double _longest_branch;
+public:
+    gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution, double longest_branch);
+
+    std::vector<double> initial_guesses();
+
+    /// results consists of the desired number of lambdas and one alpha value
+    void finalize(double *results);
 };
 
 

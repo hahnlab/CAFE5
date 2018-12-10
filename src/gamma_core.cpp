@@ -235,13 +235,19 @@ inference_optimizer_scorer *gamma_model::get_lambda_optimizer(user_data& data)
 
     if (estimate_lambda && estimate_alpha)
     {
+        branch_length_finder finder;
+        _p_tree->apply_prefix_order(finder);
+
         initialize_lambda(data.p_lambda_tree);
-        return new gamma_lambda_optimizer(_p_tree, _p_lambda, this, data.p_prior.get());
+        return new gamma_lambda_optimizer(_p_lambda, this, data.p_prior.get(), finder.longest());
     }
     else if (estimate_lambda && !estimate_alpha)
     {
+        branch_length_finder finder;
+        _p_tree->apply_prefix_order(finder);
+
         initialize_lambda(data.p_lambda_tree);
-        return new lambda_optimizer(_p_tree, _p_lambda, this, data.p_prior.get());
+        return new lambda_optimizer(_p_lambda, this, data.p_prior.get(), finder.longest());
     }
     else if (!estimate_lambda && estimate_alpha)
     {

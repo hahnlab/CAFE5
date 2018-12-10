@@ -37,13 +37,11 @@ double inference_optimizer_scorer::calculate_score(double *values)
 
 std::vector<double> lambda_optimizer::initial_guesses()
 {
-    branch_length_finder finder;
-    _p_tree->apply_prefix_order(finder);
     std::vector<double> result(_p_lambda->count());
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
     for (auto& i : result)
     {
-        i = 1.0 / finder.longest() * distribution(randomizer_engine);
+        i = 1.0 / _longest_branch * distribution(randomizer_engine);
     }
     return result;
 }
@@ -58,15 +56,14 @@ void lambda_optimizer::report_precalculation()
     std::cout << "Lambda: " << *_p_lambda << std::endl;
 }
 
+void lambda_optimizer::finalize(double *results)
+{
+    _p_lambda->update(results);
+}
+
 std::vector<double> lambda_epsilon_optimizer::initial_guesses()
 {
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-
-    std::vector<double> result(_p_lambda->count());
-    for (auto& i : result)
-    {
-        i = 1.0 / _longest_branch * distribution(randomizer_engine);
-    }
+    auto result = _lambda_optimizer.initial_guesses();
 
     current_guesses = _p_error_model->get_epsilons();
     result.insert(result.end(), current_guesses.begin(), current_guesses.end());
@@ -80,7 +77,8 @@ void lambda_epsilon_optimizer::prepare_calculation(double *values)
     double * lambdas = values;
     double * epsilons = values + _p_lambda->count();
 
-    _p_lambda->update(lambdas);
+    _lambda_optimizer.prepare_calculation(lambdas);
+
     map<double, double> replacements;
     for (size_t i = 0; i < current_guesses.size(); ++i)
     {
@@ -98,7 +96,7 @@ void lambda_epsilon_optimizer::report_precalculation()
 
 void lambda_epsilon_optimizer::finalize(double *results)
 {
-    _p_lambda->update(results);
+    _lambda_optimizer.finalize(results);
     _p_error_model->update_single_epsilon(results[_p_lambda->count()]);
 }
 
@@ -131,63 +129,56 @@ void gamma_optimizer::finalize(double * result)
     _p_gamma_model->set_alpha(*result);
 }
 
-void lambda_optimizer::finalize(double *results)
+double gamma_optimizer::get_alpha() const
 {
-    _p_lambda->update(results);
+    return _p_gamma_model->get_alpha();
 }
 
-gamma_lambda_optimizer::gamma_lambda_optimizer(const clade *p_tree, lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution) :
-    inference_optimizer_scorer(p_lambda, p_model, p_distribution),
-    _p_tree(p_tree),
-    _p_gamma_model(p_model)
+double gamma_optimizer::get_largest_multiplier(double alpha) const
 {
-
-}
-
-std::vector<double> gamma_lambda_optimizer::initial_guesses()
-{
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-    double alpha = distribution(randomizer_engine);
-
     std::vector<double> x(_p_gamma_model->get_gamma_cat_probs_count());
     std::vector<double> y(_p_gamma_model->get_lambda_multiplier_count());
     get_gamma(x, y, alpha); // passing vectors by reference
 
     double largest_multiplier = *max_element(y.begin(), y.end());
-    branch_length_finder finder;
-    _p_tree->apply_prefix_order(finder);
-    //double result = 1.0 / finder.result() * unifrnd();
-    std::vector<double> lambdas(_p_lambda->count());
-    const double longest_branch = finder.longest();
-    generate(lambdas.begin(), lambdas.end(), [longest_branch, largest_multiplier, &distribution] { 
-        return 1.0 / (longest_branch*largest_multiplier) * distribution(randomizer_engine);
-    });
+}
 
-    lambdas.push_back(alpha);
-    return lambdas;
+gamma_lambda_optimizer::gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution, double longest_branch) :
+    inference_optimizer_scorer(p_lambda, p_model, p_distribution),  
+    _lambda_optimizer(p_lambda, p_model, p_distribution, longest_branch),
+    _gamma_optimizer(p_model, p_distribution)
+{
+}
+
+std::vector<double> gamma_lambda_optimizer::initial_guesses()
+{
+    double alpha = _gamma_optimizer.initial_guesses()[0];
+    double largest_multiplier = _gamma_optimizer.get_largest_multiplier(alpha);
+    auto values = _lambda_optimizer.initial_guesses();
+    for (auto &v : values)
+    {
+        v /= largest_multiplier;
+    };
+    values.push_back(alpha);
+    return values;
 
 }
 
 void gamma_lambda_optimizer::prepare_calculation(double *values)
 {
-    _p_lambda->update(values);
+    _lambda_optimizer.prepare_calculation(values);
+    _gamma_optimizer.prepare_calculation(values + _p_lambda->count());
 
-    double alpha = values[_p_lambda->count()];
-    _p_gamma_model->set_alpha(alpha);
-
-    if (!quiet)
-        _p_gamma_model->write_probabilities(cout);
 }
 
 void gamma_lambda_optimizer::report_precalculation()
 {
-    cout << "Attempting lambda: " << *_p_lambda << ", alpha: " << _p_gamma_model->get_alpha() << std::endl;
+    cout << "Attempting lambda: " << *_p_lambda << ", alpha: " << _gamma_optimizer.get_alpha() << std::endl;
 }
 
 /// results consists of the desired number of lambdas and one alpha value
 void gamma_lambda_optimizer::finalize(double *results) {
-    _p_lambda->update(results);
-    double alpha = results[_p_lambda->count()];
-    _p_gamma_model->set_alpha(alpha);
+    _lambda_optimizer.finalize(results);
+    _gamma_optimizer.finalize(results + _p_lambda->count());
 }
 

@@ -1447,8 +1447,11 @@ class mock_model : public model {
     }
     virtual inference_optimizer_scorer * get_lambda_optimizer(user_data& data) override
     {
+        branch_length_finder finder;
+        _p_tree->apply_prefix_order(finder);
+
         initialize_lambda(data.p_lambda_tree);
-        auto result = new lambda_optimizer(_p_tree, _p_lambda, this, data.p_prior.get());
+        auto result = new lambda_optimizer(_p_lambda, this, data.p_prior.get(), finder.longest());
         result->quiet = true;
         return result;
     }
@@ -1716,7 +1719,7 @@ TEST(Inference, gamma_lambda_optimizer)
     unique_ptr<clade> p_tree(parser.parse_newick());
 
     gamma_model m(&lambda,p_tree.get(), &families, 10, 10, 4, 0.25, NULL, NULL);
-    gamma_lambda_optimizer optimizer(p_tree.get(), &lambda, &m, &frq);
+    gamma_lambda_optimizer optimizer(&lambda, &m, &frq, 7);
     vector<double> values{ 0.01, 0.25 };
     optimizer.calculate_score(&values[0]);
 }

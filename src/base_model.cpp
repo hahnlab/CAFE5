@@ -135,16 +135,16 @@ inference_optimizer_scorer *base_model::get_lambda_optimizer(user_data& data)
 
     initialize_lambda(data.p_lambda_tree);
 
+    branch_length_finder finder;
+    _p_tree->apply_prefix_order(finder);
+
     if (data.p_error_model)
     {
-        branch_length_finder finder;
-        _p_tree->apply_prefix_order(finder);
-
         return new lambda_epsilon_optimizer(this, _p_error_model, data.p_prior.get(), _p_lambda, finder.longest());
     }
     else
     {
-        return new lambda_optimizer(_p_tree, _p_lambda, this, data.p_prior.get());
+        return new lambda_optimizer(_p_lambda, this, data.p_prior.get(), finder.longest());
     }
 }
 

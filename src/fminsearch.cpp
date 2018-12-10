@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <math.h>
 #include <cstring>
+#include <algorithm>
 
 #include "fminsearch.h"
 #include "optimizer_scorer.h"
 const double MAX_DOUBLE = std::numeric_limits<double>::max();
+const double MIN_ALLOWED = 1e-9;
 
 // TODO: If fminsearch is slow, replacing this with a single array might be more efficient
 void** calloc_2dim(int row, int col, int size)
@@ -227,7 +229,7 @@ double __fminsearch_x_reflection(FMinSearch* pfm)
 	int i;
 	for ( i = 0 ; i < pfm->N ; i++ )
 	{
-		pfm->x_r[i] = pfm->x_mean[i] + pfm->rho * ( pfm->x_mean[i] - pfm->v[pfm->N][i] );
+		pfm->x_r[i] = std::max(pfm->x_mean[i] + pfm->rho * ( pfm->x_mean[i] - pfm->v[pfm->N][i] ), MIN_ALLOWED);
 	}
 	return pfm->scorer->calculate_score(pfm->x_r);
 }
@@ -238,7 +240,7 @@ double __fminsearch_x_expansion(FMinSearch* pfm)
 	int i;
 	for ( i = 0 ; i < pfm->N ; i++ )
 	{
-		pfm->x_tmp[i] = pfm->x_mean[i] + pfm->chi * ( pfm->x_r[i] - pfm->x_mean[i] );
+		pfm->x_tmp[i] = std::max(pfm->x_mean[i] + pfm->chi * ( pfm->x_r[i] - pfm->x_mean[i] ), MIN_ALLOWED);
 	}
 	return pfm->scorer->calculate_score(pfm->x_tmp);
 }
@@ -248,7 +250,7 @@ double __fminsearch_x_contract_outside(FMinSearch* pfm)
 	int i;
 	for ( i = 0 ; i < pfm->N; i++ )
 	{
-		pfm->x_tmp[i] = pfm->x_mean[i] + pfm->psi * ( pfm->x_r[i] - pfm->x_mean[i] );
+		pfm->x_tmp[i] = std::max(pfm->x_mean[i] + pfm->psi * ( pfm->x_r[i] - pfm->x_mean[i] ), MIN_ALLOWED);
 	}
 	return pfm->scorer->calculate_score(pfm->x_tmp);
 }
@@ -258,7 +260,7 @@ double __fminsearch_x_contract_inside(FMinSearch* pfm)
 	int i;
 	for ( i = 0 ; i < pfm->N ; i++ )
 	{
-		pfm->x_tmp[i] = pfm->x_mean[i] + pfm->psi * ( pfm->x_mean[i] - pfm->v[pfm->N][i] );
+		pfm->x_tmp[i] = std::max(pfm->x_mean[i] + pfm->psi * ( pfm->x_mean[i] - pfm->v[pfm->N][i] ), MIN_ALLOWED);
 	}
 	return pfm->scorer->calculate_score(pfm->x_tmp);
 }
@@ -270,7 +272,7 @@ void __fminsearch_x_shrink(FMinSearch* pfm)
 	{
 		for ( j = 0 ; j < pfm->N ; j++ )
 		{
-			pfm->v[i][j] = pfm->v[0][j] + pfm->sigma * ( pfm->v[i][j] - pfm->v[0][j] );
+			pfm->v[i][j] = std::max(pfm->v[0][j] + pfm->sigma * ( pfm->v[i][j] - pfm->v[0][j] ), MIN_ALLOWED);
 		}
 		pfm->fv[i] = pfm->scorer->calculate_score(pfm->v[i]);
 	}
