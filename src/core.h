@@ -65,20 +65,20 @@ protected:
     std::ostream & _ost; 
     lambda *_p_lambda; // TODO: multiple lambdas for different branches
     const clade *_p_tree;
+    const std::vector<gene_family>* _p_gene_families;
     int _max_family_size;
     int _max_root_family_size;
-    const std::vector<gene_family>* _p_gene_families;
+    error_model* _p_error_model;
     root_distribution _root_distribution; // in case the user wants to use a specific root size distribution for all simulations
     vector<vector<int> > _rootdist_bins; // holds the distribution for each lambda bin
 
     /// Used to track gene families with identical species counts
-    std::vector<int> references;
+    std::vector<size_t> references;
 
     void initialize_rootdist_if_necessary();
 
     std::vector<family_info_stash> results;
 
-    error_model* _p_error_model;
 public:
     model(lambda* p_lambda,
         const clade *p_tree,
@@ -132,7 +132,7 @@ public:
 
 };
 
-std::vector<int> build_reference_list(const std::vector<gene_family>& families);
+std::vector<size_t> build_reference_list(const std::vector<gene_family>& families);
 
 enum family_size_change { Increase, Decrease, Constant };
 std::ostream& operator<<(std::ostream& ost, family_size_change fsc);
@@ -189,7 +189,7 @@ void print_increases_decreases_by_clade(std::ostream& ost, const std::vector<T>&
 
     for (auto item : printables) {
         auto incdec = item->get_increases_decreases(order, 0.0);
-        for (int i = 0; i < order.size(); ++i)
+        for (size_t i = 0; i < order.size(); ++i)
         {
             if (incdec.change[i] == Increase)
                 increase_decrease_map[order[i]].first++;

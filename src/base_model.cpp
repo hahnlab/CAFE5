@@ -33,18 +33,20 @@ base_model::~base_model()
 
 }
 
-vector<int> build_reference_list(const vector<gene_family>& families)
+vector<size_t> build_reference_list(const vector<gene_family>& families)
 {
-    vector<int> reff;
+    const size_t invalid_index = std::numeric_limits<size_t>::max();
+
+    vector<size_t> reff;
     const int num_families = families.size();
-    reff.resize(num_families, -1);
+    reff.resize(num_families, invalid_index);
     for (int i = 0; i < num_families; ++i) {
-        if (reff[i] != -1) continue;
+        if (reff[i] != invalid_index) continue;
 
         reff[i] = i;
 
         for (int j = i + 1; j < num_families; ++j) {
-            if (reff[j] == -1)
+            if (reff[j] == invalid_index)
             {
                 if (families[i].species_size_match(families[j]))
                 {
@@ -64,7 +66,7 @@ void base_model::start_inference_processes(lambda *p_lambda)
     processes.clear();
 
     processes.resize(_p_gene_families->size());
-    for (int i = 0; i <_p_gene_families->size(); ++i) {
+    for (size_t i = 0; i <_p_gene_families->size(); ++i) {
         if (references[i] == i)
             processes[i] = new inference_process(_ost, p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _p_error_model); // if a single _lambda_multiplier, how do we do it?
     }
@@ -90,14 +92,14 @@ double base_model::infer_processes(root_equilibrium_distribution *prior) {
 
     vector<vector<double>> partial_likelihoods(processes.size());
 #pragma omp parallel for
-    for (int i = 0; i < processes.size(); ++i) {
+    for (size_t i = 0; i < processes.size(); ++i) {
         if (processes[i])
             partial_likelihoods[i] = processes[i]->prune(calc);    // probabilities of various family sizes
     }
 
     // prune all the families with the same lambda
 #pragma omp parallel for
-    for (int i = 0; i < _p_gene_families->size(); ++i) {
+    for (size_t i = 0; i < _p_gene_families->size(); ++i) {
 
         auto& partial_likelihood = partial_likelihoods[references[i]];
         std::vector<double> full(partial_likelihood.size());
@@ -158,11 +160,12 @@ reconstruction* base_model::reconstruct_ancestral_states(matrix_cache *p_calc, r
 
     base_model_reconstruction *result = new base_model_reconstruction();
 
-    for (int i = 0; i < _p_gene_families->size(); ++i)
+    result->_rec_processes.resize(_p_gene_families->size());
+    transform(_p_gene_families->begin(), _p_gene_families->end(), result->_rec_processes.begin(), [this, p_calc, p_prior](const gene_family &family)
     {
-        result->_rec_processes.push_back(new gene_family_reconstructor(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size,
-            &_p_gene_families->at(i), p_calc, p_prior));
-    }
+        return new gene_family_reconstructor(_ost, _p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size,
+            &family, p_calc, p_prior);
+    });
 
 
     branch_length_finder lengths;

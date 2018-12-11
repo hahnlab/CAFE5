@@ -37,9 +37,9 @@ public:
 
 /// Called when we fix lambda to calculate the probabilities of the tree
 class inference_process : public process {
-	const gene_family *_p_gene_family;
-    const error_model *_p_error_model;
     int _max_family_size;
+    const error_model *_p_error_model;
+    const gene_family *_p_gene_family;
 public:
 	inference_process(std::ostream & ost, 
         lambda* lambda, 

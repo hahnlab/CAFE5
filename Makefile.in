@@ -58,7 +58,7 @@ remove: clean
 #
 DBGDIR = debug
 DBG_OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(DBGDIR)/%.o)
-DBG_CFLAGS = -std=c++11 @OPENMP_CXXFLAGS@ -g -I. -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
+DBG_CFLAGS = -std=c++11 -Wall -Werror @OPENMP_CXXFLAGS@ -g -I. -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 DBG_LINKER = g++ -std=c++11 @OPENMP_CXXFLAGS@ -o
 
 $(DBG_OBJECTS): $(DBGDIR)/%.o: $(SRCDIR)/%.cpp
@@ -92,3 +92,4 @@ test: $(TESTDIR)/$(TEST_TARGET)
 
 prep:
 	@mkdir -p $(OBJDIR) $(BINDIR) $(TESTDIR)
+

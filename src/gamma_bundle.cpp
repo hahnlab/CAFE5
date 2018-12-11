@@ -65,7 +65,7 @@ bool gamma_bundle::prune(const vector<double>& _gamma_cat_probs, root_equilibriu
     assert(_gamma_cat_probs.size() == _inf_processes.size());
     _category_likelihoods.clear();
 
-    for (int k = 0; k < _gamma_cat_probs.size(); ++k)
+    for (size_t k = 0; k < _gamma_cat_probs.size(); ++k)
     {
         auto partial_likelihood = _inf_processes[k]->prune(calc);
         if (accumulate(partial_likelihood.begin(), partial_likelihood.end(), 0.0) == 0.0)
@@ -105,7 +105,7 @@ clademap<double> get_weighted_averages(std::vector<gene_family_reconstructor *> 
 
 void gamma_bundle::reconstruct(const vector<double>& _gamma_cat_probs)
 {
-    for (int k = 0; k < _gamma_cat_probs.size(); ++k)
+    for (size_t k = 0; k < _gamma_cat_probs.size(); ++k)
     {
         _rec_processes[k]->reconstruct();
     }

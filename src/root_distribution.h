@@ -23,7 +23,7 @@ public:
     void vectorize_increasing(int max);
 
     int sum() const;
-    int at(int index) const;
+    int at(size_t index) const;
 
     int select_randomly() const;
 };

@@ -106,16 +106,16 @@ clade *newick_parser::new_clade(clade *p_parent) {
 
 ostream& operator<<(ostream& ost, const vector<vector<double> >& matrix)
 {
-  for (int s = 0; s < matrix.size(); s++)
-  {
-    for (int c = 0; c < matrix[s].size(); c++)
+    for (auto& row : matrix)
     {
-      ost << matrix[s][c] << "\t";
+        for (auto val : row)
+        {
+            ost << val << "\t";
+        }
+        ost << "\n";
     }
-    ost << "\n";
-  }
 
-  return ost;
+    return ost;
 }
 
 //! Split string into vector of strings given delimiter

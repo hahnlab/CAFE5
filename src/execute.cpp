@@ -20,7 +20,7 @@ void estimator::compute(std::vector<model *>& models, const input_parameters &my
     std::ofstream likelihoods_file(filename("family_lks", my_input_parameters.output_prefix));
 
     std::vector<double> model_likelihoods(models.size());
-    for (int i = 0; i < models.size(); ++i) {
+    for (size_t i = 0; i < models.size(); ++i) {
         cout << endl << "Starting inference processes for " << models[i]->name() << " model" << endl;
         models[i]->start_inference_processes(models[i]->get_lambda());
 
@@ -166,8 +166,6 @@ public:
 
 double pvalue_calculator::operator()(const gene_family& gf)
 {
-    int max = gf.get_max_size();
-
     likelihood_computer pruner(_max_root_family_size, _max_family_size, _p_lambda, gf, *_p_matrix_cache, NULL);
     pruner.initialize_memory(_p_tree);
     _p_tree->apply_reverse_level_order(pruner);

@@ -28,13 +28,14 @@ double chooseln(double n, double k);
 /// passing the root of the tree, to determine the overall probabilities for the tree.
 class likelihood_computer {
 private:
-    std::map<const clade *, std::vector<double> > _probabilities; //!< represents probability of the node having various family sizes
     int _max_root_family_size;
-	int _max_parsed_family_size;
-	const lambda* _lambda;
-    const matrix_cache& _calc;
+    int _max_parsed_family_size;
     const gene_family& _gene_family;
+    const lambda* _lambda;
+    const matrix_cache& _calc;
     const error_model* _p_error_model;
+
+    std::map<const clade *, std::vector<double> > _probabilities; //!< represents probability of the node having various family sizes
     
 public:
     likelihood_computer(int max_root_family_size, int max_parsed_family_size, const lambda* lambda, const gene_family& family,

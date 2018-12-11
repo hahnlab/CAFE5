@@ -40,14 +40,14 @@ public:
 //! One gamma bundle per family
 //! Should reconstruct values for all gamma category probabilities
 class gamma_bundle {
-    std::vector<inference_process *> _inf_processes;
     std::vector<gene_family_reconstructor *> _rec_processes;
-
-    clademap<double> reconstruction;
     clademap<family_size_change> increase_decrease_map;
-    std::vector<double> _category_likelihoods;
+    clademap<double> reconstruction;
     const clade *_p_tree;
     const gene_family *_p_gene_family;
+
+    std::vector<inference_process *> _inf_processes;
+    std::vector<double> _category_likelihoods;
 
 public:
     gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers, const clade *p_tree, const gene_family *p_gene_family);

@@ -135,7 +135,7 @@ void gene_family_reconstructor::reconstruct_internal_node(const clade * c, lambd
     // i is the parent, j is the child
     for (size_t i = 0; i < L.size(); ++i)
     {
-        size_t max_j;
+        size_t max_j = 0;
         double max_val = -1;
         for (size_t j = 0; j < L.size(); ++j)
         {

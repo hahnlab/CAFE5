@@ -127,7 +127,7 @@ void gamma_model::perturb_lambda()
     get_gamma(_gamma_cat_probs, _lambda_multipliers, _alpha);
 
     auto new_multipliers = _lambda_multipliers;
-    for (int i = 0; i < _lambda_multipliers.size(); ++i)
+    for (size_t i = 0; i < _lambda_multipliers.size(); ++i)
     {
         double stddev;
         if (i == 0)
@@ -182,7 +182,7 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
 
     vector<vector<family_info_stash>> pruning_results(_family_bundles.size());
 #pragma omp parallel for
-    for (int i = 0; i < _family_bundles.size(); ++i) {
+    for (size_t i = 0; i < _family_bundles.size(); ++i) {
         gamma_bundle* bundle = _family_bundles[i];
 
         if (bundle->prune(_gamma_cat_probs, prior, calc))

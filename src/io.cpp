@@ -159,7 +159,7 @@ void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gen
                 
                 // If reading CAFE input format, leaf_indices (which is for CAFExp input format) should be empty
                 if (leaf_indices.empty()) {
-                    for (int i = 0; i < tokens.size(); ++i) {
+                    for (size_t i = 0; i < tokens.size(); ++i) {
                         if (i == 0 || i == 1) {} // Ignoring description and ID columns
                         sp_col_map[i] = tokens[i];
                     }
@@ -171,7 +171,7 @@ void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gen
         else {
             gene_family genfam; 
             
-            for (int i = 0; i < tokens.size(); ++i) {                
+            for (size_t i = 0; i < tokens.size(); ++i) {                
                 // If reading CAFE input format, leaf_indices (which is for CAFExp input format) should be empty
                 if (leaf_indices.empty()) {
                     if (i == 0) { genfam.set_desc(tokens[i]); }
@@ -222,7 +222,7 @@ inline bool is_nearly_equal(double x, double y)
     return std::abs(x - y) <= epsilon * std::abs(x);
 }
 
-void error_model::set_probs(int fam_size, std::vector<double> probs_deviation) {
+void error_model::set_probabilities(size_t fam_size, std::vector<double> probs_deviation) {
     if (fam_size == 0 && !is_nearly_equal(probs_deviation[0], 0.0))
     {
         throw std::runtime_error("Cannot have a non-zero probability for family size 0 for negative deviation");
@@ -267,7 +267,7 @@ void error_model::update_single_epsilon(double new_epsilon)
     replace_epsilons(&replacements);
 }
 
-error_model* error_model::replace_epsilons(std::map<double, double> *new_epsilons)
+void error_model::replace_epsilons(std::map<double, double> *new_epsilons)
 {
     vector<double> vec = _error_dists[0];
     assert(vec.size() == 3);
@@ -277,7 +277,7 @@ error_model* error_model::replace_epsilons(std::map<double, double> *new_epsilon
         {
             vec.back() = kv.second;
             vec[1] = 1 - kv.second;
-            set_probs(0, vec);
+            set_probabilities(0, vec);
         }
     }
 
@@ -293,7 +293,7 @@ error_model* error_model::replace_epsilons(std::map<double, double> *new_epsilon
                 vec.back() = kv.second;
                 vec.front() = kv.second;
                 vec[1] = 1 - (kv.second * 2);
-                set_probs(i, vec);
+                set_probabilities(i, vec);
             }
         }
     }
@@ -348,7 +348,7 @@ void read_error_model_file(std::istream& error_model_file, error_model *p_error_
                 int sz = std::stoi(tokens[0]);
                 vector<double> values(tokens.size() - 1);
                 transform(tokens.begin() + 1, tokens.end(), values.begin(), to_double);
-                p_error_model->set_probs(sz, values);
+                p_error_model->set_probabilities(sz, values);
             }
         }
     }

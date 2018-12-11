@@ -47,15 +47,14 @@ void clade::add_descendant(clade *p_descendant) {
 /* Recursively fills vector of names provided as argument */
 void clade::add_leaf_names(vector<string> &vector_names) {
 
-  if (_descendants.empty()) {
-    vector_names.push_back(_taxon_name); // base case (leaf), and it starts returning
-  }
-
-  else {
-    for (int i = 0; i < _descendants.size(); ++i) {
-	_descendants[i]->add_leaf_names(vector_names);
+    if (_descendants.empty()) {
+        vector_names.push_back(_taxon_name); // base case (leaf), and it starts returning
     }
-  }
+    else {
+        for (auto desc : _descendants) {
+            desc->add_leaf_names(vector_names);
+        }
+    }
 }
 
 /* Recursively finds internal nodes, and returns vector of clades */
@@ -99,16 +98,16 @@ double clade::find_branch_length(string some_taxon_name) {
 /* Names interior clades, starting from clade of first method call and going up the tree until root */
 void clade::_name_interior_clade() {
 
-  vector<string> descendant_names; // vector of names
-  add_leaf_names(descendant_names); // fills vector of names
-  sort(descendant_names.begin(), descendant_names.end()); // sorts alphabetically (from std)
-  _taxon_name.clear(); // resets whatever taxon_name was
-  for (int i = 0; i < descendant_names.size(); ++i) {
-    _taxon_name += descendant_names[i];
-  }
-  
-  if (_p_parent)
-    _p_parent->_name_interior_clade();
+    vector<string> descendant_names; // vector of names
+    add_leaf_names(descendant_names); // fills vector of names
+    sort(descendant_names.begin(), descendant_names.end()); // sorts alphabetically (from std)
+    _taxon_name.clear(); // resets whatever taxon_name was
+    for (auto name : descendant_names) {
+        _taxon_name += name;
+    }
+
+    if (_p_parent)
+        _p_parent->_name_interior_clade();
 }
 
 bool clade::is_leaf() const {
@@ -156,7 +155,7 @@ void clade::write_newick(ostream& ost, std::function<std::string(const clade *c)
         ost << '(';
 
         // some nonsense to supress trailing comma
-        for (int i = 0; i< _descendants.size() - 1; i++) {
+        for (size_t i = 0; i< _descendants.size() - 1; i++) {
             _descendants[i]->write_newick(ost, textwriter);
             ost << ',';
         }

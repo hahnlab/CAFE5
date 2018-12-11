@@ -27,6 +27,8 @@ public:
     virtual double get_value_for_clade(const clade *c) const = 0;
     virtual bool is_valid() = 0;
     virtual lambda* clone() const = 0;
+
+    virtual ~lambda() {}
 };
 
 //! (lambda) Derived class 1: one lambda for whole tree

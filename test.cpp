@@ -60,7 +60,7 @@ TEST_GROUP(Clade)
 TEST_GROUP(Options)
 {
     char *values[100];
-    int argc;
+    size_t argc;
 
     void initialize(vector<string> arguments)
     {
@@ -352,9 +352,10 @@ TEST(Inference, gamma)
 
     core.start_inference_processes(&lambda);
     uniform_distribution frq;
-    double actual = core.infer_processes(&frq);
-    // DOUBLES_EQUAL(56.3469, actual, .0001);
 
+    // TODO: make this return a non-infinite value and add a check for it
+    core.infer_processes(&frq);
+    
     delete p_tree;
 }
 
@@ -477,8 +478,8 @@ TEST(Inference, base_optimizer_guesses_lambda_and_unique_epsilons)
     unique_ptr<clade> p_tree(parser.parse_newick());
 
     error_model err;
-    err.set_probs(0, { .0, .7, .3 });
-    err.set_probs(1, { .4, .2, .4 });
+    err.set_probabilities(0, { .0, .7, .3 });
+    err.set_probabilities(1, { .4, .2, .4 });
     std::vector<gene_family> fams;
     single_lambda lambda(0.001);
     base_model model(&lambda, p_tree.get(), &fams, 10, 10, NULL, &err);
@@ -723,7 +724,7 @@ TEST(Reconstruction, gene_family_reconstructor)
 
 TEST(Reconstruction, gene_family_reconstructor_print_reconstruction)
 {
-    auto a = p_tree->find_descendant("A");
+    // auto a = p_tree->find_descendant("A");
     // cladevector order({ p_tree.get(), a });
     clademap<int> values;
     values[p_tree.get()] = 7;
@@ -739,7 +740,7 @@ TEST(Reconstruction, gene_family_reconstructor_print_reconstruction)
 
 TEST(Reconstruction, gamma_bundle_print_reconstruction_prints_value_for_each_category_and_a_summation)
 {
-    auto a = p_tree->find_descendant("A");
+    // auto a = p_tree->find_descendant("A");
     clademap<int> values;
     values[p_tree.get()] = 7;
 
@@ -791,7 +792,7 @@ TEST(Reconstruction, gamma_bundle_get_increases_decreases)
 
 TEST(Reconstruction, gamma_model_reconstruction)
 {
-    auto a = p_tree->find_descendant("A");
+    // auto a = p_tree->find_descendant("A");
 
     clademap<int> values;
     values[p_tree.get()] = 7;
@@ -834,7 +835,7 @@ TEST(Reconstruction, print_reconstructed_states_empty)
 
 TEST(Reconstruction, print_reconstructed_states_no_print)
 {
-    auto a = p_tree->find_descendant("A");
+    // auto a = p_tree->find_descendant("A");
 
     clademap<int> values;
     values[p_tree.get()] = 7;
@@ -1021,8 +1022,8 @@ TEST(Probability, matrix_multiply)
 TEST(Probability, error_model_set_probs)
 {
     error_model model;
-    model.set_probs(0, { .0, .7, .3 });
-    model.set_probs(1, { .2, .6, .2 });
+    model.set_probabilities(0, { .0, .7, .3 });
+    model.set_probabilities(1, { .2, .6, .2 });
     auto vec = model.get_probs(0);
     LONGS_EQUAL(3, vec.size());
     DOUBLES_EQUAL(0.0, vec[0], 0.00001);
@@ -1039,10 +1040,10 @@ TEST(Probability, error_model_set_probs)
 TEST(Probability, error_model_get_epsilon)
 {
     error_model model;
-    model.set_probs(0, { .0, .7, .3 });
-    model.set_probs(1, { .2, .6, .2 });
-    model.set_probs(2, { .1, .8, .1 });
-    model.set_probs(3, { .2, .6, .2 });
+    model.set_probabilities(0, { .0, .7, .3 });
+    model.set_probabilities(1, { .2, .6, .2 });
+    model.set_probabilities(2, { .1, .8, .1 });
+    model.set_probabilities(3, { .2, .6, .2 });
 
     auto actual = model.get_epsilons();
     LONGS_EQUAL(3, actual.size());
@@ -1055,7 +1056,7 @@ TEST(Probability, error_model_get_epsilon_zero_zero_must_be_zero)
     error_model model;
     try
     {
-        model.set_probs(0, { 0.4, 0.3, 0.3 });
+        model.set_probabilities(0, { 0.4, 0.3, 0.3 });
         CHECK(false);
     }
     catch(runtime_error& err)
@@ -1069,7 +1070,7 @@ TEST(Probability, error_model_rows_must_add_to_one)
     error_model model;
     try
     {
-        model.set_probs(1, { 0.3, 0.3, 0.3 });
+        model.set_probabilities(1, { 0.3, 0.3, 0.3 });
         CHECK(false);
     }
     catch (runtime_error& err)
@@ -1444,6 +1445,7 @@ class mock_model : public model {
     }
     virtual reconstruction* reconstruct_ancestral_states(matrix_cache * p_calc, root_equilibrium_distribution * p_prior) override
     {
+        return nullptr;
     }
     virtual inference_optimizer_scorer * get_lambda_optimizer(user_data& data) override
     {
@@ -1632,8 +1634,8 @@ TEST(Inference, lambda_epsilon_optimizer)
 {
     const double initial_epsilon = 0.01;
     error_model err;
-    err.set_probs(0, { .0, .99, initial_epsilon });
-    err.set_probs(1, { initial_epsilon, .98, initial_epsilon });
+    err.set_probabilities(0, { .0, .99, initial_epsilon });
+    err.set_probabilities(1, { initial_epsilon, .98, initial_epsilon });
 
     mock_model model;
 
@@ -1809,9 +1811,9 @@ TEST(Simulation, random_familysize_setter_with_error_model)
     const int family_size = 10;
     const double initial_epsilon = 0.2;
     error_model err;
-    err.set_probs(0, { .0, .8, initial_epsilon });
-    err.set_probs(1, { initial_epsilon, .6, initial_epsilon });
-    err.set_probs(family_size, { initial_epsilon, .6, initial_epsilon });
+    err.set_probabilities(0, { .0, .8, initial_epsilon });
+    err.set_probabilities(1, { initial_epsilon, .6, initial_epsilon });
+    err.set_probabilities(family_size, { initial_epsilon, .6, initial_epsilon });
 
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:3):7";

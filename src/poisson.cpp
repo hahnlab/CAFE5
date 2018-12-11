@@ -56,15 +56,14 @@ std::vector<double> poisson_scorer::initial_guesses()
 
 double poisson_scorer::calculate_score(double * values)
 {
-    lnLPoisson(values);
+    return lnLPoisson(values);
 }
 
 double poisson_scorer::lnLPoisson(double* plambda)
 {
-    int i = 0;
     double score = 0;
     double lambda = plambda[0];
-    for (i = 0; i<leaf_family_sizes.size(); i++) {
+    for (size_t i = 0; i<leaf_family_sizes.size(); i++) {
         int x = leaf_family_sizes.at(i);
         double ll = poisspdf((double)x, lambda);
         if (std::isnan(ll)) {

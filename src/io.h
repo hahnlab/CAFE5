@@ -66,7 +66,7 @@ public:
   void set_deviations(std::vector<std::string> deviations);
   
   //! Set deviation probability vector for a certain family size
-  void set_probs(int fam_size, std::vector<double>);
+  void set_probabilities(size_t fam_size, std::vector<double>);
     
   //! Get deviation probability vector for a certain family size
   std::vector<double> get_probs(int fam_size) const;
@@ -79,7 +79,7 @@ public:
       return _error_dists.size();
   }
   std::vector<double> get_epsilons() const;
-  error_model* replace_epsilons(std::map<double,double> *new_epsilons);
+  void replace_epsilons(std::map<double,double> *new_epsilons);
   void update_single_epsilon(double new_epsilon);
 
 };

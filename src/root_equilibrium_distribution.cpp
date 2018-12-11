@@ -7,7 +7,7 @@
 #include "io.h"
 #include "lambda.h" // for definition of optimizer :/
 
-float uniform_distribution::compute(int val) const
+float uniform_distribution::compute(size_t val) const
 {
     if (val >= _root_distribution->size())
         return 0;

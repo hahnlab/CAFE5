@@ -24,7 +24,7 @@ void random_familysize_setter::operator()(const clade *node) {
                                    //  std::default_random_engine gen(static_cast<long unsigned int>(time(0)));
                                    // double rnd = dis(gen);
     int parent_family_size = (*_p_tth_trial)[node->get_parent()];
-    int c = 0; // c is the family size we will go to
+    size_t c = 0; // c is the family size we will go to
 
     double lambda = _p_lambda->get_value_for_clade(node);
     double branch_length = node->get_branch_length();

@@ -170,8 +170,7 @@ void likelihood_computer::operator()(const clade *node) {
         vector<double>& node_probs = _probabilities[node];
         // factors[0] is left child
         // factors[1] is right child
-        double s = 1.0;
-        for (int i = 0; i < node_probs.size(); i++) {
+        for (size_t i = 0; i < node_probs.size(); i++) {
             node_probs[i] = 1;
             auto it = factors.begin();
 
@@ -193,8 +192,7 @@ void likelihood_computer::operator()(const clade *node) {
         vector<double>& node_probs = _probabilities[node];
         // factors[0] is left child
         // factors[1] is right child
-        double s = 1.0;
-        for (int i = 0; i < node_probs.size(); i++) {
+        for (size_t i = 0; i < node_probs.size(); i++) {
             node_probs[i] = 1;
             auto it = factors.begin();
 

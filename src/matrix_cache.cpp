@@ -35,7 +35,8 @@ vector<double> matrix::multiply(const vector<double>& v, int s_min_family_size, 
 {
     vector<double> result(s_max_family_size - s_min_family_size + 1);
 
-    assert(v.size() > c_max_family_size - c_min_family_size);
+    assert(c_min_family_size < c_max_family_size);
+    assert(v.size() > size_t(c_max_family_size - c_min_family_size));
 
 #ifdef HAVE_BLAS
     double alpha = 1.0, beta = 0.;

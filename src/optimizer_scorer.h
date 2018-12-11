@@ -74,9 +74,9 @@ public:
 /// optimize lambdas and epsilons together
 class lambda_epsilon_optimizer : public inference_optimizer_scorer
 {
+    lambda_optimizer _lambda_optimizer;
     error_model* _p_error_model;
     std::vector<double> current_guesses;
-    lambda_optimizer _lambda_optimizer;
 public:
     lambda_epsilon_optimizer(
         model* p_model,
@@ -119,8 +119,8 @@ class gamma_lambda_optimizer : public inference_optimizer_scorer
 {
     virtual void prepare_calculation(double *values) override;
     virtual void report_precalculation() override;
-    gamma_optimizer _gamma_optimizer;
     lambda_optimizer _lambda_optimizer;
+    gamma_optimizer _gamma_optimizer;
     double _longest_branch;
 public:
     gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution, double longest_branch);

@@ -12,7 +12,7 @@ class root_distribution;
 class root_equilibrium_distribution
 {
 public:
-    virtual float compute(int val) const = 0;
+    virtual float compute(size_t val) const = 0;
     virtual void initialize(const root_distribution* root_distribution) = 0;
 };
 
@@ -25,7 +25,7 @@ public:
         _root_distribution = root_distribution;
     }
 
-    virtual float compute(int val) const;   // creates uniform
+    virtual float compute(size_t val) const;   // creates uniform
 };
 
 class poisson_distribution : public root_equilibrium_distribution
@@ -40,7 +40,7 @@ public:
     }
     virtual void initialize(const root_distribution* root_distribution);
 
-    virtual float compute(int val) const
+    virtual float compute(size_t val) const
     {
         if (val >= poisson.size())
             return 0;

@@ -9,17 +9,18 @@ class matrix_cache;
 /// Given a gene gamily and a tree, reconstructs the most likely values at each node on tree. Used in the base model to calculate values for each
 /// gene family. Also used in a gamma bundle, one for each gamma category. Differences are represented by the lambda multiplier.
 class gene_family_reconstructor {
-    const lambda* _lambda;
-    const clade *_p_tree;
     const gene_family *_gene_family;
-
-    double _lambda_multiplier;
-    int _max_family_size;
-    int _max_root_family_size;
     matrix_cache *_p_calc;
-
     /// Filled out when reconstruct() is called (NULL before then)
     root_equilibrium_distribution* _p_prior;
+
+    const lambda* _lambda;
+    const clade *_p_tree;
+
+    int _max_family_size;
+    int _max_root_family_size;
+
+    double _lambda_multiplier;
 
     void reconstruct_internal_node(const clade * c, lambda * sl);
     void reconstruct_leaf_node(const clade * c, lambda * sl);

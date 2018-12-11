@@ -74,7 +74,7 @@ void simulator::simulate_processes(model *p_model, std::vector<trial *>& results
         rd.vectorize(data.rootdist);
     }
 
-    for (int i = 0; i < results.size(); i+=50)
+    for (size_t i = 0; i < results.size(); i+=50)
     {
         p_model->perturb_lambda();
 
@@ -105,11 +105,11 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
     auto fn = [&order](const clade *c) { order.push_back(c); };
     data.p_tree->apply_reverse_level_order(fn);
 
-    for (int i = 0; i < models.size(); ++i) {
+    for (auto p_model : models) {
 
         std::vector<trial *> results;
 
-        simulate_processes(models[i], results);
+        simulate_processes(p_model, results);
 
         string truth_fname = filename("simulation_truth", my_input_parameters.output_prefix);
         std::ofstream ofst(truth_fname);
@@ -135,8 +135,6 @@ void simulator::print_simulations(std::ostream& ost, bool include_internal_nodes
         cerr << "No simulations created" << endl;
         return;
     }
-    trial *sim = results[0];
-
     ost << "DESC\tFID";
     for (size_t i = 0; i < order.size(); ++i)
     {

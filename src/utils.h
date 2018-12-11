@@ -11,21 +11,21 @@ class clade;
 
 class newick_parser {
 
- private:
-  int lp_count, rp_count;
-  std::regex tokenizer;
+private:
+    std::regex tokenizer;
+    int lp_count, rp_count;
 
-  /* methods */
-  clade *new_clade(clade *p_parent);
-  
- public:
-  std::string newick_string;
+ /* methods */
+    clade *new_clade(clade *p_parent);
 
-  /* methods */
-  newick_parser(bool parse_lambdas): tokenizer("\\(|\\)|[^\\s\\(\\)\\:\\;\\,]+|\\:[+-]?[0-9]*\\.?[0-9]+([eE][+-]?[0-9]+)?|\\,|\\;"), 
-	  lp_count(0), rp_count(0), parse_to_lambdas(parse_lambdas) {} // constructor
-  clade *parse_newick();
-  bool parse_to_lambdas;	// flag for reading lambda tree
+public:
+    bool parse_to_lambdas;	// flag for reading lambda tree
+    std::string newick_string;
+
+    /* methods */
+    newick_parser(bool parse_lambdas) : tokenizer("\\(|\\)|[^\\s\\(\\)\\:\\;\\,]+|\\:[+-]?[0-9]*\\.?[0-9]+([eE][+-]?[0-9]+)?|\\,|\\;"),
+        lp_count(0), rp_count(0), parse_to_lambdas(parse_lambdas) {} // constructor
+    clade *parse_newick();
 };
 
 // these functions are intended to work with maps (key, value pairs)

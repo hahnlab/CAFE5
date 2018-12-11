@@ -41,9 +41,9 @@ public:
 
 
 class matrix_cache_key {
+    size_t _size;
     long _lambda;
     long _branch_length;
-    size_t _size;
 public:
     matrix_cache_key(int size, double some_lambda, double some_branch_length) :
         _size(size),

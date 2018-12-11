@@ -55,7 +55,7 @@ int root_distribution::sum() const
     return std::accumulate(vectorized_dist.begin(), vectorized_dist.end(), 0);
 }
 
-int root_distribution::at(int val) const
+int root_distribution::at(size_t val) const
 {
     if (val >= vectorized_dist.size())
         throw std::out_of_range("Root distribution value out of range");
