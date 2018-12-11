@@ -1700,10 +1700,10 @@ TEST(Inference, lambda_per_family)
     v.estimate_lambda_per_family(&m, ost);
     STRCMP_EQUAL("test\t0.042680165523241\n", ost.str().c_str());
 }
+
 TEST(Inference, gamma_lambda_optimizer)
 {
     // TODO: Add families and a tree to the Inference test group, since they are required for pretty much everything
-    // Remove p_tree pointer from gamma_lambda_optimizer as it is only used to find the longest branch length
     single_lambda lambda(0.05);
 
     vector<gene_family> families;
@@ -1721,7 +1721,15 @@ TEST(Inference, gamma_lambda_optimizer)
     gamma_model m(&lambda,p_tree.get(), &families, 10, 10, 4, 0.25, NULL, NULL);
     gamma_lambda_optimizer optimizer(&lambda, &m, &frq, 7);
     vector<double> values{ 0.01, 0.25 };
-    optimizer.calculate_score(&values[0]);
+    DOUBLES_EQUAL(6.1194, optimizer.calculate_score(&values[0]), 0.0001);
+}
+
+TEST(Inference, gamma_optimizer_get_largest_multiplier)
+{
+    gamma_model model(NULL, NULL, NULL, 0, 0, 3, 0, NULL, NULL);
+    gamma_optimizer opt(&model, NULL);
+    double lm = opt.get_largest_multiplier(.7);
+    DOUBLES_EQUAL(2.27678, lm, 0.0001);
 }
 
 TEST(Inference, poisson_scorer_optimizes_correct_value)

@@ -140,7 +140,7 @@ double gamma_optimizer::get_largest_multiplier(double alpha) const
     std::vector<double> y(_p_gamma_model->get_lambda_multiplier_count());
     get_gamma(x, y, alpha); // passing vectors by reference
 
-    double largest_multiplier = *max_element(y.begin(), y.end());
+    return *max_element(y.begin(), y.end());
 }
 
 gamma_lambda_optimizer::gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution, double longest_branch) :
