@@ -513,8 +513,8 @@ TEST(Inference, gamma_optimizer_guesses_lambda_and_alpha)
     CHECK(opt);
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(2, guesses.size());
-    DOUBLES_EQUAL(0.149987, guesses[0], 0.0001);
-    DOUBLES_EQUAL(0.298761, guesses[1], 0.0001);
+    DOUBLES_EQUAL(0.298761, guesses[0], 0.0001);
+    DOUBLES_EQUAL(0.49459, guesses[1], 0.0001);
     vector<double>().swap(guesses);
    delete p_tree;
    delete model.get_lambda();
@@ -1724,14 +1724,6 @@ TEST(Inference, gamma_lambda_optimizer)
     gamma_lambda_optimizer optimizer(&lambda, &m, &frq, 7);
     vector<double> values{ 0.01, 0.25 };
     DOUBLES_EQUAL(6.1194, optimizer.calculate_score(&values[0]), 0.0001);
-}
-
-TEST(Inference, gamma_optimizer_get_largest_multiplier)
-{
-    gamma_model model(NULL, NULL, NULL, 0, 0, 3, 0, NULL, NULL);
-    gamma_optimizer opt(&model, NULL);
-    double lm = opt.get_largest_multiplier(.7);
-    DOUBLES_EQUAL(2.27678, lm, 0.0001);
 }
 
 TEST(Inference, poisson_scorer_optimizes_correct_value)

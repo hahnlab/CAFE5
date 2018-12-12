@@ -112,7 +112,6 @@ public:
     gamma_optimizer(gamma_model* p_model, root_equilibrium_distribution* prior);
 
     double get_alpha() const;
-    double get_largest_multiplier(double alpha) const;
 };
 
 class gamma_lambda_optimizer : public inference_optimizer_scorer

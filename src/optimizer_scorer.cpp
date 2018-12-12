@@ -134,15 +134,6 @@ double gamma_optimizer::get_alpha() const
     return _p_gamma_model->get_alpha();
 }
 
-double gamma_optimizer::get_largest_multiplier(double alpha) const
-{
-    std::vector<double> x(_p_gamma_model->get_gamma_cat_probs_count());
-    std::vector<double> y(_p_gamma_model->get_lambda_multiplier_count());
-    get_gamma(x, y, alpha); // passing vectors by reference
-
-    return *max_element(y.begin(), y.end());
-}
-
 gamma_lambda_optimizer::gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution, double longest_branch) :
     inference_optimizer_scorer(p_lambda, p_model, p_distribution),  
     _lambda_optimizer(p_lambda, p_model, p_distribution, longest_branch),
@@ -152,14 +143,10 @@ gamma_lambda_optimizer::gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p
 
 std::vector<double> gamma_lambda_optimizer::initial_guesses()
 {
-    double alpha = _gamma_optimizer.initial_guesses()[0];
-    double largest_multiplier = _gamma_optimizer.get_largest_multiplier(alpha);
     auto values = _lambda_optimizer.initial_guesses();
-    for (auto &v : values)
-    {
-        v /= largest_multiplier;
-    };
-    values.push_back(alpha);
+    auto alpha = _gamma_optimizer.initial_guesses();
+
+    values.insert(values.end(), alpha.begin(), alpha.end());
     return values;
 
 }
