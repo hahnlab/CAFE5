@@ -141,46 +141,6 @@ double pvalue(double v, const vector<double>& conddist)
     return  idx / (double)conddist.size();
 }
 
-class pvalue_calculator
-{
-    int _max_family_size;
-    int _max_root_family_size;
-    const lambda *_p_lambda; 
-    const clade* _p_tree;
-    matrix_cache *_p_matrix_cache;
-    const std::vector<std::vector<double> >* _p_conditional_distribution;
-public:
-    pvalue_calculator(int max_family_size, int max_root_family_size, const lambda *p_lambda, const clade* p_tree, matrix_cache *p_matrix_cache, const std::vector<std::vector<double> >* p_conditional_distribution) :
-        _max_family_size(max_family_size), 
-        _max_root_family_size(max_root_family_size),
-        _p_lambda(p_lambda),
-        _p_tree(p_tree),
-        _p_matrix_cache(p_matrix_cache),
-        _p_conditional_distribution(p_conditional_distribution)
-    {
-
-    }
-
-    double operator()(const gene_family& gf);
-};
-
-double pvalue_calculator::operator()(const gene_family& gf)
-{
-    likelihood_computer pruner(_max_root_family_size, _max_family_size, _p_lambda, gf, *_p_matrix_cache, NULL);
-    pruner.initialize_memory(_p_tree);
-    _p_tree->apply_reverse_level_order(pruner);
-    auto lh = pruner.get_likelihoods(_p_tree);
-
-    double observed_max_likelihood = pruner.max_likelihood(_p_tree);	// max value but do we need a posteriori value instead?
-
-    vector<double> pvalues(_max_root_family_size);
-    for (int s = 0; s < _max_root_family_size; s++)
-    {
-        pvalues[s] = pvalue(observed_max_likelihood, _p_conditional_distribution->at(s));
-    }
-    return *max_element(pvalues.begin(), pvalues.end());
-}
-
 // find_fast_families under base model through simulations (if we reject gamma)
 vector<double> estimator::compute_pvalues(const user_data& data, int number_of_simulations)
 {
@@ -195,8 +155,22 @@ vector<double> estimator::compute_pvalues(const user_data& data, int number_of_s
 
     vector<double> result(data.gene_families.size());
 
-    pvalue_calculator calculator(data.max_family_size, data.max_root_family_size, data.p_lambda, data.p_tree, &cache, &cd);
-    transform(data.gene_families.begin(), data.gene_families.end(), result.begin(), calculator);
+    transform(data.gene_families.begin(), data.gene_families.end(), result.begin(), [&data, &cache, &cd](const gene_family& gf)
+    {
+        likelihood_computer pruner(data.max_root_family_size, data.max_family_size, data.p_lambda, gf, cache, NULL);
+        pruner.initialize_memory(data.p_tree);
+        data.p_tree->apply_reverse_level_order(pruner);
+        auto lh = pruner.get_likelihoods(data.p_tree);
+
+        double observed_max_likelihood = pruner.max_likelihood(data.p_tree);	// max value but do we need a posteriori value instead?
+
+        vector<double> pvalues(data.max_root_family_size);
+        for (int s = 0; s < data.max_root_family_size; s++)
+        {
+            pvalues[s] = pvalue(observed_max_likelihood, cd[s]);
+        }
+        return *max_element(pvalues.begin(), pvalues.end());
+    });
 
     cout << "done!\n";
 
