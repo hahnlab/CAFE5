@@ -221,7 +221,7 @@ std::vector<int> uniform_dist(int n_draws, int min, int max) {
     return uniform_vec;
 }
 
-std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, const lambda *p_lambda, const matrix_cache& cache, error_model *p_error_model)
+std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, int max_root_family_size, const lambda *p_lambda, const matrix_cache& cache, error_model *p_error_model)
 {
     vector<double> result(number_of_simulations);
     vector<gene_family> families(number_of_simulations);
@@ -242,7 +242,7 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
                 families[i].set_species_size(it.first->get_taxon_name(), it.second);
             }
         }
-        pruners[i].reset(new likelihood_computer(root_family_size, max_family_size, p_lambda, families[i], cache, NULL));
+        pruners[i].reset(new likelihood_computer(max_root_family_size, max_family_size, p_lambda, families[i], cache, NULL));
         pruners[i]->initialize_memory(p_tree);
     }
 
@@ -256,19 +256,4 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
     sort(result.begin(), result.end());
 
     return result;
-}
-
-std::vector<std::vector<double> > get_conditional_distribution_matrix(const clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, const lambda * p_lambda, const matrix_cache& cache)
-{
-    // sanity check to verify the matrix multiplications won't cause memory corruption
-    int s = cache.get_matrix_size();
-    if (s < root_family_size || s < max_family_size)
-        throw runtime_error("Precalculated matrices too small");
-    
-    std::vector<std::vector<double> > matrix(root_family_size);
-	for (int i = 0; i < root_family_size; ++i)
-	{
-		matrix[i] = get_random_probabilities(p_tree, number_of_simulations, root_family_size, max_family_size, p_lambda, cache, NULL);
-	}
-	return matrix;
 }

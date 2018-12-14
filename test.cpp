@@ -35,9 +35,29 @@ TEST_GROUP(GeneFamilies)
 
 TEST_GROUP(Inference)
 {
+    user_data _user_data;
+    single_lambda *_p_lambda;
+
     void setup()
     {
+        _p_lambda = new single_lambda(0.05);
+        newick_parser parser(false);
+        parser.newick_string = "(A:1,B:1);";
+        _user_data.p_tree = parser.parse_newick();
+        _user_data.p_lambda = _p_lambda;
+        _user_data.max_family_size = 10;
+        _user_data.max_root_family_size = 8;
+        _user_data.gene_families.resize(1);
+        _user_data.gene_families[0].set_species_size("A", 1);
+        _user_data.gene_families[0].set_species_size("B", 2);
+
         randomizer_engine.seed(10);
+    }
+
+    void teardown()
+    {
+        delete _user_data.p_tree;
+        delete _p_lambda;
     }
 };
 
@@ -294,11 +314,8 @@ TEST(Inference, infer_processes)
     families.push_back(fam4);
 
     single_lambda lambda(0.01);
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:1);";
-    clade *p_tree = parser.parse_newick();
 
-    base_model core(&lambda, p_tree, &families, 56, 30, NULL, NULL);
+    base_model core(&lambda, _user_data.p_tree, &families, 56, 30, NULL, NULL);
     core.start_inference_processes(&lambda);
 
 
@@ -306,7 +323,6 @@ TEST(Inference, infer_processes)
     double multi = core.infer_processes(&frq);
     //core.get_likelihoods();
     DOUBLES_EQUAL(41.7504, multi, 0.001);
-    delete p_tree;
 }
 
 TEST(Inference, uniform_distribution)
@@ -442,7 +458,7 @@ TEST(Probability, probability_of_matrix)
     CHECK(actual == expected);
 }
 
-TEST(Probability, get_conditional_distribution_matrix)
+TEST(Probability, get_random_probabilities)
 {
     newick_parser parser(false);
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
@@ -451,8 +467,9 @@ TEST(Probability, get_conditional_distribution_matrix)
     single_lambda lam(0.05);
     matrix_cache cache(15);
     cache.precalculate_matrices(vector<double>{0.05}, set<double>{1});
-    auto cd_matrix = get_conditional_distribution_matrix(p_tree.get(), 10, 12, 3, &lam, cache);
-    LONGS_EQUAL(10, cd_matrix.size());
+    auto probs = get_random_probabilities(p_tree.get(), 10, 3, 12, 8, &lam, cache, NULL);
+    LONGS_EQUAL(10, probs.size());
+    DOUBLES_EQUAL(0.00390567, probs[0], 0.0001);
 }
 
 TEST(Inference, base_optimizer_guesses_lambda_only)
@@ -1701,6 +1718,16 @@ TEST(Inference, lambda_per_family)
     ostringstream ost;
     v.estimate_lambda_per_family(&m, ost);
     STRCMP_EQUAL("test\t0.042680165523241\n", ost.str().c_str());
+}
+
+TEST(Inference, estimator_compute_pvalues)
+{
+    input_parameters params;
+
+    estimator v(_user_data, params);
+    auto values = v.compute_pvalues(_user_data, 3);
+    LONGS_EQUAL(1, values.size());
+    DOUBLES_EQUAL(0.666667, values[0], 0.00001);
 }
 
 TEST(Inference, gamma_lambda_optimizer)

@@ -73,6 +73,6 @@ public:
 std::vector<int> uniform_dist(int n_draws, int min, int max);
 /* END: Uniform distribution - */
 
-std::vector<std::vector<double> > get_conditional_distribution_matrix(const clade *p_tree, int root_family_size, int max_family_size, int number_of_simulations, const lambda *p_lambda, const matrix_cache& cache);
+std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, int max_root_family_size, const lambda *p_lambda, const matrix_cache& cache, error_model *p_error_model);
 
 #endif

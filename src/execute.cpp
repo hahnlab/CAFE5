@@ -142,16 +142,22 @@ double pvalue(double v, const vector<double>& conddist)
 }
 
 // find_fast_families under base model through simulations (if we reject gamma)
-vector<double> estimator::compute_pvalues(const user_data& data, int number_of_simulations)
+vector<double> estimator::compute_pvalues(const user_data& data, int number_of_simulations) const
 {
+#ifndef SILENT
     cout << "Computing pvalues..." << flush;
+#endif
 
     matrix_cache cache(max(data.max_family_size, data.max_root_family_size) + 1);
     branch_length_finder lengths;
     data.p_tree->apply_prefix_order(lengths);
     cache.precalculate_matrices(get_lambda_values(data.p_lambda), lengths.result());
 
-    auto cd = get_conditional_distribution_matrix(data.p_tree, data.max_root_family_size, data.max_family_size, number_of_simulations, data.p_lambda, cache);
+    std::vector<std::vector<double> > cd(data.max_root_family_size);
+    for (int i = 0; i < data.max_root_family_size; ++i)
+    {
+        cd[i] = get_random_probabilities(data.p_tree, number_of_simulations, i, data.max_family_size, data.max_root_family_size, data.p_lambda, cache, NULL);
+    }
 
     vector<double> result(data.gene_families.size());
 
@@ -172,8 +178,9 @@ vector<double> estimator::compute_pvalues(const user_data& data, int number_of_s
         return *max_element(pvalues.begin(), pvalues.end());
     });
 
+#ifndef SILENT
     cout << "done!\n";
-
+#endif
     return result;
 }
 
