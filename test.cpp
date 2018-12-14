@@ -350,29 +350,20 @@ TEST(Inference, gamma_adjust_family_gamma_membership)
     gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL, NULL);
 }
 
-TEST(Inference, gamma)
+TEST(Inference, gamma_model_infers_processes_without_crashing)
 {
-    std::string str = "Desc\tFamily ID\tA\tB\tC\tD\n\t (null)1\t5\t10\t2\t6\n\t (null)2\t5\t10\t2\t6\n\t (null)3\t5\t10\t2\t6\n\t (null)4\t5\t10\t2\t6\n";
-    std::istringstream ist(str);
-    std::vector<gene_family> families;
-    read_gene_families(ist, NULL, &families);
-
-    single_lambda lambda(0.5);
-    newick_parser parser(false);
-    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-    clade *p_tree = parser.parse_newick();
-
     std::vector<int> rootdist;
-    gamma_model core(&lambda, p_tree, &families, 0, 5, 0, 0, NULL, NULL);
+
+    gamma_model core(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 0, 5, 0, 0, NULL, NULL);
+
     core.set_max_sizes(148, 122);
 
-    core.start_inference_processes(&lambda);
+    core.start_inference_processes(_user_data.p_lambda);
     uniform_distribution frq;
 
     // TODO: make this return a non-infinite value and add a check for it
     core.infer_processes(&frq);
     
-    delete p_tree;
 }
 
 TEST(Inference, stash_stream)
@@ -474,12 +465,7 @@ TEST(Probability, get_random_probabilities)
 
 TEST(Inference, base_optimizer_guesses_lambda_only)
 {
-    newick_parser parser(false);
-    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-    unique_ptr<clade> tree(parser.parse_newick());
-    single_lambda sl(0.05);
-
-    base_model model(&sl, tree.get(), NULL, 0, 5, NULL, NULL);
+    base_model model(_user_data.p_lambda, _user_data.p_tree, NULL, 0, 5, NULL, NULL);
     user_data data;
     unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
     auto guesses = opt->initial_guesses();
@@ -490,19 +476,16 @@ TEST(Inference, base_optimizer_guesses_lambda_only)
 
 TEST(Inference, base_optimizer_guesses_lambda_and_unique_epsilons)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
-
     error_model err;
     err.set_probabilities(0, { .0, .7, .3 });
     err.set_probabilities(1, { .4, .2, .4 });
-    std::vector<gene_family> fams;
-    single_lambda lambda(0.001);
-    base_model model(&lambda, p_tree.get(), &fams, 10, 10, NULL, &err);
-    user_data data;
-    data.p_error_model = &err;
-    unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
+
+    base_model model(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 10, 10, NULL, &err);
+
+    _user_data.p_error_model = &err;
+    _user_data.p_lambda = nullptr;
+    unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(_user_data));
+
     CHECK(opt);
     CHECK(dynamic_cast<lambda_epsilon_optimizer*>(opt.get()) != NULL);
 #ifdef FALSE_MEMORY_LEAK_FIXED
@@ -1732,41 +1715,67 @@ TEST(Inference, estimator_compute_pvalues)
 
 TEST(Inference, gamma_lambda_optimizer)
 {
-    // TODO: Add families and a tree to the Inference test group, since they are required for pretty much everything
-    single_lambda lambda(0.05);
-
-    vector<gene_family> families;
-    gene_family fam;
-    fam.set_species_size("A", 1);
-    fam.set_species_size("B", 2);
-    families.push_back(fam);
-
     uniform_distribution frq;
 
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
-
-    gamma_model m(&lambda,p_tree.get(), &families, 10, 10, 4, 0.25, NULL, NULL);
-    gamma_lambda_optimizer optimizer(&lambda, &m, &frq, 7);
+    gamma_model m(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 10, 10, 4, 0.25, NULL, NULL);
+    gamma_lambda_optimizer optimizer(_user_data.p_lambda, &m, &frq, 7);
     vector<double> values{ 0.01, 0.25 };
-    DOUBLES_EQUAL(6.1194, optimizer.calculate_score(&values[0]), 0.0001);
+    DOUBLES_EQUAL(6.4168, optimizer.calculate_score(&values[0]), 0.0001);
 }
 
 TEST(Inference, poisson_scorer_optimizes_correct_value)
 {
-    vector<gene_family> families;
-    gene_family fam;
-    fam.set_species_size("A", 1);
-    fam.set_species_size("B", 2);
-    families.push_back(fam);
-
-    poisson_scorer scorer(families);
+    poisson_scorer scorer(_user_data.gene_families);
     optimizer opt(&scorer);
 
     auto result = opt.optimize();
 
     DOUBLES_EQUAL(0.5, result.values[0], 0.0000001)
+}
+
+class mock_scorer : public optimizer_scorer
+{
+    // Inherited via optimizer_scorer
+    virtual std::vector<double> initial_guesses() override
+    {
+        return std::vector<double>{0.2};
+    }
+    virtual double calculate_score(double * values) override
+    {
+        if (force_scoring_error)
+            return std::numeric_limits<double>::infinity();
+
+        return 1000;
+    }
+public:
+    bool force_scoring_error = false;
+};
+
+TEST(Inference, optimizer_gets_initial_guesses_from_scorer)
+{
+    mock_scorer scorer;
+    optimizer opt(&scorer);
+    auto guesses = opt.get_initial_guesses();
+    LONGS_EQUAL(1, guesses.size())
+    DOUBLES_EQUAL(0.2, guesses[0], 0.0001);
+}
+
+TEST(Inference, optimizer_disallows_bad_initializations)
+{
+    mock_scorer scorer;
+    scorer.force_scoring_error = true;
+    optimizer opt(&scorer);
+
+    try
+    {
+        opt.get_initial_guesses();
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("Failed to find any reasonable values", err.what());
+    }
+
 }
 
 TEST(Simulation, base_prepare_matrices_for_simulation_creates_matrix_for_each_branch)

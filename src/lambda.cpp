@@ -82,10 +82,30 @@ optimizer::optimizer(optimizer_scorer *p_scorer) : _p_scorer(p_scorer)
     pfm = fminsearch_new();
 }
 
-optimizer::result optimizer::optimize()
+std::vector<double> optimizer::get_initial_guesses()
 {
     auto initial = _p_scorer->initial_guesses();
+    int i = 0;
+    double first_run = _p_scorer->calculate_score(&initial[0]);
+    while (std::isinf(first_run) && i<20)
+    {
+        initial = _p_scorer->initial_guesses();
+        first_run = _p_scorer->calculate_score(&initial[0]);
+        i++;
+    }
+    if (std::isinf(first_run))
+    {
+        throw std::runtime_error("Failed to find any reasonable values");
+    }
+
+    return initial;
+}
+
+optimizer::result optimizer::optimize()
+{
+    auto initial = get_initial_guesses();
     fminsearch_set_equation(pfm, _p_scorer, initial.size());
+
     if (explode)
     {
         pfm->rho = 1.5;				// reflection

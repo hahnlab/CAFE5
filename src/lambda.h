@@ -121,6 +121,7 @@ public:
     bool quiet = false;
     bool explode = false;
 
+    std::vector<double> get_initial_guesses();
 };
 
 inline std::ostream& operator<<(std::ostream& ost, const lambda& lambda)
