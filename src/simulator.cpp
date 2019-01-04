@@ -88,8 +88,8 @@ void simulator::simulate_processes(model *p_model, std::vector<trial *>& results
         int n = 0;
 
         auto end_it = i + 50 > results.size() ? results.end() : results.begin() + i + 50;
-        generate(results.begin()+i, end_it, [this, p_model, &rd, &cache, &n]() mutable {
-            return create_trial(p_model, rd, n++, data, cache);
+        generate(results.begin()+i, end_it, [this, p_model, i, &rd, &cache, &n]() mutable {
+            return create_trial(p_model, rd, i+n++, data, cache);
         });
     }
 }

@@ -1946,6 +1946,33 @@ TEST(Simulation, simulate_processes)
     for (auto r : results) delete r;
 }
 
+TEST(Simulation, simulate_processes_uses_rootdist_if_available)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    single_lambda lam(0.05);
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    mock_model m;
+    m.set_tree(p_tree.get());
+    m.set_lambda(&lam);
+
+    user_data ud;
+    ud.p_tree = p_tree.get();
+    ud.p_lambda = &lam;
+    ud.rootdist[5] = 50;
+    ud.rootdist[10] = 50;
+    input_parameters ip;
+    ip.nsims = 100;
+    simulator sim(ud, ip);
+    vector<trial *> results;
+    sim.simulate_processes(&m, results);
+    LONGS_EQUAL(100, results.size());
+
+    LONGS_EQUAL(5, results[0]->at(p_tree.get()));
+    LONGS_EQUAL(10, results[75]->at(p_tree.get()));
+    for (auto r : results) delete r;
+}
+
 TEST(Simulation, gamma_model_perturb_lambda)
 {
     gamma_model model(NULL, NULL, NULL, 0, 5, 3, 0.7, NULL, NULL);
