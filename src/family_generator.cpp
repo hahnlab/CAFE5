@@ -63,7 +63,7 @@ int random_familysize_setter::select_size(int parent_family_size, double lambda,
     if (parent_family_size > 0) {
         auto m = _cache.get_matrix(branch_length, lambda);
         if (m.is_zero_except_00())  // saturated, return an invalid value
-            return -1;
+            return parent_family_size;
 
         for (; c < _max_family_size - 1; c++) { // Ben: why -1
             double prob = m.get(parent_family_size, c);

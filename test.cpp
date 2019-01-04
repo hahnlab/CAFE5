@@ -1834,6 +1834,15 @@ TEST(Simulation, random_familysize_setter_select_size)
 //    CHECK(FALSE);
 }
 
+TEST(Simulation, random_familysize_setter_returns_parent_size_on_saturation)
+{
+    matrix_cache cache(50);
+    cache.precalculate_matrices({ 0.1 }, { 20 });
+    random_familysize_setter setter(NULL, 50, NULL, NULL, cache);
+    LONGS_EQUAL(17, setter.select_size(17, 0.1, 20, 0.1));
+    //    CHECK(FALSE);
+}
+
 TEST(Simulation, random_familysize_setter_with_error_model)
 {
     const int family_size = 10;
