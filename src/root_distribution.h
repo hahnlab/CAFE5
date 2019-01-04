@@ -26,6 +26,8 @@ public:
     int at(size_t index) const;
 
     int select_randomly() const;
+
+    void pare(size_t new_size);
 };
 
 #endif

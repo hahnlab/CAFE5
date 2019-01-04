@@ -13,10 +13,10 @@ class base_model : public model {
 public:
     //! Computation or estimation constructor
     base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
-        int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map, error_model *p_error_model);
+        int max_family_size, int max_root_family_size, error_model *p_error_model);
 
     virtual void start_inference_processes(lambda *);
-    virtual double infer_processes(root_equilibrium_distribution *prior);
+    virtual double infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map);
 
     virtual std::string name() {
         return "Base";

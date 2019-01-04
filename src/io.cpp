@@ -53,11 +53,6 @@ void input_parameters::check_input() {
     
     if (is_simulating)
     {
-        //! The number of simulated families is specified either through -s, or through -f. Cannot be both. 
-        if (nsims > 0 && !rootdist.empty()) {
-            throw runtime_error("Option -s cannot be provided an argument if -f is specified.");
-        }
-
         // Must specify a lambda
         if (fixed_lambda <= 0.0 && fixed_multiple_lambdas.empty()) {
             throw runtime_error("Cannot simulate without initial lambda values");

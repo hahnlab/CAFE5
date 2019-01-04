@@ -69,13 +69,12 @@ protected:
     int _max_family_size;
     int _max_root_family_size;
     error_model* _p_error_model;
-    root_distribution _root_distribution; // in case the user wants to use a specific root size distribution for all simulations
     vector<vector<int> > _rootdist_bins; // holds the distribution for each lambda bin
 
     /// Used to track gene families with identical species counts
     std::vector<size_t> references;
 
-    void initialize_rootdist_if_necessary();
+   // void initialize_rootdist_if_necessary();
 
     std::vector<family_info_stash> results;
 
@@ -109,7 +108,7 @@ public:
     //! Inference methods
     virtual void start_inference_processes(lambda *) = 0;
     
-    virtual double infer_processes(root_equilibrium_distribution *prior) = 0;  // return vector of likelihoods
+    virtual double infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map) = 0;  // return vector of likelihoods
     
     virtual std::string name() = 0;
     virtual void write_family_likelihoods(std::ostream& ost) = 0;
@@ -121,12 +120,6 @@ public:
     void print_node_depths(std::ostream& ost);
 
     std::size_t get_gene_family_count() const;
-
-    int get_max_simulation_size() const;
-
-    std::size_t get_rootdist_size() const {
-        return _root_distribution.size();
-    }
 
     virtual void perturb_lambda() {}
 

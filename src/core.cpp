@@ -25,14 +25,14 @@ std::vector<model *> build_models(const input_parameters& my_input_parameters, u
     if (my_input_parameters.n_gamma_cats > 1)
     {
         auto gmodel = new gamma_model(user_data.p_lambda, user_data.p_tree, &user_data.gene_families, user_data.max_family_size, user_data.max_root_family_size,
-            my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, &user_data.rootdist, user_data.p_error_model);
+            my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, user_data.p_error_model);
         if (my_input_parameters.fixed_alpha >= 0)
             gmodel->write_probabilities(cout);
         p_model = gmodel;
     }
     else
     {
-        p_model = new base_model(user_data.p_lambda, user_data.p_tree, p_gene_families, user_data.max_family_size, user_data.max_root_family_size, &user_data.rootdist, user_data.p_error_model);
+        p_model = new base_model(user_data.p_lambda, user_data.p_tree, p_gene_families, user_data.max_family_size, user_data.max_root_family_size, user_data.p_error_model);
     }
 
     return std::vector<model *>{p_model};
@@ -66,15 +66,6 @@ std::size_t model::get_gene_family_count() const {
 void model::set_max_sizes(int max_family_size, int max_root_family_size) {
     _max_family_size = max_family_size;
     _max_root_family_size = max_root_family_size;
-}
-
-void model::initialize_rootdist_if_necessary()
-{
-    if (_root_distribution.empty())
-    {
-        _root_distribution.vectorize_uniform(_max_root_family_size);
-    }
-
 }
 
 class lambda_counter
@@ -150,19 +141,6 @@ void model::write_vital_statistics(std::ostream& ost, double final_likelihood)
     if (_p_error_model)
         ost << "Epsilon: " << _p_error_model->get_epsilons()[0] << endl;
 }
-
-int model::get_max_simulation_size() const
-{
-    if (_root_distribution.empty())
-    {
-        return 100;
-    }
-    else
-    {
-        return 2 * _root_distribution.max();
-    }
-}
-
 
 lambda* model::get_simulation_lambda(const user_data& data)
 {

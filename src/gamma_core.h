@@ -20,7 +20,7 @@ public:
 
     //! Computation or estimation constructor
     gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
-        int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map, error_model *p_error_model);
+        int max_root_family_size, int n_gamma_cats, double fixed_alpha, error_model *p_error_model);
 
     ~gamma_model();
     //! Gamma methods
@@ -37,7 +37,7 @@ public:
     //! Inference methods
     void start_inference_processes(lambda *);
 
-    double infer_processes(root_equilibrium_distribution *prior);
+    double infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map);
 
     virtual inference_optimizer_scorer *get_lambda_optimizer(user_data& data);
 

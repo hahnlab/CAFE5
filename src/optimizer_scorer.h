@@ -2,6 +2,7 @@
 #define OPTIMIZER_SCORER_H
 
 #include <vector>
+#include <map>
 
 class error_model;
 class lambda;
@@ -28,12 +29,14 @@ protected:
     lambda *_p_lambda;
     model *_p_model;
     root_equilibrium_distribution *_p_distribution;
+    const std::map<int, int>& _rootdist_map;
 
 public:
-    inference_optimizer_scorer(lambda *p_lambda, model* p_model, root_equilibrium_distribution *p_distribution) :
+    inference_optimizer_scorer(lambda *p_lambda, model* p_model, root_equilibrium_distribution *p_distribution, const std::map<int, int>& root_distribution_map) :
         _p_lambda(p_lambda),
         _p_model(p_model),
         _p_distribution(p_distribution),
+        _rootdist_map(root_distribution_map),
         quiet(false)
     {
 #ifdef SILENT
@@ -56,8 +59,8 @@ class lambda_optimizer : public inference_optimizer_scorer
     double _longest_branch;
 
 public:
-    lambda_optimizer(lambda *p_lambda, model* p_model, root_equilibrium_distribution *p_distribution, double longest_branch) :
-        inference_optimizer_scorer(p_lambda, p_model, p_distribution),
+    lambda_optimizer(lambda *p_lambda, model* p_model, root_equilibrium_distribution *p_distribution, double longest_branch, const std::map<int, int>& root_distribution_map) :
+        inference_optimizer_scorer(p_lambda, p_model, p_distribution, root_distribution_map),
         _longest_branch(longest_branch)
     {
     }
@@ -82,10 +85,11 @@ public:
         model* p_model,
         error_model *p_error_model,
         root_equilibrium_distribution* p_distribution,
+        const std::map<int, int>& root_distribution_map,
         lambda *p_lambda,
         double longest_branch) :
-        inference_optimizer_scorer(p_lambda, p_model, p_distribution),
-        _lambda_optimizer(p_lambda, p_model, p_distribution, longest_branch),
+        inference_optimizer_scorer(p_lambda, p_model, p_distribution, root_distribution_map),
+        _lambda_optimizer(p_lambda, p_model, p_distribution, longest_branch, root_distribution_map),
         _p_error_model(p_error_model)
     {
     }
@@ -109,7 +113,7 @@ public:
     // Inherited via optimizer_scorer
     virtual std::vector<double> initial_guesses() override;
     virtual void finalize(double * result) override;
-    gamma_optimizer(gamma_model* p_model, root_equilibrium_distribution* prior);
+    gamma_optimizer(gamma_model* p_model, root_equilibrium_distribution* prior, const std::map<int, int>& root_distribution_map);
 
     double get_alpha() const;
 };
@@ -122,7 +126,7 @@ class gamma_lambda_optimizer : public inference_optimizer_scorer
     gamma_optimizer _gamma_optimizer;
     double _longest_branch;
 public:
-    gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution, double longest_branch);
+    gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution, const std::map<int, int>& root_distribution_map, double longest_branch);
 
     std::vector<double> initial_guesses();
 

@@ -15,7 +15,6 @@
 #include "src/matrix_cache.h"
 #include "src/gamma_bundle.h"
 #include "src/probability.h"
-#include "src/family_generator.h"
 #include "src/execute.h"
 #include "src/user_data.h"
 #include "src/optimizer_scorer.h"
@@ -215,23 +214,6 @@ TEST(Options, check_input_does_not_throw_when_simulating_with_multiple_lambdas)
     CHECK(true);
 }
 
-TEST(Options, must_not_specify_rootdist_when_simulating)
-{
-    try
-    {
-        input_parameters params;
-        params.is_simulating = true;
-        params.nsims = 5;
-        params.rootdist = "foo.txt";
-        params.check_input();
-        CHECK(false);
-    }
-    catch (runtime_error& err)
-    {
-        STRCMP_EQUAL("Option -s cannot be provided an argument if -f is specified.", err.what());
-    }
-}
-
 TEST(Options, per_family_must_provide_families)
 {
     try
@@ -315,12 +297,12 @@ TEST(Inference, infer_processes)
 
     single_lambda lambda(0.01);
 
-    base_model core(&lambda, _user_data.p_tree, &families, 56, 30, NULL, NULL);
+    base_model core(&lambda, _user_data.p_tree, &families, 56, 30, NULL);
     core.start_inference_processes(&lambda);
 
 
     uniform_distribution frq;
-    double multi = core.infer_processes(&frq);
+    double multi = core.infer_processes(&frq, std::map<int, int>());
     //core.get_likelihoods();
     DOUBLES_EQUAL(41.7504, multi, 0.001);
 }
@@ -336,7 +318,7 @@ TEST(Inference, uniform_distribution)
 
 TEST(Inference, gamma_set_alpha)
 {
-    gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL, NULL);
+    gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL);
     model.set_alpha(0.5);
 }
 
@@ -347,14 +329,14 @@ TEST(Inference, gamma_adjust_family_gamma_membership)
     std::vector<gene_family> families;
     read_gene_families(ist, NULL, &families);
 
-    gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL, NULL);
+    gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL);
 }
 
 TEST(Inference, gamma_model_infers_processes_without_crashing)
 {
     std::vector<int> rootdist;
 
-    gamma_model core(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 0, 5, 0, 0, NULL, NULL);
+    gamma_model core(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 0, 5, 0, 0, NULL);
 
     core.set_max_sizes(148, 122);
 
@@ -362,7 +344,7 @@ TEST(Inference, gamma_model_infers_processes_without_crashing)
     uniform_distribution frq;
 
     // TODO: make this return a non-infinite value and add a check for it
-    core.infer_processes(&frq);
+    core.infer_processes(&frq, std::map<int, int>());
     
 }
 
@@ -465,7 +447,7 @@ TEST(Probability, get_random_probabilities)
 
 TEST(Inference, base_optimizer_guesses_lambda_only)
 {
-    base_model model(_user_data.p_lambda, _user_data.p_tree, NULL, 0, 5, NULL, NULL);
+    base_model model(_user_data.p_lambda, _user_data.p_tree, NULL, 0, 5, NULL);
     user_data data;
     unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
     auto guesses = opt->initial_guesses();
@@ -480,7 +462,7 @@ TEST(Inference, base_optimizer_guesses_lambda_and_unique_epsilons)
     err.set_probabilities(0, { .0, .7, .3 });
     err.set_probabilities(1, { .4, .2, .4 });
 
-    base_model model(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 10, 10, NULL, &err);
+    base_model model(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 10, 10, &err);
 
     _user_data.p_error_model = &err;
     _user_data.p_lambda = nullptr;
@@ -506,7 +488,7 @@ TEST(Inference, gamma_optimizer_guesses_lambda_and_alpha)
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
     clade *p_tree = parser.parse_newick();
 
-    gamma_model model(NULL, p_tree, NULL, 0, 5, 4, -1, NULL, NULL);
+    gamma_model model(NULL, p_tree, NULL, 0, 5, 4, -1, NULL);
     user_data data;
 
     unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
@@ -526,7 +508,7 @@ TEST(Inference, gamma_optimizer_guesses_lambda_if_alpha_provided)
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
     unique_ptr<clade> p_tree(parser.parse_newick());
 
-    gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, 0.25, NULL, NULL);
+    gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, 0.25, NULL);
 
     user_data data;
 
@@ -548,7 +530,7 @@ TEST(Inference, gamma_optimizer_guesses_alpha_if_lambda_provided)
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
     unique_ptr<clade> p_tree(parser.parse_newick());
 
-    gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, -1, NULL, NULL);
+    gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, -1, NULL);
 
     user_data data;
     single_lambda sl(0.05);
@@ -572,7 +554,7 @@ TEST(Inference, gamma_optimizer_optimizes_nothing_if_lambda_and_alpha_provided)
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
     unique_ptr<clade> p_tree(parser.parse_newick());
 
-    gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, .25, NULL, NULL);
+    gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, .25, NULL);
 
     user_data data;
     single_lambda sl(0.05);
@@ -592,7 +574,7 @@ TEST(Inference, base_model_reconstruction)
     families[0].set_species_size("A", 3);
     families[0].set_species_size("B", 4);
 
-    base_model model(&sl, p_tree.get(), &families, 5, 5, NULL, NULL);
+    base_model model(&sl, p_tree.get(), &families, 5, 5, NULL);
 
     matrix_cache calc(6);
     calc.precalculate_matrices(get_lambda_values(&sl), set<double>({ 1 }));
@@ -1419,7 +1401,7 @@ class mock_optimizer : public inference_optimizer_scorer
 
 public:
     mock_optimizer(double initial) : 
-        inference_optimizer_scorer(NULL, NULL, NULL),
+        inference_optimizer_scorer(NULL, NULL, NULL, std::map<int, int>()),
         _initial(initial)
     {
 
@@ -1431,10 +1413,6 @@ class mock_model : public model {
     // Inherited via model
     virtual void start_inference_processes(lambda *) override
     {
-    }
-    virtual double infer_processes(root_equilibrium_distribution * prior) override
-    {
-        return 0.0;
     }
     virtual std::string name() override
     {
@@ -1453,7 +1431,7 @@ class mock_model : public model {
         _p_tree->apply_prefix_order(finder);
 
         initialize_lambda(data.p_lambda_tree);
-        auto result = new lambda_optimizer(_p_lambda, this, data.p_prior.get(), finder.longest());
+        auto result = new lambda_optimizer(_p_lambda, this, data.p_prior.get(), finder.longest(), std::map<int, int>());
         result->quiet = true;
         return result;
     }
@@ -1477,6 +1455,12 @@ public:
         branch_length_finder lengths;
         _p_tree->apply_prefix_order(lengths);
         cache.precalculate_matrices(get_lambda_values(_p_lambda), lengths.result());
+    }
+
+    // Inherited via model
+    virtual double infer_processes(root_equilibrium_distribution * prior, const std::map<int, int>& root_distribution_map) override
+    {
+        return 0.0;
     }
 };
 
@@ -1545,7 +1529,7 @@ TEST(Simulation, print_process_can_print_without_internal_nodes)
 
 TEST(Simulation, gamma_model_get_simulation_lambda_selects_random_multiplier_based_on_alpha)
 {
-    gamma_model m(NULL, NULL, NULL, 0, 5, 3, 0.7, NULL, NULL);
+    gamma_model m(NULL, NULL, NULL, 0, 5, 3, 0.7, NULL);
     user_data data;
     single_lambda lam(0.05);
     data.p_lambda = &lam;
@@ -1640,7 +1624,7 @@ TEST(Inference, lambda_epsilon_optimizer)
     mock_model model;
 
     single_lambda lambda(0.05);
-    lambda_epsilon_optimizer optimizer(&model, &err, NULL, &lambda, 10);
+    lambda_epsilon_optimizer optimizer(&model, &err, NULL, std::map<int, int>(), &lambda, 10);
     optimizer.initial_guesses();
     vector<double> values = { 0.05, 0.06 };
     optimizer.calculate_score(&values[0]);
@@ -1657,8 +1641,8 @@ TEST(Inference, lambda_epsilon_optimizer)
 
 TEST(Inference, gamma_optimizer)
 {
-    gamma_model m(NULL, NULL, NULL, 0, 0, 0, 0, NULL, NULL);
-    gamma_optimizer optimizer(&m, NULL);
+    gamma_model m(NULL, NULL, NULL, 0, 0, 0, 0, NULL);
+    gamma_optimizer optimizer(&m, NULL, std::map<int, int>());
     auto initial = optimizer.initial_guesses();
     DOUBLES_EQUAL(0.298761, initial[0], 0.00001);
 }
@@ -1717,8 +1701,8 @@ TEST(Inference, gamma_lambda_optimizer)
 {
     uniform_distribution frq;
 
-    gamma_model m(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 10, 10, 4, 0.25, NULL, NULL);
-    gamma_lambda_optimizer optimizer(_user_data.p_lambda, &m, &frq, 7);
+    gamma_model m(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 10, 10, 4, 0.25, NULL);
+    gamma_lambda_optimizer optimizer(_user_data.p_lambda, &m, &frq, std::map<int, int>(), 7);
     vector<double> values{ 0.01, 0.25 };
     DOUBLES_EQUAL(6.4168, optimizer.calculate_score(&values[0]), 0.0001);
 }
@@ -1784,7 +1768,7 @@ TEST(Simulation, base_prepare_matrices_for_simulation_creates_matrix_for_each_br
     parser.newick_string = "(A:1,B:3):7";
     single_lambda lam(0.05);
     unique_ptr<clade> p_tree(parser.parse_newick());
-    base_model b(&lam, p_tree.get(), NULL, 0, 0, NULL, NULL);
+    base_model b(&lam, p_tree.get(), NULL, 0, 0, NULL);
     matrix_cache m(25);
     b.prepare_matrices_for_simulation(m);
     LONGS_EQUAL(3, m.get_cache_size());
@@ -1796,13 +1780,13 @@ TEST(Simulation, gamma_prepare_matrices_for_simulation_creates_matrix_for_each_b
     parser.newick_string = "(A:1,B:3):7";
     single_lambda lam(0.05);
     unique_ptr<clade> p_tree(parser.parse_newick());
-    gamma_model g(&lam, p_tree.get(), NULL, 0, 0, 2, 0.5, NULL, NULL);
+    gamma_model g(&lam, p_tree.get(), NULL, 0, 0, 2, 0.5, NULL);
     matrix_cache m(25);
     g.prepare_matrices_for_simulation(m);
     LONGS_EQUAL(6, m.get_cache_size());
 }
 
-TEST(Simulation, random_familysize_setter_without_error_model)
+TEST(Simulation, set_random_node_size_without_error_model)
 {
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:3):7";
@@ -1812,38 +1796,34 @@ TEST(Simulation, random_familysize_setter_without_error_model)
     trial t;
     matrix_cache cache(12);
     cache.precalculate_matrices({ 0.05 }, { 3 });
-    random_familysize_setter setter(&t, 10, &lambda, NULL, cache);
     auto b = p_tree->find_descendant("B");
-    setter(b);
+    set_random_node_size(b, &t, &lambda, NULL, 10, cache);
 
     LONGS_EQUAL(0, t[b]);
 
     t[p_tree.get()] = 5;
-    setter(b);
+
+    set_random_node_size(b, &t, &lambda, NULL, 10, cache);
     LONGS_EQUAL(5, t[b]);
 }
 
-TEST(Simulation, random_familysize_setter_select_size)
+TEST(Simulation, select_random_family_size)
 {
     matrix_cache cache(50);
     cache.precalculate_matrices({ 0.05, 0.02 }, { 10, 20 });
-    random_familysize_setter setter(NULL, 50, NULL, NULL, cache);
-    LONGS_EQUAL(2, setter.select_size(5, 0.05, 10, 0.1));
-    LONGS_EQUAL(8, setter.select_size(8, 0.05, 10, 0.5));
-    LONGS_EQUAL(15, setter.select_size(8, 0.02, 20, 0.99));
-//    CHECK(FALSE);
+    LONGS_EQUAL(2, select_random_family_size(5, 50, cache.get_matrix(10, 0.05), 0.1));
+    LONGS_EQUAL(8, select_random_family_size(8, 50, cache.get_matrix(10, 0.05), 0.5));
+    LONGS_EQUAL(15, select_random_family_size(8, 50, cache.get_matrix(20, 0.02), 0.99));
 }
 
-TEST(Simulation, random_familysize_setter_returns_parent_size_on_saturation)
+TEST(Simulation, select_random_family_size_returns_parent_size_on_saturation)
 {
     matrix_cache cache(50);
     cache.precalculate_matrices({ 0.1 }, { 20 });
-    random_familysize_setter setter(NULL, 50, NULL, NULL, cache);
-    LONGS_EQUAL(17, setter.select_size(17, 0.1, 20, 0.1));
-    //    CHECK(FALSE);
+    LONGS_EQUAL(17, select_random_family_size(17, 50, cache.get_matrix(20, 0.1), 0.1));
 }
 
-TEST(Simulation, random_familysize_setter_with_error_model)
+TEST(Simulation, set_random_node_size_with_error_model)
 {
     const int family_size = 10;
     const double initial_epsilon = 0.2;
@@ -1860,14 +1840,13 @@ TEST(Simulation, random_familysize_setter_with_error_model)
     trial t;
     matrix_cache cache(20);
     cache.precalculate_matrices({ 0.05 }, { 3 });
-    random_familysize_setter setter(&t, family_size, &lambda, &err, cache);
     auto b = p_tree->find_descendant("B");
-    setter(b);
+    set_random_node_size(b, &t, &lambda, &err, 10, cache);
 
     LONGS_EQUAL(0, t[b]);
 
     t[p_tree.get()] = 5;
-    setter(b);
+    set_random_node_size(b, &t, &lambda, &err, 10, cache);
     LONGS_EQUAL(6, t[b]);
 }
 
@@ -1982,9 +1961,25 @@ TEST(Simulation, simulate_processes_uses_rootdist_if_available)
     for (auto r : results) delete r;
 }
 
+TEST(Simulation, root_distribution_pare)
+{
+    root_distribution rd;
+    rd.vectorize_increasing(100);
+    LONGS_EQUAL(100, rd.size());
+
+    rd.pare(10);
+    LONGS_EQUAL(10, rd.size());
+
+    for (int i = 1; i < 10; ++i)
+    {
+        CHECK(rd.at(i-1) <= rd.at(i));
+    }
+
+}
+
 TEST(Simulation, gamma_model_perturb_lambda)
 {
-    gamma_model model(NULL, NULL, NULL, 0, 5, 3, 0.7, NULL, NULL);
+    gamma_model model(NULL, NULL, NULL, 0, 5, 3, 0.7, NULL);
     model.perturb_lambda();
     auto multipliers = model.get_lambda_multipliers();
     LONGS_EQUAL(3, multipliers.size());

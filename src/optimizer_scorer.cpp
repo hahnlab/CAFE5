@@ -24,7 +24,7 @@ double inference_optimizer_scorer::calculate_score(double *values)
 
     _p_model->start_inference_processes(_p_lambda);
 
-    double score = _p_model->infer_processes(_p_distribution);
+    double score = _p_model->infer_processes(_p_distribution, _rootdist_map);
 
     if (!quiet)
     {
@@ -100,8 +100,8 @@ void lambda_epsilon_optimizer::finalize(double *results)
     _p_error_model->update_single_epsilon(results[_p_lambda->count()]);
 }
 
-gamma_optimizer::gamma_optimizer(gamma_model* p_model, root_equilibrium_distribution* prior) :
-    inference_optimizer_scorer(p_model->get_lambda(), p_model, prior),
+gamma_optimizer::gamma_optimizer(gamma_model* p_model, root_equilibrium_distribution* prior, const std::map<int, int>& root_distribution_map) :
+    inference_optimizer_scorer(p_model->get_lambda(), p_model, prior, root_distribution_map),
     _p_gamma_model(p_model)
 {
 
@@ -134,10 +134,10 @@ double gamma_optimizer::get_alpha() const
     return _p_gamma_model->get_alpha();
 }
 
-gamma_lambda_optimizer::gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution, double longest_branch) :
-    inference_optimizer_scorer(p_lambda, p_model, p_distribution),  
-    _lambda_optimizer(p_lambda, p_model, p_distribution, longest_branch),
-    _gamma_optimizer(p_model, p_distribution)
+gamma_lambda_optimizer::gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution, const std::map<int, int>& root_distribution_map, double longest_branch) :
+    inference_optimizer_scorer(p_lambda, p_model, p_distribution, root_distribution_map),
+    _lambda_optimizer(p_lambda, p_model, p_distribution, longest_branch, root_distribution_map),
+    _gamma_optimizer(p_model, p_distribution, root_distribution_map)
 {
 }
 

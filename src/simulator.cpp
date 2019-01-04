@@ -1,3 +1,5 @@
+#include <numeric>
+
 #include "simulator.h"
 #include "user_data.h"
 #include "core.h"
@@ -40,9 +42,12 @@ trial* simulator::create_trial(model *p_model, const root_distribution& rd, int 
     (*result)[data.p_tree] = select_root_size(data, rd, family_number);
 
     unique_ptr<lambda> sim_lambda(p_model->get_simulation_lambda(data));
-    random_familysize_setter rfs(result, max_family_size_sim, sim_lambda.get(), data.p_error_model, cache);
+    auto fn = [result, &sim_lambda, &data, max_family_size_sim, &cache](const clade *c)
+    {
+        set_random_node_size(c, result, sim_lambda.get(), data.p_error_model, max_family_size_sim, cache);
+    };
 
-    data.p_tree->apply_prefix_order(rfs); // this is where the () overload of random_familysize_setter is used
+    data.p_tree->apply_prefix_order(fn);
 
     return result;
 }
@@ -50,29 +55,28 @@ trial* simulator::create_trial(model *p_model, const root_distribution& rd, int 
 
 void simulator::simulate_processes(model *p_model, std::vector<trial *>& results) {
 
-    int max_size = p_model->get_max_simulation_size();
-    size_t rootdist_sz = p_model->get_rootdist_size();
-    if (rootdist_sz > 0)
+    root_distribution rd;
+    int max_size;
+    if (data.rootdist.empty())
     {
-        results.resize(rootdist_sz);
+        results.resize(_user_input.nsims);
+        max_size = 100;
+        rd.vectorize_increasing(max_size);
     }
     else
     {
-        results.resize(_user_input.nsims);
+        rd.vectorize(data.rootdist);
+        if (_user_input.nsims > 0)
+        {
+            rd.pare(_user_input.nsims);
+        }
+        results.resize(rd.size());
+        max_size = 2 * rd.max();
     }
 
 #ifndef SILENT
     cout << "Simulating " << results.size() << " families for model " << p_model->name() << endl;
 #endif
-
-    root_distribution rd;
-
-    if (data.rootdist.empty()) {
-        rd.vectorize_increasing(100);
-    }
-    else {
-        rd.vectorize(data.rootdist);
-    }
 
     for (size_t i = 0; i < results.size(); i+=50)
     {

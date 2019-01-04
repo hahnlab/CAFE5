@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <random>
 
+extern std::mt19937 randomizer_engine; // seeding random number engine
 
 //! Used when simulating gene families (-s)
 void root_distribution::vector(const std::vector<int>& dist)
@@ -84,4 +85,14 @@ itr select_randomly(itr start, itr end) {
 int root_distribution::select_randomly() const
 {
     return *::select_randomly(vectorized_dist.begin(), vectorized_dist.end()); // getting a random root size from the provided (core's) root distribution
+}
+
+void root_distribution::pare(size_t new_size)
+{
+    if (vectorized_dist.size() < new_size) return;
+
+    shuffle(vectorized_dist.begin(), vectorized_dist.end(), randomizer_engine);
+    vectorized_dist.erase(vectorized_dist.begin()+new_size, vectorized_dist.end());
+    sort(vectorized_dist.begin(), vectorized_dist.end());
+    max_calculated = false;
 }

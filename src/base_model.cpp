@@ -17,13 +17,10 @@
 extern mt19937 randomizer_engine;
 
 base_model::base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
-    int max_family_size, int max_root_family_size, std::map<int, int> * p_rootdist_map, error_model *p_error_model) :
+    int max_family_size, int max_root_family_size, error_model *p_error_model) :
     model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_error_model)
 {
-    if (p_rootdist_map != NULL)
-    {
-        _root_distribution.vectorize(*p_rootdist_map); // in vector form
-    }
+
 }
 
 base_model::~base_model()
@@ -72,14 +69,23 @@ void base_model::start_inference_processes(lambda *p_lambda)
     }
 }
 
-double base_model::infer_processes(root_equilibrium_distribution *prior) {
+double base_model::infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map) {
     if (!_p_lambda->is_valid())
     {
         return -log(0);
     }
 
-    initialize_rootdist_if_necessary();
-    prior->initialize(&_root_distribution);
+    root_distribution rd;
+    if (root_distribution_map.size() > 0)
+    {
+        rd.vectorize(root_distribution_map);
+    }
+    else
+    {
+        rd.vectorize_uniform(_max_root_family_size);
+    }
+//    initialize_rootdist_if_necessary();
+    prior->initialize(&rd);
 
     results.resize(processes.size());
     std::vector<double> all_families_likelihood(processes.size());
@@ -142,11 +148,11 @@ inference_optimizer_scorer *base_model::get_lambda_optimizer(user_data& data)
 
     if (data.p_error_model)
     {
-        return new lambda_epsilon_optimizer(this, _p_error_model, data.p_prior.get(), _p_lambda, finder.longest());
+        return new lambda_epsilon_optimizer(this, _p_error_model, data.p_prior.get(), data.rootdist, _p_lambda, finder.longest());
     }
     else
     {
-        return new lambda_optimizer(_p_lambda, this, data.p_prior.get(), finder.longest());
+        return new lambda_optimizer(_p_lambda, this, data.p_prior.get(), finder.longest(), data.rootdist);
     }
 }
 

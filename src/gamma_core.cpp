@@ -20,12 +20,9 @@
 extern mt19937 randomizer_engine;
 
 gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
-    int max_root_family_size, int n_gamma_cats, double fixed_alpha, std::map<int, int> *p_rootdist_map, error_model* p_error_model) :
+    int max_root_family_size, int n_gamma_cats, double fixed_alpha, error_model* p_error_model) :
     model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_error_model) {
 
-    if (p_rootdist_map != NULL)
-        _root_distribution.vectorize(*p_rootdist_map); // in vector form
-    
     _gamma_cat_probs.resize(n_gamma_cats);
     _lambda_multipliers.resize(n_gamma_cats);
     set_alpha(fixed_alpha);
@@ -153,7 +150,7 @@ void gamma_model::perturb_lambda()
 }
 
 //! Infer bundle
-double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
+double gamma_model::infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map) {
 
     if (!_p_lambda->is_valid())
     {
@@ -171,9 +168,17 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior) {
     }
 
     using namespace std;
-    initialize_rootdist_if_necessary();
+    root_distribution rd;
+    if (root_distribution_map.size() > 0)
+    {
+        rd.vectorize(root_distribution_map);
+    }
+    else
+    {
+        rd.vectorize_uniform(_max_root_family_size);
+    }
 
-    prior->initialize(&_root_distribution);
+    prior->initialize(&rd);
     vector<double> all_bundles_likelihood(_family_bundles.size());
 
     bool success = true;
@@ -239,7 +244,7 @@ inference_optimizer_scorer *gamma_model::get_lambda_optimizer(user_data& data)
         _p_tree->apply_prefix_order(finder);
 
         initialize_lambda(data.p_lambda_tree);
-        return new gamma_lambda_optimizer(_p_lambda, this, data.p_prior.get(), finder.longest());
+        return new gamma_lambda_optimizer(_p_lambda, this, data.p_prior.get(), data.rootdist, finder.longest());
     }
     else if (estimate_lambda && !estimate_alpha)
     {
@@ -247,12 +252,12 @@ inference_optimizer_scorer *gamma_model::get_lambda_optimizer(user_data& data)
         _p_tree->apply_prefix_order(finder);
 
         initialize_lambda(data.p_lambda_tree);
-        return new lambda_optimizer(_p_lambda, this, data.p_prior.get(), finder.longest());
+        return new lambda_optimizer(_p_lambda, this, data.p_prior.get(), finder.longest(), data.rootdist);
     }
     else if (!estimate_lambda && estimate_alpha)
     {
         _p_lambda = data.p_lambda->clone();
-        return new gamma_optimizer(this, data.p_prior.get());
+        return new gamma_optimizer(this, data.p_prior.get(), data.rootdist);
     }
     else
     {

@@ -2,7 +2,6 @@
 #define io_h
 
 #include "utils.h"
-#include "family_generator.h"
 #include "clade.h"
 #include <string>
 #include <map>
