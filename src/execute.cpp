@@ -88,6 +88,9 @@ void estimator::estimate_lambda_per_family(model *p_model, ostream& ost)
     std::transform(data.gene_families.begin(), data.gene_families.end(), result.begin(),
         [this, p_model](gene_family& fam)
     {
+#ifndef SILENT
+        cout << "Estimating for " << fam.id() << endl;
+#endif
         vector<gene_family> v({ fam });
         vector<model *> models{ p_model };
         p_model->set_families(&v);

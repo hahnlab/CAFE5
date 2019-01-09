@@ -1127,12 +1127,11 @@ TEST(Probability, matrix_cache_warns_on_saturation)
     STRCMP_EQUAL("WARNING: Saturated branch using lambda 0.05 on branch length 25\n", ost.str().c_str());
 }
 
-TEST(Probability, matrix_is_zero_except_00)
+TEST(Probability, matrix_is_saturated)
 {
     matrix_cache c(10);
-    c.precalculate_matrices({ 0.05, 0.01 }, { 25 });
-    CHECK(c.get_matrix(25, 0.05).is_zero_except_00());
-    CHECK_FALSE(c.get_matrix(25, 0.01).is_zero_except_00());
+    CHECK(c.is_saturated(25, 0.05));
+    CHECK_FALSE(c.is_saturated(25, 0.01));
 }
 
 TEST(Inference, build_reference_list)
@@ -1797,41 +1796,18 @@ TEST(Simulation, set_random_node_size_without_error_model)
     matrix_cache cache(12);
     cache.precalculate_matrices({ 0.05 }, { 3 });
     auto b = p_tree->find_descendant("B");
-    set_random_node_size(b, &t, &lambda, NULL, 10, cache);
+    set_weighted_random_family_size(b, &t, &lambda, NULL, 10, cache);
 
     LONGS_EQUAL(0, t[b]);
 
     t[p_tree.get()] = 5;
 
-    set_random_node_size(b, &t, &lambda, NULL, 10, cache);
-    LONGS_EQUAL(5, t[b]);
-}
-
-TEST(Simulation, select_random_family_size)
-{
-    matrix_cache cache(50);
-    cache.precalculate_matrices({ 0.05, 0.02 }, { 10, 20 });
-    LONGS_EQUAL(2, select_random_family_size(5, 50, cache.get_matrix(10, 0.05), 0.1));
-    LONGS_EQUAL(8, select_random_family_size(8, 50, cache.get_matrix(10, 0.05), 0.5));
-    LONGS_EQUAL(15, select_random_family_size(8, 50, cache.get_matrix(20, 0.02), 0.99));
-}
-
-TEST(Simulation, select_random_family_size_returns_parent_size_on_saturation)
-{
-    matrix_cache cache(50);
-    cache.precalculate_matrices({ 0.1 }, { 20 });
-    LONGS_EQUAL(17, select_random_family_size(17, 50, cache.get_matrix(20, 0.1), 0.1));
+    set_weighted_random_family_size(b, &t, &lambda, NULL, 10, cache);
+    LONGS_EQUAL(4, t[b]);
 }
 
 TEST(Simulation, set_random_node_size_with_error_model)
 {
-    const int family_size = 10;
-    const double initial_epsilon = 0.2;
-    error_model err;
-    err.set_probabilities(0, { .0, .8, initial_epsilon });
-    err.set_probabilities(1, { initial_epsilon, .6, initial_epsilon });
-    err.set_probabilities(family_size, { initial_epsilon, .6, initial_epsilon });
-
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:3):7";
     unique_ptr<clade> p_tree(parser.parse_newick());
@@ -1841,12 +1817,16 @@ TEST(Simulation, set_random_node_size_with_error_model)
     matrix_cache cache(20);
     cache.precalculate_matrices({ 0.05 }, { 3 });
     auto b = p_tree->find_descendant("B");
-    set_random_node_size(b, &t, &lambda, &err, 10, cache);
 
-    LONGS_EQUAL(0, t[b]);
+    error_model err;
 
     t[p_tree.get()] = 5;
-    set_random_node_size(b, &t, &lambda, &err, 10, cache);
+    err.set_probabilities(5, { .9, .05, 0.05 });
+    set_weighted_random_family_size(b, &t, &lambda, &err, 10, cache);
+    LONGS_EQUAL(4, t[b]);
+
+    err.set_probabilities(5, { .05, .05, 0.9 });
+    set_weighted_random_family_size(b, &t, &lambda, &err, 10, cache);
     LONGS_EQUAL(6, t[b]);
 }
 

@@ -35,7 +35,6 @@ public:
         return _size;
     }
     bool is_zero() const;
-    bool is_zero_except_00() const;
     std::vector<double> multiply(const std::vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const;
 };
 
@@ -86,6 +85,8 @@ public:
     }
 
     void warn_on_saturation(std::ostream& ost);
+
+    bool is_saturated(double branch_length, double lambda) const;
 
     matrix_cache(int matrix_size) : _matrix_size(matrix_size) {}
     ~matrix_cache();

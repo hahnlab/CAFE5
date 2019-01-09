@@ -19,13 +19,6 @@ bool matrix::is_zero() const
     return *max_element(values.begin(), values.end()) == 0;
 }
 
-/// every element is 0 other than probability of 0 to 0
-bool matrix::is_zero_except_00() const
-{
-    return *max_element(values.begin()+1, values.end()) == 0;
-}
-
-
 //! Take in a matrix and a vector, compute product, return it
 /*!
 This function returns a likelihood vector by multiplying an initial likelihood vector and a transition probability matrix.
@@ -118,6 +111,12 @@ vector<double> get_lambda_values(const lambda *p_lambda)
     return lambdas;
 }
 
+bool matrix_cache::is_saturated(double branch_length, double lambda) const
+{
+    double alpha = lambda*branch_length / (1 + lambda*branch_length);
+    return (1 - 2 * alpha) < 0;
+}
+
 void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, const std::set<double>& branch_lengths)
 {
     // build a list of required matrices
@@ -146,13 +145,16 @@ void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, con
 
         matrix *m = matrices[i];
         m->set(0, 0, get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0));
-        for (int i = 0; i < m->size(); ++i)
+        if (!is_saturated(branch_length, lambda))
         {
-            m->set(0, i, get_from_parent_fam_size_to_c(lambda, branch_length, 0, i));
-        }
-        for (int s = 1; s < _matrix_size; s++) {
-            for (int c = 0; c < _matrix_size; c++) {
-                m->set(s, c, get_from_parent_fam_size_to_c(lambda, branch_length, s, c));
+            for (int i = 0; i < m->size(); ++i)
+            {
+                m->set(0, i, get_from_parent_fam_size_to_c(lambda, branch_length, 0, i));
+            }
+            for (int s = 1; s < _matrix_size; s++) {
+                for (int c = 0; c < _matrix_size; c++) {
+                    m->set(s, c, get_from_parent_fam_size_to_c(lambda, branch_length, s, c));
+                }
             }
         }
     }
@@ -168,7 +170,7 @@ void matrix_cache::warn_on_saturation(std::ostream& ost)
 {
     for (auto& kv : _matrix_cache)
     {
-        if (kv.second->is_zero_except_00())
+        if (is_saturated(kv.first.branch_length(), kv.first.lambda()))
             ost << "WARNING: Saturated branch using lambda " << kv.first.lambda() << " on branch length " << kv.first.branch_length() << endl;
     }
 }

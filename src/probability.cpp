@@ -106,9 +106,6 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
   {
       result = birthdeath_rate_with_log_alpha(parent_size, size, log(alpha), coeff);
   }
-      
-  //printf("Birthdeath rate for 1, 0 (alpha=%f, coeff=%f), : %f\n", alpha, coeff, birthdeath_rate_with_log_alpha(1, 0, log(alpha), coeff));
-
 
 //  if (result < .000000000000000001)
 //  {
@@ -236,7 +233,7 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
         clademap<int> sizes;
         auto fn = [&sizes, p_lambda, p_error_model, max_family_size, &cache](const clade *c)
         {
-            set_random_node_size(c, &sizes, p_lambda, p_error_model, max_family_size, cache);
+            set_weighted_random_family_size(c, &sizes, p_lambda, p_error_model, max_family_size, cache);
         };
 
         sizes[p_tree] = root_family_size;
@@ -265,69 +262,61 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
 }
 
 //! Set the family size of a node to a random value, using parent's family size
-/*!
-Starting from 0, the gene family size of the child (c) is increased until the cumulative probability of c (given the gene family size s of the parent) exceeds a random draw from a uniform distribution. When this happens, the last c becomes the child's gene family size.
-
-Note that the smaller the draw from the uniform, the higher the chance that c will be far away from s.
-*/
-void set_random_node_size(const clade *node, clademap<int> *sizemap, const lambda *p_lambda, error_model *p_error_model, int max_family_size, const matrix_cache& cache)
+void set_weighted_random_family_size(const clade *node, clademap<int> *sizemap, const lambda *p_lambda, error_model *p_error_model, int max_family_size, const matrix_cache& cache)
 {
-    if (node->is_root()) { return; } // if node is root, we do nothing
+    if (node->is_root()) // if node is root, we do nothing
+        return;
 
-                                     /* Drawing random number from uniform */
-                                     //  std::default_random_engine gen(static_cast<long unsigned int>(time(0)));
-                                     // double rnd = dis(gen);
     int parent_family_size = (*sizemap)[node->get_parent()];
     size_t c = 0; // c is the family size we will go to
 
     double lambda = p_lambda->get_value_for_clade(node);
     double branch_length = node->get_branch_length();
 
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    if (parent_family_size > 0) {
+        matrix probabilities = cache.get_matrix(branch_length, lambda);
+        if (cache.is_saturated(branch_length, lambda))
+        {
+            std::uniform_int_distribution<int> distribution(0, max_family_size - 1);
+            c = distribution(randomizer_engine);
+        }
+        vector<double> v;
+        for (int i = 0; i < max_family_size; i++) {
+            v.push_back(probabilities.get(parent_family_size, i));
+        }
+        std::discrete_distribution<int> distribution(v.begin(), v.end());
+        c = distribution(randomizer_engine);
+    }
 
-    c = select_random_family_size(parent_family_size, max_family_size, cache.get_matrix(branch_length, lambda), distribution(randomizer_engine));
-
-    if (node->is_leaf() && p_error_model != NULL)
+    if (node->is_leaf())
     {
-        if (c >= p_error_model->get_max_count())
-        {
-            throw runtime_error("Trying to simulate leaf family size that was not included in error model");
-        }
-        auto probs = p_error_model->get_probs(c);
-
-        double rnd = distribution(randomizer_engine);
-        if (rnd < probs[0])
-        {
-            c--;
-        }
-        else if (rnd > (1 - probs[2]))
-        {
-            c++;
-        }
+        c = adjust_for_error_model(c, p_error_model);
     }
 
     (*sizemap)[node] = c;
 }
 
-/// returns the index of the item for which the cumulative sum of probabilities of a smaller size is less than rnd
-int select_random_family_size(int parent_family_size, int max_family_size, const matrix& probabilities, double rnd)
+size_t adjust_for_error_model(size_t c, const error_model *p_error_model)
 {
-    int c = 0;
-    double cumul = 0;
-    if (parent_family_size > 0) {
-        if (probabilities.is_zero_except_00())  // saturated, return an invalid value
-            return parent_family_size;
+    if (p_error_model == nullptr)
+        return c;
 
-        for (; c < max_family_size - 1; c++) { // Ben: why -1
-            double prob = probabilities.get(parent_family_size, c);
-            //double prob = the_probability_of_going_from_parent_fam_size_to_c(lambda, branch_length, parent_family_size, c);
-            cumul += prob;
-
-            if (cumul >= rnd) {
-                break;
-            }
-        }
+    if (c >= p_error_model->get_max_count())
+    {
+        throw runtime_error("Trying to simulate leaf family size that was not included in error model");
     }
+    auto probs = p_error_model->get_probs(c);
+
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    double rnd = distribution(randomizer_engine);
+    if (rnd < probs[0])
+    {
+        c--;
+    }
+    else if (rnd >(1 - probs[2]))
+    {
+        c++;
+    }
+
     return c;
 }
-

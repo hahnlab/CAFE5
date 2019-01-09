@@ -42,9 +42,13 @@ trial* simulator::create_trial(model *p_model, const root_distribution& rd, int 
     (*result)[data.p_tree] = select_root_size(data, rd, family_number);
 
     unique_ptr<lambda> sim_lambda(p_model->get_simulation_lambda(data));
+#ifndef SILENT
+    cout << "Lambda: " << *sim_lambda.get() << endl;
+#endif
+
     auto fn = [result, &sim_lambda, &data, max_family_size_sim, &cache](const clade *c)
     {
-        set_random_node_size(c, result, sim_lambda.get(), data.p_error_model, max_family_size_sim, cache);
+        set_weighted_random_family_size(c, result, sim_lambda.get(), data.p_error_model, max_family_size_sim, cache);
     };
 
     data.p_tree->apply_prefix_order(fn);
@@ -86,9 +90,9 @@ void simulator::simulate_processes(model *p_model, std::vector<trial *>& results
         p_model->prepare_matrices_for_simulation(cache);
 
 #ifndef SILENT
-        cout << "Matrices complete\n";
         cache.warn_on_saturation(cerr);
 #endif
+
         int n = 0;
 
         auto end_it = i + 50 > results.size() ? results.end() : results.begin() + i + 50;
