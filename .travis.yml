@@ -5,7 +5,7 @@ compiler:
 - gcc
 # - clang  # Don't compile in clang until openmp errors can be resolved
 before_install:
-- sudo apt-get install cpputest doxygen graphviz
+- sudo apt-get install cpputest doxygen graphviz latexmk
 script:
 - cd $TRAVIS_BUILD_DIR
 - autoconf
