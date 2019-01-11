@@ -1773,6 +1773,29 @@ TEST(Simulation, base_prepare_matrices_for_simulation_creates_matrix_for_each_br
     LONGS_EQUAL(3, m.get_cache_size());
 }
 
+TEST(Simulation, base_prepare_matrices_for_simulation_uses_perturbed_lambda)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    user_data data;
+    single_lambda lam(0.05);
+    data.p_lambda = &lam;
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    base_model b(&lam, p_tree.get(), NULL, 0, 0, NULL);
+    b.perturb_lambda();
+    matrix_cache m(25);
+    b.prepare_matrices_for_simulation(m);
+    unique_ptr<single_lambda> sim_lambda(dynamic_cast<single_lambda *>(b.get_simulation_lambda(data)));
+    try
+    {
+        m.get_matrix(7, sim_lambda->get_single_lambda());
+    }
+    catch (std::runtime_error& err)
+    {
+        FAIL("Failed to cache simulation lambda");
+    }
+}
+
 TEST(Simulation, gamma_prepare_matrices_for_simulation_creates_matrix_for_each_branch_and_category)
 {
     newick_parser parser(false);
