@@ -11,6 +11,7 @@ script:
 - autoconf
 - ./configure
 - make
+- make docs
 - make test
 - test/runtests
 notifications:

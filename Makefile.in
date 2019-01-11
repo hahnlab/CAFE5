@@ -93,3 +93,7 @@ test: $(TESTDIR)/$(TEST_TARGET)
 prep:
 	@mkdir -p $(OBJDIR) $(BINDIR) $(TESTDIR)
 
+.PHONY: docs
+docs:
+	$(MAKE) -C docs
+
