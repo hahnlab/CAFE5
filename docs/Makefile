@@ -3,7 +3,7 @@
 all: CAFE5.pdf
 
 CAFE5.pdf: CAFE5.tex
-	latexmk -pdf -pdflatex="pdflatex -interaction=nonstopmode" -use-make CAFE5.tex
+	latexmk -f -bibtex -pdf -pdflatex="pdflatex -interaction=nonstopmode" CAFE5.tex
 
 clean:
 	latexmk -CA
