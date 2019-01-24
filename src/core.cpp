@@ -12,22 +12,24 @@
 #include "base_model.h"
 #include "process.h"
 
-std::vector<model *> build_models(const input_parameters& my_input_parameters, user_data& user_data) {
+std::vector<model *> build_models(const input_parameters& user_input, user_data& user_data) {
 
     model *p_model = NULL;
 
     std::vector<gene_family> *p_gene_families = &user_data.gene_families;
 
-    if (my_input_parameters.is_simulating) {
+    if (user_input.is_simulating) {
         p_gene_families = NULL;
     }
 
-    if (my_input_parameters.fixed_alpha > 0)
+    if (user_input.fixed_alpha > 0 || user_input.n_gamma_cats > 1)
     {
         auto gmodel = new gamma_model(user_data.p_lambda, user_data.p_tree, &user_data.gene_families, user_data.max_family_size, user_data.max_root_family_size,
-            my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, user_data.p_error_model);
-        if (my_input_parameters.fixed_alpha >= 0)
+            user_input.n_gamma_cats, user_input.fixed_alpha, user_data.p_error_model);
+#ifndef SILENT
+        if (user_input.fixed_alpha >= 0)
             gmodel->write_probabilities(cout);
+#endif
         p_model = gmodel;
     }
     else

@@ -988,6 +988,32 @@ TEST(Inference, create_one_model_if_lambda_is_null)
         delete m;
 }
 
+TEST(Inference, create_gamma_model_if_alpha_provided)
+{
+    input_parameters params;
+    params.input_file_path = "foo";
+    params.fixed_alpha = 0.7;
+    user_data data;
+    auto models = build_models(params, data);
+    LONGS_EQUAL(1, models.size());
+    CHECK(dynamic_cast<gamma_model *>(models[0]));
+    for (auto m : models)
+        delete m;
+}
+
+TEST(Inference, create_gamma_model_if__n_gamma_cats__provided)
+{
+    input_parameters params;
+    params.input_file_path = "foo";
+    params.n_gamma_cats = 3;
+    user_data data;
+    auto models = build_models(params, data);
+    LONGS_EQUAL(1, models.size());
+    CHECK(dynamic_cast<gamma_model *>(models[0]));
+    for (auto m : models)
+        delete m;
+}
+
 void build_matrix(matrix& m)
 {
     m.set(0, 0, 1);
