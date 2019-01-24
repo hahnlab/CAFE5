@@ -7,12 +7,28 @@
 #include "io.h"
 #include "lambda.h" // for definition of optimizer :/
 
+uniform_distribution::uniform_distribution() : _p_root_distribution(new root_distribution())
+{
+
+}
+
+uniform_distribution::~uniform_distribution()
+{
+    delete _p_root_distribution;
+}
+
+void uniform_distribution::initialize(const root_distribution* root_distribution)
+{
+    *_p_root_distribution = *root_distribution;
+    _root_distribution_sum = _p_root_distribution->sum();
+}
+
 float uniform_distribution::compute(size_t val) const
 {
-    if (val >= _root_distribution->size())
+    if (val >= _p_root_distribution->size())
         return 0;
 
-    return float(_root_distribution->at(val)) / float(_root_distribution->sum());
+    return float(_p_root_distribution->at(val)) / float(_root_distribution_sum);
 }
 
 ::poisson_distribution::poisson_distribution(std::vector<gene_family> *p_gene_families)

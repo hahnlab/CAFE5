@@ -1761,6 +1761,28 @@ TEST(Inference, optimizer_disallows_bad_initializations)
 
 }
 
+TEST(Inference, root_distribution_copy)
+{
+    root_distribution rd;
+    rd.vector({ 1,2,5 });
+    LONGS_EQUAL(5, rd.max());
+
+    root_distribution rd2 = rd;
+    LONGS_EQUAL(3, rd2.size());
+    LONGS_EQUAL(5, rd2.max());
+}
+
+TEST(Inference, uniform_root_distribution_does_not_hold_rootdist_pointer)
+{
+    uniform_distribution prior;
+    {
+        root_distribution rd;
+        rd.vector({ 1,2,5 });
+        prior.initialize(&rd);
+    }
+    DOUBLES_EQUAL(.25, prior.compute(1), 0.00001);
+}
+
 TEST(Simulation, base_prepare_matrices_for_simulation_creates_matrix_for_each_branch)
 {
     newick_parser parser(false);

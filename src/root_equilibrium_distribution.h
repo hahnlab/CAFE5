@@ -18,12 +18,13 @@ public:
 
 class uniform_distribution : public root_equilibrium_distribution
 {
-    const root_distribution* _root_distribution; // in case the user wants to use a specific root size distribution for all simulations
+    root_distribution *_p_root_distribution; // in case the user wants to use a specific root size distribution for all simulations
+    int _root_distribution_sum = 0;
 public:
-    virtual void initialize(const root_distribution* root_distribution)
-    {
-        _root_distribution = root_distribution;
-    }
+    uniform_distribution();
+    ~uniform_distribution();
+
+    virtual void initialize(const root_distribution* root_distribution);
 
     virtual float compute(size_t val) const;   // creates uniform
 };
