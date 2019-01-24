@@ -62,6 +62,11 @@ void input_parameters::check_input() {
             throw runtime_error("Cannot simulate gamma clusters without an alpha value");
         }
     }
+    else
+    {
+        if (fixed_alpha >= 0.0 && n_gamma_cats == 1) {
+            throw runtime_error("Alpha specified with 1 gamma category.");
+    }
 
 
     if (lambda_per_family)
@@ -77,8 +82,6 @@ void input_parameters::check_input() {
         throw runtime_error("Options -i and -f are mutually exclusive.");
     }
 
-    if (fixed_alpha >= 0.0 && n_gamma_cats == 1) {
-        throw runtime_error("Alpha specified with 1 gamma category.");
     }
 }
 

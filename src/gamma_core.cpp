@@ -60,17 +60,18 @@ void gamma_model::set_alpha(double alpha) {
 
 }
 
+string comma_separated(const std::vector<double>& items)
+{
+    string s;
+    for (auto i : items)
+        s += (s.empty() ? "" : ",") + to_string(i);
+    return s;
+}
+
 void gamma_model::write_probabilities(ostream& ost)
 {
-    ost << "Gamma cat probs are: ";
-    for (double d : _gamma_cat_probs)
-        ost << d << ",";
-    ost << endl;
-
-    ost << "Lambda multipliers are: ";
-    for (double d : _lambda_multipliers)
-        ost << d << ",";
-    ost << endl;
+    ost << "Gamma cat probs are: " << comma_separated(_gamma_cat_probs) << endl;
+    ost << "Lambda multipliers are: " << comma_separated(_lambda_multipliers) << endl;
 }
 
 void gamma_model::start_inference_processes(lambda *p_lambda) {
@@ -120,29 +121,43 @@ void gamma_model::prepare_matrices_for_simulation(matrix_cache& cache)
 
 void gamma_model::perturb_lambda()
 {
-    // reset the mutlipliers back to their initial values based on the alpha
-    get_gamma(_gamma_cat_probs, _lambda_multipliers, _alpha);
-
-    auto new_multipliers = _lambda_multipliers;
-    for (size_t i = 0; i < _lambda_multipliers.size(); ++i)
+    if (_gamma_cat_probs.size() == 1)
     {
-        double stddev;
-        if (i == 0)
-        {
-            stddev = _lambda_multipliers[0] / 3.0;
-        }
-        else if (i == _lambda_multipliers.size() - 1)
-        {
-            stddev = (_lambda_multipliers[i] - _lambda_multipliers[i - 1]) / 3.0;
-        }
-        else
-        {
-            stddev = (_lambda_multipliers[i + 1] - _lambda_multipliers[i - 1]) / 6.0;
-        }
-        normal_distribution<double> dist(_lambda_multipliers[i], stddev);
-        new_multipliers[i] = dist(randomizer_engine);
+        // no user cluster value was specified. Select a multiplier at random from the gamma distribution with the given alpha
+        gamma_distribution<double> dist(_alpha, 1 / _alpha);
+        _lambda_multipliers[0] = dist(randomizer_engine);
+        _gamma_cat_probs[0] = 1;
     }
-    _lambda_multipliers.swap(new_multipliers);
+    else
+    {
+        // select multipliers based on the clusters, modifying the actual lambda selected
+        // by a normal distribution based around the multipliers selected from the gamma
+        // distribution with the given alpha
+        
+        // first, reset the multipliers back to their initial values based on the alpha
+        get_gamma(_gamma_cat_probs, _lambda_multipliers, _alpha);
+
+        auto new_multipliers = _lambda_multipliers;
+        for (size_t i = 0; i < _lambda_multipliers.size(); ++i)
+        {
+            double stddev;
+            if (i == 0)
+            {
+                stddev = _lambda_multipliers[0] / 3.0;
+            }
+            else if (i == _lambda_multipliers.size() - 1)
+            {
+                stddev = (_lambda_multipliers[i] - _lambda_multipliers[i - 1]) / 3.0;
+            }
+            else
+            {
+                stddev = (_lambda_multipliers[i + 1] - _lambda_multipliers[i - 1]) / 6.0;
+            }
+            normal_distribution<double> dist(_lambda_multipliers[i], stddev);
+            new_multipliers[i] = dist(randomizer_engine);
+        }
+        _lambda_multipliers.swap(new_multipliers);
+    }
 
 #ifndef SILENT
     write_probabilities(cout);

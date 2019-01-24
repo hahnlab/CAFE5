@@ -1,5 +1,6 @@
 #include <numeric>
 
+#include "../config.h"
 #include "simulator.h"
 #include "user_data.h"
 #include "core.h"
@@ -42,9 +43,6 @@ trial* simulator::create_trial(model *p_model, const root_distribution& rd, int 
     (*result)[data.p_tree] = select_root_size(data, rd, family_number);
 
     unique_ptr<lambda> sim_lambda(p_model->get_simulation_lambda(data));
-#ifndef SILENT
-    cout << "Lambda: " << *sim_lambda.get() << endl;
-#endif
 
     auto fn = [result, &sim_lambda, &data, max_family_size_sim, &cache](const clade *c)
     {
@@ -95,7 +93,7 @@ void simulator::simulate_processes(model *p_model, std::vector<trial *>& results
 
         int n = 0;
 
-        auto end_it = i + 50 > results.size() ? results.end() : results.begin() + i + 50;
+        auto end_it = i + 50 > results.size() ? results.end() : results.begin() + i + LAMBDA_PERTURBATION_STEP_SIZE;
         generate(results.begin()+i, end_it, [this, p_model, i, &rd, &cache, &n]() mutable {
             return create_trial(p_model, rd, i+n++, data, cache);
         });

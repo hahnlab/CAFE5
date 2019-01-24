@@ -2,6 +2,7 @@
 #include <iostream>
 #include <random>
 
+#include "../config.h"
 #include "optimizer_scorer.h"
 #include "clade.h"
 #include "lambda.h"
@@ -109,7 +110,7 @@ gamma_optimizer::gamma_optimizer(gamma_model* p_model, root_equilibrium_distribu
 
 std::vector<double> gamma_optimizer::initial_guesses()
 {
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    std::normal_distribution<double> distribution(OPTIMIZER_INITIAL_GUESS_MEAN_ALPHA, OPTIMIZER_INITIAL_GUESS_STDDEV_ALPHA);
     return std::vector<double>({ distribution(randomizer_engine) });
 }
 

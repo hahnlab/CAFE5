@@ -22,7 +22,7 @@ std::vector<model *> build_models(const input_parameters& my_input_parameters, u
         p_gene_families = NULL;
     }
 
-    if (my_input_parameters.n_gamma_cats > 1)
+    if (my_input_parameters.fixed_alpha > 0)
     {
         auto gmodel = new gamma_model(user_data.p_lambda, user_data.p_tree, &user_data.gene_families, user_data.max_family_size, user_data.max_root_family_size,
             my_input_parameters.n_gamma_cats, my_input_parameters.fixed_alpha, user_data.p_error_model);

@@ -204,6 +204,37 @@ TEST(Options, must_specify_alpha_for_gamma_simulation)
     }
 }
 
+TEST(Options, must_specify_alpha_and_k_for_gamma_inference)
+{
+    try
+    {
+        input_parameters params;
+        params.fixed_alpha = 0.7;
+        params.check_input();
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("Alpha specified with 1 gamma category.", err.what());
+    }
+}
+
+TEST(Options, can_specify_alpha_without_k_for_gamma_simulation)
+{
+    try
+    {
+        input_parameters params;
+        params.fixed_alpha = 0.7;
+        params.fixed_lambda = 0.01;
+        params.is_simulating = true;
+        params.check_input();
+    }
+    catch (runtime_error& err)
+    {
+        FAIL("Exception thrown checking input")
+    }
+}
+
 TEST(Options, check_input_does_not_throw_when_simulating_with_multiple_lambdas)
 {
     input_parameters params;
@@ -496,7 +527,7 @@ TEST(Inference, gamma_optimizer_guesses_lambda_and_alpha)
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(2, guesses.size());
     DOUBLES_EQUAL(0.298761, guesses[0], 0.0001);
-    DOUBLES_EQUAL(0.49459, guesses[1], 0.0001);
+    DOUBLES_EQUAL(-0.172477, guesses[1], 0.0001);
     vector<double>().swap(guesses);
    delete p_tree;
    delete model.get_lambda();
@@ -543,7 +574,7 @@ TEST(Inference, gamma_optimizer_guesses_alpha_if_lambda_provided)
 
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(1, guesses.size());
-    DOUBLES_EQUAL(0.298761, guesses[0], 0.0001);
+    DOUBLES_EQUAL(0.979494, guesses[0], 0.0001);
     vector<double>().swap(guesses);
     delete model.get_lambda();
 }
@@ -1643,7 +1674,7 @@ TEST(Inference, gamma_optimizer)
     gamma_model m(NULL, NULL, NULL, 0, 0, 0, 0, NULL);
     gamma_optimizer optimizer(&m, NULL, std::map<int, int>());
     auto initial = optimizer.initial_guesses();
-    DOUBLES_EQUAL(0.298761, initial[0], 0.00001);
+    DOUBLES_EQUAL(0.979494, initial[0], 0.00001);
 }
 
 TEST(GeneFamilies, model_set_families)
@@ -2002,7 +2033,7 @@ TEST(Simulation, root_distribution_pare)
 
 }
 
-TEST(Simulation, gamma_model_perturb_lambda)
+TEST(Simulation, gamma_model_perturb_lambda_with_clusters)
 {
     gamma_model model(NULL, NULL, NULL, 0, 5, 3, 0.7, NULL);
     model.perturb_lambda();
@@ -2011,6 +2042,15 @@ TEST(Simulation, gamma_model_perturb_lambda)
     DOUBLES_EQUAL(0.112844, multipliers[0], 0.00001);
     DOUBLES_EQUAL(1.05493, multipliers[1], 0.00001);
     DOUBLES_EQUAL(2.06751, multipliers[2], 0.00001);
+}
+
+TEST(Simulation, gamma_model_perturb_lambda_without_clusters)
+{
+    gamma_model model(NULL, NULL, NULL, 0, 5, 1, 5, NULL);
+    model.perturb_lambda();
+    auto multipliers = model.get_lambda_multipliers();
+    LONGS_EQUAL(1, multipliers.size());
+    DOUBLES_EQUAL(0.911359, multipliers[0], 0.00001);
 }
 
 void init_lgamma_cache();

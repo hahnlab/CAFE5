@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iomanip>
 
+#include "../config.h"
 #include "lambda.h"
 #include "clade.h"
 #include "fminsearch.h"
@@ -87,7 +88,7 @@ std::vector<double> optimizer::get_initial_guesses()
     auto initial = _p_scorer->initial_guesses();
     int i = 0;
     double first_run = _p_scorer->calculate_score(&initial[0]);
-    while (std::isinf(first_run) && i<20)
+    while (std::isinf(first_run) && i < NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS)
     {
         initial = _p_scorer->initial_guesses();
         first_run = _p_scorer->calculate_score(&initial[0]);
