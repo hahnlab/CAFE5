@@ -70,6 +70,7 @@ public:
     //! modify lambda multiplier slightly for a better simulation
     void perturb_lambda();
 
+    bool can_infer() const;
 };
 
 class gamma_model_reconstruction : public reconstruction

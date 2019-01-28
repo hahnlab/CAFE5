@@ -111,7 +111,7 @@ vector<double> get_lambda_values(const lambda *p_lambda)
     return lambdas;
 }
 
-bool matrix_cache::is_saturated(double branch_length, double lambda) const
+bool matrix_cache::is_saturated(double branch_length, double lambda)
 {
     double alpha = lambda*branch_length / (1 + lambda*branch_length);
     return (1 - 2 * alpha) < 0;

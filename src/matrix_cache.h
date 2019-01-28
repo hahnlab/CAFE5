@@ -86,7 +86,7 @@ public:
 
     void warn_on_saturation(std::ostream& ost);
 
-    bool is_saturated(double branch_length, double lambda) const;
+    static bool is_saturated(double branch_length, double lambda);
 
     matrix_cache(int matrix_size) : _matrix_size(matrix_size) {}
     ~matrix_cache();

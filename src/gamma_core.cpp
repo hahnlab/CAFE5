@@ -164,17 +164,32 @@ void gamma_model::perturb_lambda()
 #endif
 }
 
+bool gamma_model::can_infer() const
+{
+    if (!_p_lambda->is_valid())
+        return false;
+
+    if (_alpha < 0)
+        return false;
+
+    branch_length_finder lengths;
+    _p_tree->apply_prefix_order(lengths);
+    auto v = get_lambda_values(_p_lambda);
+
+    double longest_branch = lengths.longest();
+    double largest_multiplier = *max_element(_lambda_multipliers.begin(), _lambda_multipliers.end());
+    double largest_lambda = *max_element(v.begin(), v.end());
+
+    if (matrix_cache::is_saturated(longest_branch, largest_multiplier*largest_lambda))
+        return false;
+
+    return true;
+}
+
 //! Infer bundle
 double gamma_model::infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map) {
 
-    if (!_p_lambda->is_valid())
-    {
-#ifndef SILENT
-        std::cout << "-lnL: " << log(0) << std::endl;
-#endif
-        return -log(0);
-    }
-    if (_alpha < 0)
+    if (!can_infer())
     {
 #ifndef SILENT
         std::cout << "-lnL: " << log(0) << std::endl;

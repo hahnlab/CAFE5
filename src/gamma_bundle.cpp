@@ -4,6 +4,7 @@
 #include <numeric>
 #include <functional>
 #include <cmath>
+#include <sstream>
 
 #include "gamma_bundle.h"
 #include "process.h"

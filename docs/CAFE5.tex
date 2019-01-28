@@ -321,6 +321,22 @@ If a change in gene family size is very large on a single branch, \shortname may
 In very large phylogenetic trees there can be many independent lambda parameters (2n - 2 in a rooted tree, where n is the number of taxa). \shortname does not always converge to a single global maximum with large numbers of $\lambda$ parameters, and therefore can give misleading results. To check for this you should always run the $\lambda$ search multiple times to ensure that the same estimated values are found. Also, the likelihood of models with more parameters should always be lower than models with fewer parameters, which may not be true if \shortname has failed to find a global maximum. If CAFE does not converge over multiple runs, then one should reduce the number of parameters estimated and try again.
 
 \section{Technical}
+
+\subsection{How does the optimizer work?}
+
+The Nelder-Mead optimization algorithm is used. It runs until it can find a difference of less than 1e-6 in either the calculated score or the calculated value, or for 10,000 iterations. The parameters that are used for the optimizer are as follows:
+
+\begin{itemize}
+  \item rho: 1 (reflection)
+  \item chi: 2 (expansion)
+  \item psi: 0.5 (contraction)
+  \item sigma: 0.5 (shrink)
+\end{itemize}
+
+In some cases, the optimizer suggests values that cannot be calculated (due to saturation, negative values, or other reasons) In this case, an infinite score is returned and the optimizer continues.
+
+When optimizing for an alpha value with a set number of clusters, if the largest multiplier in the longest branch is saturated, the scorer will return an infinite value.
+
 \subsection{How does the simulator choose what lambda to use?}
 
 Although the user specifies the lambda, in order to give more
