@@ -107,6 +107,7 @@ class optimizer {
     optimizer_scorer *_p_scorer;
 public:
     optimizer(optimizer_scorer *scorer);
+    ~optimizer();
 
     struct result {
         std::vector<double> values;
@@ -116,7 +117,7 @@ public:
 
     result optimize();
 
-    void log_results(FMinSearch * pfm, std::vector<double> &initial, double * re);
+    void log_results(const result& r);
 
     bool quiet = false;
     bool explode = false;

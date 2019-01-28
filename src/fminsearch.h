@@ -11,7 +11,7 @@ struct FMinSearch
   double tolx, tolf;
   double delta, zero_delta;
 
-  int 	N, N1;
+  int 	variable_count, variable_count_plus_one;
   int 	iters;
   double** v;
   double* fv;
@@ -25,6 +25,7 @@ struct FMinSearch
 };
 
 FMinSearch* fminsearch_new();
+void fminsearch_free(FMinSearch* pfm);
 FMinSearch* fminsearch_new_with_eq(optimizer_scorer* eq, int Xsize);
 void fminsearch_set_equation(FMinSearch* pfm, optimizer_scorer* eq, int Xsize);
 int fminsearch_min(FMinSearch* pfm, double* X0);

@@ -3,6 +3,7 @@
 #include <cstring>
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 #include "fminsearch.h"
 #include "optimizer_scorer.h"
@@ -54,8 +55,8 @@ FMinSearch* fminsearch_new_with_eq(optimizer_scorer* eq, int Xsize)
 
 void fminsearch_clear_memory(FMinSearch* pfm)
 {
-	free_2dim((void**)pfm->v, pfm->N1, pfm->N);
-	free_2dim((void**)pfm->vsort, pfm->N1, pfm->N);
+	free_2dim((void**)pfm->v, pfm->variable_count_plus_one, pfm->variable_count);
+	free_2dim((void**)pfm->vsort, pfm->variable_count_plus_one, pfm->variable_count);
 	free(pfm->fv);
 	pfm->fv = NULL;
 	free(pfm->x_mean);
@@ -77,7 +78,7 @@ void fminsearch_free(FMinSearch* pfm)
 
 void fminsearch_set_equation(FMinSearch* pfm, optimizer_scorer* eq, int Xsize)
 {
-	if ( pfm->N != Xsize )
+	if ( pfm->variable_count != Xsize )
 	{
 		if ( pfm->scorer ) fminsearch_clear_memory(pfm);
 		pfm->v = (double**)calloc_2dim(Xsize+1, Xsize, sizeof(double));
@@ -89,8 +90,8 @@ void fminsearch_set_equation(FMinSearch* pfm, optimizer_scorer* eq, int Xsize)
 		pfm->idx = (int*)calloc(Xsize+1,sizeof(int));
 	}
 	pfm->scorer = eq;
-	pfm->N = Xsize;
-	pfm->N1 = Xsize + 1;
+	pfm->variable_count = Xsize;
+	pfm->variable_count_plus_one = Xsize + 1;
 }
 
 
@@ -127,21 +128,21 @@ void __qsort_double_with_index(double* list, int* idx, int left, int right)
 void __fminsearch_sort(FMinSearch* pfm)
 {
 	int i, j, k;
-	for ( i = 0 ; i < pfm->N1 ; i++ ) pfm->idx[i] = i;
-	__qsort_double_with_index(pfm->fv, pfm->idx, 0,pfm->N);
-	for ( i = 0 ; i < pfm->N1 ; i++ )
+	for ( i = 0 ; i < pfm->variable_count_plus_one ; i++ ) pfm->idx[i] = i;
+	__qsort_double_with_index(pfm->fv, pfm->idx, 0,pfm->variable_count);
+	for ( i = 0 ; i < pfm->variable_count_plus_one ; i++ )
 	{
 		k = pfm->idx[i];
-		for( j = 0 ; j < pfm->N ; j++ )
+		for( j = 0 ; j < pfm->variable_count ; j++ )
 		{
 			pfm->vsort[i][j] = pfm->v[k][j];
 		}
 	}
 
   // copy rows from vsort back to v
-  for (int r = 0; r < pfm->N1; r++)
+  for (int r = 0; r < pfm->variable_count_plus_one; r++)
   {
-    memcpy(pfm->v[r], pfm->vsort[r], pfm->N*sizeof(double));
+    memcpy(pfm->v[r], pfm->vsort[r], pfm->variable_count*sizeof(double));
   }
 }
 
@@ -152,9 +153,9 @@ int __fminsearch_checkV(FMinSearch* pfm)
 	double t;
 	double max = -MAX_DOUBLE;
 	
-	for ( i = 0 ; i < pfm->N  ; i++ )
+	for ( i = 0 ; i < pfm->variable_count  ; i++ )
 	{
-		for ( j = 0 ; j < pfm->N ; j++ )
+		for ( j = 0 ; j < pfm->variable_count ; j++ )
 		{
 			t = fabs(pfm->v[i+1][j] - pfm->v[i][j] );
 			if ( t > max ) max = t;
@@ -165,10 +166,11 @@ int __fminsearch_checkV(FMinSearch* pfm)
 
 int __fminsearch_checkF(FMinSearch* pfm)
 {
+    using namespace std;
 	int i;
 	double t;
 	double max = -MAX_DOUBLE;
-	for ( i = 1 ; i < pfm->N1 ; i++ )
+	for ( i = 1 ; i < pfm->variable_count_plus_one ; i++ )
 	{
 		t = fabs( pfm->fv[i] - pfm->fv[0] );
 		if ( t > max ) max = t;
@@ -179,9 +181,9 @@ int __fminsearch_checkF(FMinSearch* pfm)
 void __fminsearch_min_init(FMinSearch* pfm, double* X0)
 {
 	int i,j;
-	for ( i = 0 ; i < pfm->N1 ; i++ )
+	for ( i = 0 ; i < pfm->variable_count_plus_one ; i++ )
 	{
-		for ( j = 0 ; j < pfm->N ; j++ )
+		for ( j = 0 ; j < pfm->variable_count ; j++ )
 		{
             if ( i > 1 && std::isinf(pfm->fv[i-1])) {
                 if ( (i - 1)  == j )
@@ -212,23 +214,23 @@ void __fminsearch_min_init(FMinSearch* pfm, double* X0)
 void __fminsearch_x_mean(FMinSearch* pfm)
 {
 	int i,j;
-	for ( i = 0 ; i < pfm->N ; i++ )
+	for ( i = 0 ; i < pfm->variable_count ; i++ )
 	{
 		pfm->x_mean[i] = 0;
-		for ( j = 0 ; j < pfm->N ; j++ )
+		for ( j = 0 ; j < pfm->variable_count ; j++ )
 		{
 			pfm->x_mean[i] += pfm->v[j][i];
 		}
-		pfm->x_mean[i] /= pfm->N;
+		pfm->x_mean[i] /= pfm->variable_count;
 	}
 }
 
 double __fminsearch_x_reflection(FMinSearch* pfm)
 {   
 	int i;
-	for ( i = 0 ; i < pfm->N ; i++ )
+	for ( i = 0 ; i < pfm->variable_count ; i++ )
 	{
-		pfm->x_r[i] = pfm->x_mean[i] + pfm->rho * ( pfm->x_mean[i] - pfm->v[pfm->N][i] );
+		pfm->x_r[i] = pfm->x_mean[i] + pfm->rho * ( pfm->x_mean[i] - pfm->v[pfm->variable_count][i] );
 	}
 	return pfm->scorer->calculate_score(pfm->x_r);
 }
@@ -237,7 +239,7 @@ double __fminsearch_x_reflection(FMinSearch* pfm)
 double __fminsearch_x_expansion(FMinSearch* pfm)
 {
 	int i;
-	for ( i = 0 ; i < pfm->N ; i++ )
+	for ( i = 0 ; i < pfm->variable_count ; i++ )
 	{
 		pfm->x_tmp[i] = pfm->x_mean[i] + pfm->chi * ( pfm->x_r[i] - pfm->x_mean[i] );
 	}
@@ -247,7 +249,7 @@ double __fminsearch_x_expansion(FMinSearch* pfm)
 double __fminsearch_x_contract_outside(FMinSearch* pfm)
 {
 	int i;
-	for ( i = 0 ; i < pfm->N; i++ )
+	for ( i = 0 ; i < pfm->variable_count; i++ )
 	{
 		pfm->x_tmp[i] = pfm->x_mean[i] + pfm->psi * ( pfm->x_r[i] - pfm->x_mean[i] );
 	}
@@ -257,9 +259,9 @@ double __fminsearch_x_contract_outside(FMinSearch* pfm)
 double __fminsearch_x_contract_inside(FMinSearch* pfm)
 {
 	int i;
-	for ( i = 0 ; i < pfm->N ; i++ )
+	for ( i = 0 ; i < pfm->variable_count ; i++ )
 	{
-		pfm->x_tmp[i] = pfm->x_mean[i] + pfm->psi * ( pfm->x_mean[i] - pfm->v[pfm->N][i] );
+		pfm->x_tmp[i] = pfm->x_mean[i] + pfm->psi * ( pfm->x_mean[i] - pfm->v[pfm->variable_count][i] );
 	}
 	return pfm->scorer->calculate_score(pfm->x_tmp);
 }
@@ -267,9 +269,9 @@ double __fminsearch_x_contract_inside(FMinSearch* pfm)
 void __fminsearch_x_shrink(FMinSearch* pfm)
 {
 	int i, j;
-	for ( i = 1 ; i < pfm->N1 ; i++ )
+	for ( i = 1 ; i < pfm->variable_count_plus_one ; i++ )
 	{
-		for ( j = 0 ; j < pfm->N ; j++ )
+		for ( j = 0 ; j < pfm->variable_count ; j++ )
 		{
 			pfm->v[i][j] = pfm->v[0][j] + pfm->sigma * ( pfm->v[i][j] - pfm->v[0][j] );
 		}
@@ -281,11 +283,11 @@ void __fminsearch_x_shrink(FMinSearch* pfm)
 void __fminsearch_set_last_element(FMinSearch* pfm, double* x, double f)
 {
 	int i;
-	for ( i = 0 ; i < pfm->N ; i++ )
+	for ( i = 0 ; i < pfm->variable_count ; i++ )
 	{
-		pfm->v[pfm->N][i] = x[i];
+		pfm->v[pfm->variable_count][i] = x[i];
 	}
-	pfm->fv[pfm->N] = f;
+	pfm->fv[pfm->variable_count] = f;
 	__fminsearch_sort(pfm);
 }
 
@@ -304,12 +306,12 @@ int fminsearch_min(FMinSearch* pfm, double* X0)
 			if ( fv_e < fv_r ) __fminsearch_set_last_element(pfm,pfm->x_tmp, fv_e);
 			else __fminsearch_set_last_element(pfm,pfm->x_r, fv_r);
 		}
-		else if ( fv_r >= pfm->fv[pfm->N] )
+		else if ( fv_r >= pfm->fv[pfm->variable_count] )
 		{
-			if ( fv_r > pfm->fv[pfm->N] )
+			if ( fv_r > pfm->fv[pfm->variable_count] )
 			{
 				double fv_cc = __fminsearch_x_contract_inside(pfm);
-				if ( fv_cc < pfm->fv[pfm->N] ) __fminsearch_set_last_element(pfm,pfm->x_tmp, fv_cc);
+				if ( fv_cc < pfm->fv[pfm->variable_count] ) __fminsearch_set_last_element(pfm,pfm->x_tmp, fv_cc);
 				else __fminsearch_x_shrink(pfm);
 			}
 			else
