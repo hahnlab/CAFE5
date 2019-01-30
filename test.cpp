@@ -367,7 +367,7 @@ TEST(Inference, gamma_model_infers_processes_without_crashing)
 {
     std::vector<int> rootdist;
 
-    gamma_model core(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 0, 5, 0, 0, NULL);
+    gamma_model core(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 0, 5, 1, 0, NULL);
 
     core.set_max_sizes(148, 122);
 
@@ -1770,7 +1770,7 @@ TEST(Inference, poisson_scorer_optimizes_correct_value)
 
     auto result = opt.optimize();
 
-    DOUBLES_EQUAL(0.5, result.values[0], 0.0000001)
+    DOUBLES_EQUAL(0.5, result.values[0], 0.000001)
 }
 
 class mock_scorer : public optimizer_scorer
