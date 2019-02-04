@@ -1,6 +1,9 @@
 #ifndef FMINSEARCH_H
 #define FMINSEARCH_H
 
+#include <vector>
+#include <map>
+
 class optimizer_scorer;
 
 struct FMinSearch
@@ -31,5 +34,28 @@ void fminsearch_set_equation(FMinSearch* pfm, optimizer_scorer* eq, int Xsize);
 int fminsearch_min(FMinSearch* pfm, double* X0);
 double* fminsearch_get_minX(FMinSearch* pfm);
 double fminsearch_get_minF(FMinSearch* pfm);
+
+class optimizer {
+    FMinSearch* pfm;
+    optimizer_scorer *_p_scorer;
+public:
+    optimizer(optimizer_scorer *scorer);
+    ~optimizer();
+
+    struct result {
+        std::vector<double> values;
+        double score;
+        int num_iterations;
+    };
+
+    result optimize();
+
+    void log_results(const result& r);
+
+    bool quiet = false;
+    bool explode = false;
+
+    std::vector<double> get_initial_guesses();
+};
 
 #endif

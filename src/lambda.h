@@ -2,6 +2,7 @@
 #define LAMBDA_H
 
 #include <vector>
+#include <map>
 
 class clade;
 class matrix_cache;
@@ -98,37 +99,13 @@ public:
 
 };
 
-/* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
-
-class optimizer_scorer;
-
-class optimizer {
-    FMinSearch* pfm;
-    optimizer_scorer *_p_scorer;
-public:
-    optimizer(optimizer_scorer *scorer);
-    ~optimizer();
-
-    struct result {
-        std::vector<double> values;
-        double score;
-        int num_iterations;
-    };
-
-    result optimize();
-
-    void log_results(const result& r);
-
-    bool quiet = false;
-    bool explode = false;
-
-    std::vector<double> get_initial_guesses();
-};
-
 inline std::ostream& operator<<(std::ostream& ost, const lambda& lambda)
 {
     ost << lambda.to_string();
     return ost;
 }
+
+/* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
+
 
 #endif

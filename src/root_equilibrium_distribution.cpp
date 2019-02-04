@@ -5,7 +5,7 @@
 #include "root_equilibrium_distribution.h"
 #include "poisson.h"
 #include "io.h"
-#include "lambda.h" // for definition of optimizer :/
+#include "optimizer.h"
 
 uniform_distribution::uniform_distribution() : _p_root_distribution(new root_distribution())
 {

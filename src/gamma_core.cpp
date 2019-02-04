@@ -75,6 +75,11 @@ void gamma_model::write_probabilities(ostream& ost)
 }
 
 void gamma_model::start_inference_processes(lambda *p_lambda) {
+    for (auto f : _family_bundles)
+    {
+        f->clear();
+        delete f;
+    }
 
     _family_bundles.clear();
     inference_process_factory factory(_ost, p_lambda, _p_tree, _max_family_size, _max_root_family_size);

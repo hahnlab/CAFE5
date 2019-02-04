@@ -21,6 +21,7 @@
 #include "src/root_distribution.h"
 #include "src/simulator.h"
 #include "src/poisson.h"
+#include "src/optimizer.h"
 
 // these need to be at the end to stop weird STL errors
 #include "CppUTest/TestHarness.h"

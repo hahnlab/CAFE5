@@ -1,6 +1,5 @@
 #include "clade.h"
 #include "utils.h"
-#include "fminsearch.h"
 #include "probability.h"
 
 clade *newick_parser::parse_newick() {

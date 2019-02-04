@@ -4,9 +4,16 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <numeric>
+#include <iomanip>
 
-#include "fminsearch.h"
+#include "../config.h"
+
+#include "optimizer.h"
 #include "optimizer_scorer.h"
+
+using namespace std;
+
 const double MAX_DOUBLE = std::numeric_limits<double>::max();
 
 // TODO: If fminsearch is slow, replacing this with a single array might be more efficient
@@ -340,4 +347,131 @@ double fminsearch_get_minF(FMinSearch* pfm)
 {
 	return pfm->fv[0];
 }
+
+optimizer::optimizer(optimizer_scorer *p_scorer) : _p_scorer(p_scorer)
+{
+#ifdef SILENT
+    quiet = true;
+#endif
+    pfm = fminsearch_new();
+}
+
+optimizer::~optimizer()
+{
+    fminsearch_free(pfm);
+}
+
+std::vector<double> optimizer::get_initial_guesses()
+{
+    auto initial = _p_scorer->initial_guesses();
+    int i = 0;
+    double first_run = _p_scorer->calculate_score(&initial[0]);
+    while (std::isinf(first_run) && i < NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS)
+    {
+        initial = _p_scorer->initial_guesses();
+        first_run = _p_scorer->calculate_score(&initial[0]);
+        i++;
+    }
+    if (std::isinf(first_run))
+    {
+        throw std::runtime_error("Failed to find any reasonable values");
+    }
+
+    return initial;
+}
+
+#ifdef PHASED_OPTIMIZER
+optimizer::result optimizer::optimize()
+{
+    vector<result> results(PHASED_OPTIMIZER_PHASE1_ATTEMPTS);
+
+    for (auto& r : results)
+    {
+        auto initial = get_initial_guesses();
+        fminsearch_set_equation(pfm, _p_scorer, initial.size());
+
+        if (explode)
+        {
+            pfm->rho = 1.5;				// reflection
+            pfm->chi = 50;				// expansion
+            pfm->delta = 0.4;
+        }
+        pfm->tolf = PHASED_OPTIMIZER_PHASE1_PRECISION;
+        pfm->tolx = PHASED_OPTIMIZER_PHASE1_PRECISION;
+
+        fminsearch_min(pfm, &initial[0]);
+        double *re = fminsearch_get_minX(pfm);
+        r.score = fminsearch_get_minF(pfm);
+        r.values.resize(initial.size());
+        copy(re, re + initial.size(), r.values.begin());
+        r.num_iterations = pfm->iters;
+    }
+
+    int phase1_iters = accumulate(results.begin(), results.end(), 0, [](int prev, const result& r) { return prev + r.num_iterations;  });
+    auto best = min_element(results.begin(), results.end(), [](const result& r1, const result& r2) { return r1.score < r2.score;  });
+
+    pfm->tolf = 1e-6;
+    pfm->tolx = 1e-6;
+
+    fminsearch_min(pfm, &(best->values)[0]);
+    double *re = fminsearch_get_minX(pfm);
+    result r;
+    r.score = fminsearch_get_minF(pfm);
+    r.values.resize(best->values.size());
+    copy(re, re + best->values.size(), r.values.begin());
+    r.num_iterations = pfm->iters + phase1_iters;
+
+    if (!quiet)
+    {
+        log_results(r);
+    }
+    return r;
+}
+#else
+optimizer::result optimizer::optimize()
+{
+    auto initial = get_initial_guesses();
+    fminsearch_set_equation(pfm, _p_scorer, initial.size());
+
+    if (explode)
+    {
+        pfm->rho = 1.5;				// reflection
+        pfm->chi = 50;				// expansion
+        pfm->delta = 0.4;
+    }
+
+    fminsearch_min(pfm, &initial[0]);
+    double *re = fminsearch_get_minX(pfm);
+
+    result r;
+    r.score = fminsearch_get_minF(pfm);
+    r.values.resize(initial.size());
+    r.num_iterations = pfm->iters;
+
+    copy(re, re + initial.size(), r.values.begin());
+    if (!quiet)
+    {
+        log_results(pfm, initial, re);
+    }
+    return r;
+}
+#endif
+
+void optimizer::log_results(const result& r)
+{
+    if (r.score == -log(0))
+    {
+        cerr << "Failed to find any reasonable values" << endl;
+    }
+    else
+    {
+        cout << "Completed " << r.num_iterations << " iterations" << endl;
+        cout << "Best match" << (r.values.size() == 1 ? " is: " : "es are: ") << setw(15) << setprecision(14);
+        for (size_t i = 0; i < r.values.size() - 1; ++i)
+            cout << r.values[i] << ',';
+        cout << r.values[r.values.size() - 1];
+        cout << endl;
+    }
+}
+
 

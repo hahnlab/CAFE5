@@ -5,7 +5,7 @@
 #include "poisson.h"
 #include "utils.h"
 #include "clade.h"
-#include "fminsearch.h"
+#include "optimizer.h"
 #include "probability.h"
 #include "gene_family.h"
 #include "optimizer_scorer.h"

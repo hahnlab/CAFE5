@@ -7,6 +7,7 @@
 #include "chisquare.h"
 #include "optimizer_scorer.h"
 #include "matrix_cache.h"
+#include "optimizer.h"
 
 double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 24.01409824083091, -1.231739572450155, 1.208650973866179e-3,
