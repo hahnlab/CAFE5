@@ -4,6 +4,10 @@
 #include <vector>
 #include <map>
 
+// OPTIMIZER_STRATEGY_STANDARD
+// OPTIMIZER_STRATEGY_INITIAL_VARIANTS
+// OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE
+
 class optimizer_scorer;
 
 struct FMinSearch
@@ -31,13 +35,15 @@ FMinSearch* fminsearch_new();
 void fminsearch_free(FMinSearch* pfm);
 FMinSearch* fminsearch_new_with_eq(optimizer_scorer* eq, int Xsize);
 void fminsearch_set_equation(FMinSearch* pfm, optimizer_scorer* eq, int Xsize);
-int fminsearch_min(FMinSearch* pfm, double* X0);
 double* fminsearch_get_minX(FMinSearch* pfm);
 double fminsearch_get_minF(FMinSearch* pfm);
 
 class optimizer {
     FMinSearch* pfm;
     optimizer_scorer *_p_scorer;
+    int fminsearch_min(double* X0);
+    bool threshold_achieved() const;
+    mutable int phase = 1;
 public:
     optimizer(optimizer_scorer *scorer);
     ~optimizer();

@@ -22,6 +22,9 @@
    from */
 #undef OPTIMIZER_INITIAL_GUESS_STDDEV_ALPHA
 
+/* Optimizer will not make any particular attempt to avoid local optima */
+#undef OPTIMIZER_STRATEGY_STANDARD
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
@@ -39,10 +42,6 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
-
-/* Optimizer will search a wider range of values in order to avoid local
-   optima */
-#undef PHASED_OPTIMIZER
 
 /* Number of attempts optimizer will make to initialize to a good value */
 #undef PHASED_OPTIMIZER_PHASE1_ATTEMPTS

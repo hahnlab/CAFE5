@@ -337,6 +337,12 @@ In some cases, the optimizer suggests values that cannot be calculated (due to s
 
 When optimizing for an alpha value with a set number of clusters, if the largest multiplier in the longest branch is saturated, the scorer will return an infinite value.
 
+Certain options are available at compile-time for the optimizer. If OPTIMIZER\_STRATEGY\_INITIAL\_VARIANTS is defined, the optimizer
+will take several shorter attempts at various values 
+before settling on one value to continue on with. This may cause the optimizer to take more iterations to finish but may have 
+greater accuracy. If OPTIMIZER\_STRATEGY\_PERTURB\_WHEN\_CLOSE is defined, the optimizer will begin searching a wider range of values
+when it is getting close to a solution. This attempts to get the optimizer out of a local optima it may have found.
+
 \subsection{How does the simulator choose what lambda to use?}
 
 Although the user specifies the lambda, in order to give more

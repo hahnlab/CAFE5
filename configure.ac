@@ -33,7 +33,8 @@ AC_DEFINE(NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS, 40, [Number of times optimizer 
 AC_DEFINE(OPTIMIZER_INITIAL_GUESS_MEAN_ALPHA, 1.0, [Mean value of normal curve optimizer will initialize alpha guesses from])
 AC_DEFINE(OPTIMIZER_INITIAL_GUESS_STDDEV_ALPHA, 0.4, [Standard deviation of normal curve optimizer will initialize alpha guesses from])
 AC_DEFINE(LAMBDA_PERTURBATION_STEP_SIZE, 50, [Number of values simulator will generate before modifying lambda value])
-AC_DEFINE(PHASED_OPTIMIZER,,[Optimizer will search a wider range of values in order to avoid local optima])
+AC_DEFINE(OPTIMIZER_STRATEGY_STANDARD,,[Optimizer will not make any particular attempt to avoid local optima]
+)
 AC_DEFINE(PHASED_OPTIMIZER_PHASE1_ATTEMPTS, 4, [Number of attempts optimizer will make to initialize to a good value])
 AC_DEFINE(PHASED_OPTIMIZER_PHASE1_PRECISION, 1e-3, Precision of values optimizer will use before abandoning a set of values)
 

@@ -7,9 +7,9 @@
 #include <numeric>
 #include <iomanip>
 
+#include "optimizer.h"
 #include "../config.h"
 
-#include "optimizer.h"
 #include "optimizer_scorer.h"
 
 using namespace std;
@@ -298,13 +298,15 @@ void __fminsearch_set_last_element(FMinSearch* pfm, double* x, double f)
 	__fminsearch_sort(pfm);
 }
 
-int fminsearch_min(FMinSearch* pfm, double* X0)
+int optimizer::fminsearch_min(double* X0)
 {
 	int i;
 	__fminsearch_min_init(pfm, X0);
 	for ( i = 0 ; i < pfm->maxiters; i++ )
 	{
-		if ( __fminsearch_checkV(pfm) && __fminsearch_checkF(pfm) ) break;
+		if (threshold_achieved()) 
+            break;
+
         __fminsearch_x_mean(pfm);
 		double fv_r = __fminsearch_x_reflection(pfm);
 		if ( fv_r < pfm->fv[0] )
@@ -380,7 +382,8 @@ std::vector<double> optimizer::get_initial_guesses()
     return initial;
 }
 
-#ifdef PHASED_OPTIMIZER
+
+#ifdef OPTIMIZER_STRATEGY_INITIAL_VARIANTS
 optimizer::result optimizer::optimize()
 {
     vector<result> results(PHASED_OPTIMIZER_PHASE1_ATTEMPTS);
@@ -399,12 +402,14 @@ optimizer::result optimizer::optimize()
         pfm->tolf = PHASED_OPTIMIZER_PHASE1_PRECISION;
         pfm->tolx = PHASED_OPTIMIZER_PHASE1_PRECISION;
 
-        fminsearch_min(pfm, &initial[0]);
+        fminsearch_min(&initial[0]);
         double *re = fminsearch_get_minX(pfm);
         r.score = fminsearch_get_minF(pfm);
         r.values.resize(initial.size());
         copy(re, re + initial.size(), r.values.begin());
         r.num_iterations = pfm->iters;
+//        cout << "Threshold achieved, move to Phase 2";
+
     }
 
     int phase1_iters = accumulate(results.begin(), results.end(), 0, [](int prev, const result& r) { return prev + r.num_iterations;  });
@@ -413,7 +418,7 @@ optimizer::result optimizer::optimize()
     pfm->tolf = 1e-6;
     pfm->tolx = 1e-6;
 
-    fminsearch_min(pfm, &(best->values)[0]);
+    fminsearch_min(&(best->values)[0]);
     double *re = fminsearch_get_minX(pfm);
     result r;
     r.score = fminsearch_get_minF(pfm);
@@ -439,8 +444,12 @@ optimizer::result optimizer::optimize()
         pfm->chi = 50;				// expansion
         pfm->delta = 0.4;
     }
+#ifdef OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE
+    pfm->tolf = 1e-4;
+    pfm->tolx = 1e-4;
+#endif
 
-    fminsearch_min(pfm, &initial[0]);
+    fminsearch_min(&initial[0]);
     double *re = fminsearch_get_minX(pfm);
 
     result r;
@@ -451,7 +460,7 @@ optimizer::result optimizer::optimize()
     copy(re, re + initial.size(), r.values.begin());
     if (!quiet)
     {
-        log_results(pfm, initial, re);
+        log_results(r);
     }
     return r;
 }
@@ -474,4 +483,24 @@ void optimizer::log_results(const result& r)
     }
 }
 
+bool optimizer::threshold_achieved() const
+{
+    bool achieved = __fminsearch_checkV(pfm) && __fminsearch_checkF(pfm);
+
+#ifdef OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE
+    if (achieved && phase == 1)
+    {
+        cout << "Threshold achieved, move to Phase 2";
+        pfm->rho = 1.5;				// reflection
+        pfm->chi = 50;				// expansion
+        pfm->delta = 0.4;
+        pfm->tolf = 1e-6;
+        pfm->tolx = 1e-6;
+        phase = 2;
+        achieved = false;
+    }
+#endif
+
+    return achieved;
+}
 
