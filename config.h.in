@@ -9,6 +9,19 @@
 /* OpenBLAS for matrix multiplication */
 #undef HAVE_OPENBLAS
 
+/* Number of values simulator will generate before modifying lambda value */
+#undef LAMBDA_PERTURBATION_STEP_SIZE
+
+/* Number of times optimizer will restart if it fails to find legal values */
+#undef NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS
+
+/* Mean value of normal curve optimizer will initialize alpha guesses from */
+#undef OPTIMIZER_INITIAL_GUESS_MEAN_ALPHA
+
+/* Standard deviation of normal curve optimizer will initialize alpha guesses
+   from */
+#undef OPTIMIZER_INITIAL_GUESS_STDDEV_ALPHA
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
@@ -27,8 +40,12 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-#define NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS 40
-#define OPTIMIZER_INITIAL_GUESS_MEAN_ALPHA 1.0
-#define OPTIMIZER_INITIAL_GUESS_STDDEV_ALPHA 0.4
-#define LAMBDA_PERTURBATION_STEP_SIZE 50
+/* Optimizer will search a wider range of values in order to avoid local
+   optima */
+#undef PHASED_OPTIMIZER
 
+/* Number of attempts optimizer will make to initialize to a good value */
+#undef PHASED_OPTIMIZER_PHASE1_ATTEMPTS
+
+/* Precision of values optimizer will use before abandoning a set of values */
+#undef PHASED_OPTIMIZER_PHASE1_PRECISION

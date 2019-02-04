@@ -112,12 +112,10 @@ std::vector<double> optimizer::get_initial_guesses()
     return initial;
 }
 
-#define PHASED_OPTIMIZER
-
 #ifdef PHASED_OPTIMIZER
 optimizer::result optimizer::optimize()
 {
-    vector<result> results(4);
+    vector<result> results(PHASED_OPTIMIZER_PHASE1_ATTEMPTS);
 
     for (auto& r : results)
     {
@@ -130,8 +128,8 @@ optimizer::result optimizer::optimize()
             pfm->chi = 50;				// expansion
             pfm->delta = 0.4;
         }
-        pfm->tolf = 1e-3;
-        pfm->tolx = 1e-3;
+        pfm->tolf = PHASED_OPTIMIZER_PHASE1_PRECISION;
+        pfm->tolx = PHASED_OPTIMIZER_PHASE1_PRECISION;
 
         fminsearch_min(pfm, &initial[0]);
         double *re = fminsearch_get_minX(pfm);
