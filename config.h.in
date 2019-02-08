@@ -9,6 +9,9 @@
 /* OpenBLAS for matrix multiplication */
 #undef HAVE_OPENBLAS
 
+/* Have a vector exponential function */
+#undef HAVE_VECTOR_EXP
+
 /* Number of values simulator will generate before modifying lambda value */
 #undef LAMBDA_PERTURBATION_STEP_SIZE
 

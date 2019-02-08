@@ -3,12 +3,16 @@
 #include <iostream>
 #include <random>
 #include <cassert>
+#include <numeric>
+#include <cmath>
 
 #include "utils.h" // for gene_family class
 #include "clade.h"
 #include "probability.h"
 #include "matrix_cache.h"
 #include "gene_family.h"
+
+using namespace std;
 
 extern std::mt19937 randomizer_engine;
 
@@ -76,23 +80,52 @@ double chooseln(double n, double r)
   coeff = 1 - 2 * alpha;
 */
 
+#define MAX_FAMILY_SIZE_FOR_VECTORIZING 10000
+
 double birthdeath_rate_with_log_alpha(int s, int c, double log_alpha, double coeff)
 {
     int m = std::min(c, s);
-    double lastterm = 1;
-    double p = 0.0;
-    int s_add_c = s + c;
-    int s_add_c_sub_1 = s_add_c - 1;
-    int s_sub_1 = s - 1;
+    double result = 0.0;
+    if (m < MAX_FAMILY_SIZE_FOR_VECTORIZING)
+    {
+        int s_add_c = s + c;
+        int s_add_c_sub_1 = s_add_c - 1;
+        int s_sub_1 = s - 1;
 
-    for (int j = 0; j <= m; j++) {
-        double t = chooseln(s, j) + chooseln(s_add_c_sub_1 - j, s_sub_1) + (s_add_c - 2 * j)*log_alpha;
-        p += (exp(t) * lastterm); // Note that t is in log scale, therefore we need to do exp(t) to match Eqn. (1)
-        lastterm *= coeff; // equivalent of ^j in Eqn. (1)
+        double t[MAX_FAMILY_SIZE_FOR_VECTORIZING];
+        for (int j = 0; j <= m; j++) {
+            t[j] = chooseln(s, j) + chooseln(s_add_c_sub_1 - j, s_sub_1) + (s_add_c - 2 * j)*log_alpha;
+        }
+
+        double expT[MAX_FAMILY_SIZE_FOR_VECTORIZING];
+#ifdef HAVE_VECTOR_EXP
+        vdExp(m + 1, t, expT);
+#else
+        std::transform(t, t + m + 1, expT, [](double d) { return exp(d); });
+#endif
+
+        double p[10000];
+        for (int j = 0; j <= m; j++) {
+            p[j] = expT[j] * pow(coeff, j); // Note that t is in log scale, therefore we need to do exp(t) to match Eqn. (1)
+        }
+        result = std::accumulate(p, p + m + 1, 0.0);
     }
+    else
+    {
+        // Calculate sequentially rather than allocating the required memory to vectorize (much slower)
+        double lastterm = 1;
+        int s_add_c = s + c;
+        int s_add_c_sub_1 = s_add_c - 1;
+        int s_sub_1 = s - 1;
 
-    return std::max(std::min(p, 1.0), 0.0);
-  return std::max(std::min(p, 1.0), 0.0);
+        for (int j = 0; j <= m; j++) {
+            double t = chooseln(s, j) + chooseln(s_add_c_sub_1 - j, s_sub_1) + (s_add_c - 2 * j)*log_alpha;
+            result += (exp(t) * lastterm); // Note that t is in log scale, therefore we need to do exp(t) to match Eqn. (1)
+            lastterm *= coeff; // equivalent of ^j in Eqn. (1)
+        }
+
+    }
+    return std::max(std::min(result, 1.0), 0.0);
 }
 
 double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int size)
