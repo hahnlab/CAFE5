@@ -409,7 +409,7 @@ TEST(Probability, probability_of_some_values)
     DOUBLES_EQUAL(0.465565, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 10), 0.00001);
 }
 
-bool operator==(matrix& m1, matrix& m2)
+bool operator==(const matrix& m1, const matrix& m2)
 {
     if (m1.size() != m2.size())
         return false;
@@ -430,8 +430,8 @@ TEST(Probability, matrices_take_fractional_branch_lengths_into_account)
     single_lambda lambda(0.006335);
     std::set<double> branch_lengths{ 68, 68.7105 };
     calc.precalculate_matrices(get_lambda_values(&lambda), branch_lengths);
-    DOUBLES_EQUAL(0.194661, calc.get_matrix(68.7105, 0.006335).get(5,5), 0.00001); // a value 
-    DOUBLES_EQUAL(0.195791, calc.get_matrix(68, 0.006335).get(5, 5), 0.00001);
+    DOUBLES_EQUAL(0.194661, calc.get_matrix(68.7105, 0.006335)->get(5,5), 0.00001); // a value 
+    DOUBLES_EQUAL(0.195791, calc.get_matrix(68, 0.006335)->get(5, 5), 0.00001);
 }
 
 TEST(Probability, the_probability_of_going_from_parent_fam_size_to_c)
@@ -445,7 +445,7 @@ TEST(Probability, probability_of_matrix)
     single_lambda lambda(0.05);
     std::set<double> branch_lengths{ 5 };
     calc.precalculate_matrices(get_lambda_values(&lambda), branch_lengths);
-    matrix actual = calc.get_matrix(5, lambda.get_single_lambda());
+    auto actual = calc.get_matrix(5, lambda.get_single_lambda());
     matrix expected(5);
     double values[5][5] = {
     {1,0,0,0,0},
@@ -456,11 +456,11 @@ TEST(Probability, probability_of_matrix)
     for (int i = 0; i < 5; ++i)
         for (int j = 0; j < 5; ++j)
             expected.set(i, j, values[i][j]);
-    CHECK(actual == expected);
+    CHECK(*actual == expected);
 
     // a second call should get the same results as the first
     actual = calc.get_matrix(5, lambda.get_single_lambda());
-    CHECK(actual == expected);
+    CHECK(*actual == expected);
 }
 
 TEST(Probability, get_random_probabilities)

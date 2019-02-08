@@ -76,7 +76,7 @@ double matrix_cache::get_from_parent_fam_size_to_c(double lambda, double branch_
 }
 
 //! Compute transition probability matrix for all gene family sizes from 0 to size-1 (=_max_root_family_size-1)
-matrix matrix_cache::get_matrix(double branch_length, double lambda) const {
+const matrix* matrix_cache::get_matrix(double branch_length, double lambda) const {
     // cout << "Matrix request " << size << "," << branch_length << "," << lambda << endl;
 
     matrix *result = NULL;
@@ -92,7 +92,7 @@ matrix matrix_cache::get_matrix(double branch_length, double lambda) const {
         ost << "Failed to find matrix for " << _matrix_size << "," << branch_length << "," << lambda;
         throw std::runtime_error(ost.str());
     }
-    return *result;
+    return result;
 }
 
 vector<double> get_lambda_values(const lambda *p_lambda)

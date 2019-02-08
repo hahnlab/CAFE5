@@ -216,13 +216,14 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior, const 
     prior->initialize(&rd);
     vector<double> all_bundles_likelihood(_family_bundles.size());
 
-    bool success = true;
+    vector<bool> failure(_family_bundles.size());
     matrix_cache calc(max(_max_root_family_size, _max_family_size) + 1);
     prepare_matrices_for_simulation(calc);
 
     vector<vector<family_info_stash>> pruning_results(_family_bundles.size());
+
 #pragma omp parallel for
-    for (size_t i = 0; i < _family_bundles.size(); ++i) {
+    for (size_t i = 0; i < _family_bundles.size(); i++) {
         gamma_bundle* bundle = _family_bundles[i];
 
         if (bundle->prune(_gamma_cat_probs, prior, calc))
@@ -244,12 +245,11 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior, const 
         else
         {
             // we got here because one of the gamma categories was saturated - reject this 
-#pragma omp critical
-            success = false;
+            failure[i] = true;
         }
     }
 
-    if (!success)
+    if (find(failure.begin(), failure.end(), true) != failure.end())
         return -log(0);
 
     for (auto& stashes : pruning_results)

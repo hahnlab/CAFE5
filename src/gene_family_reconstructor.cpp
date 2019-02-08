@@ -1,4 +1,5 @@
 #include <cmath>
+#include <memory>
 
 #include "gene_family_reconstructor.h"
 #include "lambda.h"
@@ -77,7 +78,7 @@ void gene_family_reconstructor::reconstruct_leaf_node(const clade * c, lambda * 
     // i will be the parent size
     for (size_t i = 1; i < L.size(); ++i)
     {
-        L[i] = matrix.get(i, observed_count);
+        L[i] = matrix->get(i, observed_count);
     }
 }
 
@@ -130,7 +131,7 @@ void gene_family_reconstructor::reconstruct_internal_node(const clade * c, lambd
 
     auto matrix = _p_calc->get_matrix(branch_length, _lambda->get_value_for_clade(c));
 
-    if (matrix.is_zero())
+    if (matrix->is_zero())
         throw runtime_error("Zero matrix found");
     // i is the parent, j is the child
     for (size_t i = 0; i < L.size(); ++i)
@@ -141,7 +142,7 @@ void gene_family_reconstructor::reconstruct_internal_node(const clade * c, lambd
         {
             child_multiplier cr(all_node_Ls, j);
             c->apply_to_descendants(cr);
-            double val = cr.result() * matrix.get(i,j);
+            double val = cr.result() * matrix->get(i,j);
             if (val > max_val)
             {
                 max_j = j;

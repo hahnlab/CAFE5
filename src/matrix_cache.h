@@ -73,7 +73,7 @@ private:
     int _matrix_size;
 public:
     double get_from_parent_fam_size_to_c(double lambda, double branch_length, int parent_size, int child_size) const;
-    matrix get_matrix(double branch_length, double lambda) const;
+    const matrix* get_matrix(double branch_length, double lambda) const;
     void precalculate_matrices(const std::vector<double>& lambdas, const std::set<double>& branch_lengths);
 
     int get_cache_size() const {

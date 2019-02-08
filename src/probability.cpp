@@ -5,6 +5,7 @@
 #include <cassert>
 #include <numeric>
 #include <cmath>
+#include <memory>
 
 #include "utils.h" // for gene_family class
 #include "clade.h"
@@ -307,7 +308,7 @@ void set_weighted_random_family_size(const clade *node, clademap<int> *sizemap, 
     double branch_length = node->get_branch_length();
 
     if (parent_family_size > 0) {
-        matrix probabilities = cache.get_matrix(branch_length, lambda);
+        auto probabilities = cache.get_matrix(branch_length, lambda);
         if (cache.is_saturated(branch_length, lambda))
         {
             std::uniform_int_distribution<int> distribution(0, max_family_size - 1);
@@ -315,7 +316,7 @@ void set_weighted_random_family_size(const clade *node, clademap<int> *sizemap, 
         }
         vector<double> v;
         for (int i = 0; i < max_family_size; i++) {
-            v.push_back(probabilities.get(parent_family_size, i));
+            v.push_back(probabilities->get(parent_family_size, i));
         }
         std::discrete_distribution<int> distribution(v.begin(), v.end());
         c = distribution(randomizer_engine);

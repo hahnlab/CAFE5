@@ -16,10 +16,10 @@ std::vector<double> single_lambda::calculate_child_factor(const matrix_cache& ca
 #if 0
     printf("  Node %s matrix parameters: %d, %f, %f\n", child->get_taxon_name().c_str(), probabilities.size(), child->get_branch_length(), _lambda);
     printf("  Multipliers: %d, %d, %d, %d\n", s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
-    if (matrix.size() > 65)
-        printf("  Matrix 65, 65 is: %e\n", matrix.get(65, 65));
+    if (matrix->size() > 65)
+        printf("  Matrix 65, 65 is: %e\n", matrix->get(65, 65));
 #endif
-	return matrix.multiply(probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
+	return matrix->multiply(probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
 }
 
 std::string single_lambda::to_string() const
@@ -36,7 +36,7 @@ std::vector<double> multiple_lambda::calculate_child_factor(const matrix_cache& 
 	double lambda = _lambdas[lambda_index];
 	//cout << "Matrix for " << child->get_taxon_name() << endl;
 	auto matrix = calc.get_matrix(child->get_branch_length(), lambda); // Ben: is _factors[child].size() the same as _max_root_family_size? If so, why not use _max_root_family_size instead?
-	return matrix.multiply(probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
+	return matrix->multiply(probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
 }
 
 void multiple_lambda::update(double* values)
