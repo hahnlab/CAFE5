@@ -386,6 +386,17 @@ std::vector<double> optimizer::get_initial_guesses()
 
 optimizer::result optimizer::optimize()
 {
+    if (!quiet)
+    {
+#if defined(OPTIMIZER_STRATEGY_INITIAL_VARIANTS)
+        cout << "Optimizer strategy: Vary initial conditions\n";
+#elif defined(OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE)
+        cout << "Optimizer strategy: Search a wider area when close to a solution\n";
+#else
+        cout << "Optimizer strategy: Standard Nelder-Mead\n";
+#endif
+    }
+
     using clock = std::chrono::system_clock;
 
     const auto before = clock::now();
