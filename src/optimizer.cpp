@@ -6,6 +6,7 @@
 #include <iostream>
 #include <numeric>
 #include <iomanip>
+#include <chrono>
 
 #include "optimizer.h"
 #include "../config.h"
@@ -383,9 +384,14 @@ std::vector<double> optimizer::get_initial_guesses()
 }
 
 
-#ifdef OPTIMIZER_STRATEGY_INITIAL_VARIANTS
 optimizer::result optimizer::optimize()
 {
+    using clock = std::chrono::system_clock;
+
+    const auto before = clock::now();
+    result r;
+
+#ifdef OPTIMIZER_STRATEGY_INITIAL_VARIANTS
     vector<result> results(PHASED_OPTIMIZER_PHASE1_ATTEMPTS);
 
     for (auto& r : results)
@@ -420,21 +426,11 @@ optimizer::result optimizer::optimize()
 
     fminsearch_min(&(best->values)[0]);
     double *re = fminsearch_get_minX(pfm);
-    result r;
     r.score = fminsearch_get_minF(pfm);
     r.values.resize(best->values.size());
     copy(re, re + best->values.size(), r.values.begin());
     r.num_iterations = pfm->iters + phase1_iters;
-
-    if (!quiet)
-    {
-        log_results(r);
-    }
-    return r;
-}
 #else
-optimizer::result optimizer::optimize()
-{
     auto initial = get_initial_guesses();
     fminsearch_set_equation(pfm, _p_scorer, initial.size());
 
@@ -452,35 +448,41 @@ optimizer::result optimizer::optimize()
     fminsearch_min(&initial[0]);
     double *re = fminsearch_get_minX(pfm);
 
-    result r;
     r.score = fminsearch_get_minF(pfm);
     r.values.resize(initial.size());
     r.num_iterations = pfm->iters;
 
-    copy(re, re + initial.size(), r.values.begin());
+    std::copy(re, re + initial.size(), r.values.begin());
+#endif
+    r.duration = chrono::duration_cast<chrono::seconds>(clock::now() - before);
+
     if (!quiet)
     {
-        log_results(r);
+        cout << r;
     }
     return r;
 }
-#endif
 
-void optimizer::log_results(const result& r)
+std::ostream& operator<<(std::ostream& ost, const optimizer::result& r)
 {
     if (r.score == -log(0))
     {
-        cerr << "Failed to find any reasonable values" << endl;
+        ost << "Failed to find any reasonable values" << endl;
     }
     else
     {
-        cout << "Completed " << r.num_iterations << " iterations" << endl;
-        cout << "Best match" << (r.values.size() == 1 ? " is: " : "es are: ") << setw(15) << setprecision(14);
+        ost << "Completed " << r.num_iterations << " iterations" << endl;
+        ost << "Time: " << chrono::duration_cast<chrono::hours>(r.duration).count() << "H";
+        ost << " " << chrono::duration_cast<chrono::minutes>(r.duration).count() % 60 << "M";
+        ost << " " << chrono::duration_cast<chrono::seconds>(r.duration).count() % 60 << "S" << endl;
+        ost << "Best match" << (r.values.size() == 1 ? " is: " : "es are: ") << setw(15) << setprecision(14);
         for (size_t i = 0; i < r.values.size() - 1; ++i)
-            cout << r.values[i] << ',';
-        cout << r.values[r.values.size() - 1];
-        cout << endl;
+            ost << r.values[i] << ',';
+        ost << r.values[r.values.size() - 1];
+        ost << endl;
     }
+
+    return ost;
 }
 
 bool optimizer::threshold_achieved() const

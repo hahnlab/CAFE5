@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <map>
+#include <chrono>
+#include <iosfwd>
 
 // OPTIMIZER_STRATEGY_STANDARD
 // OPTIMIZER_STRATEGY_INITIAL_VARIANTS
@@ -52,11 +54,10 @@ public:
         std::vector<double> values;
         double score;
         int num_iterations;
+        std::chrono::seconds duration;
     };
 
     result optimize();
-
-    void log_results(const result& r);
 
     bool quiet = false;
     bool explode = false;
@@ -64,4 +65,5 @@ public:
     std::vector<double> get_initial_guesses();
 };
 
+std::ostream& operator<<(std::ostream& ost, const optimizer::result& r);
 #endif

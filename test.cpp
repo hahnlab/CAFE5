@@ -1841,6 +1841,21 @@ TEST(Inference, uniform_root_distribution_does_not_hold_rootdist_pointer)
     DOUBLES_EQUAL(.25, prior.compute(1), 0.00001);
 }
 
+TEST(Inference, optimizer_result_stream)
+{
+    optimizer::result r;
+    r.num_iterations = 10;
+    r.score = 5;
+    r.values = vector<double>{ .05, .03 };
+    r.duration = chrono::seconds(5000);
+
+    ostringstream ost;
+    ost << r;
+    STRCMP_CONTAINS("Completed 10 iterations", ost.str().c_str());
+    STRCMP_CONTAINS("Time: 1H 23M 20S", ost.str().c_str());
+    STRCMP_CONTAINS("Best matches are:            0.05,0.03", ost.str().c_str());
+}
+
 TEST(Simulation, base_prepare_matrices_for_simulation_creates_matrix_for_each_branch)
 {
     newick_parser parser(false);
