@@ -489,8 +489,8 @@ std::ostream& operator<<(std::ostream& ost, const optimizer::result& r)
         ost << "Best match" << (r.values.size() == 1 ? " is: " : "es are: ") << setw(15) << setprecision(14);
         for (size_t i = 0; i < r.values.size() - 1; ++i)
             ost << r.values[i] << ',';
-        ost << r.values[r.values.size() - 1];
-        ost << endl;
+        ost << r.values[r.values.size() - 1] << endl; 
+        ost << "Final -lnL: " << r.score << endl;
     }
 
     return ost;
