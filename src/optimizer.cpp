@@ -457,11 +457,27 @@ optimizer::result optimizer::optimize()
 #endif
 
     fminsearch_min(&initial[0]);
-    double *re = fminsearch_get_minX(pfm);
 
+#ifdef OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE
+    cout << "\n*****Threshold achieved, move to Phase 2*****\n\n";
+    int phase1_iters = pfm->iters;
+    pfm->rho = 1.3;				// reflection
+    pfm->chi = 30;				// expansion
+    pfm->delta = 0.4;
+    pfm->tolf = 1e-6;
+    pfm->tolx = 1e-6;
+    phase = 2;
+    double *phase1_re = fminsearch_get_minX(pfm);
+    copy(phase1_re, phase1_re + initial.size(), initial.begin());
+    fminsearch_min(&initial[0]);
+    r.num_iterations = phase1_iters + pfm->iters;
+#else
+    r.num_iterations = pfm->iters;
+#endif
+
+    double *re = fminsearch_get_minX(pfm);
     r.score = fminsearch_get_minF(pfm);
     r.values.resize(initial.size());
-    r.num_iterations = pfm->iters;
 
     std::copy(re, re + initial.size(), r.values.begin());
 #endif
@@ -498,22 +514,7 @@ std::ostream& operator<<(std::ostream& ost, const optimizer::result& r)
 
 bool optimizer::threshold_achieved() const
 {
-    bool achieved = __fminsearch_checkV(pfm) && __fminsearch_checkF(pfm);
+    return __fminsearch_checkV(pfm) && __fminsearch_checkF(pfm);
 
-#ifdef OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE
-    if (achieved && phase == 1)
-    {
-        cout << "\n*****Threshold achieved, move to Phase 2*****\n\n";
-        pfm->rho = 1.3;				// reflection
-        pfm->chi = 30;				// expansion
-        pfm->delta = 0.4;
-        pfm->tolf = 1e-6;
-        pfm->tolx = 1e-6;
-        phase = 2;
-        achieved = false;
-    }
-#endif
-
-    return achieved;
 }
 
