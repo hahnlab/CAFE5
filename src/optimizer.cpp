@@ -50,7 +50,7 @@ FMinSearch* fminsearch_new()
 	pfm->tolf = 1e-6;
 	pfm->delta = 0.05;
 	pfm->zero_delta = 0.00025;
-	pfm->maxiters = 10000;
+	pfm->maxiters = 250;
 	return pfm;
 }
 
@@ -389,11 +389,11 @@ optimizer::result optimizer::optimize()
     if (!quiet)
     {
 #if defined(OPTIMIZER_STRATEGY_INITIAL_VARIANTS)
-        cout << "Optimizer strategy: Vary initial conditions\n";
+        cout << "\nOptimizer strategy: Vary initial conditions\n";
 #elif defined(OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE)
-        cout << "Optimizer strategy: Search a wider area when close to a solution\n";
+        cout << "\nOptimizer strategy: Search a wider area when close to a solution\n\n";
 #else
-        cout << "Optimizer strategy: Standard Nelder-Mead\n";
+        cout << "\nOptimizer strategy: Standard Nelder-Mead\n\n";
 #endif
     }
 
@@ -503,9 +503,9 @@ bool optimizer::threshold_achieved() const
 #ifdef OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE
     if (achieved && phase == 1)
     {
-        cout << "Threshold achieved, move to Phase 2";
-        pfm->rho = 1.5;				// reflection
-        pfm->chi = 50;				// expansion
+        cout << "\n*****Threshold achieved, move to Phase 2*****\n\n";
+        pfm->rho = 1.3;				// reflection
+        pfm->chi = 30;				// expansion
         pfm->delta = 0.4;
         pfm->tolf = 1e-6;
         pfm->tolx = 1e-6;
