@@ -77,6 +77,10 @@ TEST_GROUP(Clade)
 {
 };
 
+TEST_GROUP(Optimizer)
+{
+};
+
 TEST_GROUP(Options)
 {
     char *values[100];
@@ -2095,6 +2099,155 @@ TEST(Simulation, gamma_model_perturb_lambda_without_clusters)
     LONGS_EQUAL(1, multipliers.size());
     DOUBLES_EQUAL(0.911359, multipliers[0], 0.00001);
 }
+
+TEST(Optimizer, fminsearch_sort_sorts_scores_and_moves_values)
+{
+    FMinSearch fm;
+    fm.variable_count = 2;
+    fm.variable_count_plus_one = 3;
+    vector<double> scores({ 3.0, 5.0, 1.0 });
+    fm.fv = &scores[0];
+    vector<int> indices(3);
+    fm.idx = &indices[0];
+    fm.v = (double**)calloc_2dim(3, 2, sizeof(double));
+    fm.vsort = (double**)calloc_2dim(3, 2, sizeof(double));
+    fm.v[0][0] = 300;
+    fm.v[1][0] = 200;
+    fm.v[2][0] = 100;
+    __fminsearch_sort(&fm);
+
+    DOUBLES_EQUAL(1.0, fm.fv[0], 0.00001);
+    DOUBLES_EQUAL(3.0, fm.fv[1], 0.00001);
+    DOUBLES_EQUAL(5.0, fm.fv[2], 0.00001);
+
+    DOUBLES_EQUAL(100.0, fm.v[0][0], 0.00001);
+    DOUBLES_EQUAL(300.0, fm.v[1][0], 0.00001);
+    DOUBLES_EQUAL(200.0, fm.v[2][0], 0.00001);
+    free_2dim((void **)fm.v, 3, 2);
+    free_2dim((void **)fm.vsort, 3, 2);
+}
+
+TEST(Optimizer, fminsearch_checkV_compares_value_difference_to_lx)
+{
+    FMinSearch fm;
+    fm.v = (double**)calloc_2dim(3, 2, sizeof(double));
+    fm.variable_count = 2;
+    fm.v[0][0] = 1;
+    fm.v[1][0] = 2;
+    fm.v[2][0] = 3;
+    fm.v[0][1] = 3;
+    fm.v[1][1] = 4;
+    fm.v[2][1] = 5;
+    fm.tolx = 3;
+    CHECK(__fminsearch_checkV(&fm));
+    fm.tolx = .5;
+    CHECK_FALSE(__fminsearch_checkV(&fm));
+    free_2dim((void **)fm.v, 3, 2);
+}
+
+TEST(Optimizer, fminsearch_checkF_compares_score_difference_to_lf)
+{
+    FMinSearch fm;
+    fm.variable_count_plus_one = 3;
+    vector<double> scores({ 1.0, 3.0, 5.0 });
+    fm.fv = &scores[0];
+    fm.tolf = 5;
+    CHECK(__fminsearch_checkF(&fm));
+    fm.tolf = 1;
+    CHECK_FALSE(__fminsearch_checkF(&fm));
+}
+
+class multiplier_scorer : public optimizer_scorer
+{
+public:
+    // Inherited via optimizer_scorer
+    virtual std::vector<double> initial_guesses() override
+    {
+        return std::vector<double>{5, 3};
+    }
+    virtual double calculate_score(double * values) override
+    {
+        return values[0] * values[1];
+    }
+};
+
+TEST(Optimizer, fminsearch_min_init)
+{
+    FMinSearch fm;
+    fm.variable_count = 2;
+    fm.variable_count_plus_one = 3;
+    fm.delta = 0.05;
+    fm.zero_delta = 0.00025;
+    vector<double> scores(3);
+    fm.fv = &scores[0];
+    vector<int> indices(3);
+    fm.idx = &indices[0];
+    fm.v = (double**)calloc_2dim(3, 2, sizeof(double));
+    fm.vsort = (double**)calloc_2dim(3, 2, sizeof(double));
+    fm.v[0][0] = 300;
+    fm.v[1][0] = 200;
+    fm.v[2][0] = 100;
+
+    multiplier_scorer ms;
+    fm.scorer = &ms;
+    auto init = ms.initial_guesses();
+    __fminsearch_min_init(&fm, &init[0]);
+
+    DOUBLES_EQUAL(15, fm.fv[0], 0.0001);
+    DOUBLES_EQUAL(15.75, fm.fv[1], 0.0001);
+    DOUBLES_EQUAL(15.75, fm.fv[2], 0.0001);
+
+    free_2dim((void **)fm.v, 3, 2);
+    free_2dim((void **)fm.vsort, 3, 2);
+}
+
+TEST(Optimizer, __fminsearch_x_mean)
+{
+    FMinSearch fm;
+    fm.variable_count = 2;
+    fm.v = (double**)calloc_2dim(3, 2, sizeof(double));
+    vector<double> means(2);
+    fm.x_mean = &means[0];
+    fm.v[0][0] = 300;
+    fm.v[1][0] = 200;
+    fm.v[0][1] = 12;
+    fm.v[1][1] = 44;
+
+    __fminsearch_x_mean(&fm);
+
+    DOUBLES_EQUAL(250, fm.x_mean[0], 0.0001);
+    DOUBLES_EQUAL(28, fm.x_mean[1], 0.0001);
+
+    free_2dim((void **)fm.v, 3, 2);
+}
+
+TEST(Optimizer, __fminsearch_x_reflection)
+{
+    FMinSearch fm;
+    fm.variable_count = 2;
+    fm.v = (double**)calloc_2dim(3, 2, sizeof(double));
+    fm.rho = 1;
+    vector<double> means({ 250,28 });
+    vector<double> reflections(2);
+    fm.x_mean = &means[0];
+    fm.x_r = &reflections[0];
+    fm.v[0][0] = 300;
+    fm.v[1][0] = 200;
+    fm.v[0][1] = 12;
+    fm.v[1][1] = 44;
+
+    multiplier_scorer ms;
+    fm.scorer = &ms;
+
+    double score = __fminsearch_x_reflection(&fm);
+
+    DOUBLES_EQUAL(500, fm.x_r[0], 0.0001);
+    DOUBLES_EQUAL(56, fm.x_r[1], 0.0001);
+    DOUBLES_EQUAL(28000, score, 0.0001);
+
+    free_2dim((void **)fm.v, 3, 2);
+}
+
 
 void init_lgamma_cache();
 

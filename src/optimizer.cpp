@@ -188,6 +188,7 @@ int __fminsearch_checkF(FMinSearch* pfm)
 
 void __fminsearch_min_init(FMinSearch* pfm, double* X0)
 {
+    // run the optimizer a few times, tweaking the initial values to get an idea of what direction we should move
 	int i,j;
 	for ( i = 0 ; i < pfm->variable_count_plus_one ; i++ )
 	{
@@ -221,6 +222,7 @@ void __fminsearch_min_init(FMinSearch* pfm, double* X0)
 
 void __fminsearch_x_mean(FMinSearch* pfm)
 {
+    // compute the mean of the stored values of each of the variables being optimized
 	int i,j;
 	for ( i = 0 ; i < pfm->variable_count ; i++ )
 	{

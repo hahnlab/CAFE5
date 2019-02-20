@@ -39,6 +39,14 @@ FMinSearch* fminsearch_new_with_eq(optimizer_scorer* eq, int Xsize);
 void fminsearch_set_equation(FMinSearch* pfm, optimizer_scorer* eq, int Xsize);
 double* fminsearch_get_minX(FMinSearch* pfm);
 double fminsearch_get_minF(FMinSearch* pfm);
+void __fminsearch_sort(FMinSearch* pfm);
+void** calloc_2dim(int row, int col, int size);
+void free_2dim(void** data, int row, int col);
+int __fminsearch_checkV(FMinSearch* pfm);
+int __fminsearch_checkF(FMinSearch* pfm);
+void __fminsearch_min_init(FMinSearch* pfm, double* X0);
+void __fminsearch_x_mean(FMinSearch* pfm);
+double __fminsearch_x_reflection(FMinSearch* pfm);
 
 class optimizer {
     FMinSearch* pfm;
