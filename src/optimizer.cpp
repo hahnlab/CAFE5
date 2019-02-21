@@ -290,6 +290,7 @@ void __fminsearch_x_shrink(FMinSearch* pfm)
 	__fminsearch_sort(pfm);
 }
 
+/// Replace the worst performing row with a new set of values
 void __fminsearch_set_last_element(FMinSearch* pfm, double* x, double f)
 {
 	int i;

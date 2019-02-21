@@ -47,6 +47,11 @@ int __fminsearch_checkF(FMinSearch* pfm);
 void __fminsearch_min_init(FMinSearch* pfm, double* X0);
 void __fminsearch_x_mean(FMinSearch* pfm);
 double __fminsearch_x_reflection(FMinSearch* pfm);
+double __fminsearch_x_expansion(FMinSearch* pfm);
+double __fminsearch_x_contract_outside(FMinSearch* pfm);
+double __fminsearch_x_contract_inside(FMinSearch* pfm);
+void __fminsearch_x_shrink(FMinSearch* pfm);
+void __fminsearch_set_last_element(FMinSearch* pfm, double* x, double f);
 
 class optimizer {
     FMinSearch* pfm;

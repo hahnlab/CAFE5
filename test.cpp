@@ -2225,8 +2225,8 @@ TEST(Optimizer, __fminsearch_x_reflection)
 {
     FMinSearch fm;
     fm.variable_count = 2;
-    fm.v = (double**)calloc_2dim(3, 2, sizeof(double));
     fm.rho = 1;
+    fm.v = (double**)calloc_2dim(3, 2, sizeof(double));
     vector<double> means({ 250,28 });
     vector<double> reflections(2);
     fm.x_mean = &means[0];
@@ -2246,6 +2246,145 @@ TEST(Optimizer, __fminsearch_x_reflection)
     DOUBLES_EQUAL(28000, score, 0.0001);
 
     free_2dim((void **)fm.v, 3, 2);
+
+}
+
+TEST(Optimizer, __fminsearch_x_expansion)
+{
+    FMinSearch fm;
+    fm.variable_count = 2;
+    fm.chi = 2;
+    vector<double> means({ 250,28 });
+    vector<double> expansions(2);
+    vector<double> reflections({ 500, 56 });
+    fm.x_mean = &means[0];
+    fm.x_r = &reflections[0];
+    fm.x_tmp = &expansions[0];
+
+    multiplier_scorer ms;
+    fm.scorer = &ms;
+
+    double score = __fminsearch_x_expansion(&fm);
+
+    DOUBLES_EQUAL(750, fm.x_tmp[0], 0.0001);
+    DOUBLES_EQUAL(84, fm.x_tmp[1], 0.0001);
+    DOUBLES_EQUAL(63000, score, 0.0001);
+}
+
+TEST(Optimizer, __fminsearch_x_contract_outside)
+{
+    FMinSearch fm;
+    fm.variable_count = 2;
+    fm.psi = 0.5;
+    vector<double> means({ 250,28 });
+    vector<double> reflections({ 500, 56 });
+    vector<double> expansions(2);
+    fm.x_mean = &means[0];
+    fm.x_r = &reflections[0];
+    fm.x_tmp = &expansions[0];
+
+    multiplier_scorer ms;
+    fm.scorer = &ms;
+
+    double score = __fminsearch_x_contract_outside(&fm);
+
+    DOUBLES_EQUAL(375, fm.x_tmp[0], 0.0001);
+    DOUBLES_EQUAL(42, fm.x_tmp[1], 0.0001);
+    DOUBLES_EQUAL(15750, score, 0.0001);
+}
+
+
+TEST(Optimizer, __fminsearch_x_contract_inside)
+{
+    FMinSearch fm;
+    fm.variable_count = 2;
+    fm.psi = 0.5;
+    fm.v = (double**)calloc_2dim(3, 2, sizeof(double));
+    vector<double> means({ 250,28 });
+    vector<double> expansions(2);
+    fm.v[2][0] = 26;
+    fm.v[2][1] = 12;
+
+    fm.x_mean = &means[0];
+    fm.x_tmp = &expansions[0];
+
+    multiplier_scorer ms;
+    fm.scorer = &ms;
+
+    double score = __fminsearch_x_contract_inside(&fm);
+
+    DOUBLES_EQUAL(362, fm.x_tmp[0], 0.0001);
+    DOUBLES_EQUAL(36, fm.x_tmp[1], 0.0001);
+    DOUBLES_EQUAL(13032, score, 0.0001);
+    free_2dim((void **)fm.v, 3, 2);
+
+
+}
+
+TEST(Optimizer, __fminsearch_x_shrink)
+{
+    FMinSearch fm;
+    fm.variable_count = 2;
+    fm.variable_count_plus_one = 3;
+    fm.sigma = 0.5;
+    fm.v = (double**)calloc_2dim(3, 2, sizeof(double));
+    fm.vsort = (double**)calloc_2dim(3, 2, sizeof(double));
+    vector<int> indices(3);
+    fm.idx = &indices[0];
+    vector<double> scores(3);
+    fm.fv = &scores[0];
+
+    fm.v[0][0] = 300;
+    fm.v[0][1] = 200;
+    fm.v[1][0] = 42;
+    fm.v[1][1] = 64;
+    fm.v[2][0] = 26;
+    fm.v[2][1] = 12;
+
+    multiplier_scorer ms;
+    fm.scorer = &ms;
+    __fminsearch_x_shrink(&fm);
+
+    DOUBLES_EQUAL(300, fm.v[0][0], 0.0001);
+    DOUBLES_EQUAL(200, fm.v[0][1], 0.0001);
+    DOUBLES_EQUAL(163, fm.v[1][0], 0.0001);
+    DOUBLES_EQUAL(106, fm.v[1][1], 0.0001);
+    DOUBLES_EQUAL(171, fm.v[2][0], 0.0001);
+    DOUBLES_EQUAL(132, fm.v[2][1], 0.0001);
+
+    free_2dim((void **)fm.v, 3, 2);
+    free_2dim((void **)fm.vsort, 3, 2);
+}
+
+TEST(Optimizer, __fminsearch_set_last_element)
+{
+    FMinSearch fm;
+    fm.variable_count = 2;
+    fm.variable_count_plus_one = 3;
+    fm.v = (double**)calloc_2dim(3, 2, sizeof(double));
+    fm.vsort = (double**)calloc_2dim(3, 2, sizeof(double));
+    vector<int> indices(3);
+    fm.idx = &indices[0];
+    vector<double> scores({2,4,6});
+    fm.fv = &scores[0];
+
+    fm.v[0][0] = 300;
+    fm.v[0][1] = 200;
+    fm.v[1][0] = 42;
+    fm.v[1][1] = 64;
+    fm.v[2][0] = 26;
+    fm.v[2][1] = 12;
+
+    vector<double> new_vals({ 99, 14 });
+    __fminsearch_set_last_element(&fm, &new_vals[0], 3);
+
+    DOUBLES_EQUAL(2.0, fm.fv[0], 0.00001);
+    DOUBLES_EQUAL(3.0, fm.fv[1], 0.00001);
+    DOUBLES_EQUAL(4.0, fm.fv[2], 0.00001);
+
+    free_2dim((void **)fm.v, 3, 2);
+    free_2dim((void **)fm.vsort, 3, 2);
+
 }
 
 
