@@ -1775,7 +1775,7 @@ TEST(Inference, poisson_scorer_optimizes_correct_value)
 
     auto result = opt.optimize();
 
-    DOUBLES_EQUAL(0.5, result.values[0], 0.000001)
+    DOUBLES_EQUAL(0.5, result.values[0], 0.0001)
 }
 
 class mock_scorer : public optimizer_scorer

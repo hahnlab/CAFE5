@@ -6,9 +6,7 @@
 #include <chrono>
 #include <iosfwd>
 
-// OPTIMIZER_STRATEGY_STANDARD
-// OPTIMIZER_STRATEGY_INITIAL_VARIANTS
-// OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE
+#include "../config.h"
 
 class optimizer_scorer;
 
@@ -52,12 +50,14 @@ double __fminsearch_x_contract_outside(FMinSearch* pfm);
 double __fminsearch_x_contract_inside(FMinSearch* pfm);
 void __fminsearch_x_shrink(FMinSearch* pfm);
 void __fminsearch_set_last_element(FMinSearch* pfm, double* x, double f);
+int fminsearch_min(FMinSearch* pfm, double* X0);
+bool threshold_achieved(FMinSearch* pfm);
+
+class OptimizerStrategy;
 
 class optimizer {
     FMinSearch* pfm;
     optimizer_scorer *_p_scorer;
-    int fminsearch_min(double* X0);
-    bool threshold_achieved() const;
     mutable int phase = 1;
 public:
     optimizer(optimizer_scorer *scorer);
@@ -73,10 +73,25 @@ public:
     result optimize();
 
     bool quiet = false;
-    bool explode = false;
+//    bool explode = false;
 
     std::vector<double> get_initial_guesses();
+
+    OptimizerStrategy* get_strategy();
 };
 
 std::ostream& operator<<(std::ostream& ost, const optimizer::result& r);
+
+enum strategies { RangeWidely, InitialVar, Perturb, Standard };
+#ifdef OPTIMIZER_STRATEGY_RANGE_WIDELY_THEN_HOME_IN
+const strategies strategy = RangeWidely;
+#elif defined(OPTIMIZER_STRATEGY_INITIAL_VARIANTS)
+const strategies strategy = InitialVar;
+#elif defined(OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE)
+const strategies strategy = Perturb;
+#else
+const strategies strategy = Standard;
+#endif
+
+
 #endif

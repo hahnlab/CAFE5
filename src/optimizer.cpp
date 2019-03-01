@@ -7,13 +7,23 @@
 #include <numeric>
 #include <iomanip>
 #include <chrono>
+#include <memory>
 
 #include "optimizer.h"
 #include "../config.h"
 
 #include "optimizer_scorer.h"
+#define PHASED_OPTIMIZER_PHASE2_PRECISION 1e-6
 
 using namespace std;
+
+#if defined(OPTIMIZER_STRATEGY_INITIAL_VARIANTS)
+const string strategy_description = "\nOptimizer strategy: Vary initial conditions\n";
+#elif defined(OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE)
+const string strategy_description = "\nOptimizer strategy: Search a wider area when close to a solution\n\n";
+#else
+const string strategy_description = "\nOptimizer strategy: Standard Nelder-Mead\n\n";
+#endif
 
 const double MAX_DOUBLE = std::numeric_limits<double>::max();
 
@@ -169,7 +179,7 @@ int __fminsearch_checkV(FMinSearch* pfm)
 			if ( t > max ) max = t;
 		}
 	}
-	return max <= pfm->tolx;
+    return max <= pfm->tolx;
 }
 
 int __fminsearch_checkF(FMinSearch* pfm)
@@ -183,6 +193,7 @@ int __fminsearch_checkF(FMinSearch* pfm)
 		t = fabs( pfm->fv[i] - pfm->fv[0] );
 		if ( t > max ) max = t;
 	}
+
 	return max <= pfm->tolf;
 }
 
@@ -293,50 +304,53 @@ void __fminsearch_x_shrink(FMinSearch* pfm)
 /// Replace the worst performing row with a new set of values
 void __fminsearch_set_last_element(FMinSearch* pfm, double* x, double f)
 {
-	int i;
-	for ( i = 0 ; i < pfm->variable_count ; i++ )
-	{
-		pfm->v[pfm->variable_count][i] = x[i];
-	}
+    auto last_element_ptr = pfm->v[pfm->variable_count];
+    copy(x, x + pfm->variable_count, last_element_ptr);
 	pfm->fv[pfm->variable_count] = f;
 	__fminsearch_sort(pfm);
 }
 
-int optimizer::fminsearch_min(double* X0)
+int fminsearch_min(FMinSearch* pfm, double* X0)
 {
 	int i;
 	__fminsearch_min_init(pfm, X0);
 	for ( i = 0 ; i < pfm->maxiters; i++ )
 	{
-		if (threshold_achieved()) 
+		if (threshold_achieved(pfm)) 
             break;
 
         __fminsearch_x_mean(pfm);
-		double fv_r = __fminsearch_x_reflection(pfm);
-		if ( fv_r < pfm->fv[0] )
+		double reflection_score = __fminsearch_x_reflection(pfm);
+		if ( reflection_score < pfm->fv[0] )
 		{
-			double fv_e = __fminsearch_x_expansion(pfm);
-			if ( fv_e < fv_r ) __fminsearch_set_last_element(pfm,pfm->x_tmp, fv_e);
-			else __fminsearch_set_last_element(pfm,pfm->x_r, fv_r);
+			double expansion_score = __fminsearch_x_expansion(pfm);
+			if (expansion_score < reflection_score ) 
+                __fminsearch_set_last_element(pfm,pfm->x_tmp, expansion_score);
+			else 
+                __fminsearch_set_last_element(pfm,pfm->x_r, reflection_score);
 		}
-		else if ( fv_r >= pfm->fv[pfm->variable_count] )
+		else if ( reflection_score >= pfm->fv[pfm->variable_count] )
 		{
-			if ( fv_r > pfm->fv[pfm->variable_count] )
+			if ( reflection_score > pfm->fv[pfm->variable_count] )
 			{
-				double fv_cc = __fminsearch_x_contract_inside(pfm);
-				if ( fv_cc < pfm->fv[pfm->variable_count] ) __fminsearch_set_last_element(pfm,pfm->x_tmp, fv_cc);
-				else __fminsearch_x_shrink(pfm);
+				double contract_inside_score = __fminsearch_x_contract_inside(pfm);
+				if (contract_inside_score < pfm->fv[pfm->variable_count] ) 
+                    __fminsearch_set_last_element(pfm,pfm->x_tmp, contract_inside_score);
+				else 
+                    __fminsearch_x_shrink(pfm);
 			}
 			else
 			{
-				double fv_c = __fminsearch_x_contract_outside(pfm);
-				if ( fv_c <= fv_r ) __fminsearch_set_last_element(pfm,pfm->x_tmp, fv_c);
-				else __fminsearch_x_shrink(pfm);
+				double contract_outside_score = __fminsearch_x_contract_outside(pfm);
+				if (contract_outside_score <= reflection_score ) 
+                    __fminsearch_set_last_element(pfm,pfm->x_tmp, contract_outside_score);
+				else 
+                    __fminsearch_x_shrink(pfm);
 			}
 		}
 		else
 		{
-			__fminsearch_set_last_element(pfm,pfm->x_r, fv_r);
+			__fminsearch_set_last_element(pfm,pfm->x_r, reflection_score);
 		}
 	}
 	pfm->bymax = i == pfm->maxiters;
@@ -387,17 +401,176 @@ std::vector<double> optimizer::get_initial_guesses()
 }
 
 
+class OptimizerStrategy
+{
+public:
+    virtual void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial) = 0;
+};
+
+class StandardNelderMead : public OptimizerStrategy
+{
+    bool explode = false;
+
+public:
+    void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial)
+    {
+        if (explode)
+        {
+            pfm->rho = 1.5;				// reflection
+            pfm->chi = 50;				// expansion
+            pfm->delta = 0.4;
+        }
+        pfm->tolx = 1e-6;
+        pfm->tolf = 1e-6;
+        pfm->maxiters = 25;
+        fminsearch_min(pfm, &initial[0]);
+        double *re = fminsearch_get_minX(pfm);
+
+        r.score = fminsearch_get_minF(pfm);
+        r.values.resize(initial.size());
+        copy(re, re + initial.size(), r.values.begin());
+    }
+};
+
+class PerturbWhenClose : public OptimizerStrategy
+{
+    bool explode = false;
+public:
+    void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial)
+    {
+        if (explode)
+        {
+            pfm->rho = 1.5;				// reflection
+            pfm->chi = 50;				// expansion
+            pfm->delta = 0.4;
+        }
+        pfm->tolf = OPTIMIZER_LOW_PRECISION;
+        pfm->tolx = OPTIMIZER_LOW_PRECISION;
+
+        fminsearch_min(pfm, &initial[0]);
+
+        cout << "\n*****Threshold achieved, move to Phase 2*****\n\n";
+        int phase1_iters = pfm->iters;
+        pfm->rho = 1.3;				// reflection
+        pfm->chi = 30;				// expansion
+        pfm->delta = 0.4;
+        pfm->tolf = OPTIMIZER_HIGH_PRECISION;
+        pfm->tolx = OPTIMIZER_HIGH_PRECISION;
+
+        double *phase1_re = fminsearch_get_minX(pfm);
+        copy(phase1_re, phase1_re + initial.size(), initial.begin());
+        fminsearch_min(pfm, &initial[0]);
+        r.num_iterations = phase1_iters + pfm->iters;
+
+        double *re = fminsearch_get_minX(pfm);
+        r.score = fminsearch_get_minF(pfm);
+        r.values.resize(initial.size());
+
+        std::copy(re, re + initial.size(), r.values.begin());
+    }
+};
+
+class InitialVariants : public OptimizerStrategy
+{
+    bool explode = false;
+    optimizer& _opt;
+public:
+    InitialVariants(optimizer& opt) : _opt(opt)
+    {
+
+    }
+    void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial)
+    {
+        vector<optimizer::result> results(PHASED_OPTIMIZER_PHASE1_ATTEMPTS);
+
+        for (auto& r : results)
+        {
+            pfm->tolf = OPTIMIZER_LOW_PRECISION;
+            pfm->tolx = OPTIMIZER_LOW_PRECISION;
+
+            initial = _opt.get_initial_guesses();
+            fminsearch_min(pfm, &initial[0]);
+            double *re = fminsearch_get_minX(pfm);
+            r.score = fminsearch_get_minF(pfm);
+            r.values.resize(initial.size());
+            copy(re, re + initial.size(), r.values.begin());
+            r.num_iterations = pfm->iters;
+            //        cout << "Threshold achieved, move to Phase 2";
+
+        }
+
+        int phase1_iters = accumulate(results.begin(), results.end(), 0, [](int prev, const optimizer::result& r) { return prev + r.num_iterations;  });
+        auto best = min_element(results.begin(), results.end(), [](const optimizer::result& r1, const optimizer::result& r2) { return r1.score < r2.score;  });
+
+        pfm->tolf = OPTIMIZER_HIGH_PRECISION;
+        pfm->tolx = OPTIMIZER_HIGH_PRECISION;
+
+        fminsearch_min(pfm, &(best->values)[0]);
+        double *re = fminsearch_get_minX(pfm);
+        r.score = fminsearch_get_minF(pfm);
+        r.values.resize(best->values.size());
+        copy(re, re + best->values.size(), r.values.begin());
+        r.num_iterations = pfm->iters + phase1_iters;
+    }
+};
+
+class RangeWidelyThenHomeIn : public OptimizerStrategy
+{
+public:
+    void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial)
+    {
+        pfm->rho = 1.5;				// reflection
+        pfm->chi = 50;				// expansion
+        pfm->delta = 0.4;
+
+        pfm->tolf = OPTIMIZER_LOW_PRECISION;
+        pfm->tolx = OPTIMIZER_LOW_PRECISION;
+
+        fminsearch_min(pfm, &initial[0]);
+
+        cout << "\n*****Threshold achieved, move to Phase 2*****\n\n";
+
+        pfm->rho = 1;				// reflection
+        pfm->chi = 2;				// expansion
+        pfm->delta = 0.05;
+        pfm->tolf = OPTIMIZER_HIGH_PRECISION;
+        pfm->tolx = OPTIMIZER_HIGH_PRECISION;
+        int phase1_iters = pfm->iters;
+        double *phase1_re = fminsearch_get_minX(pfm);
+        copy(phase1_re, phase1_re + initial.size(), initial.begin());
+        fminsearch_min(pfm, &initial[0]);
+        r.num_iterations = phase1_iters + pfm->iters;
+
+        double *re = fminsearch_get_minX(pfm);
+        r.score = fminsearch_get_minF(pfm);
+        r.values.resize(initial.size());
+
+        std::copy(re, re + initial.size(), r.values.begin());
+    }
+};
+
+OptimizerStrategy *optimizer::get_strategy()
+{
+    switch (strategy)
+    {
+    case RangeWidely:
+        return new RangeWidelyThenHomeIn();
+    case InitialVar:
+        return new InitialVariants(*this);
+    case Perturb:
+        return new PerturbWhenClose();
+    case Standard:
+        return new StandardNelderMead();
+    }
+
+    return new StandardNelderMead();
+}
+
 optimizer::result optimizer::optimize()
 {
     if (!quiet)
     {
-#if defined(OPTIMIZER_STRATEGY_INITIAL_VARIANTS)
-        cout << "\nOptimizer strategy: Vary initial conditions\n";
-#elif defined(OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE)
-        cout << "\nOptimizer strategy: Search a wider area when close to a solution\n\n";
-#else
-        cout << "\nOptimizer strategy: Standard Nelder-Mead\n\n";
-#endif
+        cout << strategy_description;
     }
 
     using clock = std::chrono::system_clock;
@@ -405,85 +578,11 @@ optimizer::result optimizer::optimize()
     const auto before = clock::now();
     result r;
 
-#ifdef OPTIMIZER_STRATEGY_INITIAL_VARIANTS
-    vector<result> results(PHASED_OPTIMIZER_PHASE1_ATTEMPTS);
-
-    for (auto& r : results)
-    {
-        auto initial = get_initial_guesses();
-        fminsearch_set_equation(pfm, _p_scorer, initial.size());
-
-        if (explode)
-        {
-            pfm->rho = 1.5;				// reflection
-            pfm->chi = 50;				// expansion
-            pfm->delta = 0.4;
-        }
-        pfm->tolf = PHASED_OPTIMIZER_PHASE1_PRECISION;
-        pfm->tolx = PHASED_OPTIMIZER_PHASE1_PRECISION;
-
-        fminsearch_min(&initial[0]);
-        double *re = fminsearch_get_minX(pfm);
-        r.score = fminsearch_get_minF(pfm);
-        r.values.resize(initial.size());
-        copy(re, re + initial.size(), r.values.begin());
-        r.num_iterations = pfm->iters;
-//        cout << "Threshold achieved, move to Phase 2";
-
-    }
-
-    int phase1_iters = accumulate(results.begin(), results.end(), 0, [](int prev, const result& r) { return prev + r.num_iterations;  });
-    auto best = min_element(results.begin(), results.end(), [](const result& r1, const result& r2) { return r1.score < r2.score;  });
-
-    pfm->tolf = 1e-6;
-    pfm->tolx = 1e-6;
-
-    fminsearch_min(&(best->values)[0]);
-    double *re = fminsearch_get_minX(pfm);
-    r.score = fminsearch_get_minF(pfm);
-    r.values.resize(best->values.size());
-    copy(re, re + best->values.size(), r.values.begin());
-    r.num_iterations = pfm->iters + phase1_iters;
-#else
     auto initial = get_initial_guesses();
     fminsearch_set_equation(pfm, _p_scorer, initial.size());
 
-    if (explode)
-    {
-        pfm->rho = 1.5;				// reflection
-        pfm->chi = 50;				// expansion
-        pfm->delta = 0.4;
-    }
-#ifdef OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE
-    pfm->tolf = 1e-4;
-    pfm->tolx = 1e-4;
-#endif
-
-    fminsearch_min(&initial[0]);
-
-#ifdef OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE
-    cout << "\n*****Threshold achieved, move to Phase 2*****\n\n";
-    int phase1_iters = pfm->iters;
-    pfm->rho = 1.3;				// reflection
-    pfm->chi = 30;				// expansion
-    pfm->delta = 0.4;
-    pfm->tolf = 1e-6;
-    pfm->tolx = 1e-6;
-    phase = 2;
-    double *phase1_re = fminsearch_get_minX(pfm);
-    copy(phase1_re, phase1_re + initial.size(), initial.begin());
-    fminsearch_min(&initial[0]);
-    r.num_iterations = phase1_iters + pfm->iters;
-#else
-    r.num_iterations = pfm->iters;
-#endif
-
-    double *re = fminsearch_get_minX(pfm);
-    r.score = fminsearch_get_minF(pfm);
-    r.values.resize(initial.size());
-
-    std::copy(re, re + initial.size(), r.values.begin());
-#endif
+    unique_ptr<OptimizerStrategy> strat(get_strategy());
+    strat->Run(pfm, r, initial);
     r.duration = chrono::duration_cast<chrono::seconds>(clock::now() - before);
 
     if (!quiet)
@@ -515,9 +614,8 @@ std::ostream& operator<<(std::ostream& ost, const optimizer::result& r)
     return ost;
 }
 
-bool optimizer::threshold_achieved() const
+bool threshold_achieved(FMinSearch* pfm)
 {
     return __fminsearch_checkV(pfm) && __fminsearch_checkF(pfm);
-
 }
 
