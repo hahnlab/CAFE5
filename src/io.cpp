@@ -32,6 +32,7 @@ struct option longopts[] = {
   { "log", optional_argument, NULL, 'g'},
   { "exclude", no_argument, NULL, 'x' },
   { "lambda_per_family", no_argument, NULL, 'b' },
+  { "help", no_argument, NULL, 'h'},
   { 0, 0, 0, 0 }
 };
 

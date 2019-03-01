@@ -16,6 +16,11 @@ using namespace std;
 input_parameters read_arguments(int argc, char *const argv[])
 {
     input_parameters my_input_parameters;
+    if (argc == 1)
+    {
+        my_input_parameters.help = true;
+        return my_input_parameters;
+    }
 
     int args; // getopt_long returns int or char
     int prev_arg;
@@ -82,6 +87,9 @@ input_parameters read_arguments(int argc, char *const argv[])
         case 'g':
             my_input_parameters.do_log = true;
             break;
+        case 'h':
+            my_input_parameters.help = true;
+            break;
         case 'x':
             my_input_parameters.exclude_zero_root_families = true;
             break;
@@ -123,6 +131,32 @@ action* get_executor(input_parameters& user_input, user_data& data)
     return NULL;
 }
 
+void show_help()
+{
+    const char *text = ""
+        "Usage: cafexp [options]\n\n"
+        "CAFE is a software that provides a statistical foundation for evolutionary inferences about changes in gene family size. "
+        "The program employs a birth and death process to model gene gain and loss across a user-specified phylogenetic tree, "
+        "thus accounting for the species phylogenetic history. The distribution of family sizes generated under this model can "
+        "provide a basis for assessing the significance of the observed family size differences among taxa.\n\n"
+        "Options:\n"
+        "\t--fixed_alpha, -a\tAlpha value of the discrete gamma distribution to use in category calculations.If not specified, the alpha parameter will be estimated by maximum likelihood.\n"
+        "\t--error_model, -e\tError model file path\n"
+        "\t--rootdist, -f\tRoot distribution file path\n"
+        "\t--infile, -i\tcharacter or gene family file path\n"
+        "\t--n_gamma_cats, -k\tNumber of gamma categories to use.If specified, the Gamma model will be used to run calculations; otherwise the Base model will be used.\n"
+        "\t--fixed_lambda, -l\tSingle Lambda value\n"
+        "\t--fixed_multiple_lambdas\tMultiple lambda values, comma separated\n"
+        "\t--output_prefix, -o\tOutput prefix - added to output file names\n"
+        "\t--poisson, -p\tUse a Poisson distribution for the root frequency distribution.Without specifying this, a normal distribution will be used. A value can be specified(-p10, or --poisson = 10); otherwise the distribution will be estimated from the gene families.\n"
+        "\t--chisquare_compare, -r\tChi square compare\n"
+        "\t--simulate, -s\tSimulate families.Optionally provide the number of simulations to generate(-s100, or --simulate = 100)\n"
+        "\t--tree, -t\tTree file path - Required for estimation\n"
+        "\t--lambda_tree, -y\tLambda tree file path\n";
+
+        std::cout << text;
+}
+
 /// The main function. Evaluates arguments, calls processes
 /// \callgraph
 int cafexp(int argc, char *const argv[]) {
@@ -131,6 +165,11 @@ int cafexp(int argc, char *const argv[]) {
     try {
         input_parameters user_input = read_arguments(argc, argv);
 
+        if (user_input.help)
+        {
+            show_help();
+            return 0;
+        }
         user_data data;
         data.read_datafiles(user_input);
 

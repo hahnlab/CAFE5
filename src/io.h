@@ -43,6 +43,7 @@ public:
     bool use_uniform_eq_freq = true;
     bool exclude_zero_root_families = false;
     bool lambda_per_family = false;
+    bool help = false;
 
     //! Check calls
     void check_input();
