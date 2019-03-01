@@ -10,6 +10,12 @@
 
 class optimizer_scorer;
 
+struct candidate {
+    std::vector<double> values;
+    double score;
+    candidate(int size);
+    ~candidate();
+};
 struct FMinSearch
 {
   int maxiters;
@@ -20,9 +26,7 @@ struct FMinSearch
 
   int 	variable_count, variable_count_plus_one;
   int 	iters;
-  double** v;
-  double* fv;
-  double** vsort;
+  std::vector<candidate *> candidates;
   double* x_mean;
   double* x_r;
   double* x_tmp;
@@ -35,8 +39,7 @@ FMinSearch* fminsearch_new();
 void fminsearch_free(FMinSearch* pfm);
 FMinSearch* fminsearch_new_with_eq(optimizer_scorer* eq, int Xsize);
 void fminsearch_set_equation(FMinSearch* pfm, optimizer_scorer* eq, int Xsize);
-double* fminsearch_get_minX(FMinSearch* pfm);
-double fminsearch_get_minF(FMinSearch* pfm);
+candidate *get_best_result(FMinSearch* pfm);
 void __fminsearch_sort(FMinSearch* pfm);
 void** calloc_2dim(int row, int col, int size);
 void free_2dim(void** data, int row, int col);

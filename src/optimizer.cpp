@@ -73,10 +73,11 @@ FMinSearch* fminsearch_new_with_eq(optimizer_scorer* eq, int Xsize)
 
 void fminsearch_clear_memory(FMinSearch* pfm)
 {
-	free_2dim((void**)pfm->v, pfm->variable_count_plus_one, pfm->variable_count);
-	free_2dim((void**)pfm->vsort, pfm->variable_count_plus_one, pfm->variable_count);
-	free(pfm->fv);
-	pfm->fv = NULL;
+    for (auto c : pfm->candidates)
+    {
+        delete c;
+    }
+    std::vector<candidate*>().swap(pfm->candidates);
 	free(pfm->x_mean);
 	pfm->x_mean = NULL;
 	free(pfm->x_r);
@@ -98,11 +99,11 @@ void fminsearch_set_equation(FMinSearch* pfm, optimizer_scorer* eq, int Xsize)
 {
 	if ( pfm->variable_count != Xsize )
 	{
-		if ( pfm->scorer ) fminsearch_clear_memory(pfm);
-		pfm->v = (double**)calloc_2dim(Xsize+1, Xsize, sizeof(double));
-		pfm->vsort = (double**)calloc_2dim(Xsize+1, Xsize, sizeof(double));
-		pfm->fv = (double*)calloc(Xsize+1, sizeof(double));
-		pfm->x_mean = (double*)calloc(Xsize, sizeof(double));
+        if ( pfm->scorer ) fminsearch_clear_memory(pfm);
+        pfm->candidates.resize(Xsize + 1);
+        for (auto& c : pfm->candidates)
+            c = new candidate(Xsize);
+        pfm->x_mean = (double*)calloc(Xsize, sizeof(double));
 		pfm->x_r = (double*)calloc(Xsize, sizeof(double));
 		pfm->x_tmp = (double*)calloc(Xsize, sizeof(double));
 		pfm->idx = (int*)calloc(Xsize+1,sizeof(int));
@@ -112,56 +113,11 @@ void fminsearch_set_equation(FMinSearch* pfm, optimizer_scorer* eq, int Xsize)
 	pfm->variable_count_plus_one = Xsize + 1;
 }
 
-
-void __qsort_double_with_index(double* list, int* idx, int left, int right)
-{
-	double pivot = list[left];
-	int pivot_idx = idx[left];
-	int from = left;
-	int to = right;
-
-	while( from < to )
-	{
-		while( pivot <= list[to] && from < to ) to--;
-		if ( from != to )
-		{
-			list[from] = list[to];
-			idx[from] = idx[to];
-			from++;
-		}
-		while( pivot >= list[from] && from < to ) from++;
-		if ( from != to )
-		{
-			list[to] = list[from];
-			idx[to] = idx[from];
-			to--;
-		}
-	}
-	list[from] = pivot;
-	idx[from] = pivot_idx;
-	if ( left < from ) __qsort_double_with_index(list,idx,left, from-1);
-	if ( right > from ) __qsort_double_with_index(list,idx,from+1,right);
-}
-
 void __fminsearch_sort(FMinSearch* pfm)
 {
-	int i, j, k;
-	for ( i = 0 ; i < pfm->variable_count_plus_one ; i++ ) pfm->idx[i] = i;
-	__qsort_double_with_index(pfm->fv, pfm->idx, 0,pfm->variable_count);
-	for ( i = 0 ; i < pfm->variable_count_plus_one ; i++ )
-	{
-		k = pfm->idx[i];
-		for( j = 0 ; j < pfm->variable_count ; j++ )
-		{
-			pfm->vsort[i][j] = pfm->v[k][j];
-		}
-	}
-
-  // copy rows from vsort back to v
-  for (int r = 0; r < pfm->variable_count_plus_one; r++)
-  {
-    memcpy(pfm->v[r], pfm->vsort[r], pfm->variable_count*sizeof(double));
-  }
+    sort(pfm->candidates.begin(), pfm->candidates.end(), [](candidate * a, candidate *b) {
+        return a->score < b->score;
+    });
 }
 
 
@@ -175,7 +131,7 @@ int __fminsearch_checkV(FMinSearch* pfm)
 	{
 		for ( j = 0 ; j < pfm->variable_count ; j++ )
 		{
-			t = fabs(pfm->v[i+1][j] - pfm->v[i][j] );
+			t = fabs(pfm->candidates[i+1]->values[j] - pfm->candidates[i]->values[j] );
 			if ( t > max ) max = t;
 		}
 	}
@@ -190,7 +146,7 @@ int __fminsearch_checkF(FMinSearch* pfm)
 	double max = -MAX_DOUBLE;
 	for ( i = 1 ; i < pfm->variable_count_plus_one ; i++ )
 	{
-		t = fabs( pfm->fv[i] - pfm->fv[0] );
+		t = fabs( pfm->candidates[i]->score - pfm->candidates[0]->score );
 		if ( t > max ) max = t;
 	}
 
@@ -205,28 +161,28 @@ void __fminsearch_min_init(FMinSearch* pfm, double* X0)
 	{
 		for ( j = 0 ; j < pfm->variable_count ; j++ )
 		{
-            if ( i > 1 && std::isinf(pfm->fv[i-1])) {
+            if ( i > 1 && std::isinf(pfm->candidates[i-1]->score)) {
                 if ( (i - 1)  == j )
                 {
-                    pfm->v[i][j] = X0[j] ? ( 1 + pfm->delta*100 ) * X0[j] : pfm->zero_delta;
+                    pfm->candidates[i]->values[j] = X0[j] ? ( 1 + pfm->delta*100 ) * X0[j] : pfm->zero_delta;
                 }
                 else
                 {
-                    pfm->v[i][j] = X0[j];
+                    pfm->candidates[i]->values[j] = X0[j];
                 }                
             }
             else {
                 if ( (i - 1)  == j )
                 {
-                    pfm->v[i][j] = X0[j] ? ( 1 + pfm->delta ) * X0[j] : pfm->zero_delta;
+                    pfm->candidates[i]->values[j] = X0[j] ? ( 1 + pfm->delta ) * X0[j] : pfm->zero_delta;
                 }
                 else
                 {
-                    pfm->v[i][j] = X0[j];
+                    pfm->candidates[i]->values[j] = X0[j];
                 }
             }
 		}
-		pfm->fv[i] = pfm->scorer->calculate_score(pfm->v[i]);
+		pfm->candidates[i]->score = pfm->scorer->calculate_score(&pfm->candidates[i]->values[0]);
 	}
 	__fminsearch_sort(pfm);
 }
@@ -240,7 +196,7 @@ void __fminsearch_x_mean(FMinSearch* pfm)
 		pfm->x_mean[i] = 0;
 		for ( j = 0 ; j < pfm->variable_count ; j++ )
 		{
-			pfm->x_mean[i] += pfm->v[j][i];
+			pfm->x_mean[i] += pfm->candidates[j]->values[i];
 		}
 		pfm->x_mean[i] /= pfm->variable_count;
 	}
@@ -251,7 +207,7 @@ double __fminsearch_x_reflection(FMinSearch* pfm)
 	int i;
 	for ( i = 0 ; i < pfm->variable_count ; i++ )
 	{
-		pfm->x_r[i] = pfm->x_mean[i] + pfm->rho * ( pfm->x_mean[i] - pfm->v[pfm->variable_count][i] );
+		pfm->x_r[i] = pfm->x_mean[i] + pfm->rho * ( pfm->x_mean[i] - pfm->candidates[pfm->variable_count]->values[i] );
 	}
 	return pfm->scorer->calculate_score(pfm->x_r);
 }
@@ -282,7 +238,7 @@ double __fminsearch_x_contract_inside(FMinSearch* pfm)
 	int i;
 	for ( i = 0 ; i < pfm->variable_count ; i++ )
 	{
-		pfm->x_tmp[i] = pfm->x_mean[i] + pfm->psi * ( pfm->x_mean[i] - pfm->v[pfm->variable_count][i] );
+		pfm->x_tmp[i] = pfm->x_mean[i] + pfm->psi * ( pfm->x_mean[i] - pfm->candidates[pfm->variable_count]->values[i] );
 	}
 	return pfm->scorer->calculate_score(pfm->x_tmp);
 }
@@ -294,9 +250,9 @@ void __fminsearch_x_shrink(FMinSearch* pfm)
 	{
 		for ( j = 0 ; j < pfm->variable_count ; j++ )
 		{
-			pfm->v[i][j] = pfm->v[0][j] + pfm->sigma * ( pfm->v[i][j] - pfm->v[0][j] );
+			pfm->candidates[i]->values[j] = pfm->candidates[0]->values[j] + pfm->sigma * ( pfm->candidates[i]->values[j] - pfm->candidates[0]->values[j] );
 		}
-		pfm->fv[i] = pfm->scorer->calculate_score(pfm->v[i]);
+		pfm->candidates[i]->score = pfm->scorer->calculate_score(&pfm->candidates[i]->values[0]);
 	}
 	__fminsearch_sort(pfm);
 }
@@ -304,9 +260,9 @@ void __fminsearch_x_shrink(FMinSearch* pfm)
 /// Replace the worst performing row with a new set of values
 void __fminsearch_set_last_element(FMinSearch* pfm, double* x, double f)
 {
-    auto last_element_ptr = pfm->v[pfm->variable_count];
-    copy(x, x + pfm->variable_count, last_element_ptr);
-	pfm->fv[pfm->variable_count] = f;
+    candidate* c = pfm->candidates.back();
+    copy(x, x + pfm->variable_count, c->values.begin());
+	c->score = f;
 	__fminsearch_sort(pfm);
 }
 
@@ -321,7 +277,7 @@ int fminsearch_min(FMinSearch* pfm, double* X0)
 
         __fminsearch_x_mean(pfm);
 		double reflection_score = __fminsearch_x_reflection(pfm);
-		if ( reflection_score < pfm->fv[0] )
+		if ( reflection_score < pfm->candidates[0]->score )
 		{
 			double expansion_score = __fminsearch_x_expansion(pfm);
 			if (expansion_score < reflection_score ) 
@@ -329,12 +285,12 @@ int fminsearch_min(FMinSearch* pfm, double* X0)
 			else 
                 __fminsearch_set_last_element(pfm,pfm->x_r, reflection_score);
 		}
-		else if ( reflection_score >= pfm->fv[pfm->variable_count] )
+		else if ( reflection_score >= pfm->candidates[pfm->variable_count]->score )
 		{
-			if ( reflection_score > pfm->fv[pfm->variable_count] )
+			if ( reflection_score > pfm->candidates[pfm->variable_count]->score )
 			{
 				double contract_inside_score = __fminsearch_x_contract_inside(pfm);
-				if (contract_inside_score < pfm->fv[pfm->variable_count] ) 
+				if (contract_inside_score < pfm->candidates[pfm->variable_count]->score ) 
                     __fminsearch_set_last_element(pfm,pfm->x_tmp, contract_inside_score);
 				else 
                     __fminsearch_x_shrink(pfm);
@@ -358,15 +314,19 @@ int fminsearch_min(FMinSearch* pfm, double* X0)
 	return pfm->bymax;
 }
 
-double* fminsearch_get_minX(FMinSearch* pfm)
+candidate *get_best_result(FMinSearch* pfm)
 {
-	return pfm->v[0];
+    return pfm->candidates[0];
 }
 
-double fminsearch_get_minF(FMinSearch* pfm)
+candidate::candidate(int size) : values(size)
 {
-	return pfm->fv[0];
 }
+
+candidate::~candidate() {
+    std::vector<double>().swap(values);
+}
+
 
 optimizer::optimizer(optimizer_scorer *p_scorer) : _p_scorer(p_scorer)
 {
@@ -424,11 +384,10 @@ public:
         pfm->tolf = 1e-6;
         pfm->maxiters = 25;
         fminsearch_min(pfm, &initial[0]);
-        double *re = fminsearch_get_minX(pfm);
+        auto result = get_best_result(pfm);
 
-        r.score = fminsearch_get_minF(pfm);
-        r.values.resize(initial.size());
-        copy(re, re + initial.size(), r.values.begin());
+        r.score = result->score;
+        r.values = result->values;
     }
 };
 
@@ -457,16 +416,16 @@ public:
         pfm->tolf = OPTIMIZER_HIGH_PRECISION;
         pfm->tolx = OPTIMIZER_HIGH_PRECISION;
 
-        double *phase1_re = fminsearch_get_minX(pfm);
-        copy(phase1_re, phase1_re + initial.size(), initial.begin());
+        auto phase1_result = get_best_result(pfm);
+        r.score = phase1_result->score;
+        r.values = phase1_result->values;
+
         fminsearch_min(pfm, &initial[0]);
         r.num_iterations = phase1_iters + pfm->iters;
 
-        double *re = fminsearch_get_minX(pfm);
-        r.score = fminsearch_get_minF(pfm);
-        r.values.resize(initial.size());
-
-        std::copy(re, re + initial.size(), r.values.begin());
+        auto phase2_result = get_best_result(pfm);
+        r.score = phase2_result->score;
+        r.values = phase2_result->values;
     }
 };
 
@@ -490,10 +449,9 @@ public:
 
             initial = _opt.get_initial_guesses();
             fminsearch_min(pfm, &initial[0]);
-            double *re = fminsearch_get_minX(pfm);
-            r.score = fminsearch_get_minF(pfm);
-            r.values.resize(initial.size());
-            copy(re, re + initial.size(), r.values.begin());
+            auto phase1_result = get_best_result(pfm);
+            r.score = phase1_result->score;
+            r.values = phase1_result->values;
             r.num_iterations = pfm->iters;
             //        cout << "Threshold achieved, move to Phase 2";
 
@@ -506,10 +464,9 @@ public:
         pfm->tolx = OPTIMIZER_HIGH_PRECISION;
 
         fminsearch_min(pfm, &(best->values)[0]);
-        double *re = fminsearch_get_minX(pfm);
-        r.score = fminsearch_get_minF(pfm);
-        r.values.resize(best->values.size());
-        copy(re, re + best->values.size(), r.values.begin());
+        auto phase2_result = get_best_result(pfm);
+        r.score = phase2_result->score;
+        r.values = phase2_result->values;
         r.num_iterations = pfm->iters + phase1_iters;
     }
 };
@@ -536,16 +493,15 @@ public:
         pfm->tolf = OPTIMIZER_HIGH_PRECISION;
         pfm->tolx = OPTIMIZER_HIGH_PRECISION;
         int phase1_iters = pfm->iters;
-        double *phase1_re = fminsearch_get_minX(pfm);
-        copy(phase1_re, phase1_re + initial.size(), initial.begin());
+        auto phase1_result = get_best_result(pfm);
+        initial = phase1_result->values;
+
         fminsearch_min(pfm, &initial[0]);
+
         r.num_iterations = phase1_iters + pfm->iters;
-
-        double *re = fminsearch_get_minX(pfm);
-        r.score = fminsearch_get_minF(pfm);
-        r.values.resize(initial.size());
-
-        std::copy(re, re + initial.size(), r.values.begin());
+        auto phase2_result = get_best_result(pfm);
+        r.score = phase2_result->score;
+        r.values = phase2_result->values;
     }
 };
 
