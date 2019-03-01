@@ -40,7 +40,8 @@ AC_DEFINE(LAMBDA_PERTURBATION_STEP_SIZE, 50, [Number of values simulator will ge
 AC_DEFINE(OPTIMIZER_STRATEGY_STANDARD,,[Optimizer will not make any particular attempt to avoid local optima]
 )
 AC_DEFINE(PHASED_OPTIMIZER_PHASE1_ATTEMPTS, 4, [Number of attempts optimizer will make to initialize to a good value])
-AC_DEFINE(PHASED_OPTIMIZER_PHASE1_PRECISION, 1e-3, Precision of values optimizer will use before abandoning a set of values)
+AC_DEFINE(OPTIMIZER_LOW_PRECISION, 1e-3, Precision of values optimizer will use before abandoning a set of values)
+AC_DEFINE(OPTIMIZER_HIGH_PRECISION, 1e-6, Precision of values optimizer will use before abandoning a set of values)
 
 dnl Process Makefile.in to create Makefile
 AC_OUTPUT(Makefile)
