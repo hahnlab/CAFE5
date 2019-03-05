@@ -7,7 +7,6 @@
 #include <sstream>
 
 #include "gamma_bundle.h"
-#include "process.h"
 #include "gene_family_reconstructor.h"
 #include "root_equilibrium_distribution.h"
 #include "clade.h"
@@ -15,22 +14,26 @@
 
 using namespace std;
 
-gamma_bundle::gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers, const clade *p_tree, const gene_family *p_gene_family)
-    : _p_tree(p_tree),
-    _p_gene_family(p_gene_family)
+gamma_bundle::gamma_bundle(std::vector<double> lambda_multipliers, const clade *p_tree, const gene_family *p_gene_family,
+    std::ostream & ost, const lambda* lambda, int max_family_size, int max_root_family_size) : 
+    _p_tree(p_tree),
+    _p_gene_family(p_gene_family),
+    _lambda_multipliers(lambda_multipliers),
+    _max_family_size(max_family_size),
+    _max_root_family_size(max_root_family_size)
 {
-    std::transform(lambda_multipliers.begin(), lambda_multipliers.end(), std::back_inserter(_inf_processes), factory);
-    for (auto p : _inf_processes)
+//    for (double m: lambda_multipliers)
+//        _inf_processes.push_back(new inference_process(ost, lambda, m, p_tree, max_family_size, max_root_family_size, _p_gene_family, NULL)); 
+
+    for (auto m : lambda_multipliers)
     {
-        _rec_processes.push_back(factory.create_reconstruction_process(p->get_lambda_multiplier()));
+        _rec_processes.push_back(new gene_family_reconstructor(ost, lambda, m, _p_tree, max_family_size, max_root_family_size, _p_gene_family,
+            NULL, NULL));
     }
 }
 
 gamma_bundle::~gamma_bundle()
 {
-    for (auto i : _inf_processes)
-        delete i;
-
     for (auto r : _rec_processes)
         delete r;
 }
@@ -42,16 +45,7 @@ std::vector<const clade *> gamma_bundle::get_taxa()
 
 string gamma_bundle::get_family_id() const
 { 
-    return _inf_processes[0]->family_id();  
-}
-
-void gamma_bundle::clear()
-{
-    for (size_t i = 0; i < _inf_processes.size(); ++i)
-    {
-        delete _inf_processes[i];
-    }
-    _inf_processes.clear();
+    return _p_gene_family->id();
 }
 
 void gamma_bundle::set_values(matrix_cache *calc, root_equilibrium_distribution*prior)
@@ -62,13 +56,13 @@ void gamma_bundle::set_values(matrix_cache *calc, root_equilibrium_distribution*
     }
 }
 
-bool gamma_bundle::prune(const vector<double>& _gamma_cat_probs, root_equilibrium_distribution *eq, matrix_cache& calc) {
-    assert(_gamma_cat_probs.size() == _inf_processes.size());
+bool gamma_bundle::prune(const vector<double>& _gamma_cat_probs, root_equilibrium_distribution *eq, matrix_cache& calc, const lambda *p_lambda) {
+    //assert(_gamma_cat_probs.size() == _inf_processes.size());
     _category_likelihoods.clear();
 
     for (size_t k = 0; k < _gamma_cat_probs.size(); ++k)
     {
-        auto partial_likelihood = _inf_processes[k]->prune(calc);
+        auto partial_likelihood = inference_prune(*_p_gene_family, calc, p_lambda, _p_tree, _lambda_multipliers[k], _max_root_family_size, _max_family_size);
         if (accumulate(partial_likelihood.begin(), partial_likelihood.end(), 0.0) == 0.0)
             return false;   // saturation
 
@@ -169,25 +163,5 @@ increase_decrease gamma_bundle::get_increases_decreases(cladevector& order, doub
 
 double gamma_bundle::get_lambda_likelihood(int family_id)
 {
-    return _inf_processes[family_id]->get_lambda_multiplier();
-}
-
-inference_process_factory::inference_process_factory(std::ostream & ost, lambda* lambda, const clade *p_tree, int max_family_size,
-        int max_root_family_size) :
-        _ost(ost), _lambda(lambda), _p_tree(p_tree),
-        _max_family_size(max_family_size), _max_root_family_size(max_root_family_size),
-        _family(NULL)
-{
-
-}
-
-inference_process* inference_process_factory::operator()(double lambda_multiplier)
-{
-    return new inference_process(_ost, _lambda, lambda_multiplier, _p_tree, _max_family_size, _max_root_family_size, _family, NULL); // if a single _lambda_multiplier, how do we do it?
-}
-
-gene_family_reconstructor* inference_process_factory::create_reconstruction_process(double lambda_multiplier)
-{
-    return new gene_family_reconstructor(_ost, _lambda, lambda_multiplier, _p_tree, _max_family_size, _max_root_family_size, _family,
-        NULL, NULL);
+    return _lambda_multipliers[family_id];
 }

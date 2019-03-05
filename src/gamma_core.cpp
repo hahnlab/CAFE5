@@ -6,7 +6,6 @@
 
 #include "gamma_core.h"
 #include "gamma.h"
-#include "process.h"
 #include "root_equilibrium_distribution.h"
 #include "gene_family_reconstructor.h"
 #include "matrix_cache.h"
@@ -32,7 +31,6 @@ gamma_model::~gamma_model()
 {
     for (auto f : _family_bundles)
     {
-        f->clear();
         delete f;
     }
 }
@@ -72,22 +70,6 @@ void gamma_model::write_probabilities(ostream& ost)
 {
     ost << "Gamma cat probs are: " << comma_separated(_gamma_cat_probs) << endl;
     ost << "Lambda multipliers are: " << comma_separated(_lambda_multipliers) << endl;
-}
-
-void gamma_model::start_inference_processes(lambda *p_lambda) {
-    for (auto f : _family_bundles)
-    {
-        f->clear();
-        delete f;
-    }
-
-    _family_bundles.clear();
-    inference_process_factory factory(_ost, p_lambda, _p_tree, _max_family_size, _max_root_family_size);
-    for (auto i = _p_gene_families->begin(); i != _p_gene_families->end(); ++i)
-    {
-        factory.set_gene_family(&(*i));
-        _family_bundles.push_back(new gamma_bundle(factory, _lambda_multipliers, _p_tree, &(*i)));
-    }
 }
 
 //! Randomly select one of the multipliers to apply to the sim
@@ -192,7 +174,18 @@ bool gamma_model::can_infer() const
 }
 
 //! Infer bundle
-double gamma_model::infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map) {
+double gamma_model::infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) {
+
+    for (auto f : _family_bundles)
+    {
+        delete f;
+    }
+
+    _family_bundles.clear();
+    for (auto i = _p_gene_families->begin(); i != _p_gene_families->end(); ++i)
+    {
+        _family_bundles.push_back(new gamma_bundle(_lambda_multipliers, _p_tree, &(*i), _ost, p_lambda, _max_family_size, _max_root_family_size));
+    }
 
     if (!can_infer())
     {
@@ -226,7 +219,7 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior, const 
     for (size_t i = 0; i < _family_bundles.size(); i++) {
         gamma_bundle* bundle = _family_bundles[i];
 
-        if (bundle->prune(_gamma_cat_probs, prior, calc))
+        if (bundle->prune(_gamma_cat_probs, prior, calc, p_lambda))
         {
             auto cat_likelihoods = bundle->get_category_likelihoods();
             double family_likelihood = accumulate(cat_likelihoods.begin(), cat_likelihoods.end(), 0.0);

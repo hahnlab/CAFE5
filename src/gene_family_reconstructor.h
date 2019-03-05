@@ -34,7 +34,7 @@ class gene_family_reconstructor {
 public:
     void reconstruct();
 
-    gene_family_reconstructor(std::ostream & ost, lambda* lambda, double lambda_multiplier, const clade *p_tree,
+    gene_family_reconstructor(std::ostream & ost, const lambda* lambda, double lambda_multiplier, const clade *p_tree,
         int max_family_size,
         int max_root_family_size,
         const gene_family *gf,

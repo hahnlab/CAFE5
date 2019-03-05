@@ -7,7 +7,6 @@ class gene_family_reconstructor;
 class matrix_cache;
 
 class base_model : public model {
-    std::vector<inference_process *> processes;
     double simulation_lambda_multiplier = 1.0;
 
 public:
@@ -15,13 +14,11 @@ public:
     base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
         int max_family_size, int max_root_family_size, error_model *p_error_model);
 
-    virtual void start_inference_processes(lambda *);
-    virtual double infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map);
+    virtual double infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda);
 
     virtual std::string name() {
         return "Base";
     }
-    virtual ~base_model();
 
     virtual void write_family_likelihoods(std::ostream& ost);
 

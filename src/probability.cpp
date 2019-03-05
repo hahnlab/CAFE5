@@ -149,10 +149,9 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 }
 
 /* END: Birth-death model components ----------------------- */
-
-void likelihood_computer::initialize_memory(const clade *p_tree)
+void initialize_probabilities(const clade *p_tree, std::map<const clade *, std::vector<double> >& _probabilities, int _max_root_family_size, int _max_parsed_family_size)
 {
-    auto fn = [this](const clade *node) {
+    auto fn = [&](const clade *node) {
         if (node->is_root())
         {
             _probabilities[node].resize(_max_root_family_size);
@@ -165,12 +164,12 @@ void likelihood_computer::initialize_memory(const clade *p_tree)
     p_tree->apply_reverse_level_order(fn);
 }
 
-//! Operator () overload for likelihood_computer.
-/*!
-  The operator () overload here allows likelihood_computer to be called as a function (i.e., it makes likelihood_computer a functor).
-  This is what allows likelihood_computer to be called recursively in the pruning algorithm, through apply_reverse_level_order.
-*/
-void likelihood_computer::operator()(const clade *node) {
+void compute_node_probability(const clade *node, const gene_family&_gene_family, const error_model*_p_error_model,
+    std::map<const clade *, std::vector<double> >& _probabilities, 
+    int _max_root_family_size,
+    int _max_parsed_family_size,
+    const lambda* _lambda,
+    const matrix_cache& _calc) {
     if (node->is_leaf()) {
         int species_size = _gene_family.get_species_size(node->get_taxon_name());
 
@@ -196,7 +195,7 @@ void likelihood_computer::operator()(const clade *node) {
 	else if (node->is_root()) {
 		// at the root, the size of the vector holding the final likelihoods will be _max_root_family_size (size 0 is not included, so we do not add 1)
         std::vector<std::vector<double> > factors;
-        auto fn = [this, &factors](const clade *c) {
+        auto fn = [&](const clade *c) {
             factors.push_back(_lambda->calculate_child_factor(_calc, c, _probabilities[c], 1, _max_root_family_size, 0, _max_parsed_family_size));
         };
         node->apply_to_descendants(fn);
@@ -216,7 +215,7 @@ void likelihood_computer::operator()(const clade *node) {
     else {
 		// at any internal node, the size of the vector holding likelihoods will be _max_parsed_family_size+1 because size=0 is included
         std::vector<std::vector<double> > factors;
-        auto fn = [this, &factors](const clade *c) {
+        auto fn = [&](const clade *c) {
             factors.push_back(_lambda->calculate_child_factor(_calc, c, _probabilities[c], 0, _max_parsed_family_size, 0, _max_parsed_family_size));
         };
 
@@ -258,7 +257,7 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
 {
     vector<double> result(number_of_simulations);
     vector<gene_family> families(number_of_simulations);
-    vector<unique_ptr<likelihood_computer>> pruners(number_of_simulations);
+    vector<std::map<const clade *, std::vector<double> >> pruners(number_of_simulations);
 
     // TODO: This is slow so it should be done in parallel. Care will have to be taken
     // that stl containers that are added to are thread-safe.
@@ -279,15 +278,16 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
                 families[i].set_species_size(it.first->get_taxon_name(), it.second);
             }
         }
-        pruners[i].reset(new likelihood_computer(max_root_family_size, max_family_size, p_lambda, families[i], cache, NULL));
-        pruners[i]->initialize_memory(p_tree);
+        // pruners[i].reset(new likelihood_computer(max_root_family_size, max_family_size, p_lambda, families[i], cache, NULL));
+        initialize_probabilities(p_tree, pruners[i], max_root_family_size, max_family_size);
     }
 
 #pragma omp parallel for
     for (size_t i = 0; i < result.size(); ++i)
     {
-        p_tree->apply_reverse_level_order(*pruners[i]);
-        result[i] = pruners[i]->max_likelihood(p_tree);
+        auto fn = [&](const clade *c) { compute_node_probability(c, families[i], NULL, pruners[i], max_root_family_size, max_family_size, p_lambda, cache); };
+        p_tree->apply_reverse_level_order(fn);
+        result[i] = *std::max_element(pruners[i].at(p_tree).begin(), pruners[i].at(p_tree).end());
     }
 
     sort(result.begin(), result.end());

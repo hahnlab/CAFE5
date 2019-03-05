@@ -23,9 +23,7 @@ double inference_optimizer_scorer::calculate_score(double *values)
         report_precalculation();
     }
 
-    _p_model->start_inference_processes(_p_lambda);
-
-    double score = _p_model->infer_processes(_p_distribution, _rootdist_map);
+    double score = _p_model->infer_processes(_p_distribution, _rootdist_map, _p_lambda);
 
     if (!quiet)
     {

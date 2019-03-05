@@ -105,10 +105,7 @@ public:
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache) = 0;
 
-    //! Inference methods
-    virtual void start_inference_processes(lambda *) = 0;
-    
-    virtual double infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map) = 0;  // return vector of likelihoods
+    virtual double infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) = 0;  // return vector of likelihoods
     
     virtual std::string name() = 0;
     virtual void write_family_likelihoods(std::ostream& ost) = 0;
@@ -203,6 +200,7 @@ inline std::string filename(std::string base, std::string suffix)
     return base + (suffix.empty() ? "" : "_") + suffix + ".txt";
 }
 
+std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, const lambda *_lambda, const clade *_p_tree, double _lambda_multiplier, int _max_root_family_size, int _max_family_size);
 
 #endif /* CORE_H */
 

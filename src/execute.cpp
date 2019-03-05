@@ -22,11 +22,8 @@ void estimator::compute(std::vector<model *>& models, const input_parameters &my
 
     std::vector<double> model_likelihoods(models.size());
     for (size_t i = 0; i < models.size(); ++i) {
-        cout << endl << "Starting inference processes for " << models[i]->name() << " model" << endl;
-        models[i]->start_inference_processes(models[i]->get_lambda());
-
         cout << endl << "Inferring processes for " << models[i]->name() << " model" << endl;
-        double result = models[i]->infer_processes(data.p_prior.get(), data.rootdist);
+        double result = models[i]->infer_processes(data.p_prior.get(), data.rootdist, models[i]->get_lambda());
         models[i]->write_vital_statistics(results_file, result);
 
         models[i]->write_family_likelihoods(likelihoods_file);
@@ -167,12 +164,12 @@ vector<double> estimator::compute_pvalues(const user_data& data, int number_of_s
 
     transform(data.gene_families.begin(), data.gene_families.end(), result.begin(), [&data, &cache, &cd](const gene_family& gf)
     {
-        likelihood_computer pruner(data.max_root_family_size, data.max_family_size, data.p_lambda, gf, cache, NULL);
-        pruner.initialize_memory(data.p_tree);
-        data.p_tree->apply_reverse_level_order(pruner);
-        auto lh = pruner.get_likelihoods(data.p_tree);
+        std::map<const clade *, std::vector<double> > family_likelihoods;
+        initialize_probabilities(data.p_tree, family_likelihoods, data.max_root_family_size, data.max_family_size);
+        auto fn = [&](const clade *c) { compute_node_probability(c, gf, NULL, family_likelihoods, data.max_root_family_size, data.max_family_size, data.p_lambda, cache); };
+        data.p_tree->apply_reverse_level_order(fn);
 
-        double observed_max_likelihood = pruner.max_likelihood(data.p_tree);	// max value but do we need a posteriori value instead?
+        double observed_max_likelihood = *std::max_element(family_likelihoods.at(data.p_tree).begin(), family_likelihoods.at(data.p_tree).end());
 
         vector<double> pvalues(data.max_root_family_size);
         for (int s = 0; s < data.max_root_family_size; s++)

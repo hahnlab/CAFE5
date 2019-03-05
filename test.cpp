@@ -10,7 +10,6 @@
 #include "src/gamma_core.h"
 #include "src/root_equilibrium_distribution.h"
 #include "src/base_model.h"
-#include "src/process.h"
 #include "src/gene_family_reconstructor.h"
 #include "src/matrix_cache.h"
 #include "src/gamma_bundle.h"
@@ -346,11 +345,9 @@ TEST(Inference, infer_processes)
     single_lambda lambda(0.01);
 
     base_model core(&lambda, _user_data.p_tree, &families, 56, 30, NULL);
-    core.start_inference_processes(&lambda);
-
 
     uniform_distribution frq;
-    double multi = core.infer_processes(&frq, std::map<int, int>());
+    double multi = core.infer_processes(&frq, std::map<int, int>(), &lambda);
     //core.get_likelihoods();
     DOUBLES_EQUAL(41.7504, multi, 0.001);
 }
@@ -388,11 +385,10 @@ TEST(Inference, gamma_model_infers_processes_without_crashing)
 
     core.set_max_sizes(148, 122);
 
-    core.start_inference_processes(_user_data.p_lambda);
     uniform_distribution frq;
 
     // TODO: make this return a non-infinite value and add a check for it
-    core.infer_processes(&frq, std::map<int, int>());
+    core.infer_processes(&frq, std::map<int, int>(), _user_data.p_lambda);
     
 }
 
@@ -918,9 +914,7 @@ TEST(Inference, gamma_bundle_prune)
     fam.set_species_size("B", 6);
     unique_ptr<clade> p_tree(parser.parse_newick());
     single_lambda lambda(0.005);
-    inference_process_factory factory(cout, &lambda, p_tree.get(), 10, 8);
-    factory.set_gene_family(&fam);
-    gamma_bundle bundle(factory, { 0.1, 0.5 }, p_tree.get(), &fam);
+    gamma_bundle bundle({ 0.1, 0.5 }, p_tree.get(), &fam, cout, &lambda, 10, 8);
 
     root_distribution rd;
     rd.vector({ 1,2,3,4,5,4,3,2,1 });
@@ -929,7 +923,7 @@ TEST(Inference, gamma_bundle_prune)
     matrix_cache cache(11);
     multiple_lambda ml(map<string, int>(), {0.0005, 0.0025});
     cache.precalculate_matrices(get_lambda_values(&ml), set<double>{1, 3, 7});
-    CHECK(bundle.prune({ 0.01, 0.05 }, &dist, cache)); 
+    CHECK(bundle.prune({ 0.01, 0.05 }, &dist, cache, &lambda)); 
     auto cat_likelihoods = bundle.get_category_likelihoods();
 
     LONGS_EQUAL(2, cat_likelihoods.size());
@@ -947,9 +941,7 @@ TEST(Inference, gamma_bundle_prune_returns_false_if_saturated)
     fam.set_species_size("B", 6);
     unique_ptr<clade> p_tree(parser.parse_newick());
     single_lambda lambda(0.9);
-    inference_process_factory factory(cout, &lambda, p_tree.get(), 10, 8);
-    factory.set_gene_family(&fam);
-    gamma_bundle bundle(factory, { 0.1, 0.5 }, p_tree.get(), &fam);
+    gamma_bundle bundle({ 0.1, 0.5 }, p_tree.get(), &fam, cout, &lambda, 10, 8);
 
     root_distribution rd;
     rd.vector({ 1,2,3,4,5,4,3,2,1 });
@@ -958,7 +950,7 @@ TEST(Inference, gamma_bundle_prune_returns_false_if_saturated)
     matrix_cache cache(11);
     cache.precalculate_matrices({ 0.09, 0.45 }, set<double>{1, 3, 7});
 
-    CHECK(!bundle.prune({ 0.01, 0.05 }, &dist, cache));
+    CHECK(!bundle.prune({ 0.01, 0.05 }, &dist, cache, &lambda));
 }
 
 TEST(Inference, matrix_cache_key_handles_floating_point_imprecision)
@@ -1235,10 +1227,9 @@ TEST(Inference, prune)
     unique_ptr<clade> p_tree(parser.parse_newick());
 
     single_lambda lambda(0.03);
-    inference_process process(ost, &lambda, 1.5, p_tree.get(), 20, 20, &fam, NULL);
     matrix_cache cache(21);
     cache.precalculate_matrices({ 0.045 }, { 1.0,3.0,7.0 });
-    auto actual = process.prune(cache);
+    auto actual = inference_prune(fam, cache, &lambda, p_tree.get(), 1.5, 20, 20);
 
     vector<double> log_expected{ -17.2771, -10.0323 , -5.0695 , -4.91426 , -5.86062 , -7.75163 , -10.7347 , -14.2334 , -18.0458 , 
         -22.073 , -26.2579 , -30.5639 , -34.9663 , -39.4472 , -43.9935 , -48.595 , -53.2439 , -57.9338 , -62.6597 , -67.4173 };
@@ -1264,13 +1255,14 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_correctly)
     single_lambda lambda(0.03);
 
     matrix_cache cache(21);
-    likelihood_computer pruner(20, 20, &lambda, family, cache, NULL);
-    pruner.initialize_memory(p_tree.get());
+    std::map<const clade *, std::vector<double> > _probabilities; 
+
+    initialize_probabilities(p_tree.get(), _probabilities, 20, 20);
     cache.precalculate_matrices({ 0.045 }, { 1.0,3.0,7.0 });
 
     auto A = p_tree->find_descendant("A");
-    pruner(A);
-    auto actual = pruner.get_likelihoods(A);
+    compute_node_probability(A, family, NULL, _probabilities, 20, 20, &lambda, cache);
+    auto& actual = _probabilities[A];
 
     vector<double> expected{ 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -1281,8 +1273,8 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_correctly)
     }
 
     auto B = p_tree->find_descendant("B");
-    pruner(B);
-    actual = pruner.get_likelihoods(B);
+    compute_node_probability(B, family, NULL, _probabilities, 20, 20, &lambda, cache);
+    actual = _probabilities[B];
 
     expected = { 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -1307,17 +1299,17 @@ TEST(Inference, likelihood_computer_sets_root_nodes_correctly)
     single_lambda lambda(0.03);
 
     matrix_cache cache(21);
-    likelihood_computer pruner(20, 20, &lambda, family, cache, NULL);
-    pruner.initialize_memory(p_tree.get());
+    std::map<const clade *, std::vector<double> > _probabilities;
+    initialize_probabilities(p_tree.get(), _probabilities, 20, 20);
 
     cache.precalculate_matrices({ 0.03 }, { 1.0,3.0,7.0 });
 
     auto AB = p_tree->find_descendant("AB");
-    pruner(p_tree->find_descendant("A"));
-    pruner(p_tree->find_descendant("B"));
-    pruner(AB);
+    compute_node_probability(p_tree->find_descendant("A"), family, NULL, _probabilities, 20, 20, &lambda, cache);
+    compute_node_probability(p_tree->find_descendant("B"), family, NULL, _probabilities, 20, 20, &lambda, cache);
+    compute_node_probability(AB, family, NULL, _probabilities, 20, 20, &lambda, cache);
 
-    auto actual = pruner.get_likelihoods(AB);
+    auto& actual = _probabilities[AB];
 
     vector<double> log_expected{ -19.7743, -11.6688, -5.85672, -5.66748, -6.61256, -8.59725, -12.2301, -16.4424, -20.9882, -25.7574, 
         -30.6888, -35.7439, -40.8971, -46.1299, -51.4289, -56.7837, -62.1863, -67.6304, -73.1106, -78.6228
@@ -1354,12 +1346,12 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_from_error_model_if_provided
     error_model model;
     read_error_model_file(ist, &model);
 
-    likelihood_computer pruner(20, 20, &lambda, family, cache, &model);
-    pruner.initialize_memory(p_tree.get());
+    std::map<const clade *, std::vector<double> > _probabilities;
+    initialize_probabilities(p_tree.get(), _probabilities, 20, 20);
 
     auto A = p_tree->find_descendant("A");
-    pruner(A);
-    auto actual = pruner.get_likelihoods(A);
+    compute_node_probability(A, family, &model, _probabilities, 20, 20, &lambda, cache);
+    auto& actual = _probabilities[A];
 
     vector<double> expected{ 0, 0, 0.2, 0.6, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -1484,9 +1476,6 @@ public:
 
 class mock_model : public model {
     // Inherited via model
-    virtual void start_inference_processes(lambda *) override
-    {
-    }
     virtual std::string name() override
     {
         return "mockmodel";
@@ -1531,7 +1520,7 @@ public:
     }
 
     // Inherited via model
-    virtual double infer_processes(root_equilibrium_distribution * prior, const std::map<int, int>& root_distribution_map) override
+    virtual double infer_processes(root_equilibrium_distribution * prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) override
     {
         return 0.0;
     }

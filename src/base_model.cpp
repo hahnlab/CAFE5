@@ -4,7 +4,6 @@
 #include <random>
 
 #include "base_model.h"
-#include "process.h"
 #include "gene_family_reconstructor.h"
 #include "matrix_cache.h"
 #include "gene_family.h"
@@ -20,13 +19,6 @@ base_model::base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_
     int max_family_size, int max_root_family_size, error_model *p_error_model) :
     model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_error_model)
 {
-
-}
-
-base_model::~base_model()
-{
-    for (auto proc : processes)
-        delete proc;
 
 }
 
@@ -56,20 +48,7 @@ vector<size_t> build_reference_list(const vector<gene_family>& families)
     return reff;
 }
 
-void base_model::start_inference_processes(lambda *p_lambda)
-{
-    for (auto proc : processes)
-        delete proc;
-    processes.clear();
-
-    processes.resize(_p_gene_families->size());
-    for (size_t i = 0; i <_p_gene_families->size(); ++i) {
-        if (references[i] == i)
-            processes[i] = new inference_process(_ost, p_lambda, 1.0, _p_tree, _max_family_size, _max_root_family_size, &_p_gene_families->at(i), _p_error_model); // if a single _lambda_multiplier, how do we do it?
-    }
-}
-
-double base_model::infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map) {
+double base_model::infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) {
     if (!_p_lambda->is_valid())
     {
         return -log(0);
@@ -87,8 +66,8 @@ double base_model::infer_processes(root_equilibrium_distribution *prior, const s
 //    initialize_rootdist_if_necessary();
     prior->initialize(&rd);
 
-    results.resize(processes.size());
-    std::vector<double> all_families_likelihood(processes.size());
+    results.resize(_p_gene_families->size());
+    std::vector<double> all_families_likelihood(_p_gene_families->size());
 
     branch_length_finder lengths;
     _p_tree->apply_prefix_order(lengths);
@@ -96,11 +75,12 @@ double base_model::infer_processes(root_equilibrium_distribution *prior, const s
     matrix_cache calc(max(_max_root_family_size, _max_family_size) + 1);
     calc.precalculate_matrices(get_lambda_values(_p_lambda), lengths.result());
 
-    vector<vector<double>> partial_likelihoods(processes.size());
+    vector<vector<double>> partial_likelihoods(_p_gene_families->size());
 #pragma omp parallel for
-    for (size_t i = 0; i < processes.size(); ++i) {
-        if (processes[i])
-            partial_likelihoods[i] = processes[i]->prune(calc);    // probabilities of various family sizes
+    for (size_t i = 0; i < _p_gene_families->size(); ++i) {
+        if (references[i] == i)
+            partial_likelihoods[i] = inference_prune(_p_gene_families->at(i), calc, _p_lambda, _p_tree, 1.0, _max_root_family_size, _max_family_size);
+            // probabilities of various family sizes
     }
 
     // prune all the families with the same lambda

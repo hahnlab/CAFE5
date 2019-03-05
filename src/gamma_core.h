@@ -34,10 +34,7 @@ public:
     //! Randomly select one of the multipliers to apply to the sim
     virtual lambda* get_simulation_lambda(const user_data& data) override;
 
-    //! Inference methods
-    void start_inference_processes(lambda *);
-
-    double infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map);
+    double infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda);
 
     virtual inference_optimizer_scorer *get_lambda_optimizer(user_data& data);
 

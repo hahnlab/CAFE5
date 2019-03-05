@@ -10,7 +10,6 @@
 #include "matrix_cache.h"
 #include "gamma_core.h"
 #include "base_model.h"
-#include "process.h"
 
 std::vector<model *> build_models(const input_parameters& user_input, user_data& user_data) {
 
@@ -158,4 +157,19 @@ void branch_length_finder::operator()(const clade *c)
 double branch_length_finder::longest() const
 {
     return *max_element(_result.begin(), _result.end());
+}
+
+//! Computes likelihoods for the given tree and a single family. Uses a lambda value based on the provided lambda
+/// and a given multiplier. Works by creating a likelihood_computer and calling it on all modes of the tree
+/// using the species counts for the family. 
+/// \returns a vector of probabilities for gene counts at the root of the tree 
+std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, const lambda *_lambda, const clade *_p_tree, double _lambda_multiplier, int _max_root_family_size, int _max_family_size)
+{
+    unique_ptr<lambda> multiplier(_lambda->multiply(_lambda_multiplier));
+    std::map<const clade *, std::vector<double> > _probabilities;
+    initialize_probabilities(_p_tree, _probabilities, _max_root_family_size, _max_family_size);
+    auto fn = [&](const clade *c) { compute_node_probability(c, gf, NULL, _probabilities, _max_root_family_size, _max_family_size, multiplier.get(), calc); };
+    _p_tree->apply_reverse_level_order(fn);
+
+    return _probabilities.at(_p_tree); // likelihood of the whole tree = multiplication of likelihood of all nodes
 }

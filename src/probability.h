@@ -20,61 +20,25 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 double chooseln(double n, double k);
 
 /* START: Likelihood computation ---------------------- */
+void initialize_probabilities(const clade *p_tree, std::map<const clade *, std::vector<double> >& _probabilities, int _max_root_family_size, int _max_parsed_family_size);
 
-/// The likelihood_computer class is a functor that is used in the pruning algorithm. It is called once on each node of the tree,
+/// compute_node_probability is a function that is used in the pruning algorithm. It is called once on each node of the tree,
 /// starting with the leaf nodes and working upwards. For each node, a vector of probabilities is added to the _probabilities
 /// map. For leaf nodes, the probabilities are set based on input data, but for internal nodes the probabilities are calculated 
 /// based on the probabilities of the child nodes. After all calculations, the caller should call the max_likelihood method,
 /// passing the root of the tree, to determine the overall probabilities for the tree.
-class likelihood_computer {
-private:
-    int _max_root_family_size;
-    int _max_parsed_family_size;
-    const gene_family& _gene_family;
-    const lambda* _lambda;
-    const matrix_cache& _calc;
-    const error_model* _p_error_model;
-
-    std::map<const clade *, std::vector<double> > _probabilities; //!< represents probability of the node having various family sizes
-    
-public:
-    likelihood_computer(int max_root_family_size, int max_parsed_family_size, const lambda* lambda, const gene_family& family,
-        const matrix_cache& calc, const error_model *p_error_model) : 
-		_max_root_family_size(max_root_family_size),
-		_max_parsed_family_size(max_parsed_family_size),
-        _gene_family(family),
-		_lambda(lambda),
-        _calc(calc),
-        _p_error_model(p_error_model) {
-    }
-  
-    void operator()(const clade *node);
-
-    std::vector<double> get_likelihoods(const clade *node) const { 
-        return _probabilities.at(node);
-    }
-
-	double max_likelihood(const clade *node) const
-	{
-		if (_probabilities.at(node).empty())
-			throw std::runtime_error("No probabilities calculated");
-
-		// use "at" rather than [] so the method can be const
-		return *std::max_element(_probabilities.at(node).begin(), _probabilities.at(node).end());
-	}
-
-    void initialize_memory(const clade *p_tree);
-
-};
-
-/* END: Likelihood computation ---------------------- */
+void compute_node_probability(const clade *node, const gene_family&_gene_family, const error_model*_p_error_model,
+    std::map<const clade *, std::vector<double> >& _probabilities,
+    int _max_root_family_size,
+    int _max_parsed_family_size,
+    const lambda* _lambda,
+    const matrix_cache& _calc);
 
 /* START: Uniform distribution */
 std::vector<int> uniform_dist(int n_draws, int min, int max);
 /* END: Uniform distribution - */
 
 void set_weighted_random_family_size(const clade *node, clademap<int> *sizemap, const lambda *p_lambda, error_model *p_error_model, int max_family_size, const matrix_cache& cache);
-int select_random_family_size(int parent_family_size, int max_family_size, const matrix& probabilities);
 std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, int max_root_family_size, const lambda *p_lambda, const matrix_cache& cache, error_model *p_error_model);
 size_t adjust_for_error_model(size_t c, const error_model *p_error_model);
 

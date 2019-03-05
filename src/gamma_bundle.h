@@ -15,28 +15,6 @@ class gene_family;
 
 #include "core.h"
 
-class inference_process_factory
-{
-    std::ostream & _ost;
-    lambda* _lambda;
-    const clade *_p_tree;
-    int _max_family_size;
-    int _max_root_family_size;
-    const gene_family *_family;
-public:
-
-    inference_process_factory(std::ostream & ost, lambda* lambda, const clade *p_tree, int max_family_size,
-        int max_root_family_size);
-
-    void set_gene_family(const gene_family *family) {
-        _family = family;
-    }
-
-    inference_process* operator()(double lambda_multiplier);
-
-    gene_family_reconstructor* create_reconstruction_process(double lambda_multiplier);
-};
-
 //! One gamma bundle per family
 //! Should reconstruct values for all gamma category probabilities
 class gamma_bundle {
@@ -46,11 +24,15 @@ class gamma_bundle {
     const clade *_p_tree;
     const gene_family *_p_gene_family;
 
-    std::vector<inference_process *> _inf_processes;
+    std::vector<double> _lambda_multipliers;
     std::vector<double> _category_likelihoods;
 
+    int _max_family_size;
+    int _max_root_family_size;
+
 public:
-    gamma_bundle(inference_process_factory& factory, std::vector<double> lambda_multipliers, const clade *p_tree, const gene_family *p_gene_family);
+    gamma_bundle(std::vector<double> lambda_multipliers, const clade *p_tree, const gene_family *p_gene_family,
+        std::ostream & ost, const lambda* lambda, int max_family_size, int max_root_family_size);
     ~gamma_bundle();
 
     /// used to copy known values into the reconstructor
@@ -62,10 +44,8 @@ public:
         _p_tree(p_tree),
         _p_gene_family(p_gene_family) {}
 
-    void clear();
-
     bool prune(const std::vector<double>& gamma_cat_probs, root_equilibrium_distribution *eq_freq,
-        matrix_cache& calc);
+        matrix_cache& calc, const lambda *p_lambda);
 
     void reconstruct(const std::vector<double>& _gamma_cat_probs);
 
