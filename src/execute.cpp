@@ -14,7 +14,7 @@ double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 -5.395239384953e-6 };
 
 
-void estimator::compute(std::vector<model *>& models, const input_parameters &my_input_parameters, int max_family_size, int max_root_family_size)
+void estimator::compute(std::vector<model *>& models, const input_parameters &my_input_parameters)
 {
     std::ofstream results_file(filename("results", my_input_parameters.output_prefix));
 
@@ -118,14 +118,14 @@ void estimator::execute(std::vector<model *>& models)
     {
         estimate_missing_variables(models, data);
 
-        compute(models, _user_input, data.max_family_size, data.max_root_family_size);
+        compute(models, _user_input);
 
         auto pvalues = compute_pvalues(data, 1000);
 
         matrix_cache cache(data.max_family_size + 1);
         for (model* p_model : models) {
             std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(&cache, data.p_prior.get()));
-            rec->write_results(p_model, _user_input.output_prefix, pvalues);
+            rec->write_results(p_model->name(), _user_input.output_prefix, data, pvalues);
         }
     }
 }

@@ -5,6 +5,7 @@
 #include <functional>
 #include <cmath>
 #include <sstream>
+#include <memory>
 
 #include "gamma_bundle.h"
 #include "gene_family_reconstructor.h"
@@ -20,22 +21,10 @@ gamma_bundle::gamma_bundle(std::vector<double> lambda_multipliers, const clade *
     _p_gene_family(p_gene_family),
     _lambda_multipliers(lambda_multipliers),
     _max_family_size(max_family_size),
-    _max_root_family_size(max_root_family_size)
+    _max_root_family_size(max_root_family_size),
+    _ost(ost),
+    _p_lambda(lambda)
 {
-//    for (double m: lambda_multipliers)
-//        _inf_processes.push_back(new inference_process(ost, lambda, m, p_tree, max_family_size, max_root_family_size, _p_gene_family, NULL)); 
-
-    for (auto m : lambda_multipliers)
-    {
-        _rec_processes.push_back(new gene_family_reconstructor(ost, lambda, m, _p_tree, max_family_size, max_root_family_size, _p_gene_family,
-            NULL, NULL));
-    }
-}
-
-gamma_bundle::~gamma_bundle()
-{
-    for (auto r : _rec_processes)
-        delete r;
 }
 
 std::vector<const clade *> gamma_bundle::get_taxa()
@@ -46,14 +35,6 @@ std::vector<const clade *> gamma_bundle::get_taxa()
 string gamma_bundle::get_family_id() const
 { 
     return _p_gene_family->id();
-}
-
-void gamma_bundle::set_values(matrix_cache *calc, root_equilibrium_distribution*prior)
-{
-    for (auto rec : _rec_processes)
-    {
-        rec->set_values(calc, prior);
-    }
 }
 
 bool gamma_bundle::prune(const vector<double>& _gamma_cat_probs, root_equilibrium_distribution *eq, matrix_cache& calc, const lambda *p_lambda) {
@@ -79,9 +60,10 @@ bool gamma_bundle::prune(const vector<double>& _gamma_cat_probs, root_equilibriu
     return true;
 }
 
-clademap<double> get_weighted_averages(std::vector<gene_family_reconstructor *> m, const vector<double>& _gamma_cat_probs)
+clademap<double> get_weighted_averages(std::vector<clademap<int>>& m, const vector<double>& _gamma_cat_probs)
 {
-    auto nodes = m[0]->get_nodes();
+    cladevector nodes(m[0].size());
+    std::transform(m[0].begin(), m[0].end(), nodes.begin(), [](std::pair<const clade *, int> v) { return v.first;  });
 
     clademap<double> result;
     for (auto node : nodes)
@@ -89,7 +71,7 @@ clademap<double> get_weighted_averages(std::vector<gene_family_reconstructor *> 
         double val = 0.0;
         for (size_t i = 0; i<_gamma_cat_probs.size(); ++i)
         {
-            val += _gamma_cat_probs[i] * double(m[i]->get_reconstructed_value(node));
+            val += _gamma_cat_probs[i] * double(m[i].at(node));
         }
         result[node] = val;
     }
@@ -98,17 +80,21 @@ clademap<double> get_weighted_averages(std::vector<gene_family_reconstructor *> 
 }
 
 
-void gamma_bundle::reconstruct(const vector<double>& _gamma_cat_probs)
+void gamma_bundle::reconstruct(const vector<double>& _gamma_cat_probs, matrix_cache *calc, root_equilibrium_distribution*prior)
 {
+    reconstructed_states.resize(_gamma_cat_probs.size());
+    increase_decrease_map.resize(_gamma_cat_probs.size());
     for (size_t k = 0; k < _gamma_cat_probs.size(); ++k)
     {
-        _rec_processes[k]->reconstruct();
+        unique_ptr<lambda> ml(_p_lambda->multiply(_lambda_multipliers[k]));
+        reconstruct_gene_families(ml.get(), _p_tree, _max_family_size, _max_root_family_size, _p_gene_family, calc, prior, reconstructed_states[k]);
+        compute_increase_decrease(reconstructed_states[k], increase_decrease_map[k]);
     }
 
     // multiply every reconstruction by gamma_cat_prob
-    reconstruction = get_weighted_averages(_rec_processes, _gamma_cat_probs);
+    reconstruction = get_weighted_averages(reconstructed_states, _gamma_cat_probs);
 
-    compute_increase_decrease(reconstruction, increase_decrease_map);
+    compute_increase_decrease(reconstruction, _increase_decrease_map);
 }
 
 string gamma_bundle::get_reconstructed_states(const clade *node) const
@@ -121,9 +107,10 @@ string gamma_bundle::get_reconstructed_states(const clade *node) const
     }
     else
     {
-        for (auto r : _rec_processes)
-            ost << r->get_reconstructed_value(node) << '_';
-
+        for (auto& r : reconstructed_states)
+        {
+            ost << r.at(node) << '_';
+        }
         ost << std::round(reconstruction.at(node));
     }
     return ost.str();
@@ -133,8 +120,12 @@ void gamma_bundle::print_reconstruction(std::ostream & ost, cladevector& order)
 {
     string family_id = _p_gene_family->id();
 
-    auto f = [order, this](const clade *node) { 
-        return newick_node(node, order, this);
+    auto g = [this](const clade *node) {
+        return get_reconstructed_states(node);
+    };
+
+    auto f = [order, g, this](const clade *node) {
+        return newick_node(node, order, g);
     };
     
     ost << "  TREE " << family_id << " = ";
@@ -154,7 +145,7 @@ increase_decrease gamma_bundle::get_increases_decreases(cladevector& order, doub
         if (taxon->is_leaf() || taxon->is_root())
             return Constant;
         else
-            return increase_decrease_map.at(taxon);
+            return _increase_decrease_map.at(taxon);
     });
 
     result.category_likelihoods = _category_likelihoods;

@@ -74,8 +74,8 @@ class gamma_model_reconstruction : public reconstruction
 {
     const std::vector<double>& _lambda_multipliers;
     const vector<gamma_bundle *>& _family_bundles;
-    void print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues);
-    void print_increases_decreases_by_clade(std::ostream& ost);
+    void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues) override;
+    void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) override;
 public:
     gamma_model_reconstruction(const std::vector<double>& lambda_multipliers, const vector<gamma_bundle *>& family_bundles) :
         _lambda_multipliers(lambda_multipliers), _family_bundles(family_bundles)
@@ -83,6 +83,6 @@ public:
 
     }
 
-    void print_reconstructed_states(std::ostream& ost);
+    void print_reconstructed_states(std::ostream& ost, const std::vector<gene_family>& gene_families, const clade *p_tree);
 };
 

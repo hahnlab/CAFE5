@@ -1,11 +1,12 @@
 #include <cmath>
-#include <memory>
+#include <sstream>
 
 #include "gene_family_reconstructor.h"
 #include "lambda.h"
 #include "matrix_cache.h"
 #include "root_equilibrium_distribution.h"
 #include "gene_family.h"
+#include "user_data.h"
 
 std::ostream& operator<<(std::ostream& ost, family_size_change fsc)
 {
@@ -25,42 +26,7 @@ std::ostream& operator<<(std::ostream& ost, family_size_change fsc)
     return ost;
 }
 
-
-gene_family_reconstructor::gene_family_reconstructor(std::ostream & ost, const lambda* lambda, double lambda_multiplier, const clade *p_tree,
-    int max_family_size,
-    int max_root_family_size,
-    const gene_family *gf,
-    matrix_cache *p_calc,
-    root_equilibrium_distribution* p_prior) : _gene_family(gf), _p_calc(p_calc), _p_prior(p_prior), _lambda(lambda), _p_tree(p_tree),
-    _max_family_size(max_family_size), _max_root_family_size(max_root_family_size), _lambda_multiplier(lambda_multiplier)
-{
-}
-
-class child_multiplier
-{
-    clademap<std::vector<double> >& _L;
-    double value;
-    int _j;
-public:
-    bool write = false;
-    child_multiplier(clademap<std::vector<double> >& L, int j) : _L(L), _j(j)
-    {
-        value = 1.0;
-    }
-
-    void operator()(const clade *c)
-    {
-        value *= _L[c][_j];
-        if (write)
-            cout << "Child factor " << c->get_taxon_name() << " = " << _L[c][_j] << endl;
-    }
-
-    double result() const {
-        return value;
-    }
-};
-
-void gene_family_reconstructor::reconstruct_leaf_node(const clade * c, lambda * _lambda)
+void reconstruct_leaf_node(const clade * c, const lambda * _lambda, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, int _max_family_size, const gene_family* _gene_family, const matrix_cache *_p_calc)
 {
     auto& C = all_node_Cs[c];
     auto& L = all_node_Ls[c];
@@ -82,7 +48,7 @@ void gene_family_reconstructor::reconstruct_leaf_node(const clade * c, lambda * 
     }
 }
 
-void gene_family_reconstructor::reconstruct_root_node(const clade * c)
+void reconstruct_root_node(const clade * c, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, int _max_family_size, int _max_root_family_size, const root_equilibrium_distribution* _p_prior)
 {
     auto& L = all_node_Ls[c];
     auto& C = all_node_Cs[c];
@@ -98,9 +64,12 @@ void gene_family_reconstructor::reconstruct_root_node(const clade * c)
 
         for (size_t j = 1; j < L.size(); ++j)
         {
-            child_multiplier cr(all_node_Ls, j);
-            c->apply_to_descendants(cr);
-            double val = cr.result() * _p_prior->compute(j);
+            double value = 1.0;
+            auto child_multiplier = [&all_node_Ls, j, &value](const clade *child) {
+                value *= all_node_Ls[child][j];
+            };
+            c->apply_to_descendants(child_multiplier);
+            double val = value * _p_prior->compute(j);
             if (val > max_val)
             {
                 max_val = val;
@@ -118,7 +87,7 @@ void gene_family_reconstructor::reconstruct_root_node(const clade * c)
     }
 }
 
-void gene_family_reconstructor::reconstruct_internal_node(const clade * c, lambda * _lambda)
+void reconstruct_internal_node(const clade * c, const lambda * _lambda, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, int _max_family_size, const matrix_cache *_p_calc)
 {
     auto& C = all_node_Cs[c];
     auto& L = all_node_Ls[c];
@@ -140,9 +109,12 @@ void gene_family_reconstructor::reconstruct_internal_node(const clade * c, lambd
         double max_val = -1;
         for (size_t j = 0; j < L.size(); ++j)
         {
-            child_multiplier cr(all_node_Ls, j);
-            c->apply_to_descendants(cr);
-            double val = cr.result() * matrix->get(i,j);
+            double value = 1.0;
+            auto child_multiplier = [&all_node_Ls, j, &value](const clade *child) {
+                value *= all_node_Ls[child][j];
+            };
+            c->apply_to_descendants(child_multiplier);
+            double val = value * matrix->get(i,j);
             if (val > max_val)
             {
                 max_j = j;
@@ -156,98 +128,75 @@ void gene_family_reconstructor::reconstruct_internal_node(const clade * c, lambd
 }
 
 
-void gene_family_reconstructor::operator()(const clade *c)
+void reconstruct_at_node(const clade *c, const lambda *_lambda, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, int max_family_size, int max_root_family_size, const matrix_cache* p_calc, const root_equilibrium_distribution* p_prior, const gene_family *p_family)
 {
-    // all_node_Cs and all_node_Ls are hashtables where the keys are nodes and values are vectors of doubles
-    unique_ptr<lambda> ml(_lambda->multiply(_lambda_multiplier));
-
     if (c->is_leaf())
     {
-        reconstruct_leaf_node(c, ml.get());
+        reconstruct_leaf_node(c, _lambda, all_node_Cs, all_node_Ls, max_family_size, p_family, p_calc);
     }
     else if (c->is_root())
     {
-        reconstruct_root_node(c);
+        reconstruct_root_node(c, all_node_Cs, all_node_Ls, max_family_size, max_root_family_size, p_prior);
     }
     else
     {
-        reconstruct_internal_node(c, ml.get());
+        reconstruct_internal_node(c, _lambda, all_node_Cs, all_node_Ls, max_family_size, p_calc);
     }
 }
 
-class backtracker
+void reconstruct_gene_families(const lambda* lambda, const clade *p_tree,
+    int max_family_size,
+    int max_root_family_size,
+    const gene_family *gf,
+    matrix_cache *p_calc,
+    root_equilibrium_distribution* p_prior, clademap<int>& reconstructed_states)
 {
-    clademap<std::vector<int> >& _all_node_Cs;
-    clademap<int>& reconstructed_states;
-public:
-    backtracker(clademap<int>& rc, clademap<std::vector<int> >& all_node_Cs, const clade *root) : 
-        _all_node_Cs(all_node_Cs),
-        reconstructed_states(rc)
-    {
-        reconstructed_states[root] = _all_node_Cs[root][0];
-    }
+    clademap<std::vector<int>> all_node_Cs;
 
-    void operator()(clade *child)
-    {
-        if (!child->is_leaf())
-        {
-            auto& C = _all_node_Cs[child];
-            int parent_c = reconstructed_states[child->get_parent()];
-            reconstructed_states[child] = C[parent_c];
-            child->apply_to_descendants(*this);
-        }
-    }
-};
+    /// Ls hold a probability for each family size (values are probabilities of any given family size)
+    clademap<std::vector<double>> all_node_Ls;
 
-void gene_family_reconstructor::reconstruct()
-{
-    // Pupko's joint reconstruction algorithm
-    _p_tree->apply_reverse_level_order(*this);
-
-    backtracker b(reconstructed_states, all_node_Cs, _p_tree);
-    _p_tree->apply_to_descendants(b);
-
-    compute_increase_decrease(reconstructed_states, increase_decrease_map);
-}
-
-std::string gene_family_reconstructor::get_reconstructed_states(const clade *node) const
-{
-    int value = node->is_leaf() ? _gene_family->get_species_size(node->get_taxon_name()) : reconstructed_states.at(node);
-    return to_string(value);
-}
-
-cladevector gene_family_reconstructor::get_taxa() const
-{
-    return _p_tree->find_internal_nodes();
-}
-
-
-
-void gene_family_reconstructor::print_reconstruction(std::ostream & ost, cladevector& order)
-{
-    auto f = [order, this](const clade *node) { 
-        return newick_node(node, order, this); 
+    std::function <void(const clade *)> pupko_reconstructor;
+    pupko_reconstructor = [&](const clade *c) {
+        reconstruct_at_node(c, lambda, all_node_Cs, all_node_Ls, max_family_size, max_root_family_size, p_calc, p_prior, gf);
     };
 
-    ost << "  TREE " << _gene_family->id() << " = ";
-    _p_tree->write_newick(ost, f);
+    std::function<void(const clade *child)> backtracker;
+    backtracker = [&reconstructed_states, &all_node_Cs, &backtracker](const clade *child) {
+        if (!child->is_leaf())
+        {
+            auto& C = all_node_Cs[child];
+            int parent_c = reconstructed_states[child->get_parent()];
+            reconstructed_states[child] = C[parent_c];
+            child->apply_to_descendants(backtracker);
+        }
+        };
 
-    ost << ';' << endl;
+    // Pupko's joint reconstruction algorithm
+    p_tree->apply_reverse_level_order(pupko_reconstructor);
+
+    reconstructed_states[p_tree] = all_node_Cs[p_tree][0];
+    p_tree->apply_to_descendants(backtracker);
+
 }
 
-increase_decrease gene_family_reconstructor::get_increases_decreases(cladevector& order, double pvalue)
+string newick_node(const clade *node, const cladevector& order, std::function<std::string(const clade *c)> textwriter)
 {
-    increase_decrease result;
-    result.change.resize(order.size());
-    result.gene_family_id = _gene_family->id();
-    result.pvalue = pvalue;
+    auto node_id = distance(order.begin(), find(order.begin(), order.end(), node));
+    ostringstream ost;
+    if (node->is_leaf())
+        ost << node->get_taxon_name();
+    else
+    {
+        ost << node_id;
+    }
 
-    transform(order.begin(), order.end(), result.change.begin(), [this](const clade *taxon)->family_size_change {
-        return increase_decrease_map[taxon];
-    });
-
-    return result;
+    ost << "_" << textwriter(node);
+    if (!node->is_root())
+        ost << ':' << node->get_branch_length();
+    return ost.str();
 }
+
 
 bool parent_compare(int a, int b)
 {
@@ -257,13 +206,6 @@ bool parent_compare(int a, int b)
 bool parent_compare(double a, double b)
 {
     return parent_compare(int(std::round(a)), int(std::round(b)));
-}
-
-cladevector gene_family_reconstructor::get_nodes()
-{
-    cladevector result(reconstructed_states.size());
-    std::transform(reconstructed_states.begin(), reconstructed_states.end(), result.begin(), [](std::pair<const clade *, int> v) { return v.first;  });
-    return result;
 }
 
 template <typename T>
@@ -314,15 +256,16 @@ std::ostream& operator<<(std::ostream & ost, const increase_decrease& val)
     return ost;
 }
 
-void reconstruction::write_results(model *p_model, std::string output_prefix, std::vector<double>& pvalues)
+void reconstruction::write_results(std::string model_identifier, std::string output_prefix, const user_data& data, std::vector<double>& pvalues)
 {
-    std::ofstream ofst(filename(p_model->name() + "_asr", output_prefix));
-    print_reconstructed_states(ofst);
+    std::ofstream ofst(filename(model_identifier + "_asr", output_prefix));
+    print_reconstructed_states(ofst, data.gene_families, data.p_tree);
 
-    std::ofstream family_results(filename(p_model->name() + "_family_results", output_prefix));
-    print_increases_decreases_by_family(family_results, pvalues);
+    auto order = data.p_tree->find_internal_nodes();
+    std::ofstream family_results(filename(model_identifier + "_family_results", output_prefix));
+    print_increases_decreases_by_family(family_results, order, pvalues);
 
-    std::ofstream clade_results(filename(p_model->name() + "_clade_results", output_prefix));
-    print_increases_decreases_by_clade(clade_results);
+    std::ofstream clade_results(filename(model_identifier + "_clade_results", output_prefix));
+    print_increases_decreases_by_clade(clade_results, order);
 }
 

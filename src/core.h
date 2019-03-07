@@ -48,12 +48,12 @@ public:
 std::ostream& operator<<(std::ostream& ost, const family_info_stash& r);
 
 class reconstruction {
-    virtual void print_reconstructed_states(std::ostream& ost) = 0;
-    virtual void print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues) = 0;
-    virtual void print_increases_decreases_by_clade(std::ostream& ost) = 0;
+    virtual void print_reconstructed_states(std::ostream& ost, const std::vector<gene_family>& gene_families, const clade *p_tree) = 0;
+    virtual void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues) = 0;
+    virtual void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) = 0;
 
 public:
-    void write_results(model *p_model, std::string output_prefix, std::vector<double>& pvalues);
+    void write_results(std::string model_identifier, std::string output_prefix, const user_data& data, std::vector<double>& pvalues);
     virtual ~reconstruction()
     {
     }

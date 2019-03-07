@@ -727,20 +727,22 @@ TEST_GROUP(Reconstruction)
     }
 };
 
-TEST(Reconstruction, gene_family_reconstructor)
+TEST(Reconstruction, reconstruct_leaf_node)
 {
-  single_lambda lambda(0.05);
+  single_lambda lambda(0.1);
   fam.set_species_size("Mouse", 3);
 
   clade leaf("Mouse", 7);
 
   matrix_cache calc(8);
   calc.precalculate_matrices({ .1 }, set<double>({ 7 }));
-  gene_family_reconstructor process(cout, &lambda, 2.0, NULL, 7, 0, &fam, &calc, NULL);
-  process(&leaf);
-  auto L = process.get_L(&leaf);
+  clademap<std::vector<int>> all_node_Cs;
+  clademap<std::vector<double>> all_node_Ls;
+  reconstruct_leaf_node(&leaf, &lambda, all_node_Cs, all_node_Ls, 7, &fam, &calc);
 
   // L holds the probability of the leaf moving from size 3 to size n
+  auto L = all_node_Ls[&leaf];
+
   LONGS_EQUAL(8, L.size());
   DOUBLES_EQUAL(0.0, L[0], 0.0001);
   DOUBLES_EQUAL(0.0586679, L[1], 0.0001);
@@ -748,36 +750,20 @@ TEST(Reconstruction, gene_family_reconstructor)
   DOUBLES_EQUAL(0.193072, L[3], 0.0001);
 }
 
-TEST(Reconstruction, gene_family_reconstructor_print_reconstruction)
-{
-    // auto a = p_tree->find_descendant("A");
-    // cladevector order({ p_tree.get(), a });
-    clademap<int> values;
-    values[p_tree.get()] = 7;
-    values[p_tree->find_descendant("AB")] = 8;
-    values[p_tree->find_descendant("CD")] = 6;
-
-    gene_family_reconstructor gfc(&fam, p_tree.get(), values);
-    ostringstream ost;
-
-    gfc.print_reconstruction(ost, order);
-    STRCMP_EQUAL("  TREE Family5 = ((A_11:1,B_2:3)4_8:7,(C_5:11,D_6:17)5_6:23)6_7;\n", ost.str().c_str());
-}
-
 TEST(Reconstruction, gamma_bundle_print_reconstruction_prints_value_for_each_category_and_a_summation)
 {
     // auto a = p_tree->find_descendant("A");
     clademap<int> values;
     values[p_tree.get()] = 7;
+    values[p_tree->find_descendant("AB")] = 0;
+    values[p_tree->find_descendant("CD")] = 0;
 
     clademap<double> values2;
     values2[p_tree.get()] = 7;
     values2[p_tree->find_descendant("AB")] = 8;
     values2[p_tree->find_descendant("CD")] = 6;
 
-    auto gfc = new gene_family_reconstructor(&fam, p_tree.get(), values);
-    vector<gene_family_reconstructor *> v{ gfc };
-
+    vector<clademap<int>> v{ values };
     ostringstream ost;
     gamma_bundle bundle(v, values2, clademap<family_size_change>(), p_tree.get(), &fam);
     bundle.print_reconstruction(ost, order);
@@ -801,10 +787,9 @@ TEST(Reconstruction, gamma_bundle_get_increases_decreases)
     values2[a] = 11;
     values2[ab] = 13;
 
-    auto gfc = new gene_family_reconstructor(&fam, p_tree.get(), values);
-    vector<gene_family_reconstructor *> v{ gfc };
     clademap<family_size_change> c;
     c[ab] = Decrease;
+    vector<clademap<int>> v{ values };
 
     ostringstream ost;
     gamma_bundle bundle(v, values2, c, p_tree.get(), &fam);
@@ -830,15 +815,16 @@ TEST(Reconstruction, gamma_model_reconstruction)
     values2[p_tree->find_descendant("AB")] = 8;
     values2[p_tree->find_descendant("CD")] = 6;
 
-    auto gfc = new gene_family_reconstructor(&fam, p_tree.get(), values);
-    vector<gene_family_reconstructor *> v{ gfc };
+    vector<clademap<int>> v{ values };
+
     gamma_bundle bundle(v, values2, clademap<family_size_change>(), p_tree.get(), &fam);
     vector<gamma_bundle *> bundles{ &bundle };
 
     vector<double> multipliers{ 0.13, 1.4 };
     gamma_model_reconstruction gmr(multipliers, bundles);
     std::ostringstream ost;
-    gmr.print_reconstructed_states(ost);
+    vector<gene_family> families{ fam };
+    gmr.print_reconstructed_states(ost, families, p_tree.get());
 
     STRCMP_CONTAINS("#NEXUS", ost.str().c_str());
     STRCMP_CONTAINS("BEGIN TREES;", ost.str().c_str());
@@ -853,25 +839,33 @@ TEST(Reconstruction, gamma_model_reconstruction)
 
 TEST(Reconstruction, print_reconstructed_states_empty)
 {
-    base_model_reconstruction bmr;
+    std::vector<clademap<int>> reconstructed_states;
+    std::vector<clademap<family_size_change>> increase_decrease_map;
+    std::vector<string> family_ids;
+
+    base_model_reconstruction bmr(reconstructed_states, increase_decrease_map, family_ids);
     ostringstream ost;
-    bmr.print_reconstructed_states(ost);
+    vector<gene_family> families{ fam };
+    bmr.print_reconstructed_states(ost, families, p_tree.get());
     STRCMP_EQUAL("", ost.str().c_str());
 }
 
 TEST(Reconstruction, print_reconstructed_states_no_print)
 {
-    // auto a = p_tree->find_descendant("A");
-
     clademap<int> values;
     values[p_tree.get()] = 7;
     values[p_tree->find_descendant("AB")] = 8;
     values[p_tree->find_descendant("CD")] = 6;
 
-    base_model_reconstruction bmr;
-    bmr._rec_processes.push_back(new gene_family_reconstructor(&fam, p_tree.get(), values));
+    std::vector<clademap<int>> reconstructed_states{ values };
+    std::vector<clademap<family_size_change>> increase_decrease_map;
+    std::vector<string> family_ids;
+
+    base_model_reconstruction bmr(reconstructed_states, increase_decrease_map, family_ids);
+
     ostringstream ost;
-    bmr.print_reconstructed_states(ost);
+    vector<gene_family> families{ fam };
+    bmr.print_reconstructed_states(ost, families, p_tree.get());
     STRCMP_CONTAINS("#NEXUS", ost.str().c_str());
     STRCMP_CONTAINS("BEGIN TREES;", ost.str().c_str());
     STRCMP_CONTAINS("  TREE Family5 = ((A_11:1,B_2:3)1_8:7,(C_5:11,D_6:17)2_6:23)0_7;", ost.str().c_str());
@@ -880,29 +874,51 @@ TEST(Reconstruction, print_reconstructed_states_no_print)
 
 TEST(Reconstruction, reconstruction_process_internal_node)
 {
-    single_lambda s_lambda(0.05);
-    double multiplier = 2.0;
+    single_lambda s_lambda(0.1);
     fam.set_species_size("A", 3);
     fam.set_species_size("B", 6);
 
-    unique_ptr<lambda> m(s_lambda.multiply(multiplier));
     matrix_cache calc(25);
-    calc.precalculate_matrices(get_lambda_values(m.get()), set<double>({ 1, 3, 7, 11, 17, 23 }));
-    gene_family_reconstructor process(cout, &s_lambda, multiplier, NULL, 24, 24, &fam, &calc, NULL);
+    calc.precalculate_matrices({ 0.1 }, set<double>({ 1, 3, 7, 11, 17, 23 }));
 
-    process(p_tree->find_descendant("A"));
-    process(p_tree->find_descendant("B"));
+    clademap<std::vector<int>> all_node_Cs;
+    clademap<std::vector<double>> all_node_Ls;
+
+    reconstruct_leaf_node(p_tree->find_descendant("A"), &s_lambda, all_node_Cs, all_node_Ls, 24, &fam, &calc);
+    reconstruct_leaf_node(p_tree->find_descendant("B"), &s_lambda, all_node_Cs, all_node_Ls, 24, &fam, &calc);
 
     auto internal_node = p_tree->find_descendant("AB");
-    process(internal_node);
-    auto L = process.get_L(internal_node);
+    reconstruct_internal_node(internal_node, &s_lambda, all_node_Cs, all_node_Ls, 24, &calc);
+    auto L = all_node_Ls[internal_node];
 
-    // L holds the probability of the leaf moving from size 3 to size n
+    // L holds the probability of the node moving from size 3 to size n
     LONGS_EQUAL(25, L.size());
     DOUBLES_EQUAL(0.0, L[0], 0.0001);
     DOUBLES_EQUAL(0.00101688, L[1], 0.0001);
     DOUBLES_EQUAL(0.00254648, L[2], 0.0001);
     DOUBLES_EQUAL(0.0033465, L[3], 0.0001);
+}
+
+TEST(Reconstruction, gamma_bundle_reconstruct)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    gene_family fam;
+    fam.set_species_size("A", 3);
+    fam.set_species_size("B", 6);
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    single_lambda lambda(0.005);
+    gamma_bundle bundle({ 0.1, 0.5 }, p_tree.get(), &fam, cout, &lambda, 10, 8);
+    matrix_cache cache(11);
+    multiple_lambda ml(map<string, int>(), { 0.0005, 0.0025 });
+    cache.precalculate_matrices(get_lambda_values(&ml), set<double>{1, 3, 7});
+    root_distribution rd;
+    rd.vector({ 1,2,3,4,5,4,3,2,1 });
+    uniform_distribution dist;
+    dist.initialize(&rd);
+
+    bundle.reconstruct({ .15, .25 }, &cache, &dist );
+    STRCMP_EQUAL("4_4_2", bundle.get_reconstructed_states(p_tree->find_descendant("AB")).c_str());
 }
 
 TEST(Inference, gamma_bundle_prune)

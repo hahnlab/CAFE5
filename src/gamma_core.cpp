@@ -315,14 +315,13 @@ reconstruction* gamma_model::reconstruct_ancestral_states(matrix_cache *calc, ro
 #pragma omp parallel for
     for (size_t i = 0; i<_family_bundles.size(); ++i)
     {
-        _family_bundles[i]->set_values(calc, prior);
-        _family_bundles[i]->reconstruct(_gamma_cat_probs);
+        _family_bundles[i]->reconstruct(_gamma_cat_probs, calc, prior);
     }
 
     return result;
 }
 
-void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost)
+void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost, const std::vector<gene_family>& gene_families, const clade *p_tree)
 {
     if (_family_bundles.empty())
         return;
@@ -346,12 +345,12 @@ void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost)
     ost << endl;
 }
 
-void gamma_model_reconstruction::print_increases_decreases_by_family(std::ostream& ost, const std::vector<double>& pvalues)
+void gamma_model_reconstruction::print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues)
 {
     ::print_increases_decreases_by_family(ost, _family_bundles, pvalues);
 }
 
-void gamma_model_reconstruction::print_increases_decreases_by_clade(std::ostream& ost)
+void gamma_model_reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order)
 {
     ::print_increases_decreases_by_clade(ost, _family_bundles);
 }
