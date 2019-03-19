@@ -335,7 +335,19 @@ The Nelder-Mead optimization algorithm is used. It runs until it can find a diff
 
 In some cases, the optimizer suggests values that cannot be calculated (due to saturation, negative values, or other reasons) In this case, an infinite score is returned and the optimizer continues.
 
-When optimizing for an alpha value with a set number of clusters, if the largest multiplier in the longest branch is saturated, the scorer will return an infinite value.
+When optimizing for an alpha value with a set number of clusters, if the largest multiplier in the longest branch is saturated, the scorer will return an infinite value. This will be noted at the end of the run with text like:
+
+\begin{lstlisting}
+90 values were attempted (10% rejected)
+\end{lstlisting}
+
+showing that 10% of the values were rejected due to saturation. In addition, individual families may either be saturated or be calculated with a probability so low it cannot be measured. If this occurs on more than 20% of the attempts, it also will be noted at the end of the run.
+
+\begin{lstlisting}
+The following families had failure rates >20% of the time:
+Family6 had 22 failures
+Family9 had 19 failures
+\end{lstlisting}
 
 Certain options are available at compile-time for the optimizer. If OPTIMIZER\_STRATEGY\_INITIAL\_VARIANTS is defined, the optimizer
 will take several shorter attempts at various values 
