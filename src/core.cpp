@@ -173,3 +173,57 @@ std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, c
 
     return _probabilities.at(_p_tree); // likelihood of the whole tree = multiplication of likelihood of all nodes
 }
+
+void event_monitor::Event_InferenceAttempt_Started() 
+{ 
+#ifndef SILENT
+    std::cout << "-lnL: " << log(0) << std::endl;
+#endif
+    attempts++;
+}
+
+void event_monitor::Event_Reconstruction_Started(std::string model)
+{
+#ifndef SILENT
+    cout << "Starting reconstruction processes for " << model << " model" << endl;
+#endif
+}
+
+void event_monitor::Event_Reconstruction_Complete()
+{
+#ifndef SILENT
+    cout << "Done!" << endl;
+#endif
+}
+
+void event_monitor::Event_InferenceAttempt_Complete(double final_likelihood)
+{
+#ifndef SILENT
+    std::cout << "-lnL: " << final_likelihood << std::endl;
+#endif
+}
+
+void event_monitor::summarize(std::ostream& ost) const
+{
+    if (attempts == 0)
+    {
+        ost << "No attempts made\n";
+        return;
+    }
+    ost << this->attempts << " values were attempted (" << round(double(rejects) / double(attempts) * 100) << "% rejected)\n";
+    if (!failure_count.empty())
+    {
+        auto failures = [](const pair<string, int>& a, const pair<string, int>& b) { return a.second < b.second; };
+        auto worst_performing_family = std::max_element(failure_count.begin(), failure_count.end(), failures);
+        if (worst_performing_family->second * 5 > (attempts - rejects))    // at least one family had 20% rejections
+        {
+            ost << "The following families had failure rates >20% of the time:\n";
+            for (auto& a : this->failure_count)
+            {
+                if (a.second * 5 > (attempts - rejects))
+                    ost << a.first << " had " << a.second << " failures\n";
+            }
+        }
+    }
+}
+

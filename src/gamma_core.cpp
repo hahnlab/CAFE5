@@ -182,6 +182,9 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior, const 
     }
 
     _family_bundles.clear();
+
+    _monitor.Event_InferenceAttempt_Started();
+
     for (auto i = _p_gene_families->begin(); i != _p_gene_families->end(); ++i)
     {
         _family_bundles.push_back(new gamma_bundle(_lambda_multipliers, _p_tree, &(*i), _ost, p_lambda, _max_family_size, _max_root_family_size));
@@ -189,9 +192,7 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior, const 
 
     if (!can_infer())
     {
-#ifndef SILENT
-        std::cout << "-lnL: " << log(0) << std::endl;
-#endif
+        _monitor.Event_InferenceAttempt_InvalidValues();
         return -log(0);
     }
 
@@ -243,8 +244,15 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior, const 
     }
 
     if (find(failure.begin(), failure.end(), true) != failure.end())
+    {
+        for (size_t i = 0; i < _family_bundles.size(); i++) {
+            if (failure[i])
+            {
+                _monitor.Event_InferenceAttempt_Saturation(_family_bundles[i]->get_family_id());
+            }
+        }
         return -log(0);
-
+    }
     for (auto& stashes : pruning_results)
     {
         for (auto& stash : stashes)
@@ -254,10 +262,7 @@ double gamma_model::infer_processes(root_equilibrium_distribution *prior, const 
     }
     double final_likelihood = -accumulate(all_bundles_likelihood.begin(), all_bundles_likelihood.end(), 0.0);
 
-#ifndef SILENT
-    std::cout << "-lnL: " << final_likelihood << std::endl;
-#endif
-
+    _monitor.Event_InferenceAttempt_Complete(final_likelihood);
     return final_likelihood;
 }
 
@@ -295,8 +300,8 @@ inference_optimizer_scorer *gamma_model::get_lambda_optimizer(user_data& data)
 
 reconstruction* gamma_model::reconstruct_ancestral_states(matrix_cache *calc, root_equilibrium_distribution*prior)
 {
+    _monitor.Event_Reconstruction_Started("Gamma");
     gamma_model_reconstruction* result = new gamma_model_reconstruction(_lambda_multipliers, _family_bundles);
-    cout << "Gamma: reconstructing ancestral states - lambda = " << *_p_lambda << ", alpha = " << _alpha << endl;
 
     branch_length_finder lengths;
     _p_tree->apply_prefix_order(lengths);
@@ -317,6 +322,8 @@ reconstruction* gamma_model::reconstruct_ancestral_states(matrix_cache *calc, ro
     {
         _family_bundles[i]->reconstruct(_gamma_cat_probs, calc, prior);
     }
+
+    _monitor.Event_Reconstruction_Complete();
 
     return result;
 }

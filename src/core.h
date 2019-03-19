@@ -59,6 +59,22 @@ public:
     }
 };
 
+class event_monitor
+{
+    std::map<string, int> failure_count;
+    int attempts = 0;
+    int rejects = 0;
+public:
+    void summarize(std::ostream& ost) const;
+
+    void Event_InferenceAttempt_Started();
+    void Event_InferenceAttempt_InvalidValues() { rejects++; }
+    void Event_InferenceAttempt_Saturation(std::string family) { failure_count[family]++; }
+    void Event_InferenceAttempt_Complete(double final_likelihood);
+
+    void Event_Reconstruction_Started(std::string model);
+    void Event_Reconstruction_Complete();
+};
 
 class model {
 protected:
@@ -77,6 +93,8 @@ protected:
    // void initialize_rootdist_if_necessary();
 
     std::vector<family_info_stash> results;
+
+    event_monitor _monitor;
 
 public:
     model(lambda* p_lambda,
@@ -120,6 +138,7 @@ public:
 
     virtual void perturb_lambda() {}
 
+    const event_monitor& get_monitor() { return _monitor;  }
 };
 
 std::vector<size_t> build_reference_list(const std::vector<gene_family>& families);

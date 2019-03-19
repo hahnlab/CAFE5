@@ -49,8 +49,11 @@ vector<size_t> build_reference_list(const vector<gene_family>& families)
 }
 
 double base_model::infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) {
+    _monitor.Event_InferenceAttempt_Started();
+
     if (!_p_lambda->is_valid())
     {
+        _monitor.Event_InferenceAttempt_InvalidValues();
         return -log(0);
     }
 
@@ -104,6 +107,8 @@ double base_model::infer_processes(root_equilibrium_distribution *prior, const s
     }
     double final_likelihood = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families
 
+    _monitor.Event_InferenceAttempt_Complete(final_likelihood);
+
     return final_likelihood;
 }
 
@@ -140,9 +145,8 @@ inference_optimizer_scorer *base_model::get_lambda_optimizer(user_data& data)
 
 reconstruction* base_model::reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior)
 {
-#ifndef SILENT
-    cout << "Starting reconstruction processes for base model" << endl;
-#endif
+    _monitor.Event_Reconstruction_Started("Base");
+
     std::vector<clademap<int>> reconstructed_states;
     std::vector<clademap<family_size_change>> increase_decrease_map;
     std::vector<string> family_ids;
@@ -154,10 +158,6 @@ reconstruction* base_model::reconstruct_ancestral_states(matrix_cache *p_calc, r
     _p_tree->apply_prefix_order(lengths);
     p_calc->precalculate_matrices(get_lambda_values(_p_lambda), lengths.result());
 
-#ifndef SILENT
-    cout << "Base: reconstructing ancestral states - lambda = " << *_p_lambda << endl;
-#endif
-
     reconstructed_states.resize(_p_gene_families->size());
     increase_decrease_map.resize(_p_gene_families->size());
     for (size_t i = 0; i<_p_gene_families->size(); ++i)
@@ -166,10 +166,8 @@ reconstruction* base_model::reconstruct_ancestral_states(matrix_cache *p_calc, r
             &_p_gene_families->at(i), p_calc, p_prior, reconstructed_states[i]);
         compute_increase_decrease(reconstructed_states[i], increase_decrease_map[i]);
     }
-#ifndef SILENT
-    cout << "Done!" << endl;
-#endif
 
+    _monitor.Event_Reconstruction_Complete();
     return new base_model_reconstruction(reconstructed_states, increase_decrease_map, family_ids);
 }
 
