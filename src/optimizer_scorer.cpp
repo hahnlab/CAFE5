@@ -14,7 +14,7 @@ extern std::mt19937 randomizer_engine;
 
 using namespace std;
 
-double inference_optimizer_scorer::calculate_score(double *values)
+double inference_optimizer_scorer::calculate_score(const double *values)
 {
     prepare_calculation(values);
 
@@ -45,7 +45,7 @@ std::vector<double> lambda_optimizer::initial_guesses()
     return result;
 }
 
-void lambda_optimizer::prepare_calculation(double *values)
+void lambda_optimizer::prepare_calculation(const double *values)
 {
     _p_lambda->update(values);
 }
@@ -71,10 +71,10 @@ std::vector<double> lambda_epsilon_optimizer::initial_guesses()
 
 }
 
-void lambda_epsilon_optimizer::prepare_calculation(double *values)
+void lambda_epsilon_optimizer::prepare_calculation(const double *values)
 {
-    double * lambdas = values;
-    double * epsilons = values + _p_lambda->count();
+    auto lambdas = values;
+    auto epsilons = values + _p_lambda->count();
 
     _lambda_optimizer.prepare_calculation(lambdas);
 
@@ -112,7 +112,7 @@ std::vector<double> gamma_optimizer::initial_guesses()
     return std::vector<double>({ distribution(randomizer_engine) });
 }
 
-void gamma_optimizer::prepare_calculation(double * values)
+void gamma_optimizer::prepare_calculation(const double * values)
 {
     double alpha = *values;
     _p_gamma_model->set_alpha(alpha);
@@ -150,7 +150,7 @@ std::vector<double> gamma_lambda_optimizer::initial_guesses()
 
 }
 
-void gamma_lambda_optimizer::prepare_calculation(double *values)
+void gamma_lambda_optimizer::prepare_calculation(const double *values)
 {
     _lambda_optimizer.prepare_calculation(values);
     _gamma_optimizer.prepare_calculation(values + _p_lambda->count());

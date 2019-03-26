@@ -54,12 +54,12 @@ std::vector<double> poisson_scorer::initial_guesses()
     return std::vector<double>{my_random};
 }
 
-double poisson_scorer::calculate_score(double * values)
+double poisson_scorer::calculate_score(const double * values)
 {
     return lnLPoisson(values);
 }
 
-double poisson_scorer::lnLPoisson(double* plambda)
+double poisson_scorer::lnLPoisson(const double* plambda)
 {
     double score = 0;
     double lambda = plambda[0];

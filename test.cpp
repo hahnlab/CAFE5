@@ -1473,7 +1473,7 @@ class mock_optimizer : public inference_optimizer_scorer
     {
         return std::vector<double>{_initial};
     }
-    virtual void prepare_calculation(double * values) override
+    virtual void prepare_calculation(const double * values) override
     {
     }
     virtual void report_precalculation() override
@@ -1802,7 +1802,7 @@ class mock_scorer : public optimizer_scorer
     {
         return std::vector<double>{0.2};
     }
-    virtual double calculate_score(double * values) override
+    virtual double calculate_score(const double * values) override
     {
         if (force_scoring_error)
             return std::numeric_limits<double>::infinity();
@@ -2228,7 +2228,7 @@ public:
     {
         return std::vector<double>{5, 3};
     }
-    virtual double calculate_score(double * values) override
+    virtual double calculate_score(const double * values) override
     {
         return values[0] * values[1];
     }

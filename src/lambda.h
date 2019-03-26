@@ -22,7 +22,7 @@ class lambda {
 public:
     virtual std::vector<double> calculate_child_factor(const matrix_cache& calc, const clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const = 0; //!< Pure virtual function (= 0 is the 'pure specifier' and indicates this function MUST be overridden by a derived class' method)
     virtual lambda *multiply(double factor) const = 0;
-    virtual void update(double* values) = 0;
+    virtual void update(const double* values) = 0;
     virtual int count() const = 0;
     virtual std::string to_string() const = 0;
     virtual double get_value_for_clade(const clade *c) const = 0;
@@ -46,7 +46,7 @@ public:
 	{
 		return new single_lambda(_lambda * factor);
 	}
-    virtual void update(double* values) { _lambda = *values; }
+    virtual void update(const double* values) override { _lambda = *values; }
 
     virtual int count() const {
         return 1;
@@ -82,7 +82,7 @@ public:
 
         return new multiple_lambda(_node_name_to_lambda_index, npi);
     }
-    virtual void update(double* values);    
+    virtual void update(const double* values) override;    
     virtual int count() const {
         return _lambdas.size();
     }

@@ -18,12 +18,12 @@ public:
 
     virtual std::vector<double> initial_guesses() = 0;
 
-    virtual double calculate_score(double *values) = 0;
+    virtual double calculate_score(const double *values) = 0;
 };
 
 class inference_optimizer_scorer : public optimizer_scorer {
 protected:
-    virtual void prepare_calculation(double *values) = 0;
+    virtual void prepare_calculation(const double *values) = 0;
     virtual void report_precalculation() = 0;
 
     lambda *_p_lambda;
@@ -46,7 +46,7 @@ public:
 
     virtual ~inference_optimizer_scorer() {}
 
-    double calculate_score(double *values) ;
+    double calculate_score(const double *values) ;
 
     virtual void finalize(double *result) = 0;
 
@@ -69,7 +69,7 @@ public:
 
     virtual void finalize(double *results);
 
-    virtual void prepare_calculation(double *values) override;
+    virtual void prepare_calculation(const double *values) override;
     virtual void report_precalculation() override;
 };
 
@@ -96,7 +96,7 @@ public:
 
     std::vector<double> initial_guesses();
 
-    virtual void prepare_calculation(double *values) override;
+    virtual void prepare_calculation(const double *values) override;
     virtual void report_precalculation() override;
 
     virtual void finalize(double *results);
@@ -107,7 +107,7 @@ class gamma_model;
 class gamma_optimizer : public inference_optimizer_scorer {
     gamma_model *_p_gamma_model;
 public:
-    virtual void prepare_calculation(double *values) override;
+    virtual void prepare_calculation(const double *values) override;
     virtual void report_precalculation() override;
 
     // Inherited via optimizer_scorer
@@ -120,7 +120,7 @@ public:
 
 class gamma_lambda_optimizer : public inference_optimizer_scorer
 {
-    virtual void prepare_calculation(double *values) override;
+    virtual void prepare_calculation(const double *values) override;
     virtual void report_precalculation() override;
     lambda_optimizer _lambda_optimizer;
     gamma_optimizer _gamma_optimizer;

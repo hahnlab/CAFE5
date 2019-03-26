@@ -39,7 +39,7 @@ std::vector<double> multiple_lambda::calculate_child_factor(const matrix_cache& 
 	return matrix->multiply(probabilities, s_min_family_size, s_max_family_size, c_min_family_size, c_max_family_size);
 }
 
-void multiple_lambda::update(double* values)
+void multiple_lambda::update(const double* values)
 {
     std::copy(values, values + _lambdas.size(), _lambdas.begin());
 }
