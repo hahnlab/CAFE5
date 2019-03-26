@@ -17,14 +17,6 @@
 
 using namespace std;
 
-#if defined(OPTIMIZER_STRATEGY_INITIAL_VARIANTS)
-const string strategy_description = "\nOptimizer strategy: Vary initial conditions\n";
-#elif defined(OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE)
-const string strategy_description = "\nOptimizer strategy: Search a wider area when close to a solution\n\n";
-#else
-const string strategy_description = "\nOptimizer strategy: Standard Nelder-Mead\n\n";
-#endif
-
 const double MAX_DOUBLE = std::numeric_limits<double>::max();
 
 // TODO: If fminsearch is slow, replacing this with a single array might be more efficient
@@ -365,6 +357,8 @@ class OptimizerStrategy
 {
 public:
     virtual void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial) = 0;
+
+    virtual std::string Description() const = 0;
 };
 
 class StandardNelderMead : public OptimizerStrategy
@@ -389,6 +383,8 @@ public:
         r.score = result->score;
         r.values = result->values;
     }
+
+    virtual std::string Description() const override { return "Standard Nelder-Mead"; };
 };
 
 class PerturbWhenClose : public OptimizerStrategy
@@ -427,6 +423,7 @@ public:
         r.score = phase2_result->score;
         r.values = phase2_result->values;
     }
+    virtual std::string Description() const override { return "Standard Nelder-Mead"; };
 };
 
 class InitialVariants : public OptimizerStrategy
@@ -469,6 +466,8 @@ public:
         r.values = phase2_result->values;
         r.num_iterations = pfm->iters + phase1_iters;
     }
+
+    virtual std::string Description() const override { return "Vary initial conditions"; };
 };
 
 class RangeWidelyThenHomeIn : public OptimizerStrategy
@@ -503,7 +502,9 @@ public:
         r.score = phase2_result->score;
         r.values = phase2_result->values;
     }
-};
+    virtual std::string Description() const override { return "Search a wider area when close to a solution"; };
+};    
+
 
 OptimizerStrategy *optimizer::get_strategy()
 {
@@ -524,9 +525,11 @@ OptimizerStrategy *optimizer::get_strategy()
 
 optimizer::result optimizer::optimize()
 {
+    unique_ptr<OptimizerStrategy> strat(get_strategy());
+
     if (!quiet)
     {
-        cout << strategy_description;
+        cout << "Optimizer strategy: " << strat->Description() << endl;
     }
 
     using clock = std::chrono::system_clock;
@@ -537,7 +540,6 @@ optimizer::result optimizer::optimize()
     auto initial = get_initial_guesses();
     fminsearch_set_equation(pfm, _p_scorer, initial.size());
 
-    unique_ptr<OptimizerStrategy> strat(get_strategy());
     strat->Run(pfm, r, initial);
     r.duration = chrono::duration_cast<chrono::seconds>(clock::now() - before);
 
