@@ -12,6 +12,10 @@
 #include "optimizer.h"
 #include "../config.h"
 
+#ifdef HAVE_NLOPT_HPP
+#include <nlopt.hpp>
+#endif
+
 #include "optimizer_scorer.h"
 #define PHASED_OPTIMIZER_PHASE2_PRECISION 1e-6
 
@@ -506,23 +510,6 @@ public:
 };    
 
 
-OptimizerStrategy *optimizer::get_strategy()
-{
-    switch (strategy)
-    {
-    case RangeWidely:
-        return new RangeWidelyThenHomeIn();
-    case InitialVar:
-        return new InitialVariants(*this);
-    case Perturb:
-        return new PerturbWhenClose();
-    case Standard:
-        return new StandardNelderMead();
-    }
-
-    return new StandardNelderMead();
-}
-
 optimizer::result optimizer::optimize()
 {
     unique_ptr<OptimizerStrategy> strat(get_strategy());
@@ -575,5 +562,70 @@ std::ostream& operator<<(std::ostream& ost, const optimizer::result& r)
 bool threshold_achieved(FMinSearch* pfm)
 {
     return __fminsearch_checkV(pfm) && __fminsearch_checkF(pfm);
+}
+
+#ifdef HAVE_NLOPT_HPP
+double myvfunc(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
+{
+    optimizer_scorer* scorer = reinterpret_cast<optimizer_scorer *>(my_func_data);
+    return scorer->calculate_score(&x[0]);
+}
+
+class NLOpt_strategy : public OptimizerStrategy {
+    const nlopt::algorithm _algorithm = nlopt::LD_MMA;
+
+    // Inherited via OptimizerStrategy
+    virtual void Run(FMinSearch * pfm, optimizer::result & r, std::vector<double>& initial) override
+    {
+        nlopt::opt opt(_algorithm, initial.size());
+        opt.set_min_objective(myvfunc, pfm->scorer);
+        opt.set_ftol_rel(pfm->tolf);
+        opt.set_xtol_rel(pfm->tolx);
+        opt.set_maxeval(pfm->maxiters);
+        double minf;
+        try {
+            vector<double> values(initial);
+            nlopt::result result = opt.optimize(values, minf);
+
+            r.num_iterations = opt.get_numevals();
+            r.score = result;
+            r.values = values;
+        }
+        catch (std::exception &e) {
+            std::cout << "nlopt failed: " << e.what() << std::endl;
+        }
+    }
+
+
+    // Inherited via OptimizerStrategy
+    virtual std::string Description() const override
+    {
+        nlopt::opt opt(_algorithm, 1);
+        return opt.get_algorithm_name();
+    }
+
+};
+#endif
+
+OptimizerStrategy *optimizer::get_strategy()
+{
+    switch (strategy)
+    {
+    case NLOpt:
+#ifdef HAVE_NLOPT_HPP
+        return new NLOpt_strategy();
+#endif
+        break;
+    case RangeWidely:
+        return new RangeWidelyThenHomeIn();
+    case InitialVar:
+        return new InitialVariants(*this);
+    case Perturb:
+        return new PerturbWhenClose();
+    case Standard:
+        return new StandardNelderMead();
+    }
+
+    return new StandardNelderMead();
 }
 

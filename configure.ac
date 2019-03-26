@@ -6,6 +6,9 @@ AC_LANG(C++)
 AC_PROG_CXX([icc g++])
 AC_OPENMP
 
+AC_CHECK_LIB([m], [floor])
+AC_CHECK_LIB([nlopt], [nlopt_create])
+
 ax_blas_ok=no
 
 AC_SEARCH_LIBS(sgemm, mkl_intel_lp64,
@@ -32,7 +35,9 @@ fi
 AC_SEARCH_LIBS(vdExp, mkl_intel_lp64,
 		[AC_DEFINE([HAVE_VECTOR_EXP],[1], [Have a vector exponential function])],,
 		[])
-	
+
+AC_CHECK_HEADERS(nlopt.hpp)
+		
 AC_DEFINE(NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS, 40, [Number of times optimizer will restart if it fails to find legal values])
 AC_DEFINE(OPTIMIZER_INITIAL_GUESS_MEAN_ALPHA, 1.0, [Mean value of normal curve optimizer will initialize alpha guesses from])
 AC_DEFINE(OPTIMIZER_INITIAL_GUESS_STDDEV_ALPHA, 0.4, [Standard deviation of normal curve optimizer will initialize alpha guesses from])

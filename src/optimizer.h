@@ -85,8 +85,10 @@ public:
 
 std::ostream& operator<<(std::ostream& ost, const optimizer::result& r);
 
-enum strategies { RangeWidely, InitialVar, Perturb, Standard };
-#ifdef OPTIMIZER_STRATEGY_RANGE_WIDELY_THEN_HOME_IN
+enum strategies { RangeWidely, InitialVar, Perturb, Standard, NLOpt };
+#ifdef HAVE_NLOPT_HPP
+const strategies strategy = NLOpt;
+#elif defined(OPTIMIZER_STRATEGY_RANGE_WIDELY_THEN_HOME_IN)
 const strategies strategy = RangeWidely;
 #elif defined(OPTIMIZER_STRATEGY_INITIAL_VARIANTS)
 const strategies strategy = InitialVar;
