@@ -48,6 +48,17 @@ double gammaln(double a)
 #define GAMMA_CACHE_SIZE 1024
 
 vector<double> lgamma_cache;
+
+matrix chooseln_cache(100);
+
+inline double lgamma2(double n)
+{
+    if (n >= 0 && n < GAMMA_CACHE_SIZE && (n - int(n) < 0.00000000001))
+        return lgamma_cache.at(int(n));
+
+    return lgamma(n);
+}
+
 void init_lgamma_cache()
 {
     lgamma_cache.resize(GAMMA_CACHE_SIZE);
@@ -55,20 +66,20 @@ void init_lgamma_cache()
     {
         lgamma_cache[i] = lgamma(i);
     }
-}
 
-inline double lgamma2(double n)
-{
-    if (n < GAMMA_CACHE_SIZE && (n - int(n) < 0.00000000001))
-        return lgamma_cache.at(int(n));
-
-    return lgamma(n);
+    for (int i = 0; i < chooseln_cache.size(); ++i)
+        for (int j = 0; j < chooseln_cache.size(); ++j)
+            chooseln_cache.set(i, j, lgamma2(i + 1) - lgamma2(j + 1) - lgamma2(i - j + 1));
 }
 
 double chooseln(double n, double r)
 {
   if (r == 0 || (n == 0 && r == 0)) return 0;
   else if (n <= 0 || r <= 0) return log(0);
+
+  if (n >= 0 && r >= 0 && n < chooseln_cache.size() && r < chooseln_cache.size() && (n - int(n) < 0.00000000001) && (r - int(r) < 0.00000000001))
+      return chooseln_cache.get(n, r);
+
   return lgamma2(n + 1) - lgamma2(r + 1) - lgamma2(n - r + 1);
 }
 

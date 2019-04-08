@@ -98,12 +98,14 @@ void gamma_model::prepare_matrices_for_simulation(matrix_cache& cache)
 {
     branch_length_finder lengths;
     _p_tree->apply_prefix_order(lengths);
-    //_lambda_multipliers
+    vector<double> multipliers;
     for (auto multiplier : _lambda_multipliers)
     {
         unique_ptr<lambda> mult(_p_lambda->multiply(multiplier));
-        cache.precalculate_matrices(get_lambda_values(mult.get()), lengths.result());
+        auto values = get_lambda_values(mult.get());
+        multipliers.insert(multipliers.end(), values.begin(), values.end());
     }
+    cache.precalculate_matrices(multipliers, lengths.result());
 }
 
 void gamma_model::perturb_lambda()
