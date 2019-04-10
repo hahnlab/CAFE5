@@ -129,21 +129,16 @@ void print_clade_name(clade *clade) {
   cout << clade->get_taxon_name() << " (length of subtending branch: " << clade->get_branch_length() << ")" << endl;
 }
 
-class named_lambda_index_getter
-{
-public:
-	std::map<std::string, int> node_name_to_lambda_index;
-	void operator()(const clade *c)
-	{
-		node_name_to_lambda_index[c->get_taxon_name()] = c->get_lambda_index()-1; // -1 is to adjust the index offset
-	}
-};
-
 std::map<std::string, int> clade::get_lambda_index_map()
 {
-	named_lambda_index_getter m;
-	apply_prefix_order(m);
-	return m.node_name_to_lambda_index;
+    std::map<std::string, int> node_name_to_lambda_index;
+    
+    auto fn = [&node_name_to_lambda_index](const clade *c) { 
+        node_name_to_lambda_index[c->get_taxon_name()] = c->get_lambda_index() - 1; // -1 is to adjust the index offset
+    };
+
+    apply_prefix_order(fn);
+	return node_name_to_lambda_index;
 }
 
 void clade::write_newick(ostream& ost, std::function<std::string(const clade *c)> textwriter) const

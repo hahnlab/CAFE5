@@ -76,10 +76,14 @@ public:
     void Event_Reconstruction_Complete();
 };
 
+/*! @brief Describes the actions that are taken when estimating or simulating data
+
+    A Model represents a way to calculate or simulate values in the data.
+*/
 class model {
 protected:
     std::ostream & _ost; 
-    lambda *_p_lambda; // TODO: multiple lambdas for different branches
+    lambda *_p_lambda;
     const clade *_p_tree;
     const std::vector<gene_family>* _p_gene_families;
     int _max_family_size;
@@ -90,12 +94,16 @@ protected:
     /// Used to track gene families with identical species counts
     std::vector<size_t> references;
 
-   // void initialize_rootdist_if_necessary();
-
     std::vector<family_info_stash> results;
 
     event_monitor _monitor;
 
+    //! Create a lambda based on the lambda tree model the user passed.
+    /// Called when the user has provided no lambda value and one must
+    /// be estimated. If the p_lambda_tree is NULL, uses a single
+    /// lambda; otherwise uses the number of unique lambdas in the provided
+    /// tree
+    void initialize_lambda(clade *p_lambda_tree);
 public:
     model(lambda* p_lambda,
         const clade *p_tree,
@@ -106,6 +114,7 @@ public:
     
     virtual ~model() {}
     
+    /// Allows the replacement of the current set of families with a new set
     void set_families(const std::vector<gene_family>* p_gene_families)
     {
         _p_gene_families = p_gene_families;
@@ -114,11 +123,8 @@ public:
     lambda * get_lambda() const {
         return _p_lambda;
     }
-    void initialize_lambda(clade *p_lambda_tree);
 
-    void set_max_sizes(int max_family_size, int max_root_family_size);
-    
-    //! Simulation methods
+    //! Returns a lambda suitable for creating a simulated family. Default case is simply to return the lambda provided by the user.
     virtual lambda* get_simulation_lambda(const user_data& data);
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache) = 0;
@@ -132,10 +138,11 @@ public:
     virtual reconstruction* reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
 
     virtual inference_optimizer_scorer *get_lambda_optimizer(user_data& data) = 0;
-    void print_node_depths(std::ostream& ost);
 
     std::size_t get_gene_family_count() const;
 
+    //! Tells the model to modify its lambdas slightly to provide a bit of extra randomness when simulating.
+    //  Default is to do nothing.
     virtual void perturb_lambda() {}
 
     const event_monitor& get_monitor() { return _monitor;  }

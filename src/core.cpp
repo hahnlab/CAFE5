@@ -63,33 +63,17 @@ std::size_t model::get_gene_family_count() const {
     return _p_gene_families->size();
 }
 
-//! Set max family sizes and max root family sizes for INFERENCE
-void model::set_max_sizes(int max_family_size, int max_root_family_size) {
-    _max_family_size = max_family_size;
-    _max_root_family_size = max_root_family_size;
-}
-
-class lambda_counter
-{
-public:
-    std::set<int> unique_lambdas;
-    void operator()(const clade *p_node)
-    {
-        unique_lambdas.insert(p_node->get_lambda_index());
-    }
-};
-
-
 void model::initialize_lambda(clade *p_lambda_tree)
 {
     lambda *p_lambda = NULL;
     if (p_lambda_tree != NULL)
     {
-        lambda_counter counter;
-        p_lambda_tree->apply_prefix_order(counter);
+        std::set<int> unique_lambdas;
+        auto fn = [&unique_lambdas](const clade *p_node) { unique_lambdas.insert(p_node->get_lambda_index()); };
+        p_lambda_tree->apply_prefix_order(fn);
         auto node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
-        p_lambda = new multiple_lambda(node_name_to_lambda_index, std::vector<double>(counter.unique_lambdas.size()));
-        cout << "Searching for " << counter.unique_lambdas.size() << " lambdas" << endl;
+        p_lambda = new multiple_lambda(node_name_to_lambda_index, std::vector<double>(unique_lambdas.size()));
+        cout << "Searching for " << unique_lambdas.size() << " lambdas" << endl;
     }
     else
     {
@@ -97,42 +81,6 @@ void model::initialize_lambda(clade *p_lambda_tree)
     }
 
     _p_lambda = p_lambda;
-}
-
-class depth_finder
-{
-    clademap<double>& _depths;
-    double _depth;
-public:
-    depth_finder(clademap<double>& depths, double depth) : _depths(depths), _depth(depth) {}
-    void operator()(const clade *c)
-    {
-        _depths[c] = _depth + c->get_branch_length();
-        depth_finder dp(_depths, _depth + c->get_branch_length());
-        c->apply_to_descendants(dp);
-    }
-};
-
-void model::print_node_depths(std::ostream& ost)
-{
-    clademap<double> depths;
-    depth_finder dp(depths, 0);
-    dp(_p_tree);
-    
-    double max_depth = 0;
-    for (auto& x : depths)
-    {
-        if (x.second > max_depth)
-            max_depth = x.second;
-    }
-
-    for (auto& x : depths)
-    {
-        if (!x.first->is_leaf())
-        {
-            ost << x.first->get_taxon_name() << "\t" << (max_depth - x.second) << endl;
-        }
-    }
 }
 
 void model::write_vital_statistics(std::ostream& ost, double final_likelihood)
@@ -160,18 +108,18 @@ double branch_length_finder::longest() const
 }
 
 //! Computes likelihoods for the given tree and a single family. Uses a lambda value based on the provided lambda
-/// and a given multiplier. Works by creating a likelihood_computer and calling it on all modes of the tree
+/// and a given multiplier. Works by calling \ref compute_node_probability on all nodes of the tree
 /// using the species counts for the family. 
 /// \returns a vector of probabilities for gene counts at the root of the tree 
-std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, const lambda *_lambda, const clade *_p_tree, double _lambda_multiplier, int _max_root_family_size, int _max_family_size)
+std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, const lambda *p_lambda, const clade *p_tree, double lambda_multiplier, int max_root_family_size, int max_family_size)
 {
-    unique_ptr<lambda> multiplier(_lambda->multiply(_lambda_multiplier));
-    std::map<const clade *, std::vector<double> > _probabilities;
-    initialize_probabilities(_p_tree, _probabilities, _max_root_family_size, _max_family_size);
-    auto fn = [&](const clade *c) { compute_node_probability(c, gf, NULL, _probabilities, _max_root_family_size, _max_family_size, multiplier.get(), calc); };
-    _p_tree->apply_reverse_level_order(fn);
+    unique_ptr<lambda> multiplier(p_lambda->multiply(lambda_multiplier));
+    clademap<std::vector<double>> probabilities;
+    initialize_probabilities(p_tree, probabilities, max_root_family_size, max_family_size);
+    auto fn = [&](const clade *c) { compute_node_probability(c, gf, NULL, probabilities, max_root_family_size, max_family_size, multiplier.get(), calc); };
+    p_tree->apply_reverse_level_order(fn);
 
-    return _probabilities.at(_p_tree); // likelihood of the whole tree = multiplication of likelihood of all nodes
+    return probabilities.at(p_tree); // likelihood of the whole tree = multiplication of likelihood of all nodes
 }
 
 void event_monitor::Event_InferenceAttempt_Started() 

@@ -42,7 +42,7 @@ trial* simulator::create_trial(model *p_model, const root_distribution& rd, int 
 
     (*result)[data.p_tree] = select_root_size(data, rd, family_number);
 
-    unique_ptr<lambda> sim_lambda(p_model->get_simulation_lambda(data));
+    unique_ptr<lambda> sim_lambda(data.p_lambda->clone());
 
     auto fn = [result, &sim_lambda, &data, max_family_size_sim, &cache](const clade *c)
     {

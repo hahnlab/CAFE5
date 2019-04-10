@@ -165,10 +165,11 @@ vector<double> estimator::compute_pvalues(const user_data& data, int number_of_s
 
     vector<double> result(data.gene_families.size());
 
-    transform(data.gene_families.begin(), data.gene_families.end(), result.begin(), [&data, &cache, &cd](const gene_family& gf)
+    std::map<const clade *, std::vector<double> > family_likelihoods;
+    transform(data.gene_families.begin(), data.gene_families.end(), result.begin(), [&data, &cache, &cd, &family_likelihoods](const gene_family& gf)
     {
-        std::map<const clade *, std::vector<double> > family_likelihoods;
         initialize_probabilities(data.p_tree, family_likelihoods, data.max_root_family_size, data.max_family_size);
+
         auto fn = [&](const clade *c) { compute_node_probability(c, gf, NULL, family_likelihoods, data.max_root_family_size, data.max_family_size, data.p_lambda, cache); };
         data.p_tree->apply_reverse_level_order(fn);
 

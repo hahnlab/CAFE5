@@ -159,6 +159,7 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
   return result;
 }
 
+
 /* END: Birth-death model components ----------------------- */
 void initialize_probabilities(const clade *p_tree, std::map<const clade *, std::vector<double> >& _probabilities, int _max_root_family_size, int _max_parsed_family_size)
 {
@@ -175,31 +176,35 @@ void initialize_probabilities(const clade *p_tree, std::map<const clade *, std::
     p_tree->apply_reverse_level_order(fn);
 }
 
-void compute_node_probability(const clade *node, const gene_family&_gene_family, const error_model*_p_error_model,
-    std::map<const clade *, std::vector<double> >& _probabilities, 
+//! Calculates the probabilities of a given node for a given family size.
+//! The probability of a leaf node is given from the family size at that node (1 for the family
+//! size, and 0 for all other sizes). Internal nodes are calculated based on the probabilities
+//! of the descendants.
+void compute_node_probability(const clade *node, const gene_family&gene_family, const error_model*p_error_model,
+    std::map<const clade *, std::vector<double> >& probabilities, 
     int _max_root_family_size,
     int _max_parsed_family_size,
     const lambda* _lambda,
     const matrix_cache& _calc) {
     if (node->is_leaf()) {
-        int species_size = _gene_family.get_species_size(node->get_taxon_name());
+        int species_size = gene_family.get_species_size(node->get_taxon_name());
 
-        if (_p_error_model != NULL)
+        if (p_error_model != NULL)
         {
-            auto error_model_probabilities = _p_error_model->get_probs(species_size);
-            int offset = species_size - ((_p_error_model->n_deviations() - 1) / 2);
+            auto error_model_probabilities = p_error_model->get_probs(species_size);
+            int offset = species_size - ((p_error_model->n_deviations() - 1) / 2);
             for (size_t i = 0; i<error_model_probabilities.size(); ++i)
             {
                 if (offset + int(i) < 0)
                     continue;
                 
-                _probabilities[node][offset+i] = error_model_probabilities[i];
+                probabilities[node][offset+i] = error_model_probabilities[i];
             }
         }
         else
         {
             // cout << "Leaf node " << node->get_taxon_name() << " has " << _probabilities[node].size() << " probabilities" << endl;
-            _probabilities[node][species_size] = 1.0;
+            probabilities[node][species_size] = 1.0;
         }
     }
 
@@ -207,10 +212,10 @@ void compute_node_probability(const clade *node, const gene_family&_gene_family,
 		// at the root, the size of the vector holding the final likelihoods will be _max_root_family_size (size 0 is not included, so we do not add 1)
         std::vector<std::vector<double> > factors;
         auto fn = [&](const clade *c) {
-            factors.push_back(_lambda->calculate_child_factor(_calc, c, _probabilities[c], 1, _max_root_family_size, 0, _max_parsed_family_size));
+            factors.push_back(_lambda->calculate_child_factor(_calc, c, probabilities[c], 1, _max_root_family_size, 0, _max_parsed_family_size));
         };
         node->apply_to_descendants(fn);
-        vector<double>& node_probs = _probabilities[node];
+        vector<double>& node_probs = probabilities[node];
         // factors[0] is left child
         // factors[1] is right child
         for (size_t i = 0; i < node_probs.size(); i++) {
@@ -227,12 +232,12 @@ void compute_node_probability(const clade *node, const gene_family&_gene_family,
 		// at any internal node, the size of the vector holding likelihoods will be _max_parsed_family_size+1 because size=0 is included
         std::vector<std::vector<double> > factors;
         auto fn = [&](const clade *c) {
-            factors.push_back(_lambda->calculate_child_factor(_calc, c, _probabilities[c], 0, _max_parsed_family_size, 0, _max_parsed_family_size));
+            factors.push_back(_lambda->calculate_child_factor(_calc, c, probabilities[c], 0, _max_parsed_family_size, 0, _max_parsed_family_size));
         };
 
         node->apply_to_descendants(fn);
 
-        vector<double>& node_probs = _probabilities[node];
+        vector<double>& node_probs = probabilities[node];
         // factors[0] is left child
         // factors[1] is right child
         for (size_t i = 0; i < node_probs.size(); i++) {

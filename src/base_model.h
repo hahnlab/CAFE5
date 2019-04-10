@@ -6,6 +6,13 @@
 class gene_family_reconstructor;
 class matrix_cache;
 
+/*! @brief A Base model can simulate families or estimate lambdas and error models.
+
+    The estimation method creates a best guess for the missing lambda and, optionally,
+    epsilon values, by using an @optimizer to provide guesses for the missing values
+    and calculating a score for each one.
+*/
+
 class base_model : public model {
     double simulation_lambda_multiplier = 1.0;
 
@@ -28,8 +35,11 @@ public:
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache);
 
+    //! Return the lambda provided by the user, but with a small randomizer
+    /// provided by simulation_lambda_multiplier. That is modified by calling \ref perturb_lambda.
     virtual lambda* get_simulation_lambda(const user_data& data);
 
+    //! Sets simulation_lambda_multiplier by a normal distribution mean=1, stddev = .3
     void perturb_lambda();
 
 };

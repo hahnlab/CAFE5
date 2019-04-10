@@ -72,7 +72,6 @@ void gamma_model::write_probabilities(ostream& ost)
     ost << "Lambda multipliers are: " << comma_separated(_lambda_multipliers) << endl;
 }
 
-//! Randomly select one of the multipliers to apply to the sim
 lambda* gamma_model::get_simulation_lambda(const user_data& data)
 {
     discrete_distribution<int> dist(_gamma_cat_probs.begin(), _gamma_cat_probs.end());

@@ -31,7 +31,7 @@ public:
 
     void write_probabilities(std::ostream& ost);
 
-    //! Randomly select one of the multipliers to apply to the sim
+    //! Randomly select one of the multipliers to apply to the simulation
     virtual lambda* get_simulation_lambda(const user_data& data) override;
 
     double infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda);

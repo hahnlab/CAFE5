@@ -15,6 +15,14 @@ class simulation_data;
     
 typedef clademap<int> trial;
 
+/*! @brief All of the actions that the application can perform 
+
+    Based on user input, CAFExp creates an action which drives the rest of the program.
+    Action is a base class that defines which task is being performed.
+
+    All actions take the input parameters that the user entered, and the 
+    data that is described by those parameters (loaded files, clades, etc.)
+*/
 class action
 {
 protected:
@@ -40,6 +48,10 @@ public:
     virtual void execute(std::vector<model *>& models);
 };
 
+/*! @brief Estimator is used to guess at any missing values that the
+    user did not provide. It will provide values for lambda, gamma, 
+    and epsilon.
+*/
 class estimator : public action
 {
 public:
