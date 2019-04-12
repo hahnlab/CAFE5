@@ -356,7 +356,8 @@ std::vector<double> optimizer::get_initial_guesses()
     return initial;
 }
 
-
+//! @brief Base class for the optimizer strategy to be used
+//! \ingroup optimizer
 class OptimizerStrategy
 {
 public:

@@ -9,6 +9,7 @@
 ///
 
 //! Discretization of gamma distribution with equal proportions in each category 
+//! \ingroup gamma
 int discrete_gamma(double freqK[], double rK[],double alfa, double beta, int K, int median) {
 
     int i;
@@ -59,6 +60,7 @@ int discrete_gamma(double freqK[], double rK[],double alfa, double beta, int K, 
   Applied Statistics,
   19: 285-287 (AS32)
 */
+//! \ingroup gamma
 double incomplete_gamma(double x, double alpha, double ln_gamma_alpha) {
     int i;
     double p = alpha, g = ln_gamma_alpha;
@@ -117,6 +119,7 @@ l50:
   Pike MC & Hill ID (1966) Algorithm 291: Logarithm of the gamma function.
   Communications of the Association for Computing Machinery, 9:684
  */
+ //! \ingroup gamma
 double ln_gamma(double alpha) {
     double x = alpha, f = 0, z;
 
@@ -145,6 +148,7 @@ double ln_gamma(double alpha) {
   
   Converted into C by Ziheng Yang, Oct. 1993.
 */
+//! \ingroup gamma
 double point_chi2(double prob, double v) {
     double e=.5e-6, aa=.6931471805, p=prob, g;
     double xx, c, ch, a=0, q=0, p1=0, p2=0, t=0, x=0, b=0, s1, s2, s3, s4, s5, s6;
@@ -218,6 +222,7 @@ l4:
     points of the normal distribution. 26: 118-121.
 
 */
+//! \ingroup gamma
 double point_normal(double prob) {
    double a0 =- .322232431088, a1 =- 1, a2 =- .342242088547, a3 =- .0204231210245;
    double a4 =- .453642210148e-4, b0 = .0993484626060, b1 = .588581570495;
@@ -239,6 +244,7 @@ double point_normal(double prob) {
   v_freq: vector of probabilities of each gamma category (should be the same)
   v_rate: vector of rate medians (for each gamma category) 
 */
+//! \ingroup gamma
 void get_gamma(std::vector<double> &v_freq, std::vector<double> &v_rate, double alpha) {
     assert(v_freq.size() == v_rate.size());
     assert(v_freq.size() != 0);

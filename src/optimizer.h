@@ -8,14 +8,30 @@
 
 #include "../config.h"
 
+//! \defgroup optimizer Optimization
+//! @brief Classes and functions designed to calculate optimal values for various parameters
+//!
+//! One of CAFE's main functions is to calculate the most
+//! likely lambda value for a given tree and group of 
+//! families. Generally the infer_processes method of 
+//! the model is called to calculate the score, but
+//! the optimizer_scorer is generic enough for other
+//! purposes.
 class optimizer_scorer;
 
+//! @brief Values and score for a potential optimization
+//! \ingroup optimizer
 struct candidate {
     std::vector<double> values;
     double score;
     candidate(int size);
     ~candidate();
 };
+
+//! @brief Options for an optimization. In general,
+//! the Nelder-Mead optimization strategy is used
+//! but other possibilities are available.
+//! \ingroup optimizer
 struct FMinSearch
 {
   int maxiters;
@@ -58,6 +74,13 @@ bool threshold_achieved(FMinSearch* pfm);
 
 class OptimizerStrategy;
 
+//! @brief Provides routines allowing the optimization of some function
+//! \ingroup optimizer
+//!
+//! Comprises a optimizer_scorer and a OptimizerStrategy. The
+//! optimizer guesses at a value, uses the scorer to get a score for that
+//! value, and then uses the strategy and the score to guess at the 
+//! a new value.
 class optimizer {
     FMinSearch* pfm;
     optimizer_scorer *_p_scorer;
@@ -66,25 +89,41 @@ public:
     optimizer(optimizer_scorer *scorer);
     ~optimizer();
 
+    //! @brief information on the results of an optimization run
     struct result {
+
+        //! the optimized values
         std::vector<double> values;
+
+        //! The score that the scorer returned for the optimized values
         double score;
+
+        //! The number of iterations it took for the optimizer to complete
         int num_iterations;
+
+        //! Length of time (in seconds) that the optimizer took to run
         std::chrono::seconds duration;
     };
 
+    //! The main function that returns optimized values
     result optimize();
 
     bool quiet = false;
 //    bool explode = false;
 
+    //! Asks the scorer for initial values to try.
+    //! Calculates the score for initial values to 
+    //! determine if they are acceptable. Keeps
+    //! asking until scorable values are found
     std::vector<double> get_initial_guesses();
+
 
     OptimizerStrategy* get_strategy();
 };
 
 std::ostream& operator<<(std::ostream& ost, const optimizer::result& r);
 
+//! \ingroup optimizer
 enum strategies { RangeWidely, InitialVar, Perturb, Standard, NLOpt };
 #ifdef HAVE_NLOPT_HPP
 const strategies strategy = NLOpt;

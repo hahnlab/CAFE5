@@ -11,7 +11,8 @@ class root_equilibrium_distribution;
 class clade;
 class base_model;
 
-/// Base class for use by the optimizer
+/// @brief Base class for use by the optimizer
+//! \ingroup optimizer
 class optimizer_scorer {
 public:
     virtual ~optimizer_scorer() {}
@@ -21,6 +22,9 @@ public:
     virtual double calculate_score(const double *values) = 0;
 };
 
+//! @brief  Scorer that holds a model and calls its inference method
+//! for scoring
+//! \ingroup optimizer
 class inference_optimizer_scorer : public optimizer_scorer {
 protected:
     virtual void prepare_calculation(const double *values) = 0;
@@ -53,7 +57,8 @@ public:
     bool quiet;
 };
 
-/// 
+//! @brief Scorer that optimizes for lambda
+//! \ingroup optimizer
 class lambda_optimizer : public inference_optimizer_scorer
 {
     double _longest_branch;
@@ -74,7 +79,8 @@ public:
 };
 
 
-/// optimize lambdas and epsilons together
+/// @brief Scorer that optimizes lambdas and epsilons together
+//! \ingroup optimizer
 class lambda_epsilon_optimizer : public inference_optimizer_scorer
 {
     lambda_optimizer _lambda_optimizer;
@@ -104,6 +110,9 @@ public:
 
 class gamma_model;
 
+//! @brief Scorer that optimizes for alpha
+//! \ingroup optimizer
+//! \ingroup gamma
 class gamma_optimizer : public inference_optimizer_scorer {
     gamma_model *_p_gamma_model;
 public:
@@ -118,6 +127,9 @@ public:
     double get_alpha() const;
 };
 
+//! @brief Scorer that optimizes for both lambda and alpha
+//! \ingroup optimizer
+//! \ingroup gamma
 class gamma_lambda_optimizer : public inference_optimizer_scorer
 {
     virtual void prepare_calculation(const double *values) override;

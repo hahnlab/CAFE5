@@ -11,8 +11,10 @@ class matrix_cache;
     The estimation method creates a best guess for the missing lambda and, optionally,
     epsilon values, by using an @optimizer to provide guesses for the missing values
     and calculating a score for each one.
-*/
 
+    \defgroup base Base Model
+
+ */
 class base_model : public model {
     double simulation_lambda_multiplier = 1.0;
 
@@ -21,7 +23,7 @@ public:
     base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
         int max_family_size, int max_root_family_size, error_model *p_error_model);
 
-    virtual double infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda);
+    virtual double infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda);
 
     virtual std::string name() {
         return "Base";
@@ -44,7 +46,7 @@ public:
 
 };
 
-
+//! \ingroup base Base Model
 class base_model_reconstruction : public reconstruction
 {
     std::vector<clademap<int>> _reconstructed_family_counts;

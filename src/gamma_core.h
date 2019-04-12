@@ -1,8 +1,12 @@
 #include "core.h"
 
+//! \defgroup gamma Gamma Model
+//! @brief Extends the Base model by assuming lambda values belong to a gamma distribution
 class inference_process_factory;
 class gamma_bundle;
 
+//! @brief Represents a model of species change in which lambda values are expected to belong to a gamma distribution
+//! \ingroup gamma
 class gamma_model : public model {
 private:
     //! Gamma
@@ -34,7 +38,7 @@ public:
     //! Randomly select one of the multipliers to apply to the simulation
     virtual lambda* get_simulation_lambda(const user_data& data) override;
 
-    double infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda);
+    double infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda);
 
     virtual inference_optimizer_scorer *get_lambda_optimizer(user_data& data);
 
@@ -70,6 +74,8 @@ public:
     bool can_infer() const;
 };
 
+//! @brief Holds data for reconstructing a tree based on the Gamma model
+//! \ingroup gamma
 class gamma_model_reconstruction : public reconstruction
 {
     const std::vector<double>& _lambda_multipliers;

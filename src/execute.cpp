@@ -23,7 +23,7 @@ void estimator::compute(std::vector<model *>& models, const input_parameters &my
     std::vector<double> model_likelihoods(models.size());
     for (size_t i = 0; i < models.size(); ++i) {
         cout << endl << "Inferring processes for " << models[i]->name() << " model" << endl;
-        double result = models[i]->infer_processes(data.p_prior.get(), data.rootdist, models[i]->get_lambda());
+        double result = models[i]->infer_family_likelihoods(data.p_prior.get(), data.rootdist, models[i]->get_lambda());
         models[i]->write_vital_statistics(results_file, result);
 
         models[i]->write_family_likelihoods(likelihoods_file);

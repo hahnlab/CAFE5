@@ -48,7 +48,7 @@ vector<size_t> build_reference_list(const vector<gene_family>& families)
     return reff;
 }
 
-double base_model::infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) {
+double base_model::infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) {
     _monitor.Event_InferenceAttempt_Started();
 
     if (!_p_lambda->is_valid())

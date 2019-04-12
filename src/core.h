@@ -129,7 +129,7 @@ public:
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache) = 0;
 
-    virtual double infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) = 0;  // return vector of likelihoods
+    virtual double infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) = 0;  // return vector of likelihoods
     
     virtual std::string name() = 0;
     virtual void write_family_likelihoods(std::ostream& ost) = 0;
@@ -148,6 +148,10 @@ public:
     const event_monitor& get_monitor() { return _monitor;  }
 };
 
+//! @brief Creates a list of families that are identical in all values
+//!
+//! With this information we can reduce the number of calculations required
+//! and speed up the overall performance
 std::vector<size_t> build_reference_list(const std::vector<gene_family>& families);
 
 enum family_size_change { Increase, Decrease, Constant };

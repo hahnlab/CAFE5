@@ -80,9 +80,16 @@ vector<const clade*> clade::find_internal_nodes() const {
 
   /* Recursively find pointer to clade with provided taxon name */
 const clade *clade::find_descendant(string some_taxon_name) const {
-  descendant_finder finder(some_taxon_name);
-  apply_prefix_order(finder);
-  return finder.get_result();
+
+    const clade *p_descendant;
+    auto descendant_finder = [some_taxon_name, &p_descendant](const clade *clade) {
+        if (clade->get_taxon_name() == some_taxon_name)
+            p_descendant = clade;
+    };
+
+  apply_prefix_order(descendant_finder);
+
+  return p_descendant;
 }
   
 /* Finds branch length of clade with provided taxon name. Does so by calling find_descendant(), which recursively searches the tree */

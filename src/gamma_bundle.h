@@ -15,10 +15,10 @@ class gene_family;
 
 #include "core.h"
 
-//! One gamma bundle per family
+//! @brief Represents discrete gamma values for a family
 //! Should reconstruct values for all gamma category probabilities
+//! \ingroup gamma
 class gamma_bundle {
-//    std::vector<gene_family_reconstructor *> _rec_processes;
     clademap<family_size_change> _increase_decrease_map;
     clademap<double> reconstruction;
     const clade *_p_tree;

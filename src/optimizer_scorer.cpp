@@ -23,7 +23,7 @@ double inference_optimizer_scorer::calculate_score(const double *values)
         report_precalculation();
     }
 
-    double score = _p_model->infer_processes(_p_distribution, _rootdist_map, _p_lambda);
+    double score = _p_model->infer_family_likelihoods(_p_distribution, _rootdist_map, _p_lambda);
 
     if (!quiet)
     {

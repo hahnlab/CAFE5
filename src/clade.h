@@ -7,7 +7,6 @@
 #include <string>
 #include <functional>
 
-/*! \defgroup Overview An overview */
 class gene_family;
 
 /* Forward declaration of newick_parser class, so class clade can see friend */
@@ -142,23 +141,4 @@ template<typename T>
 using clademap = std::map<const clade *, T>;
 
 using cladevector = std::vector<const clade *>;
-
-/* This class will store a descendant clade if it finds the provided taxon_name */
-class descendant_finder {
-
-private:
-    std::string _some_taxon_name;
-    const clade *_p_descendant_found;
-
-public:
-    descendant_finder(std::string some_taxon_name) : _some_taxon_name(some_taxon_name), _p_descendant_found(NULL) { }
-
-    void operator()(const clade *clade) {
-        if (clade->get_taxon_name() == _some_taxon_name) {
-            _p_descendant_found = clade;
-        }
-    }
-
-    const clade *get_result() { return _p_descendant_found; }
-};
 #endif

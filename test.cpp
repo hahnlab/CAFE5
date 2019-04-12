@@ -347,7 +347,7 @@ TEST(Inference, infer_processes)
     base_model core(&lambda, _user_data.p_tree, &families, 56, 30, NULL);
 
     uniform_distribution frq;
-    double multi = core.infer_processes(&frq, std::map<int, int>(), &lambda);
+    double multi = core.infer_family_likelihoods(&frq, std::map<int, int>(), &lambda);
     //core.get_likelihoods();
     DOUBLES_EQUAL(41.7504, multi, 0.001);
 }
@@ -386,7 +386,7 @@ TEST(Inference, gamma_model_infers_processes_without_crashing)
     uniform_distribution frq;
 
     // TODO: make this return a non-infinite value and add a check for it
-    core.infer_processes(&frq, std::map<int, int>(), _user_data.p_lambda);
+    core.infer_family_likelihoods(&frq, std::map<int, int>(), _user_data.p_lambda);
     
 }
 
@@ -1534,7 +1534,7 @@ public:
     }
 
     // Inherited via model
-    virtual double infer_processes(root_equilibrium_distribution * prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) override
+    virtual double infer_family_likelihoods(root_equilibrium_distribution * prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) override
     {
         return 0.0;
     }

@@ -175,7 +175,7 @@ bool gamma_model::can_infer() const
 }
 
 //! Infer bundle
-double gamma_model::infer_processes(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) {
+double gamma_model::infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) {
 
     for (auto f : _family_bundles)
     {
