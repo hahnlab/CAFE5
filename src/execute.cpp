@@ -109,6 +109,8 @@ void estimator::estimate_lambda_per_family(model *p_model, ostream& ost)
 
 }
 
+/*! Calls estimate_lambda_per_family if the user has set that parameter, otherwise
+    calls \ref estimate_missing_variables; \ref compute; \ref compute_pvalues, and \ref model::reconstruct_ancestral_states */
 void estimator::execute(std::vector<model *>& models)
 {
     if (_user_input.lambda_per_family)

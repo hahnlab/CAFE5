@@ -49,25 +49,19 @@ public:
 //! \ingroup base Base Model
 class base_model_reconstruction : public reconstruction
 {
-    std::vector<clademap<int>> _reconstructed_family_counts;
-    std::vector<clademap<family_size_change>> _family_increase_decrease;
-    std::vector<string> _family_ids;
-
-    void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues) override;
-    void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) override;
 public:
 
-    base_model_reconstruction(const std::vector<clademap<int>>& reconstructed_states,
-                    const std::vector<clademap<family_size_change>>& increase_decrease_map,
-                    const std::vector<string>& family_ids) :
-        _reconstructed_family_counts(reconstructed_states),
-        _family_increase_decrease(increase_decrease_map),
-        _family_ids(family_ids)
+    base_model_reconstruction(size_t num_families) : families(num_families)
     {
 
     }
 
-    void print_reconstructed_states(std::ostream& ost, const std::vector<gene_family>& gene_families, const clade *p_tree);
+    void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<gene_family>& gene_families, const clade *p_tree) override;
+
+    std::vector<reconstructed_family<int>> families;
+
+    void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues) override;
+    void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) override;
 };
 
 #endif

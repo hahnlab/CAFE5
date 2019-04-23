@@ -3,13 +3,13 @@
 #include <iomanip>
 #include <cmath>
 #include <random>
+#include <sstream>
 
 #include "gamma_core.h"
 #include "gamma.h"
 #include "root_equilibrium_distribution.h"
 #include "gene_family_reconstructor.h"
 #include "matrix_cache.h"
-#include "gamma_bundle.h"
 #include "gene_family.h"
 #include "user_data.h"
 #include "optimizer_scorer.h"
@@ -24,15 +24,17 @@ gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_famil
 
     _gamma_cat_probs.resize(n_gamma_cats);
     _lambda_multipliers.resize(n_gamma_cats);
+    if (p_gene_families)
+        _category_likelihoods.resize(p_gene_families->size());
     set_alpha(fixed_alpha);
 }
 
-gamma_model::~gamma_model()
+gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
+    int max_root_family_size, std::vector<double> gamma_categories, std::vector<double> multipliers, error_model *p_error_model) :
+    model(p_lambda, p_tree, p_gene_families, max_family_size, max_root_family_size, p_error_model)
 {
-    for (auto f : _family_bundles)
-    {
-        delete f;
-    }
+    _gamma_cat_probs = gamma_categories;
+    _lambda_multipliers = multipliers;
 }
 
 void gamma_model::write_vital_statistics(std::ostream& ost, double final_likelihood)
@@ -174,22 +176,34 @@ bool gamma_model::can_infer() const
     return true;
 }
 
+bool gamma_model::prune(const gene_family& family, root_equilibrium_distribution *eq, matrix_cache& calc, const lambda *p_lambda,
+    std::vector<double>& category_likelihoods) 
+{
+    category_likelihoods.clear();
+
+    for (size_t k = 0; k < _gamma_cat_probs.size(); ++k)
+    {
+        auto partial_likelihood = inference_prune(family, calc, p_lambda, _p_tree, _lambda_multipliers[k], _max_root_family_size, _max_family_size);
+        if (accumulate(partial_likelihood.begin(), partial_likelihood.end(), 0.0) == 0.0)
+            return false;   // saturation
+
+        std::vector<double> full(partial_likelihood.size());
+        for (size_t j = 0; j < partial_likelihood.size(); ++j) {
+            double eq_freq = eq->compute(j);
+            full[j] = partial_likelihood[j] * eq_freq;
+        }
+
+        //        _category_likelihoods.push_back(accumulate(full.begin(), full.end(), 0.0) * _gamma_cat_probs[k]); // sum over all sizes (Felsenstein's approach)
+        category_likelihoods.push_back(*max_element(full.begin(), full.end()) * _gamma_cat_probs[k]); // get max (CAFE's approach)
+    }
+
+    return true;
+}
+
 //! Infer bundle
 double gamma_model::infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) {
 
-    for (auto f : _family_bundles)
-    {
-        delete f;
-    }
-
-    _family_bundles.clear();
-
     _monitor.Event_InferenceAttempt_Started();
-
-    for (auto i = _p_gene_families->begin(); i != _p_gene_families->end(); ++i)
-    {
-        _family_bundles.push_back(new gamma_bundle(_lambda_multipliers, _p_tree, &(*i), _ost, p_lambda, _max_family_size, _max_root_family_size));
-    }
 
     if (!can_infer())
     {
@@ -209,21 +223,20 @@ double gamma_model::infer_family_likelihoods(root_equilibrium_distribution *prio
     }
 
     prior->initialize(&rd);
-    vector<double> all_bundles_likelihood(_family_bundles.size());
+    vector<double> all_bundles_likelihood(_p_gene_families->size());
 
-    vector<bool> failure(_family_bundles.size());
+    vector<bool> failure(_p_gene_families->size());
     matrix_cache calc(max(_max_root_family_size, _max_family_size) + 1);
     prepare_matrices_for_simulation(calc);
 
-    vector<vector<family_info_stash>> pruning_results(_family_bundles.size());
+    vector<vector<family_info_stash>> pruning_results(_p_gene_families->size());
 
 #pragma omp parallel for
-    for (size_t i = 0; i < _family_bundles.size(); i++) {
-        gamma_bundle* bundle = _family_bundles[i];
+    for (size_t i = 0; i < _p_gene_families->size(); i++) {
+        auto& cat_likelihoods = _category_likelihoods[i];
 
-        if (bundle->prune(_gamma_cat_probs, prior, calc, p_lambda))
+        if (prune(_p_gene_families->at(i), prior, calc, p_lambda, cat_likelihoods))
         {
-            auto cat_likelihoods = bundle->get_category_likelihoods();
             double family_likelihood = accumulate(cat_likelihoods.begin(), cat_likelihoods.end(), 0.0);
 
             vector<double> posterior_probabilities = get_posterior_probabilities(cat_likelihoods);
@@ -231,7 +244,7 @@ double gamma_model::infer_family_likelihoods(root_equilibrium_distribution *prio
             pruning_results[i].resize(cat_likelihoods.size());
             for (size_t k = 0; k < cat_likelihoods.size(); ++k)
             {
-                pruning_results[i][k] = family_info_stash(bundle->get_family_id(), bundle->get_lambda_likelihood(k), cat_likelihoods[k],
+                pruning_results[i][k] = family_info_stash(_p_gene_families->at(i).id(),_lambda_multipliers[k], cat_likelihoods[k],
                     family_likelihood, posterior_probabilities[k], posterior_probabilities[k] > 0.95);
                 //            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
             }
@@ -246,10 +259,10 @@ double gamma_model::infer_family_likelihoods(root_equilibrium_distribution *prio
 
     if (find(failure.begin(), failure.end(), true) != failure.end())
     {
-        for (size_t i = 0; i < _family_bundles.size(); i++) {
+        for (size_t i = 0; i < _p_gene_families->size(); i++) {
             if (failure[i])
             {
-                _monitor.Event_InferenceAttempt_Saturation(_family_bundles[i]->get_family_id());
+                _monitor.Event_InferenceAttempt_Saturation(_p_gene_families->at(i).id());
             }
         }
         return -log(0);
@@ -299,10 +312,46 @@ inference_optimizer_scorer *gamma_model::get_lambda_optimizer(user_data& data)
     }
 }
 
+clademap<double> get_weighted_averages(const std::vector<reconstructed_family<int>>& m, const vector<double>& probabilities)
+{
+    cladevector nodes(m[0].clade_counts.size());
+    std::transform(m[0].clade_counts.begin(), m[0].clade_counts.end(), nodes.begin(), [](std::pair<const clade *, int> v) { return v.first;  });
+
+    clademap<double> result;
+    for (auto node : nodes)
+    {
+        double val = 0.0;
+        for (size_t i = 0; i<probabilities.size(); ++i)
+        {
+            val += probabilities[i] * double(m[i].clade_counts.at(node));
+        }
+        result[node] = val;
+    }
+
+    return result;
+}
+
+void gamma_model::reconstruct_family(const gene_family& family, matrix_cache *calc, root_equilibrium_distribution*prior, gamma_model_reconstruction::gamma_reconstruction& rc) const
+{
+    auto& cat_rec = rc.category_reconstruction;
+
+    for (size_t k = 0; k < _gamma_cat_probs.size(); ++k)
+    {
+        unique_ptr<lambda> ml(_p_lambda->multiply(_lambda_multipliers[k]));
+        reconstruct_gene_families(ml.get(), _p_tree, _max_family_size, _max_root_family_size, &family, calc, prior, cat_rec[k].clade_counts);
+        compute_increase_decrease(cat_rec[k].clade_counts, cat_rec[k].size_deltas);
+    }
+
+    // multiply every reconstruction by gamma_cat_prob
+    rc.reconstruction.clade_counts = get_weighted_averages(cat_rec, _gamma_cat_probs);
+
+    compute_increase_decrease(rc.reconstruction.clade_counts, rc.reconstruction.size_deltas);
+}
+
 reconstruction* gamma_model::reconstruct_ancestral_states(matrix_cache *calc, root_equilibrium_distribution*prior)
 {
     _monitor.Event_Reconstruction_Started("Gamma");
-    gamma_model_reconstruction* result = new gamma_model_reconstruction(_lambda_multipliers, _family_bundles);
+    gamma_model_reconstruction* result = new gamma_model_reconstruction(_p_gene_families->size(), _lambda_multipliers);
 
     branch_length_finder lengths;
     _p_tree->apply_prefix_order(lengths);
@@ -319,9 +368,11 @@ reconstruction* gamma_model::reconstruct_ancestral_states(matrix_cache *calc, ro
     calc->precalculate_matrices(all, lengths.result());
 
 #pragma omp parallel for
-    for (size_t i = 0; i<_family_bundles.size(); ++i)
+    for (size_t i = 0; i<_p_gene_families->size(); ++i)
     {
-        _family_bundles[i]->reconstruct(_gamma_cat_probs, calc, prior);
+        reconstruct_family(_p_gene_families->at(i), calc, prior, result->_families[i]);
+
+        result->_families[i]._category_likelihoods = _category_likelihoods[i];
     }
 
     _monitor.Event_Reconstruction_Complete();
@@ -329,18 +380,44 @@ reconstruction* gamma_model::reconstruct_ancestral_states(matrix_cache *calc, ro
     return result;
 }
 
-void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost, const std::vector<gene_family>& gene_families, const clade *p_tree)
+void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<gene_family>& gene_families, const clade *p_tree)
 {
-    if (_family_bundles.empty())
+    if (_families.empty())
         return;
 
-    auto rec = _family_bundles[0];
-    auto order = rec->get_taxa();
+    auto rec = _families[0];
 
     ost << "#NEXUS\nBEGIN TREES;\n";
-    for (auto item : _family_bundles)
+    for (size_t i = 0; i<gene_families.size(); ++i)
     {
-        item->print_reconstruction(ost, order);
+        auto& gene_family = gene_families[i];
+
+        auto g = [i, gene_family, this](const clade *node) {
+            std::ostringstream ost;
+
+            if (node->is_leaf())
+            {
+                ost << gene_family.get_species_size(node->get_taxon_name());
+            }
+            else
+            {
+                for (auto& r : _families[i].category_reconstruction)
+                {
+                    ost << r.clade_counts.at(node) << '_';
+                }
+                ost << std::round(_families[i].reconstruction.clade_counts.at(node));
+            }
+            return ost.str();
+        };
+
+        auto f = [order, g, this](const clade *node) {
+            return newick_node(node, order, g);
+        };
+
+        ost << "  TREE " << gene_family.id() << " = ";
+        p_tree->write_newick(ost, f);
+
+        ost << ';' << endl;
     }
     ost << "END;\n\n";
 
@@ -353,13 +430,73 @@ void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost, c
     ost << endl;
 }
 
+increase_decrease get_increases_decreases(const gamma_model_reconstruction::gamma_reconstruction& rc, const cladevector& order, double pvalue)
+{
+    increase_decrease result;
+    result.change.resize(order.size());
+    result.gene_family_id = rc.reconstruction.id;
+    result.pvalue = pvalue;
+
+    transform(order.begin(), order.end(), result.change.begin(), [rc](const clade *taxon)->family_size_change {
+        if (taxon->is_leaf() || taxon->is_root())
+            return Constant;
+        else
+            return rc.reconstruction.size_deltas.at(taxon);
+    });
+
+    result.category_likelihoods = rc._category_likelihoods;
+    return result;
+}
+
+
 void gamma_model_reconstruction::print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues)
 {
-    ::print_increases_decreases_by_family(ost, _family_bundles, pvalues);
+    if (_families.size() != pvalues.size())
+    {
+        throw std::runtime_error("No pvalues found for family");
+    }
+    if (_families.empty())
+    {
+        ost << "No increases or decreases recorded\n";
+        return;
+    }
+
+    ost << "#FamilyID\tpvalue\t*\t";
+    for (auto& it : order) {
+        ost << it->get_taxon_name() << "\t";
+    }
+    ost << endl;
+
+    for (size_t i = 0; i < _families.size(); ++i) {
+        ost << get_increases_decreases(_families[i], order, pvalues[i]);
+    }
 }
 
 void gamma_model_reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order)
 {
-    ::print_increases_decreases_by_clade(ost, _family_bundles);
+    if (_families.empty())
+    {
+        ost << "No increases or decreases recorded\n";
+        return;
+    }
+
+    clademap<pair<int, int>> increase_decrease_map;
+
+    for (auto &item : _families) {
+        auto incdec = get_increases_decreases(item, order, 0.0);
+        for (size_t i = 0; i < order.size(); ++i)
+        {
+            if (incdec.change[i] == Increase)
+                increase_decrease_map[order[i]].first++;
+            if (incdec.change[i] == Decrease)
+                increase_decrease_map[order[i]].second++;
+        }
+    }
+
+    ost << "#Taxon_ID\tIncrease/Decrease\n";
+    for (auto& it : increase_decrease_map) {
+        ost << it.first->get_taxon_name() << "\t";
+        ost << it.second.first << "/" << it.second.second << endl;
+    }
 }
 

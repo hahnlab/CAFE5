@@ -124,9 +124,6 @@ std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, c
 
 void event_monitor::Event_InferenceAttempt_Started() 
 { 
-#ifndef SILENT
-    std::cout << "-lnL: " << log(0) << std::endl;
-#endif
     attempts++;
 }
 

@@ -29,7 +29,10 @@ protected:
     user_data& data;
     const input_parameters &_user_input;
 public:
+    /*! Performs an action on each of the models provided */
     virtual void execute(std::vector<model *>& models) = 0;
+
+    /*! Construct an action and store references to the parameters the user asked for and any data already loaded */
     action(user_data& d, const input_parameters& ui) : data(d), _user_input(ui)
     {
 

@@ -47,8 +47,10 @@ public:
 
 std::ostream& operator<<(std::ostream& ost, const family_info_stash& r);
 
+//! The result of a model reconstruction. Should be able to (a) print reconstructed states with all available information;
+/// (b) print increases and decreases by family; and (c) print increases and decreases by clade.
 class reconstruction {
-    virtual void print_reconstructed_states(std::ostream& ost, const std::vector<gene_family>& gene_families, const clade *p_tree) = 0;
+    virtual void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<gene_family>& gene_families, const clade *p_tree) = 0;
     virtual void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues) = 0;
     virtual void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) = 0;
 
@@ -135,6 +137,7 @@ public:
     virtual void write_family_likelihoods(std::ostream& ost) = 0;
     virtual void write_vital_statistics(std::ostream& ost, double final_likelihood);
 
+    //! Based on the model parameters, attempts to reconstruct the most likely counts of each family at each node
     virtual reconstruction* reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
 
     virtual inference_optimizer_scorer *get_lambda_optimizer(user_data& data) = 0;
@@ -165,65 +168,15 @@ struct increase_decrease
     std::vector<double> category_likelihoods;
 };
 
+template<typename T>
+struct reconstructed_family {
+    std::string id;
+    clademap<family_size_change> size_deltas;
+    clademap<T> clade_counts;
+};
+
 
 std::vector<model *> build_models(const input_parameters& my_input_parameters, user_data& user_data);
-
-template <class T>
-void print_increases_decreases_by_family(std::ostream& ost, const std::vector<T>& printables, const std::vector<double>& pvalues)
-{
-    if (printables.size() != pvalues.size())
-    {
-        throw std::runtime_error("No pvalues found for family");
-    }
-    if (printables.empty())
-    {
-        ost << "No increases or decreases recorded\n";
-        return;
-    }
-    auto rec = printables[0];
-    auto order = rec->get_taxa();
-
-    ost << "#FamilyID\tpvalue\t*\t";
-    for (auto& it : order) {
-        ost << it->get_taxon_name() << "\t";
-    }
-    ost << endl;
-
-    for (size_t i = 0; i < printables.size(); ++i) {
-        ost << printables[i]->get_increases_decreases(order, pvalues[i]);
-    }
-}
-
-template<class T>
-void print_increases_decreases_by_clade(std::ostream& ost, const std::vector<T>& printables) {
-    if (printables.empty())
-    {
-        ost << "No increases or decreases recorded\n";
-        return;
-    }
-
-    auto rec = printables[0];
-    auto order = rec->get_taxa();
-
-    clademap<pair<int, int>> increase_decrease_map;
-
-    for (auto item : printables) {
-        auto incdec = item->get_increases_decreases(order, 0.0);
-        for (size_t i = 0; i < order.size(); ++i)
-        {
-            if (incdec.change[i] == Increase)
-                increase_decrease_map[order[i]].first++;
-            if (incdec.change[i] == Decrease)
-                increase_decrease_map[order[i]].second++;
-        }
-    }
-
-    ost << "#Taxon_ID\tIncrease/Decrease\n";
-    for (auto& it : increase_decrease_map) {
-        ost << it.first->get_taxon_name() << "\t";
-        ost << it.second.first << "/" << it.second.second << endl;
-    }
-}
 
 inline std::string filename(std::string base, std::string suffix)
 {

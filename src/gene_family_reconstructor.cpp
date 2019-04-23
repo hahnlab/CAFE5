@@ -258,10 +258,11 @@ std::ostream& operator<<(std::ostream & ost, const increase_decrease& val)
 
 void reconstruction::write_results(std::string model_identifier, std::string output_prefix, const user_data& data, std::vector<double>& pvalues)
 {
-    std::ofstream ofst(filename(model_identifier + "_asr", output_prefix));
-    print_reconstructed_states(ofst, data.gene_families, data.p_tree);
-
     auto order = data.p_tree->find_internal_nodes();
+
+    std::ofstream ofst(filename(model_identifier + "_asr", output_prefix));
+    print_reconstructed_states(ofst, order, data.gene_families, data.p_tree);
+
     std::ofstream family_results(filename(model_identifier + "_family_results", output_prefix));
     print_increases_decreases_by_family(family_results, order, pvalues);
 
