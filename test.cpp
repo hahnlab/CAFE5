@@ -523,27 +523,23 @@ TEST(Inference, base_optimizer_guesses_lambda_and_unique_epsilons)
 }
 
 
-TEST(Inference, gamma_optimizer_guesses_lambda_and_alpha)
+TEST(Inference, gamma_model_creates__gamma_lambda_optimizer_if_nothing_provided)
 {
     newick_parser parser(false);
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-    clade *p_tree = parser.parse_newick();
+    unique_ptr<clade> p_tree(parser.parse_newick());
 
-    gamma_model model(NULL, p_tree, NULL, 0, 5, 4, -1, NULL);
+    gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, -1, NULL);
     user_data data;
 
     unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
     CHECK(opt);
-    auto guesses = opt->initial_guesses();
-    LONGS_EQUAL(2, guesses.size());
-    DOUBLES_EQUAL(0.298761, guesses[0], 0.0001);
-    DOUBLES_EQUAL(-0.172477, guesses[1], 0.0001);
-    vector<double>().swap(guesses);
-   delete p_tree;
-   delete model.get_lambda();
+    CHECK(dynamic_cast<gamma_lambda_optimizer *>(opt.get()));
+
+    delete model.get_lambda();
 }
 
-TEST(Inference, gamma_optimizer_guesses_lambda_if_alpha_provided)
+TEST(Inference, gamma_model__creates__lambda_optimizer__if_alpha_provided)
 {
     newick_parser parser(false);
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
@@ -557,15 +553,10 @@ TEST(Inference, gamma_optimizer_guesses_lambda_if_alpha_provided)
 
     CHECK(opt);
     CHECK(dynamic_cast<lambda_optimizer *>(opt.get()));
-
-    auto guesses = opt->initial_guesses();
-    LONGS_EQUAL(1, guesses.size());
-    DOUBLES_EQUAL(0.298761, guesses[0], 0.0001);
-    vector<double>().swap(guesses);
-    delete model.get_lambda();
+   delete model.get_lambda();
 }
 
-TEST(Inference, gamma_optimizer_guesses_alpha_if_lambda_provided)
+TEST(Inference, gamma_model__creates__gamma_optimizer__if_lambda_provided)
 {
     newick_parser parser(false);
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
@@ -582,14 +573,10 @@ TEST(Inference, gamma_optimizer_guesses_alpha_if_lambda_provided)
     CHECK(opt);
     CHECK(dynamic_cast<gamma_optimizer *>(opt.get()));
 
-    auto guesses = opt->initial_guesses();
-    LONGS_EQUAL(1, guesses.size());
-    DOUBLES_EQUAL(0.979494, guesses[0], 0.0001);
-    vector<double>().swap(guesses);
     delete model.get_lambda();
 }
 
-TEST(Inference, gamma_optimizer_optimizes_nothing_if_lambda_and_alpha_provided)
+TEST(Inference, gamma_model_creates_nothing_if_lambda_and_alpha_provided)
 {
     newick_parser parser(false);
     parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
@@ -603,6 +590,31 @@ TEST(Inference, gamma_optimizer_optimizes_nothing_if_lambda_and_alpha_provided)
 
     CHECK(model.get_lambda_optimizer(data) == nullptr);
 }
+
+TEST(Inference, gamma_lambda_optimizer__provides_two_guesses)
+{
+    single_lambda sl(0.05);
+    gamma_model model(NULL, NULL, NULL, 0, 5, 4, .25, NULL);
+    gamma_lambda_optimizer glo(&sl, &model, NULL, map<int, int>(), 5);
+    auto guesses = glo.initial_guesses();
+    LONGS_EQUAL(2, guesses.size());
+
+    double lambda = guesses[0];
+    CHECK(lambda > 0 && lambda < 1);
+
+    double alpha = guesses[1];
+    CHECK(alpha > 0 && alpha < 10);
+    vector<double>().swap(guesses);
+}
+
+TEST(Inference, gamma_optimizer__creates_single_initial_guess)
+{
+    gamma_model m(NULL, NULL, NULL, 0, 0, 0, 0, NULL);
+    gamma_optimizer optimizer(&m, NULL, std::map<int, int>());
+    auto initial = optimizer.initial_guesses();
+    LONGS_EQUAL(1, initial.size());
+}
+
 
 TEST(Inference, base_model_reconstruction)
 {
@@ -1793,14 +1805,6 @@ TEST(Inference, lambda_epsilon_optimizer)
     actual = err.get_probs(0);
     expected = { 0, .96, .04 };
     CHECK(expected == actual);
-}
-
-TEST(Inference, gamma_optimizer)
-{
-    gamma_model m(NULL, NULL, NULL, 0, 0, 0, 0, NULL);
-    gamma_optimizer optimizer(&m, NULL, std::map<int, int>());
-    auto initial = optimizer.initial_guesses();
-    DOUBLES_EQUAL(0.979494, initial[0], 0.00001);
 }
 
 TEST(GeneFamilies, model_set_families)

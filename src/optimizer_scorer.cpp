@@ -108,7 +108,7 @@ gamma_optimizer::gamma_optimizer(gamma_model* p_model, root_equilibrium_distribu
 
 std::vector<double> gamma_optimizer::initial_guesses()
 {
-    std::normal_distribution<double> distribution(OPTIMIZER_INITIAL_GUESS_MEAN_ALPHA, OPTIMIZER_INITIAL_GUESS_STDDEV_ALPHA);
+    std::exponential_distribution<double> distribution(1.0);
     return std::vector<double>({ distribution(randomizer_engine) });
 }
 

@@ -579,6 +579,18 @@ multiplier is modified by a normal distribution with the mean at the
 value of the multiplier, and a standard deviation intended to reflect
 the number of clusters requested.
 
+Initial Guesses
+---------------
+
+One of the most important concerns when searching a parameter space is
+what initial values to choose. Each of the three values that CAFE can
+search for has a particular initial guess strategy. For lambda values,
+the formula is 1 / (longest tree branch times a random number between 0 and 1).
+For epsilon values, the initial guesses are taken directly from the
+provided error model. For gamma values, a random value taken from an
+exponential distribution is used.
+
+
 Acknowledgements
 ================
 
