@@ -9,8 +9,16 @@
 #include <chrono>
 #include <memory>
 
-#include "optimizer.h"
 #include "../config.h"
+
+#ifdef HAVE_EIGEN_CORE
+#include <Eigen/Core>
+#include "LBFGSpp/LBFGS.h"
+//using Eigen::VectorXd;
+using namespace LBFGSpp;
+#endif
+
+#include "optimizer.h"
 
 #ifdef HAVE_NLOPT_HPP
 #include <nlopt.hpp>
@@ -18,6 +26,7 @@
 
 #include "optimizer_scorer.h"
 #define PHASED_OPTIMIZER_PHASE2_PRECISION 1e-6
+
 
 using namespace std;
 
@@ -565,15 +574,97 @@ bool threshold_achieved(FMinSearch* pfm)
     return __fminsearch_checkV(pfm) && __fminsearch_checkF(pfm);
 }
 
+#ifdef HAVE_EIGEN_CORE
+double LBGFS_compute(const Eigen::VectorXd& x, Eigen::VectorXd& grad, optimizer_scorer* scorer)
+{
+    if (isnan(x[0]))
+        return INFINITY;
+
+    vector<double> t(x.size());
+    for (int i = 0; i < x.size(); ++i) t[i] = x[i];
+
+    double score = scorer->calculate_score(&t[0]);
+    if (isinf(score))
+        return INFINITY;
+
+    int ndim = grad.size();
+    vector<double> h(ndim);
+    int dim;
+
+    for (dim = 0; dim < ndim; dim++) {
+        auto adjusted_x = x;
+        double temp = x[dim];
+        h[dim] = 1e-6 * fabs(temp);
+        if (h[dim] == 0.0) h[dim] = 1e-6;
+        adjusted_x[dim] = temp + h[dim];
+        h[dim] = adjusted_x[dim] - temp;
+        grad[dim] = scorer->calculate_score(&adjusted_x[0]);
+    }
+    for (dim = 0; dim < ndim; dim++)
+        grad[dim] = (grad[dim] - score) / h[dim];
+
+    return score;
+}
+
+class LBFGS_strategy : public OptimizerStrategy {
+    virtual void Run(FMinSearch * pfm, optimizer::result & r, std::vector<double>& initial) override
+    {
+        LBFGSParam<double> param;
+        param.delta = pfm->tolx;
+        param.max_iterations = 25;
+        param.epsilon = pfm->tolf;
+        LBFGSSolver<double> solver(param);
+        optimizer_scorer* scorer = pfm->scorer;
+        auto wrapper = [scorer](const Eigen::VectorXd& x, Eigen::VectorXd& grad) {
+            return LBGFS_compute(x, grad, scorer);
+        };
+
+        double fx;
+        Eigen::VectorXd x = Eigen::VectorXd::Zero(initial.size());
+        for (size_t i = 0; i < initial.size(); ++i) x[i] = initial[i];
+        int niter = solver.minimize(wrapper, x, fx);
+
+        r.num_iterations = niter;
+        r.score = fx;
+        r.values.resize(initial.size());
+        for (int i = 0; i < x.size(); ++i) r.values[i] = x[i];
+
+    }
+
+    virtual std::string Description() const override { return "Broyden-Fletcher-Goldfarb-Shanno algorithm"; };
+
+};
+#endif
+
 #ifdef HAVE_NLOPT_HPP
 double myvfunc(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
 {
     optimizer_scorer* scorer = reinterpret_cast<optimizer_scorer *>(my_func_data);
-    return scorer->calculate_score(&x[0]);
+    double score = scorer->calculate_score(&x[0]);
+    if (isinf(score))
+        return INFINITY;
+
+    int ndim = grad.size();
+    vector<double> h(ndim);
+    int dim;
+    
+    for (dim = 0; dim < ndim; dim++) {
+        auto adjusted_x = x;
+        double temp = x[dim];
+        h[dim] = 1e-4 * fabs(temp);
+        if (h[dim] == 0.0) h[dim] = 1e-4;
+        adjusted_x[dim] = temp + h[dim];
+        h[dim] = adjusted_x[dim] - temp;
+        grad[dim] = scorer->calculate_score(&adjusted_x[0]);
+    }
+    for (dim = 0; dim < ndim; dim++)
+        grad[dim] = (grad[dim] - score) / h[dim];
+
+    return score;
 }
 
 class NLOpt_strategy : public OptimizerStrategy {
-    const nlopt::algorithm _algorithm = nlopt::LD_MMA;
+    const nlopt::algorithm _algorithm = nlopt::LD_LBFGS;
 
     // Inherited via OptimizerStrategy
     virtual void Run(FMinSearch * pfm, optimizer::result & r, std::vector<double>& initial) override
@@ -583,6 +674,11 @@ class NLOpt_strategy : public OptimizerStrategy {
         opt.set_ftol_rel(pfm->tolf);
         opt.set_xtol_rel(pfm->tolx);
         opt.set_maxeval(pfm->maxiters);
+        opt.set_lower_bounds(0);
+        vector<double> uppers(initial.size(), 1.0);
+        if (uppers.size() > 1)
+            uppers[uppers.size() - 1] = 10;
+        opt.set_upper_bounds(uppers);
         double minf;
         try {
             vector<double> values(initial);
@@ -612,6 +708,11 @@ OptimizerStrategy *optimizer::get_strategy()
 {
     switch (strategy)
     {
+    case LBFGS:
+#ifdef HAVE_EIGEN_CORE
+        return new LBFGS_strategy();
+#endif
+        break;
     case NLOpt:
 #ifdef HAVE_NLOPT_HPP
         return new NLOpt_strategy();

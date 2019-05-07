@@ -6,8 +6,17 @@
 /* If a matrix multiplication library exists */
 #undef HAVE_BLAS
 
+/* Define to 1 if you have the <Eigen/Core> header file. */
+#undef HAVE_EIGEN_CORE
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `m' library (-lm). */
+#undef HAVE_LIBM
+
+/* Define to 1 if you have the `nlopt' library (-lnlopt). */
+#undef HAVE_LIBNLOPT
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H

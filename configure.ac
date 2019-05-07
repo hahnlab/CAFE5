@@ -37,6 +37,7 @@ AC_SEARCH_LIBS(vdExp, mkl_intel_lp64,
 		[])
 
 AC_CHECK_HEADERS(nlopt.hpp)
+AC_CHECK_HEADERS(Eigen/Core)
 		
 AC_DEFINE(NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS, 40, [Number of times optimizer will restart if it fails to find legal values])
 AC_DEFINE(OPTIMIZER_INITIAL_GUESS_MEAN_ALPHA, 1.0, [Mean value of normal curve optimizer will initialize alpha guesses from])
