@@ -577,14 +577,14 @@ bool threshold_achieved(FMinSearch* pfm)
 #ifdef HAVE_EIGEN_CORE
 double LBGFS_compute(const Eigen::VectorXd& x, Eigen::VectorXd& grad, optimizer_scorer* scorer)
 {
-    if (isnan(x[0]))
+    if (std::isnan(x[0]))
         return INFINITY;
 
     vector<double> t(x.size());
     for (int i = 0; i < x.size(); ++i) t[i] = x[i];
 
     double score = scorer->calculate_score(&t[0]);
-    if (isinf(score))
+    if (std::isinf(score))
         return INFINITY;
 
     int ndim = grad.size();
@@ -641,7 +641,7 @@ double myvfunc(const std::vector<double> &x, std::vector<double> &grad, void *my
 {
     optimizer_scorer* scorer = reinterpret_cast<optimizer_scorer *>(my_func_data);
     double score = scorer->calculate_score(&x[0]);
-    if (isinf(score))
+    if (std::isinf(score))
         return INFINITY;
 
     int ndim = grad.size();
