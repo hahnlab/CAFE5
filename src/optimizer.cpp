@@ -359,7 +359,7 @@ std::vector<double> optimizer::get_initial_guesses()
     }
     if (std::isinf(first_run))
     {
-        throw std::runtime_error("Failed to find any reasonable values");
+        throw std::runtime_error("Failed to initialize any reasonable values");
     }
 
     return initial;
@@ -592,17 +592,20 @@ double LBGFS_compute(const Eigen::VectorXd& x, Eigen::VectorXd& grad, optimizer_
     int dim;
 
     for (dim = 0; dim < ndim; dim++) {
-        auto adjusted_x = x;
-        double temp = x[dim];
-        h[dim] = 1e-6 * fabs(temp);
-        if (h[dim] == 0.0) h[dim] = 1e-6;
-        adjusted_x[dim] = temp + h[dim];
-        h[dim] = adjusted_x[dim] - temp;
-        grad[dim] = scorer->calculate_score(&adjusted_x[0]);
+        auto adjusted_t = t;
+        h[dim] = 1e-4 * fabs(t[dim]);
+        if (h[dim] == 0.0) h[dim] = 1e-4;
+        adjusted_t[dim] = t[dim] + h[dim];
+        h[dim] = adjusted_t[dim] - t[dim];
+        grad[dim] = scorer->calculate_score(adjusted_t.data());
     }
     for (dim = 0; dim < ndim; dim++)
-        grad[dim] = (grad[dim] - score) / h[dim];
-
+    {
+        if (std::isinf(grad[dim]))
+            grad[dim] = (100 - score) / h[dim];
+        else
+            grad[dim] = (grad[dim] - score) / h[dim];
+    }
     return score;
 }
 
