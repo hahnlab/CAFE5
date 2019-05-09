@@ -1917,7 +1917,7 @@ TEST(Inference, optimizer_disallows_bad_initializations)
     }
     catch (runtime_error& err)
     {
-        STRCMP_EQUAL("Failed to find any reasonable values", err.what());
+        STRCMP_EQUAL("Failed to initialize any reasonable values", err.what());
     }
 
 }
