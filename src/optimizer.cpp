@@ -588,24 +588,28 @@ double LBGFS_compute(const Eigen::VectorXd& x, Eigen::VectorXd& grad, optimizer_
         return INFINITY;
 
     int ndim = grad.size();
-    vector<double> h(ndim);
+    vector<double> gradiations(ndim);
+    vector<double> gradiated_scores(ndim);
     int dim;
 
     for (dim = 0; dim < ndim; dim++) {
+        double adjustment = 1e-4 * fabs(t[dim]);
+        if (adjustment == 0.0) gradiations[dim] = 1e-4;
+
         auto adjusted_t = t;
-        h[dim] = 1e-4 * fabs(t[dim]);
-        if (h[dim] == 0.0) h[dim] = 1e-4;
-        adjusted_t[dim] = t[dim] + h[dim];
-        h[dim] = adjusted_t[dim] - t[dim];
-        grad[dim] = scorer->calculate_score(adjusted_t.data());
+        adjusted_t[dim] += adjustment;
+
+        gradiations[dim] = adjusted_t[dim];
+        gradiated_scores[dim] = scorer->calculate_score(adjusted_t.data());
     }
     for (dim = 0; dim < ndim; dim++)
     {
-        if (std::isinf(grad[dim]))
-            grad[dim] = (100 - score) / h[dim];
+        if (std::isinf(gradiated_scores[dim]))
+            grad[dim] = (100 - score) / gradiations[dim];
         else
-            grad[dim] = (grad[dim] - score) / h[dim];
+            grad[dim] = (gradiated_scores[dim] - score) / gradiations[dim];
     }
+
     return score;
 }
 
@@ -616,6 +620,7 @@ class LBFGS_strategy : public OptimizerStrategy {
         param.delta = pfm->tolx;
         param.max_iterations = 25;
         param.epsilon = pfm->tolf;
+        param.past = 1;
         LBFGSSolver<double> solver(param);
         optimizer_scorer* scorer = pfm->scorer;
         auto wrapper = [scorer](const Eigen::VectorXd& x, Eigen::VectorXd& grad) {
