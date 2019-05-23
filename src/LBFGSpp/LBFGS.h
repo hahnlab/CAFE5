@@ -9,7 +9,6 @@
 #include "LBFGS/LineSearchBacktracking.h"
 #include "LBFGS/LineSearchBracketing.h"
 
-
 namespace LBFGSpp {
 
 
@@ -33,7 +32,6 @@ private:
     Vector                    m_fx;     // History of the objective function values
     Vector                    m_xp;     // Old x
     Vector                    m_grad;   // New gradient
-    Vector                    m_gradp;  // Old gradient
     Vector                    m_drt;    // Moving direction
 
     inline void reset(int n)
@@ -52,6 +50,7 @@ private:
     }
 
 public:
+    Vector                    m_gradp;  // Old gradient
     ///
     /// Constructor for LBFGS solver.
     ///
@@ -86,6 +85,7 @@ public:
 
         // Evaluate function and compute gradient
         fx = f(x, m_grad);
+
         Scalar xnorm = x.norm();
         Scalar gnorm = m_grad.norm();
         if(fpast > 0)

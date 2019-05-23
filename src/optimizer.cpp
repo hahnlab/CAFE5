@@ -11,13 +11,6 @@
 
 #include "../config.h"
 
-#ifdef HAVE_EIGEN_CORE
-#include <Eigen/Core>
-#include "LBFGSpp/LBFGS.h"
-//using Eigen::VectorXd;
-using namespace LBFGSpp;
-#endif
-
 #include "optimizer.h"
 
 #ifdef HAVE_NLOPT_HPP
@@ -25,6 +18,8 @@ using namespace LBFGSpp;
 #endif
 
 #include "optimizer_scorer.h"
+#include "LBFGS_Strategy.h"
+
 #define PHASED_OPTIMIZER_PHASE2_PRECISION 1e-6
 
 
@@ -324,7 +319,7 @@ candidate *get_best_result(FMinSearch* pfm)
     return pfm->candidates[0];
 }
 
-candidate::candidate(int size) : values(size)
+candidate::candidate(int size) : values(size), score(0)
 {
 }
 
@@ -590,76 +585,6 @@ bool threshold_achieved(FMinSearch* pfm)
 {
     return __fminsearch_checkV(pfm) && __fminsearch_checkF(pfm);
 }
-
-#ifdef HAVE_EIGEN_CORE
-double LBGFS_compute(const Eigen::VectorXd& x, Eigen::VectorXd& grad, optimizer_scorer* scorer)
-{
-    if (std::isnan(x[0]))
-        return INFINITY;
-
-    vector<double> t(x.size());
-    for (int i = 0; i < x.size(); ++i) t[i] = x[i];
-
-    double score = scorer->calculate_score(&t[0]);
-    if (std::isinf(score))
-        return INFINITY;
-
-    int ndim = grad.size();
-    vector<double> gradiations(ndim);
-    vector<double> gradiated_scores(ndim);
-    int dim;
-
-    for (dim = 0; dim < ndim; dim++) {
-        double adjustment = 1e-4 * fabs(t[dim]);
-        if (adjustment == 0.0) gradiations[dim] = 1e-4;
-
-        auto adjusted_t = t;
-        adjusted_t[dim] += adjustment;
-
-        gradiations[dim] = adjusted_t[dim];
-        gradiated_scores[dim] = scorer->calculate_score(adjusted_t.data());
-    }
-    for (dim = 0; dim < ndim; dim++)
-    {
-        if (std::isinf(gradiated_scores[dim]))
-            grad[dim] = (100 - score) / gradiations[dim];
-        else
-            grad[dim] = (gradiated_scores[dim] - score) / gradiations[dim];
-    }
-
-    return score;
-}
-
-class LBFGS_strategy : public OptimizerStrategy {
-    virtual void Run(FMinSearch * pfm, optimizer::result & r, std::vector<double>& initial) override
-    {
-        LBFGSParam<double> param;
-        param.delta = pfm->tolx;
-        param.max_iterations = 25;
-        param.epsilon = pfm->tolf;
-        param.past = 1;
-        LBFGSSolver<double> solver(param);
-        optimizer_scorer* scorer = pfm->scorer;
-        auto wrapper = [scorer](const Eigen::VectorXd& x, Eigen::VectorXd& grad) {
-            return LBGFS_compute(x, grad, scorer);
-        };
-
-        double fx;
-        Eigen::VectorXd x = Eigen::VectorXd::Zero(initial.size());
-        for (size_t i = 0; i < initial.size(); ++i) x[i] = initial[i];
-        int niter = solver.minimize(wrapper, x, fx);
-
-        r.num_iterations = niter;
-        r.score = fx;
-        r.values.resize(initial.size());
-        for (int i = 0; i < x.size(); ++i) r.values[i] = x[i];
-
-    }
-
-    virtual std::string Description() const override { return "Broyden-Fletcher-Goldfarb-Shanno algorithm"; };
-
-};
-#endif
 
 #ifdef HAVE_NLOPT_HPP
 double myvfunc(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
