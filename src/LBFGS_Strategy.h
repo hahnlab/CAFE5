@@ -10,7 +10,7 @@
 #include <vector>
 
 #include <Eigen/Core>
-#include "LBFGSpp/LBFGS.h"
+#include "LBFGS.h"
 
 class gradient_calculator
 {

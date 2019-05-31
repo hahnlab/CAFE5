@@ -23,42 +23,36 @@ release: $(BINDIR)/$(TARGET)
 
 
 SOURCES := $(wildcard $(SRCDIR)/*.cpp)
-#INCLUDES := $(wildcard $(SRCDIR)/*.h)
+INCLUDES := -I$(SRCDIR)/LBFGSpp/include
 OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 rm = rm -f
 
 $(BINDIR)/$(TARGET): $(OBJECTS) $(OBJDIR)/main.o
 	$(LINKER) $@ $(LFLAGS) $(OBJECTS) $(OBJDIR)/main.o @LIBS@ 
-	@echo "Linking complete!"
 
 $(OBJECTS): $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
-	$(CC) $(CFLAGS) -c $< -o $@
-	@echo "Compiled "$<" successfully!"
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 $(OBJDIR)/main.o: main.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
-	@echo "Compiled "$<" successfully!"
 
 $(OBJDIR)/test.o: test.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
-	@echo "Compiled "$<" successfully!"
 
 .PHONY: clean
 clean:
 	$(rm) $(OBJECTS) $(OBJDIR)/main.o
-	@echo "Cleanup complete!"
 
 .PHONY: remove
 remove: clean
 	@$(rm) $(BINDIR)/$(TARGET)
-	@echo "Executable removed!"
 
 #
 # Debug build settings
 #
 DBGDIR = debug
 DBG_OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(DBGDIR)/%.o)
-DBG_CFLAGS = -std=c++11 -Wall -Werror @OPENMP_CXXFLAGS@ -g -I. -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
+DBG_CFLAGS = -std=c++11 -Wall -Werror @OPENMP_CXXFLAGS@ -g -I.  $(INCLUDES) -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 DBG_LINKER = $(LD) -std=c++11 @OPENMP_CXXFLAGS@ -o
 
 $(DBG_OBJECTS): $(DBGDIR)/%.o: $(SRCDIR)/%.cpp
@@ -77,7 +71,7 @@ TESTDIR = test
 TEST_TARGET = runtests
 TEST_OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(TESTDIR)/%.o)
 $(TEST_OBJECTS): $(TESTDIR)/%.o: $(SRCDIR)/%.cpp
-	$(CC) $(DBG_CFLAGS) -DSILENT -c $< -o $@
+	$(CC) $(DBG_CFLAGS)  $(INCLUDES) -DSILENT -c $< -o $@
 
 $(TESTDIR)/test.o: test.cpp
 	$(CC) $(DBG_CFLAGS) -c $< -o $@
@@ -85,7 +79,6 @@ $(TESTDIR)/test.o: test.cpp
 TESTLIBS=-lCppUTest -lCppUTestExt
 $(TESTDIR)/$(TEST_TARGET): $(TEST_OBJECTS) $(TESTDIR)/test.o
 	$(LINKER) $@ $(LFLAGS) $(TEST_OBJECTS) $(TESTDIR)/test.o $(TESTLIBS)
-	@echo "Test linking complete!"
 
 .PHONY: test
 test: $(TESTDIR)/$(TEST_TARGET)
