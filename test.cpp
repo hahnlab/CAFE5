@@ -20,7 +20,6 @@
 #include "src/simulator.h"
 #include "src/poisson.h"
 #include "src/optimizer.h"
-#include "src/LBFGS_Strategy.h"
 
 // these need to be at the end to stop weird STL errors
 #include "CppUTest/TestHarness.h"
@@ -2497,66 +2496,6 @@ TEST(Optimizer, __fminsearch_set_last_element)
     DOUBLES_EQUAL(4.0, fm.candidates[2]->score, 0.00001);
 
 }
-
-#ifdef HAVE_EIGEN_CORE
-TEST(Optimizer, LBFGS_strategy_scaling)
-{
-    LBFGS_strategy strat;
-    vector<double> v({3, 5, 7});
-    strat.calculate_scale_values(v);
-
-    multiplier_scorer scorer(3);
-    DOUBLES_EQUAL(105, strat.calculate_score_from_scaled_values(&scorer, { 1,1,1 }), 0.0001);
-}
-
-TEST(Optimizer, LBFGS_strategy_description)
-{
-    LBFGS_strategy strat;
-    STRCMP_EQUAL("Broyden-Fletcher-Goldfarb-Shanno algorithm", strat.Description().c_str());
-}
-
-TEST(Optimizer, gradient_calculator__approximates_infinite_gradient)
-{
-    vector<double> previous({ 0.006, .9 });
-    vector<double> current({ 0.001, .1 });
-    gradient_calculator gc;
-    gc.update(previous, 50000001);
-    Eigen::VectorXd actual_gradient;
-    actual_gradient.resize(2);
-
-    gc.approximate_infinite_gradient(current, actual_gradient);
-    DOUBLES_EQUAL(200, actual_gradient[0], 0.001);
-    DOUBLES_EQUAL(1.25, actual_gradient[1], 0.001);
-}
-
-TEST(Optimizer, gradient_calculator__computes_gradients)
-{
-    gradient_calculator gc;
-    Eigen::VectorXd grad;
-    grad.resize(3);
-    auto multiply_func = [](const std::vector<double>& values) { return values[0] * values[1] * values[2];  };
-    gc.compute_gradients({ 1,2,3 }, grad, 5, multiply_func);
-    DOUBLES_EQUAL(1.049505, grad[0], 0.00001);
-    DOUBLES_EQUAL(0.5247525, grad[1], 0.00001);
-    DOUBLES_EQUAL(0.349835, grad[2], 0.00001);
-}
-
-TEST(Optimizer, gradient_calculator__stores_finite_scores)
-{
-    gradient_calculator gc;
-    gc.update({ 1,3 }, 5);
-    DOUBLES_EQUAL(5, gc._last_success.score, 0.001);
-    LONGS_EQUAL(2, gc._last_success.values.size());
-    DOUBLES_EQUAL(1, gc._last_success.values[0], 0.001);
-    DOUBLES_EQUAL(3, gc._last_success.values[1], 0.001);
-
-    gc.update({ 2,9,10 }, INFINITY);
-    DOUBLES_EQUAL(5, gc._last_success.score, 0.001);
-    LONGS_EQUAL(2, gc._last_success.values.size());
-    DOUBLES_EQUAL(1, gc._last_success.values[0], 0.001);
-    DOUBLES_EQUAL(3, gc._last_success.values[1], 0.001);
-}
-#endif
 
 TEST(Optimizer, NelderMeadSimilarityCutoff__threshold__returns_false_on_first_nine_attempts)
 {

@@ -13,12 +13,7 @@
 
 #include "optimizer.h"
 
-#ifdef HAVE_NLOPT_HPP
-#include <nlopt.hpp>
-#endif
-
 #include "optimizer_scorer.h"
-#include "LBFGS_Strategy.h"
 
 #define PHASED_OPTIMIZER_PHASE2_PRECISION 1e-6
 
@@ -586,88 +581,10 @@ bool threshold_achieved(FMinSearch* pfm)
     return __fminsearch_checkV(pfm) && __fminsearch_checkF(pfm);
 }
 
-#ifdef HAVE_NLOPT_HPP
-double myvfunc(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
-{
-    optimizer_scorer* scorer = reinterpret_cast<optimizer_scorer *>(my_func_data);
-    double score = scorer->calculate_score(&x[0]);
-    if (std::isinf(score))
-        return INFINITY;
-
-    int ndim = grad.size();
-    vector<double> h(ndim);
-    int dim;
-    
-    for (dim = 0; dim < ndim; dim++) {
-        auto adjusted_x = x;
-        double temp = x[dim];
-        h[dim] = 1e-4 * fabs(temp);
-        if (h[dim] == 0.0) h[dim] = 1e-4;
-        adjusted_x[dim] = temp + h[dim];
-        h[dim] = adjusted_x[dim] - temp;
-        grad[dim] = scorer->calculate_score(&adjusted_x[0]);
-    }
-    for (dim = 0; dim < ndim; dim++)
-        grad[dim] = (grad[dim] - score) / h[dim];
-
-    return score;
-}
-
-class NLOpt_strategy : public OptimizerStrategy {
-    const nlopt::algorithm _algorithm = nlopt::LD_LBFGS;
-
-    // Inherited via OptimizerStrategy
-    virtual void Run(FMinSearch * pfm, optimizer::result & r, std::vector<double>& initial) override
-    {
-        nlopt::opt opt(_algorithm, initial.size());
-        opt.set_min_objective(myvfunc, pfm->scorer);
-        opt.set_ftol_rel(pfm->tolf);
-        opt.set_xtol_rel(pfm->tolx);
-        opt.set_maxeval(pfm->maxiters);
-        opt.set_lower_bounds(0);
-        vector<double> uppers(initial.size(), 1.0);
-        if (uppers.size() > 1)
-            uppers[uppers.size() - 1] = 10;
-        opt.set_upper_bounds(uppers);
-        double minf;
-        try {
-            vector<double> values(initial);
-            nlopt::result result = opt.optimize(values, minf);
-
-            r.num_iterations = opt.get_numevals();
-            r.score = result;
-            r.values = values;
-        }
-        catch (std::exception &e) {
-            std::cout << "nlopt failed: " << e.what() << std::endl;
-        }
-    }
-
-
-    // Inherited via OptimizerStrategy
-    virtual std::string Description() const override
-    {
-        nlopt::opt opt(_algorithm, 1);
-        return opt.get_algorithm_name();
-    }
-
-};
-#endif
-
 OptimizerStrategy *optimizer::get_strategy()
 {
     switch (strategy)
     {
-    case LBFGS:
-#ifdef HAVE_EIGEN_CORE
-        return new LBFGS_strategy();
-#endif
-        break;
-    case NLOpt:
-#ifdef HAVE_NLOPT_HPP
-        return new NLOpt_strategy();
-#endif
-        break;
     case RangeWidely:
         return new RangeWidelyThenHomeIn();
     case InitialVar:

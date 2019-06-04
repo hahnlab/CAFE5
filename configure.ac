@@ -7,7 +7,6 @@ AC_PROG_CXX([icc g++])
 AC_OPENMP
 
 AC_CHECK_LIB([m], [floor])
-AC_CHECK_LIB([nlopt], [nlopt_create])
 
 ax_blas_ok=no
 
@@ -36,9 +35,6 @@ AC_SEARCH_LIBS(vdExp, mkl_intel_lp64,
 		[AC_DEFINE([HAVE_VECTOR_EXP],[1], [Have a vector exponential function])],,
 		[])
 
-AC_CHECK_HEADERS(nlopt.hpp)
-AC_CHECK_HEADERS(Eigen/Core)
-		
 AC_DEFINE(NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS, 40, [Number of times optimizer will restart if it fails to find legal values])
 AC_DEFINE(LAMBDA_PERTURBATION_STEP_SIZE, 50, [Number of values simulator will generate before modifying lambda value])
 AC_DEFINE(OPTIMIZER_STRATEGY_STANDARD,,[Optimizer will not make any particular attempt to avoid local optima]
