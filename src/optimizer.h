@@ -5,6 +5,8 @@
 #include <map>
 #include <chrono>
 #include <iosfwd>
+#include <functional>
+#include <deque>
 
 #include "../config.h"
 
@@ -69,8 +71,8 @@ double __fminsearch_x_contract_outside(FMinSearch* pfm);
 double __fminsearch_x_contract_inside(FMinSearch* pfm);
 void __fminsearch_x_shrink(FMinSearch* pfm);
 void __fminsearch_set_last_element(FMinSearch* pfm, double* x, double f);
-int fminsearch_min(FMinSearch* pfm, double* X0);
 bool threshold_achieved(FMinSearch* pfm);
+int fminsearch_min(FMinSearch* pfm, double* X0, std::function<bool(FMinSearch*)> threshold_func = threshold_achieved);
 
 class OptimizerStrategy;
 
@@ -119,6 +121,27 @@ public:
 
 
     OptimizerStrategy* get_strategy();
+};
+
+//! @brief Base class for the optimizer strategy to be used
+//! \ingroup optimizer
+class OptimizerStrategy
+{
+public:
+    virtual void Run(FMinSearch* pfm, optimizer::result& r, std::vector<double>& initial) = 0;
+
+    virtual std::string Description() const = 0;
+};
+
+class NelderMeadSimilarityCutoff : public OptimizerStrategy
+{
+    std::deque<double> scores;
+public:
+    void Run(FMinSearch* pfm, optimizer::result& r, std::vector<double>& initial) override;
+
+    bool threshold_achieved_checking_similarity(FMinSearch* pfm);
+
+    virtual std::string Description() const override { return "Nelder-Mead with similarity cutoff"; };
 };
 
 std::ostream& operator<<(std::ostream& ost, const optimizer::result& r);

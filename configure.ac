@@ -40,8 +40,6 @@ AC_CHECK_HEADERS(nlopt.hpp)
 AC_CHECK_HEADERS(Eigen/Core)
 		
 AC_DEFINE(NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS, 40, [Number of times optimizer will restart if it fails to find legal values])
-AC_DEFINE(OPTIMIZER_INITIAL_GUESS_MEAN_ALPHA, 1.0, [Mean value of normal curve optimizer will initialize alpha guesses from])
-AC_DEFINE(OPTIMIZER_INITIAL_GUESS_STDDEV_ALPHA, 0.4, [Standard deviation of normal curve optimizer will initialize alpha guesses from])
 AC_DEFINE(LAMBDA_PERTURBATION_STEP_SIZE, 50, [Number of values simulator will generate before modifying lambda value])
 AC_DEFINE(OPTIMIZER_STRATEGY_STANDARD,,[Optimizer will not make any particular attempt to avoid local optima]
 )

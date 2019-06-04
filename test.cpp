@@ -2489,6 +2489,59 @@ TEST(Optimizer, __fminsearch_set_last_element)
 }
 
 
+TEST(Optimizer, NelderMeadSimilarityCutoff__threshold__returns_false_on_first_nine_attempts)
+{
+    NelderMeadSimilarityCutoff strat;
+    FMinSearch fm;
+    candidate c(1);
+    fm.candidates.push_back(&c);
+    fm.candidates[0]->score = 100;
+    for (int i = 0; i<9; ++i)
+        CHECK_FALSE(strat.threshold_achieved_checking_similarity(&fm));
+
+}
+
+TEST(Optimizer, NelderMeadSimilarityCutoff__threshold__returns_true_if_all_attempts_match)
+{
+    NelderMeadSimilarityCutoff strat;
+    FMinSearch fm;
+    candidate c(1);
+    fm.candidates.push_back(&c);
+    fm.candidates[0]->score = 100;
+    for (int i = 0; i < 9; ++i)
+        strat.threshold_achieved_checking_similarity(&fm);
+
+    CHECK_TRUE(strat.threshold_achieved_checking_similarity(&fm));
+}
+
+TEST(Optimizer, NelderMeadSimilarityCutoff__threshold__returns_false_if_attempt_varies)
+{
+    NelderMeadSimilarityCutoff strat;
+    FMinSearch fm;
+    candidate c(1);
+    fm.candidates.push_back(&c);
+    fm.candidates[0]->score = 100;
+    for (int i = 0; i < 9; ++i)
+        strat.threshold_achieved_checking_similarity(&fm);
+
+    fm.candidates[0]->score = 100.1;
+    CHECK_FALSE(strat.threshold_achieved_checking_similarity(&fm));
+}
+
+TEST(Optimizer, NelderMeadSimilarityCutoff__threshold__returns_true_if_attempt_varies_minimally)
+{
+    NelderMeadSimilarityCutoff strat;
+    FMinSearch fm;
+    candidate c(1);
+    fm.candidates.push_back(&c);
+    fm.candidates[0]->score = 100;
+    for (int i = 0; i < 9; ++i)
+        strat.threshold_achieved_checking_similarity(&fm);
+
+    fm.candidates[0]->score = 100.0001;
+    CHECK_TRUE(strat.threshold_achieved_checking_similarity(&fm));
+}
+
 void init_lgamma_cache();
 
 int main(int ac, char** av)

@@ -271,13 +271,13 @@ void __fminsearch_set_last_element(FMinSearch* pfm, double* x, double f)
 	__fminsearch_sort(pfm);
 }
 
-int fminsearch_min(FMinSearch* pfm, double* X0)
+int fminsearch_min(FMinSearch* pfm, double* X0, std::function<bool(FMinSearch *)> threshold_func)
 {
 	int i;
 	__fminsearch_min_init(pfm, X0);
 	for ( i = 0 ; i < pfm->maxiters; i++ )
 	{
-		if (threshold_achieved(pfm)) 
+		if (threshold_func(pfm)) 
             break;
 
         __fminsearch_x_mean(pfm);
@@ -365,16 +365,6 @@ std::vector<double> optimizer::get_initial_guesses()
     return initial;
 }
 
-//! @brief Base class for the optimizer strategy to be used
-//! \ingroup optimizer
-class OptimizerStrategy
-{
-public:
-    virtual void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial) = 0;
-
-    virtual std::string Description() const = 0;
-};
-
 class StandardNelderMead : public OptimizerStrategy
 {
     bool explode = false;
@@ -400,6 +390,33 @@ public:
 
     virtual std::string Description() const override { return "Standard Nelder-Mead"; };
 };
+
+void NelderMeadSimilarityCutoff::Run(FMinSearch* pfm, optimizer::result& r, std::vector<double>& initial)
+{
+    pfm->tolx = 1e-6;
+    pfm->tolf = 1e-6;
+    pfm->maxiters = 25;
+    fminsearch_min(pfm, &initial[0], [this](FMinSearch* pfm) { return threshold_achieved_checking_similarity(pfm); });
+    auto result = get_best_result(pfm);
+
+    r.score = result->score;
+    r.values = result->values;
+}
+
+bool NelderMeadSimilarityCutoff::threshold_achieved_checking_similarity(FMinSearch* pfm)
+{
+    double current = get_best_result(pfm)->score;
+    scores.push_back(current);
+    if (scores.size() < 10)
+        return false;
+
+    if (scores.size() > 10)
+        scores.pop_front();
+
+    double mx = *std::max_element(scores.begin(), scores.end());
+    double mn = *std::min_element(scores.begin(), scores.end());
+    return mx-mn < OPTIMIZER_LOW_PRECISION;
+}
 
 class PerturbWhenClose : public OptimizerStrategy
 {
