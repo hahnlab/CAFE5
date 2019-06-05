@@ -511,14 +511,12 @@ TEST(Inference, base_optimizer_guesses_lambda_and_unique_epsilons)
 
     CHECK(opt);
     CHECK(dynamic_cast<lambda_epsilon_optimizer*>(opt.get()) != NULL);
-#ifdef FALSE_MEMORY_LEAK_FIXED
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(3, guesses.size());
-    DOUBLES_EQUAL(0.0808301, guesses[0], 0.0001);
+    DOUBLES_EQUAL(0.2987612, guesses[0], 0.0001);
     DOUBLES_EQUAL(0.3, guesses[1], 0.0001);
     DOUBLES_EQUAL(0.4, guesses[2], 0.0001);
-    vector<double>().swap(guesses);
-#endif
+
     delete model.get_lambda();
 }
 
@@ -604,7 +602,6 @@ TEST(Inference, gamma_lambda_optimizer__provides_two_guesses)
 
     double alpha = guesses[1];
     CHECK(alpha > 0 && alpha < 10);
-    vector<double>().swap(guesses);
 }
 
 TEST(Inference, gamma_optimizer__creates_single_initial_guess)
@@ -2501,9 +2498,13 @@ TEST(Optimizer, NelderMeadSimilarityCutoff__threshold__returns_false_on_first_ni
 {
     NelderMeadSimilarityCutoff strat;
     FMinSearch fm;
-    candidate c(1);
-    fm.candidates.push_back(&c);
-    fm.candidates[0]->score = 100;
+    fm.variable_count = 1;
+    candidate c(1), c2(1);
+    c.values[0] = .0001;
+    c.score = 100;
+    c2.values[0] = .0005;
+    c2.score = 101;
+    fm.candidates = { &c, &c2 };
     for (int i = 0; i<9; ++i)
         CHECK_FALSE(strat.threshold_achieved_checking_similarity(&fm));
 
@@ -2513,9 +2514,13 @@ TEST(Optimizer, NelderMeadSimilarityCutoff__threshold__returns_true_if_all_attem
 {
     NelderMeadSimilarityCutoff strat;
     FMinSearch fm;
-    candidate c(1);
-    fm.candidates.push_back(&c);
-    fm.candidates[0]->score = 100;
+    fm.variable_count = 1;
+    candidate c(1), c2(1);
+    c.values[0] = .0001;
+    c.score = 100;
+    c2.values[0] = .0005;
+    c2.score = 101;
+    fm.candidates = { &c, &c2 };
     for (int i = 0; i < 9; ++i)
         strat.threshold_achieved_checking_similarity(&fm);
 
@@ -2526,9 +2531,13 @@ TEST(Optimizer, NelderMeadSimilarityCutoff__threshold__returns_false_if_attempt_
 {
     NelderMeadSimilarityCutoff strat;
     FMinSearch fm;
-    candidate c(1);
-    fm.candidates.push_back(&c);
-    fm.candidates[0]->score = 100;
+    fm.variable_count = 1;
+    candidate c(1), c2(1);
+    c.values[0] = .0001;
+    c.score = 100;
+    c2.values[0] = .0005;
+    c2.score = 101;
+    fm.candidates = { &c, &c2 };
     for (int i = 0; i < 9; ++i)
         strat.threshold_achieved_checking_similarity(&fm);
 
@@ -2540,9 +2549,13 @@ TEST(Optimizer, NelderMeadSimilarityCutoff__threshold__returns_true_if_attempt_v
 {
     NelderMeadSimilarityCutoff strat;
     FMinSearch fm;
-    candidate c(1);
-    fm.candidates.push_back(&c);
-    fm.candidates[0]->score = 100;
+    fm.variable_count = 1;
+    candidate c(1), c2(1);
+    c.values[0] = .0001;
+    c.score = 100;
+    c2.values[0] = .0005;
+    c2.score = 101;
+    fm.candidates = { &c, &c2 };
     for (int i = 0; i < 9; ++i)
         strat.threshold_achieved_checking_similarity(&fm);
 
@@ -2554,6 +2567,7 @@ void init_lgamma_cache();
 
 int main(int ac, char** av)
 {
+    MemoryLeakWarningPlugin::turnOffNewDeleteOverloads();
     init_lgamma_cache();
     return CommandLineTestRunner::RunAllTests(ac, av);
 }

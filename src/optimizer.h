@@ -27,7 +27,6 @@ struct candidate {
     std::vector<double> values;
     double score;
     candidate(int size);
-    ~candidate();
 };
 
 //! @brief Options for an optimization. In general,
@@ -147,13 +146,15 @@ public:
 std::ostream& operator<<(std::ostream& ost, const optimizer::result& r);
 
 //! \ingroup optimizer
-enum strategies { RangeWidely, InitialVar, Perturb, Standard, NLOpt, LBFGS};
+enum strategies { RangeWidely, InitialVar, Perturb, Standard, SimilarityCutoff, NLOpt, LBFGS};
 #if defined(OPTIMIZER_STRATEGY_RANGE_WIDELY_THEN_HOME_IN)
 const strategies strategy = RangeWidely;
 #elif defined(OPTIMIZER_STRATEGY_INITIAL_VARIANTS)
 const strategies strategy = InitialVar;
 #elif defined(OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE)
 const strategies strategy = Perturb;
+#elif defined(OPTIMIZER_STRATEGY_SIMILARITY_CUTOFF)
+const strategies strategy = SimilarityCutoff;
 #else
 const strategies strategy = Standard;
 #endif

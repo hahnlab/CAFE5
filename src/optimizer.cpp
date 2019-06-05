@@ -72,7 +72,6 @@ void fminsearch_clear_memory(FMinSearch* pfm)
     {
         delete c;
     }
-    std::vector<candidate*>().swap(pfm->candidates);
 	free(pfm->x_mean);
 	pfm->x_mean = NULL;
 	free(pfm->x_r);
@@ -318,11 +317,6 @@ candidate::candidate(int size) : values(size), score(0)
 {
 }
 
-candidate::~candidate() {
-    std::vector<double>().swap(values);
-}
-
-
 optimizer::optimizer(optimizer_scorer *p_scorer) : _p_scorer(p_scorer)
 {
 #ifdef SILENT
@@ -376,6 +370,7 @@ public:
 
         r.score = result->score;
         r.values = result->values;
+        r.num_iterations = pfm->iters;
     }
 
     virtual std::string Description() const override { return "Standard Nelder-Mead"; };
@@ -391,10 +386,14 @@ void NelderMeadSimilarityCutoff::Run(FMinSearch* pfm, optimizer::result& r, std:
 
     r.score = result->score;
     r.values = result->values;
+    r.num_iterations = pfm->iters;
 }
 
 bool NelderMeadSimilarityCutoff::threshold_achieved_checking_similarity(FMinSearch* pfm)
 {
+    if (threshold_achieved(pfm))
+        return true;
+
     double current = get_best_result(pfm)->score;
     scores.push_back(current);
     if (scores.size() < 10)
@@ -591,6 +590,8 @@ OptimizerStrategy *optimizer::get_strategy()
         return new InitialVariants(*this);
     case Perturb:
         return new PerturbWhenClose();
+    case SimilarityCutoff:
+        return new NelderMeadSimilarityCutoff();
     case Standard:
         return new StandardNelderMead();
     }
