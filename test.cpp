@@ -931,6 +931,19 @@ TEST(Reconstruction, get_weighted_averages)
     DOUBLES_EQUAL(6.5, avg[&c2], 0.01);
 }
 
+TEST(Reconstruction, get_non_root_internal_nodes)
+{
+    newick_parser parser(false);
+    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
+    unique_ptr<clade> p_tree(parser.parse_newick());
+
+    auto actual = get_non_root_internal_nodes(p_tree.get());
+
+    LONGS_EQUAL(2, actual.size());
+    STRCMP_EQUAL("AB", actual[0]->get_taxon_name().c_str());
+    STRCMP_EQUAL("CD", actual[1]->get_taxon_name().c_str());
+}
+
 TEST(Inference, gamma_model_prune)
 {
     newick_parser parser(false);

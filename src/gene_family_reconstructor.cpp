@@ -256,9 +256,16 @@ std::ostream& operator<<(std::ostream & ost, const increase_decrease& val)
     return ost;
 }
 
+cladevector get_non_root_internal_nodes(const clade* p_tree)
+{
+    auto order = p_tree->find_internal_nodes();
+    order.erase(remove_if(order.begin(), order.end(), [](const clade* c) { return c->is_root(); }), order.end());
+    return order;
+}
+
 void reconstruction::write_results(std::string model_identifier, std::string output_prefix, const user_data& data, std::vector<double>& pvalues)
 {
-    auto order = data.p_tree->find_internal_nodes();
+    auto order = get_non_root_internal_nodes(data.p_tree);
 
     std::ofstream ofst(filename(model_identifier + "_asr", output_prefix));
     print_reconstructed_states(ofst, order, data.gene_families, data.p_tree);
