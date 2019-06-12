@@ -167,32 +167,12 @@ void clade::write_newick(ostream& ost, std::function<std::string(const clade *c)
     }
 }
 
-
-/* Testing implementation of clade class */
-
-/* creating (((A,B)AB,C)ABC) 
-clade *p_child11 = new clade("A", 1); // (leaf) child11 = A
-clade *p_child12 = new clade("B", 1); // (leaf) child12 = B
-clade *p_child1 = new clade("AB", 1); // (internal) child1 = AB
-p_child1->add_descendant(p_child11);
-p_child1->add_descendant(p_child12);
-clade *p_child2 = new clade("C", 2); // (leaf) child2 = C
-clade parent;
-parent.taxon_name = "ABC"; // (root) parent = ABC
-parent.add_descendant(p_child1);
-parent.add_descendant(p_child2);
-*/
-
-/* testing print_immediate_descendants()
-parent.print_immediate_descendants();
-p_child1->print_immediate_descendants();
-*/
-
-/* testing print_clade()
-parent.print_clade();
-*/
-
-/* testing is_leaf()
-if (!parent.am_leaf()) { cout << "I am not leaf\n"; }
-if (p_child11->am_leaf()) { cout << "I am leaf\n"; }
-*/
+string clade_index_or_name(const clade* node, const cladevector& order)
+{
+    if (node->is_leaf())
+        return node->get_taxon_name();
+    else
+    {
+        return to_string(distance(order.begin(), find(order.begin(), order.end(), node)));
+    }
+}

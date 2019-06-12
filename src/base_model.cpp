@@ -226,51 +226,15 @@ increase_decrease get_increases_decreases(const clademap<family_size_change>& in
 }
 
 void base_model_reconstruction::print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues) {
-    if (families.size() != pvalues.size())
-    {
-        throw std::runtime_error("No pvalues found for family");
-    }
-    if (families.empty())
-    {
-        ost << "No increases or decreases recorded\n";
-        return;
-    }
-
-    ost << "#FamilyID\tpvalue\t*\t";
-    for (auto& it : order) {
-        ost << it->get_taxon_name() << "\t";
-    }
-    ost << endl;
-
-    for (size_t i = 0; i < families.size(); ++i) {
-        ost << get_increases_decreases(families[i].size_deltas, order, pvalues[i], families[i].id);
-    }
+    reconstruction::print_increases_decreases_by_family(ost, order, pvalues, families.size(), [this, order, pvalues](int family_index) {
+        return get_increases_decreases(families[family_index].size_deltas, order, pvalues[family_index], families[family_index].id);
+        });
 }
 
 void base_model_reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) {
-    if (families.empty())
-    {
-        ost << "No increases or decreases recorded\n";
-        return;
-    }
 
-    clademap<pair<int, int>> items;
-
-    for (size_t i = 0; i < families.size(); ++i) {
-        auto incdec = get_increases_decreases(families[i].size_deltas, order, 0.0, families[i].id);
-        for (size_t i = 0; i < order.size(); ++i)
-        {
-            if (incdec.change[i] == Increase)
-                items[order[i]].first++;
-            if (incdec.change[i] == Decrease)
-                items[order[i]].second++;
-        }
-    }
-
-    ost << "#Taxon_ID\tIncrease/Decrease\n";
-    for (auto& it : items) {
-        ost << it.first->get_taxon_name() << "\t";
-        ost << it.second.first << "/" << it.second.second << endl;
-    }
+    reconstruction::print_increases_decreases_by_clade(ost, order, families.size(), [this, order](int family_index) {
+        return get_increases_decreases(families[family_index].size_deltas, order, 0.0, families[family_index].id);
+        });
 }
 

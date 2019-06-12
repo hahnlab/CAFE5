@@ -47,6 +47,8 @@ public:
 
 std::ostream& operator<<(std::ostream& ost, const family_info_stash& r);
 
+struct increase_decrease;
+
 //! The result of a model reconstruction. Should be able to (a) print reconstructed states with all available information;
 /// (b) print increases and decreases by family; and (c) print increases and decreases by clade.
 class reconstruction {
@@ -55,7 +57,13 @@ class reconstruction {
     virtual void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) = 0;
 
 public:
-    void write_results(std::string model_identifier, std::string output_prefix, const user_data& data, std::vector<double>& pvalues);
+    void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order, size_t family_count,
+        std::function<increase_decrease(int family_index)> get_by_family);
+
+    void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues, size_t family_count,
+        std::function<increase_decrease(int family_index)> get_by_family);
+        
+        void write_results(std::string model_identifier, std::string output_prefix, const user_data& data, std::vector<double>& pvalues);
     virtual ~reconstruction()
     {
     }

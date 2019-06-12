@@ -370,6 +370,8 @@ reconstruction* gamma_model::reconstruct_ancestral_states(matrix_cache *calc, ro
 #pragma omp parallel for
     for (size_t i = 0; i<_p_gene_families->size(); ++i)
     {
+        result->_families[i].reconstruction.id = _p_gene_families->at(i).id();
+
         reconstruct_family(_p_gene_families->at(i), calc, prior, result->_families[i]);
 
         result->_families[i]._category_likelihoods = _category_likelihoods[i];
@@ -451,52 +453,15 @@ increase_decrease get_increases_decreases(const gamma_model_reconstruction::gamm
 
 void gamma_model_reconstruction::print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues)
 {
-    if (_families.size() != pvalues.size())
-    {
-        throw std::runtime_error("No pvalues found for family");
-    }
-    if (_families.empty())
-    {
-        ost << "No increases or decreases recorded\n";
-        return;
-    }
-
-    ost << "#FamilyID\tpvalue\t*\t";
-    for (auto& it : order) {
-        ost << it->get_taxon_name() << "\t";
-    }
-    ost << endl;
-
-    for (size_t i = 0; i < _families.size(); ++i) {
-        ost << get_increases_decreases(_families[i], order, pvalues[i]);
-    }
+    reconstruction::print_increases_decreases_by_family(ost, order, pvalues, _families.size(), [this, order, pvalues](int family_index) {
+        return get_increases_decreases(_families[family_index], order, pvalues[family_index]);
+        });
 }
 
 void gamma_model_reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order)
 {
-    if (_families.empty())
-    {
-        ost << "No increases or decreases recorded\n";
-        return;
-    }
-
-    clademap<pair<int, int>> increase_decrease_map;
-
-    for (auto &item : _families) {
-        auto incdec = get_increases_decreases(item, order, 0.0);
-        for (size_t i = 0; i < order.size(); ++i)
-        {
-            if (incdec.change[i] == Increase)
-                increase_decrease_map[order[i]].first++;
-            if (incdec.change[i] == Decrease)
-                increase_decrease_map[order[i]].second++;
-        }
-    }
-
-    ost << "#Taxon_ID\tIncrease/Decrease\n";
-    for (auto& it : increase_decrease_map) {
-        ost << it.first->get_taxon_name() << "\t";
-        ost << it.second.first << "/" << it.second.second << endl;
-    }
+    reconstruction::print_increases_decreases_by_clade(ost, order, _families.size(), [this, order](int family_index) {
+        return get_increases_decreases(_families[family_index], order, 0.0);
+        });
 }
 

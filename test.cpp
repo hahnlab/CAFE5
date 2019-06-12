@@ -1676,7 +1676,7 @@ TEST(Inference, base_model_print_increases_decreases_by_family)
     pvalues.push_back(0.07);
     ostringstream ost;
     bmr.print_increases_decreases_by_family(ost, order, pvalues);
-    STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA\tB\tAB", ost.str().c_str());
+    STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA\tB\t2", ost.str().c_str());
     STRCMP_CONTAINS("myid\t0.07\tn\ti\td\tc", ost.str().c_str());
 }
 
@@ -1714,7 +1714,7 @@ TEST(Inference, gamma_model_print_increases_decreases_by_family)
     //bundles.push_back(&bundle);
     ostringstream ost;
     gmr.print_increases_decreases_by_family(ost, order, pvalues);
-    STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA\tB\tAB", ost.str().c_str());
+    STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA\tB\t2", ost.str().c_str());
     STRCMP_CONTAINS("myid\t0.07\tn\tc\tc\tc", ost.str().c_str());
 }
 
@@ -1736,7 +1736,7 @@ TEST(Inference, gamma_model_print_increases_decreases_by_clade)
     gamma_model_reconstruction gmr(0, vector<double>());
 
     gmr.print_increases_decreases_by_clade(empty, order);
-    STRCMP_CONTAINS("No increases or decreases recorded", empty.str().c_str());
+    STRCMP_EQUAL("#Taxon_ID\t#Taxon_Name\tIncrease/Decrease\n", empty.str().c_str());
 
 #if 0
     bmr.families.resize(1);
@@ -1757,7 +1757,7 @@ TEST(Inference, gamma_model_print_increases_decreases_by_clade)
     gmr._families.resize(1);
     ostringstream ost;
     gmr.print_increases_decreases_by_clade(ost, order);
-    STRCMP_CONTAINS("#Taxon_ID\tIncrease/Decrease", ost.str().c_str());
+    STRCMP_CONTAINS("#Taxon_ID\t#Taxon_Name\tIncrease/Decrease", ost.str().c_str());
 //    STRCMP_CONTAINS("A\t1/0", ost.str().c_str());
 //    STRCMP_CONTAINS("B\t0/1", ost.str().c_str());
 }
@@ -1777,7 +1777,7 @@ TEST(Inference, base_model_print_increases_decreases_by_clade)
     base_model_reconstruction bmr(0);
 
     bmr.print_increases_decreases_by_clade(empty, order);
-    STRCMP_CONTAINS("No increases or decreases recorded", empty.str().c_str());
+    STRCMP_EQUAL("#Taxon_ID\t#Taxon_Name\tIncrease/Decrease\n", empty.str().c_str());
 
     bmr.families.resize(1);
     bmr.families.resize(1);
@@ -1787,7 +1787,7 @@ TEST(Inference, base_model_print_increases_decreases_by_clade)
 
     ostringstream ost;
     bmr.print_increases_decreases_by_clade(ost, order);
-    STRCMP_CONTAINS("#Taxon_ID\tIncrease/Decrease", ost.str().c_str());
+    STRCMP_CONTAINS("#Taxon_ID\t#Taxon_Name\tIncrease/Decrease", ost.str().c_str());
     STRCMP_CONTAINS("A\t1/0", ost.str().c_str());
     STRCMP_CONTAINS("B\t0/1", ost.str().c_str());
 }

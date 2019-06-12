@@ -182,18 +182,12 @@ void reconstruct_gene_families(const lambda* lambda, const clade *p_tree,
 
 string newick_node(const clade *node, const cladevector& order, std::function<std::string(const clade *c)> textwriter)
 {
-    auto node_id = distance(order.begin(), find(order.begin(), order.end(), node));
     ostringstream ost;
-    if (node->is_leaf())
-        ost << node->get_taxon_name();
-    else
-    {
-        ost << node_id;
-    }
+    ost << clade_index_or_name(node, order) << "_" << textwriter(node);
 
-    ost << "_" << textwriter(node);
     if (!node->is_root())
         ost << ':' << node->get_branch_length();
+
     return ost.str();
 }
 
@@ -262,6 +256,53 @@ cladevector get_non_root_internal_nodes(const clade* p_tree)
     order.erase(remove_if(order.begin(), order.end(), [](const clade* c) { return c->is_root(); }), order.end());
     return order;
 }
+
+void reconstruction::print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues, size_t family_count,
+    std::function<increase_decrease(int family_index)> get_by_family) {
+    if (family_count != pvalues.size())
+    {
+        throw std::runtime_error("No pvalues found for family");
+    }
+    if (family_count == 0)
+    {
+        ost << "No increases or decreases recorded\n";
+        return;
+    }
+
+    ost << "#FamilyID\tpvalue\t*\t";
+    for (auto& it : order) {
+        ost << clade_index_or_name(it, order) << "\t";
+    }
+    ost << endl;
+
+    for (size_t i = 0; i < family_count; ++i) {
+        ost << get_by_family(i);
+    }
+}
+
+void reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order, size_t family_count,
+    std::function<increase_decrease(int family_index)> get_by_family) {
+    clademap<pair<int, int>> increase_decrease_map;
+
+    for (size_t j = 0; j < family_count; ++j) {
+        auto incdec = get_by_family(j);
+        for (size_t i = 0; i < order.size(); ++i)
+        {
+            if (incdec.change[i] == Increase)
+                increase_decrease_map[order[i]].first++;
+            if (incdec.change[i] == Decrease)
+                increase_decrease_map[order[i]].second++;
+        }
+    }
+
+    ost << "#Taxon_ID\t#Taxon_Name\tIncrease/Decrease\n";
+    for (auto& it : increase_decrease_map) {
+        ost << clade_index_or_name(it.first, order) << "\t";
+        ost << it.first->get_taxon_name() << "\t";
+        ost << it.second.first << "/" << it.second.second << endl;
+    }
+}
+
 
 void reconstruction::write_results(std::string model_identifier, std::string output_prefix, const user_data& data, std::vector<double>& pvalues)
 {

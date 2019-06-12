@@ -141,4 +141,6 @@ template<typename T>
 using clademap = std::map<const clade *, T>;
 
 using cladevector = std::vector<const clade *>;
+
+std::string clade_index_or_name(const clade* node, const cladevector& order);
 #endif
