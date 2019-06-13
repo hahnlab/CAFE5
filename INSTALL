@@ -1,0 +1,14 @@
+Installation Instructions
+*************************
+
+Installation from Source
+========================
+* cd to the root directory of the CAFE source
+* Type "./configure"
+* Type "make"
+* The cafe executable will be built in the "release" directory.
+
+Basic Installation
+==================
+Copy the binary file "release/cafe" to somewhere on your path. /usr/local/bin is often used.
+
