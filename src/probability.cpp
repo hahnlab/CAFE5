@@ -161,20 +161,6 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 
 
 /* END: Birth-death model components ----------------------- */
-void initialize_probabilities(const clade *p_tree, std::map<const clade *, std::vector<double> >& _probabilities, int _max_root_family_size, int _max_parsed_family_size)
-{
-    auto fn = [&](const clade *node) {
-        if (node->is_root())
-        {
-            _probabilities[node].resize(_max_root_family_size);
-        }
-        else
-        {
-            _probabilities[node].resize(_max_parsed_family_size + 1); // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
-        }
-    };
-    p_tree->apply_reverse_level_order(fn);
-}
 
 //! Calculates the probabilities of a given node for a given family size.
 //! The probability of a leaf node is given from the family size at that node (1 for the family
@@ -269,33 +255,48 @@ std::vector<int> uniform_dist(int n_draws, int min, int max) {
     return uniform_vec;
 }
 
+/*! Create a sorted vector of probabilities by generating random trees 
+    \param p_tree The structure of the tree to generate
+    \param number_of_simulations The number of random probabilities to return
+    \param root_family_size The count of the family at the root. All other family sizes will be generated randomly based on this
+    \param max_family_size The maximum possible family size (Used to cut off probability calculations at a reasonable value)
+    \param root_family_size The maximum possible family size at the root
+    \param lambda The rate of change of the family
+
+    \returns a sorted vector of probabilities of the requested number of randomly generated trees
+*/
+
 std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, int max_root_family_size, const lambda *p_lambda, const matrix_cache& cache, error_model *p_error_model)
 {
     vector<double> result(number_of_simulations);
     vector<gene_family> families(number_of_simulations);
-    vector<std::map<const clade *, std::vector<double> >> pruners(number_of_simulations);
+    vector<clademap<std::vector<double>>> pruners(number_of_simulations);
 
-    // TODO: This is slow so it should be done in parallel. Care will have to be taken
-    // that stl containers that are added to are thread-safe.
+    // generate families by generating a tree, then storing off the leaf values
     for (size_t i = 0; i < result.size(); ++i)
     {
+        // generate a tree with root_family_size at the root
         clademap<int> sizes;
-        auto fn = [&sizes, p_lambda, p_error_model, max_family_size, &cache](const clade *c)
-        {
-            set_weighted_random_family_size(c, &sizes, p_lambda, p_error_model, max_family_size, cache);
-        };
-
         sizes[p_tree] = root_family_size;
-        p_tree->apply_prefix_order(fn); 
+        auto fn = [&](const clade* c) { set_weighted_random_family_size(c, &sizes, p_lambda, p_error_model, max_family_size, cache);};
+        p_tree->apply_prefix_order(fn);
 
+        // create the family by setting the species size from the leaf values
         for (auto& it : sizes) {
             if (it.first->is_leaf())
             {
                 families[i].set_species_size(it.first->get_taxon_name(), it.second);
             }
         }
-        // pruners[i].reset(new likelihood_computer(max_root_family_size, max_family_size, p_lambda, families[i], cache, NULL));
-        initialize_probabilities(p_tree, pruners[i], max_root_family_size, max_family_size);
+    }
+
+    // initialize the probability vectors in the pruners
+    // Do this outside of the parallel loop as it allocates needed memory
+    for (auto& p : pruners)
+    {
+        // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
+        auto fn = [&](const clade* node) { p[node].resize(node->is_root() ? max_root_family_size : max_family_size + 1); };
+        p_tree->apply_reverse_level_order(fn);
     }
 
 #pragma omp parallel for

@@ -1299,7 +1299,9 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_correctly)
     matrix_cache cache(21);
     std::map<const clade *, std::vector<double> > _probabilities; 
 
-    initialize_probabilities(p_tree.get(), _probabilities, 20, 20);
+    auto init_func = [&](const clade* node) { _probabilities[node].resize(node->is_root() ? 20 : 21); };
+    p_tree->apply_reverse_level_order(init_func);
+
     cache.precalculate_matrices({ 0.045 }, { 1.0,3.0,7.0 });
 
     auto A = p_tree->find_descendant("A");
@@ -1342,7 +1344,8 @@ TEST(Inference, likelihood_computer_sets_root_nodes_correctly)
 
     matrix_cache cache(21);
     std::map<const clade *, std::vector<double> > _probabilities;
-    initialize_probabilities(p_tree.get(), _probabilities, 20, 20);
+    auto init_func = [&](const clade* node) { _probabilities[node].resize(node->is_root() ? 20 : 21); };
+    p_tree->apply_reverse_level_order(init_func);
 
     cache.precalculate_matrices({ 0.03 }, { 1.0,3.0,7.0 });
 
@@ -1389,7 +1392,8 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_from_error_model_if_provided
     read_error_model_file(ist, &model);
 
     std::map<const clade *, std::vector<double> > _probabilities;
-    initialize_probabilities(p_tree.get(), _probabilities, 20, 20);
+    auto init_func = [&](const clade* node) { _probabilities[node].resize(node->is_root() ? 20 : 21); };
+    p_tree->apply_reverse_level_order(init_func);
 
     auto A = p_tree->find_descendant("A");
     compute_node_probability(A, family, &model, _probabilities, 20, 20, &lambda, cache);

@@ -20,7 +20,6 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 double chooseln(double n, double k);
 
 /* START: Likelihood computation ---------------------- */
-void initialize_probabilities(const clade *p_tree, std::map<const clade *, std::vector<double> >& _probabilities, int _max_root_family_size, int _max_parsed_family_size);
 
 /// compute_node_probability is a function that is used in the pruning algorithm. It is called once on each node of the tree,
 /// starting with the leaf nodes and working upwards. For each node, a vector of probabilities is added to the _probabilities

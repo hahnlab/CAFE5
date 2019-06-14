@@ -147,7 +147,7 @@ double pvalue(double v, const vector<double>& conddist)
     return  idx / (double)conddist.size();
 }
 
-// find_fast_families under base model through simulations (if we reject gamma)
+//! Compute pvalues for each family based on the given lambda
 vector<double> estimator::compute_pvalues(const user_data& data, int number_of_simulations) const
 {
 #ifndef SILENT
@@ -170,10 +170,11 @@ vector<double> estimator::compute_pvalues(const user_data& data, int number_of_s
     std::map<const clade *, std::vector<double> > family_likelihoods;
     transform(data.gene_families.begin(), data.gene_families.end(), result.begin(), [&data, &cache, &cd, &family_likelihoods](const gene_family& gf)
     {
-        initialize_probabilities(data.p_tree, family_likelihoods, data.max_root_family_size, data.max_family_size);
+        auto init_func = [&](const clade* node) { family_likelihoods[node].resize(node->is_root() ? data.max_root_family_size : data.max_family_size + 1); };
+        data.p_tree->apply_reverse_level_order(init_func);
 
-        auto fn = [&](const clade *c) { compute_node_probability(c, gf, NULL, family_likelihoods, data.max_root_family_size, data.max_family_size, data.p_lambda, cache); };
-        data.p_tree->apply_reverse_level_order(fn);
+        auto compute_func = [&](const clade *c) { compute_node_probability(c, gf, NULL, family_likelihoods, data.max_root_family_size, data.max_family_size, data.p_lambda, cache); };
+        data.p_tree->apply_reverse_level_order(compute_func);
 
         double observed_max_likelihood = *std::max_element(family_likelihoods.at(data.p_tree).begin(), family_likelihoods.at(data.p_tree).end());
 
