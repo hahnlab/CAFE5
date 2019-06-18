@@ -16,7 +16,7 @@ public:
     {
 
     }
-    trial* create_trial(model *p_model, const root_distribution& rd, int family_number, const user_data& data, const matrix_cache& cache);
+    trial* create_trial(model *p_model, const root_distribution& rd, int family_number, const matrix_cache& cache);
 
     virtual void execute(std::vector<model *>& models);
     void print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<trial *>& results);

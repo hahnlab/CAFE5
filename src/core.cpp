@@ -91,9 +91,9 @@ void model::write_vital_statistics(std::ostream& ost, double final_likelihood)
         ost << "Epsilon: " << _p_error_model->get_epsilons()[0] << endl;
 }
 
-lambda* model::get_simulation_lambda(const user_data& data)
+lambda* model::get_simulation_lambda()
 {
-    return data.p_lambda->clone();
+    return _p_lambda->clone();
 }
 
 void branch_length_finder::operator()(const clade *c)

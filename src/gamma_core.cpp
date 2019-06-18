@@ -74,11 +74,11 @@ void gamma_model::write_probabilities(ostream& ost)
     ost << "Lambda multipliers are: " << comma_separated(_lambda_multipliers) << endl;
 }
 
-lambda* gamma_model::get_simulation_lambda(const user_data& data)
+lambda* gamma_model::get_simulation_lambda()
 {
     discrete_distribution<int> dist(_gamma_cat_probs.begin(), _gamma_cat_probs.end());
 
-    return data.p_lambda->multiply(_lambda_multipliers[dist(randomizer_engine)]);
+    return _p_lambda->multiply(_lambda_multipliers[dist(randomizer_engine)]);
 }
 
 std::vector<double> gamma_model::get_posterior_probabilities(std::vector<double> cat_likelihoods)

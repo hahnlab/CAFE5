@@ -135,7 +135,7 @@ public:
     }
 
     //! Returns a lambda suitable for creating a simulated family. Default case is simply to return the lambda provided by the user.
-    virtual lambda* get_simulation_lambda(const user_data& data);
+    virtual lambda* get_simulation_lambda();
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache) = 0;
 

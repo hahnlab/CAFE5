@@ -1637,12 +1637,37 @@ TEST(Simulation, print_process_can_print_without_internal_nodes)
 
 TEST(Simulation, gamma_model_get_simulation_lambda_selects_random_multiplier_based_on_alpha)
 {
-    gamma_model m(NULL, NULL, NULL, 0, 5, 3, 0.7, NULL);
-    user_data data;
     single_lambda lam(0.05);
-    data.p_lambda = &lam;
-    unique_ptr<single_lambda> new_lam(dynamic_cast<single_lambda *>(m.get_simulation_lambda(data)));
+    gamma_model m(&lam, NULL, NULL, 0, 5, 3, 0.7, NULL);
+    unique_ptr<single_lambda> new_lam(dynamic_cast<single_lambda *>(m.get_simulation_lambda()));
     DOUBLES_EQUAL(0.00574028, new_lam->get_single_lambda(), 0.0000001);
+}
+
+TEST(Simulation, create_trial)
+{
+    newick_parser parser(false);
+    parser.newick_string = "(A:1,B:3):7";
+    single_lambda lam(0.05);
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    base_model b(&lam, p_tree.get(), NULL, 0, 0, NULL);
+
+
+    user_data data;
+    data.p_tree = p_tree.get();
+    input_parameters params;
+    mock_model model;
+    simulator sim(data, params);
+
+    root_distribution rd;
+    rd.vector({ 1,2,5 });
+
+    matrix_cache cache(100);
+    b.prepare_matrices_for_simulation(cache);
+
+    unique_ptr<trial> actual(sim.create_trial(&b, rd, 0, cache));
+
+    auto AB = p_tree->find_descendant("AB");
+    LONGS_EQUAL(2, actual->at(AB));
 }
 
 TEST(Inference, model_vitals)
@@ -2054,15 +2079,13 @@ TEST(Simulation, base_prepare_matrices_for_simulation_uses_perturbed_lambda)
 {
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:3):7";
-    user_data data;
     single_lambda lam(0.05);
-    data.p_lambda = &lam;
     unique_ptr<clade> p_tree(parser.parse_newick());
     base_model b(&lam, p_tree.get(), NULL, 0, 0, NULL);
     b.perturb_lambda();
     matrix_cache m(25);
     b.prepare_matrices_for_simulation(m);
-    unique_ptr<single_lambda> sim_lambda(dynamic_cast<single_lambda *>(b.get_simulation_lambda(data)));
+    unique_ptr<single_lambda> sim_lambda(dynamic_cast<single_lambda *>(b.get_simulation_lambda()));
     try
     {
         m.get_matrix(7, sim_lambda->get_single_lambda());

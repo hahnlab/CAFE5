@@ -21,10 +21,7 @@ int select_root_size(const user_data& data, const root_distribution& rd, int fam
     }
 }
 
-trial* simulator::create_trial(model *p_model, const root_distribution& rd, int family_number, const user_data& data, const matrix_cache& cache) {
-
-    if (data.p_lambda == NULL)
-        throw std::runtime_error("No lambda specified for simulation");
+trial* simulator::create_trial(model *p_model, const root_distribution& rd, int family_number, const matrix_cache& cache) {
 
     if (data.p_tree == NULL)
         throw runtime_error("No tree specified for simulation");
@@ -42,9 +39,9 @@ trial* simulator::create_trial(model *p_model, const root_distribution& rd, int 
 
     (*result)[data.p_tree] = select_root_size(data, rd, family_number);
 
-    unique_ptr<lambda> sim_lambda(data.p_lambda->clone());
+    unique_ptr<lambda> sim_lambda(p_model->get_simulation_lambda());
 
-    auto fn = [result, &sim_lambda, &data, max_family_size_sim, &cache](const clade *c)
+    auto fn = [&](const clade *c)
     {
         set_weighted_random_family_size(c, result, sim_lambda.get(), data.p_error_model, max_family_size_sim, cache);
     };
@@ -95,7 +92,7 @@ void simulator::simulate_processes(model *p_model, std::vector<trial *>& results
 
         auto end_it = i + 50 > results.size() ? results.end() : results.begin() + i + LAMBDA_PERTURBATION_STEP_SIZE;
         generate(results.begin()+i, end_it, [this, p_model, i, &rd, &cache, &n]() mutable {
-            return create_trial(p_model, rd, i+n++, data, cache);
+            return create_trial(p_model, rd, i+n++, cache);
         });
     }
 }
