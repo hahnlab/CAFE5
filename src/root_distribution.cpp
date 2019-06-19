@@ -64,27 +64,10 @@ int root_distribution::at(size_t val) const
     return vectorized_dist.at(val);
 }
 
-
-/* START: Drawing random root size from uniform */
-template<typename itr, typename random_generator>
-itr select_randomly(itr start, itr end, random_generator& g) {
-    std::uniform_int_distribution<> dis(0, std::distance(start, end) - 1);
-    std::advance(start, dis(g)); // advances iterator (start) by dis(g), where g is a seeded mt generator
-    return start;
-}
-
-template<typename itr>
-itr select_randomly(itr start, itr end) {
-    static std::random_device rd; // randomly generates uniformly distributed ints (seed)
-    static std::mt19937 gen(rd()); // seeding Mersenne Twister generator
-    return select_randomly(start, end, gen); // plug in mt generator to advance our container and draw random element from it
-}
-/* END: Drawing random root size from uniform */
-
-
 int root_distribution::select_randomly() const
 {
-    return *::select_randomly(vectorized_dist.begin(), vectorized_dist.end()); // getting a random root size from the provided (core's) root distribution
+    std::uniform_int_distribution<> dis(0, vectorized_dist.size()-1);
+    return vectorized_dist[dis(randomizer_engine)]; // getting a random root size from the provided (core's) root distribution
 }
 
 void root_distribution::pare(size_t new_size)

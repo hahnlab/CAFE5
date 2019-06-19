@@ -21,7 +21,7 @@ int select_root_size(const user_data& data, const root_distribution& rd, int fam
     }
 }
 
-trial* simulator::create_trial(model *p_model, const root_distribution& rd, int family_number, const matrix_cache& cache) {
+trial* simulator::create_trial(const lambda *p_lambda, const root_distribution& rd, int family_number, const matrix_cache& cache) {
 
     if (data.p_tree == NULL)
         throw runtime_error("No tree specified for simulation");
@@ -39,11 +39,10 @@ trial* simulator::create_trial(model *p_model, const root_distribution& rd, int 
 
     (*result)[data.p_tree] = select_root_size(data, rd, family_number);
 
-    unique_ptr<lambda> sim_lambda(p_model->get_simulation_lambda());
 
     auto fn = [&](const clade *c)
     {
-        set_weighted_random_family_size(c, result, sim_lambda.get(), data.p_error_model, max_family_size_sim, cache);
+        set_weighted_random_family_size(c, result, p_lambda, data.p_error_model, max_family_size_sim, cache);
     };
 
     data.p_tree->apply_prefix_order(fn);
@@ -77,9 +76,10 @@ void simulator::simulate_processes(model *p_model, std::vector<trial *>& results
     cout << "Simulating " << results.size() << " families for model " << p_model->name() << endl;
 #endif
 
-    for (size_t i = 0; i < results.size(); i+=50)
+    for (size_t i = 0; i < results.size(); i+= LAMBDA_PERTURBATION_STEP_SIZE)
     {
         p_model->perturb_lambda();
+        unique_ptr<lambda> sim_lambda(p_model->get_simulation_lambda());
 
         matrix_cache cache(max_size);
         p_model->prepare_matrices_for_simulation(cache);
@@ -90,9 +90,9 @@ void simulator::simulate_processes(model *p_model, std::vector<trial *>& results
 
         int n = 0;
 
-        auto end_it = i + 50 > results.size() ? results.end() : results.begin() + i + LAMBDA_PERTURBATION_STEP_SIZE;
-        generate(results.begin()+i, end_it, [this, p_model, i, &rd, &cache, &n]() mutable {
-            return create_trial(p_model, rd, i+n++, cache);
+        auto end_it = i + LAMBDA_PERTURBATION_STEP_SIZE > results.size() ? results.end() : results.begin() + i + LAMBDA_PERTURBATION_STEP_SIZE;
+        generate(results.begin()+i, end_it, [this, &sim_lambda, i, &rd, &cache, &n]() mutable {
+            return create_trial(sim_lambda.get(), rd, i+n++, cache);
         });
     }
 }

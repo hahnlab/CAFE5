@@ -1647,27 +1647,25 @@ TEST(Simulation, create_trial)
 {
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:3):7";
-    single_lambda lam(0.05);
+    single_lambda lam(0.25);
     unique_ptr<clade> p_tree(parser.parse_newick());
-    base_model b(&lam, p_tree.get(), NULL, 0, 0, NULL);
-
 
     user_data data;
     data.p_tree = p_tree.get();
     input_parameters params;
-    mock_model model;
     simulator sim(data, params);
 
     root_distribution rd;
     rd.vector({ 1,2,5 });
 
     matrix_cache cache(100);
-    b.prepare_matrices_for_simulation(cache);
+    cache.precalculate_matrices(get_lambda_values(&lam), { 1,3,7 });
 
-    unique_ptr<trial> actual(sim.create_trial(&b, rd, 0, cache));
+    unique_ptr<trial> actual(sim.create_trial(&lam, rd, 0, cache));
 
-    auto AB = p_tree->find_descendant("AB");
-    LONGS_EQUAL(2, actual->at(AB));
+    LONGS_EQUAL(5, actual->at(p_tree.get()));
+    LONGS_EQUAL(2, actual->at(p_tree->find_descendant("A")));
+    LONGS_EQUAL(6, actual->at(p_tree->find_descendant("B")));
 }
 
 TEST(Inference, model_vitals)
