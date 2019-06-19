@@ -6,6 +6,7 @@
 #include <queue>
 #include <string>
 #include <functional>
+#include <set>
 
 class gene_family;
 
@@ -75,6 +76,9 @@ public:
     void write_newick(std::ostream& ost, std::function<std::string(const clade *c)> textwriter) const;
 
     std::map<std::string, int> get_lambda_index_map();
+
+    //! Return a unique list of all brnach lengths for this clade and its descendants
+    std::set<double> get_branch_lengths() const;
 
     //! apply the functor f to direct descendants. Does not automatically recurse.
     template <typename func> void apply_to_descendants(func& f) const {

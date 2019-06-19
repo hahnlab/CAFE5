@@ -33,7 +33,7 @@ public:
 
     virtual inference_optimizer_scorer *get_lambda_optimizer(user_data& data);
 
-    virtual reconstruction* reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
+    virtual reconstruction* reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache);
 
@@ -56,7 +56,7 @@ public:
 
     }
 
-    void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<gene_family>& gene_families, const clade *p_tree) override;
+    void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family *>& gene_families, const clade *p_tree) override;
 
     std::vector<reconstructed_family<int>> families;
 

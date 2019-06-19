@@ -72,11 +72,8 @@ double base_model::infer_family_likelihoods(root_equilibrium_distribution *prior
     results.resize(_p_gene_families->size());
     std::vector<double> all_families_likelihood(_p_gene_families->size());
 
-    branch_length_finder lengths;
-    _p_tree->apply_prefix_order(lengths);
-
     matrix_cache calc(max(_max_root_family_size, _max_family_size) + 1);
-    calc.precalculate_matrices(get_lambda_values(_p_lambda), lengths.result());
+    calc.precalculate_matrices(get_lambda_values(_p_lambda), _p_tree->get_branch_lengths());
 
     vector<vector<double>> partial_likelihoods(_p_gene_families->size());
 #pragma omp parallel for
@@ -128,37 +125,35 @@ inference_optimizer_scorer *base_model::get_lambda_optimizer(user_data& data)
 
     initialize_lambda(data.p_lambda_tree);
 
-    branch_length_finder finder;
-    _p_tree->apply_prefix_order(finder);
+    auto lengths = _p_tree->get_branch_lengths();
+    auto longest_branch = *max_element(lengths.begin(), lengths.end());
 
     if (data.p_error_model)
     {
-        return new lambda_epsilon_optimizer(this, _p_error_model, data.p_prior.get(), data.rootdist, _p_lambda, finder.longest());
+        return new lambda_epsilon_optimizer(this, _p_error_model, data.p_prior.get(), data.rootdist, _p_lambda, longest_branch);
     }
     else
     {
-        return new lambda_optimizer(_p_lambda, this, data.p_prior.get(), finder.longest(), data.rootdist);
+        return new lambda_optimizer(_p_lambda, this, data.p_prior.get(), longest_branch, data.rootdist);
     }
 }
 
 #define EPSILON_RANGES
 
-reconstruction* base_model::reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior)
+reconstruction* base_model::reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior)
 {
     _monitor.Event_Reconstruction_Started("Base");
 
-    auto result = new base_model_reconstruction(_p_gene_families->size());
+    auto result = new base_model_reconstruction(families.size());
 
-    branch_length_finder lengths;
-    _p_tree->apply_prefix_order(lengths);
-    p_calc->precalculate_matrices(get_lambda_values(_p_lambda), lengths.result());
+    p_calc->precalculate_matrices(get_lambda_values(_p_lambda), _p_tree->get_branch_lengths());
 
-    for (size_t i = 0; i<_p_gene_families->size(); ++i)
+    for (size_t i = 0; i< families.size(); ++i)
     {
-        result->families[i].id = _p_gene_families->at(i).id();
+        result->families[i].id = families[i]->id();
 
         reconstruct_gene_families(_p_lambda, _p_tree, _max_family_size, _max_root_family_size,
-            &_p_gene_families->at(i), p_calc, p_prior, result->families[i].clade_counts);
+            families[i], p_calc, p_prior, result->families[i].clade_counts);
         compute_increase_decrease(result->families[i].clade_counts, result->families[i].size_deltas);
     }
 
@@ -170,9 +165,7 @@ reconstruction* base_model::reconstruct_ancestral_states(matrix_cache *p_calc, r
 void base_model::prepare_matrices_for_simulation(matrix_cache& cache)
 {
     unique_ptr<lambda> perturbed_lambda(get_simulation_lambda());
-    branch_length_finder lengths;
-    _p_tree->apply_prefix_order(lengths);
-    cache.precalculate_matrices(get_lambda_values(perturbed_lambda.get()), lengths.result());
+    cache.precalculate_matrices(get_lambda_values(perturbed_lambda.get()), _p_tree->get_branch_lengths());
 }
 
 lambda* base_model::get_simulation_lambda()
@@ -186,14 +179,14 @@ void base_model::perturb_lambda()
     simulation_lambda_multiplier = dist(randomizer_engine);
 }
 
-void base_model_reconstruction::print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<gene_family>& gene_families, const clade *p_tree) {
+void base_model_reconstruction::print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade *p_tree) {
     if (families.empty())
         return;
 
     ost << "#NEXUS\nBEGIN TREES;\n";
     for (size_t i = 0; i<gene_families.size(); ++i)
     {
-        auto& gene_family = gene_families[i];
+        auto& gene_family = *gene_families[i];
         auto g = [i, gene_family, this](const clade *node) {
             int value = node->is_leaf() ? gene_family.get_species_size(node->get_taxon_name()) : families[i].clade_counts.at(node);
             return to_string(value);

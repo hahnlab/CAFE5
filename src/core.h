@@ -31,20 +31,6 @@ struct family_info_stash {
     bool significant;
 };
 
-class branch_length_finder
-{
-    std::set<double> _result;
-public:
-    void operator()(const clade *c);
-
-    std::set<double> result() const
-    {
-        return _result;
-    }
-
-    double longest() const;
-};
-
 std::ostream& operator<<(std::ostream& ost, const family_info_stash& r);
 
 struct increase_decrease;
@@ -52,7 +38,7 @@ struct increase_decrease;
 //! The result of a model reconstruction. Should be able to (a) print reconstructed states with all available information;
 /// (b) print increases and decreases by family; and (c) print increases and decreases by clade.
 class reconstruction {
-    virtual void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<gene_family>& gene_families, const clade *p_tree) = 0;
+    virtual void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade *p_tree) = 0;
     virtual void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues) = 0;
     virtual void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) = 0;
 
@@ -63,7 +49,8 @@ public:
     void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues, size_t family_count,
         std::function<increase_decrease(int family_index)> get_by_family);
         
-        void write_results(std::string model_identifier, std::string output_prefix, const user_data& data, std::vector<double>& pvalues);
+    void write_results(std::string model_identifier, std::string output_prefix, const clade* p_tree, const std::vector<const gene_family *>& families, std::vector<double>& pvalues);
+
     virtual ~reconstruction()
     {
     }
@@ -146,7 +133,7 @@ public:
     virtual void write_vital_statistics(std::ostream& ost, double final_likelihood);
 
     //! Based on the model parameters, attempts to reconstruct the most likely counts of each family at each node
-    virtual reconstruction* reconstruct_ancestral_states(matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
+    virtual reconstruction* reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
 
     virtual inference_optimizer_scorer *get_lambda_optimizer(user_data& data) = 0;
 
@@ -157,6 +144,11 @@ public:
     virtual void perturb_lambda() {}
 
     const event_monitor& get_monitor() { return _monitor;  }
+
+    //! Returns true if the the model is interested in calculating pvalues for this family
+    //! Default is to calculate pvalues for all families
+    virtual bool should_calculate_pvalue(const gene_family& gf) const { return true; }
+    virtual lambda* get_pvalue_lambda() const;
 };
 
 //! @brief Creates a list of families that are identical in all values

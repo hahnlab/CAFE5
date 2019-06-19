@@ -96,15 +96,9 @@ lambda* model::get_simulation_lambda()
     return _p_lambda->clone();
 }
 
-void branch_length_finder::operator()(const clade *c)
+lambda* model::get_pvalue_lambda() const
 {
-    if (c->get_branch_length() > 0.0)
-        _result.insert(c->get_branch_length());
-}
-
-double branch_length_finder::longest() const
-{
-    return *max_element(_result.begin(), _result.end());
+    return _p_lambda->clone();
 }
 
 //! Computes likelihoods for the given tree and a single family. Uses a lambda value based on the provided lambda

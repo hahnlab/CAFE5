@@ -304,12 +304,12 @@ void reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const
 }
 
 
-void reconstruction::write_results(std::string model_identifier, std::string output_prefix, const user_data& data, std::vector<double>& pvalues)
+void reconstruction::write_results(std::string model_identifier, std::string output_prefix, const clade *p_tree, const std::vector<const gene_family*>& families, std::vector<double>& pvalues)
 {
-    auto order = get_non_root_internal_nodes(data.p_tree);
+    auto order = get_non_root_internal_nodes(p_tree);
 
     std::ofstream ofst(filename(model_identifier + "_asr", output_prefix));
-    print_reconstructed_states(ofst, order, data.gene_families, data.p_tree);
+    print_reconstructed_states(ofst, order, families, p_tree);
 
     std::ofstream family_results(filename(model_identifier + "_family_results", output_prefix));
     print_increases_decreases_by_family(family_results, order, pvalues);

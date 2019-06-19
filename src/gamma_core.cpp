@@ -97,8 +97,6 @@ std::vector<double> gamma_model::get_posterior_probabilities(std::vector<double>
 
 void gamma_model::prepare_matrices_for_simulation(matrix_cache& cache)
 {
-    branch_length_finder lengths;
-    _p_tree->apply_prefix_order(lengths);
     vector<double> multipliers;
     for (auto multiplier : _lambda_multipliers)
     {
@@ -106,7 +104,7 @@ void gamma_model::prepare_matrices_for_simulation(matrix_cache& cache)
         auto values = get_lambda_values(mult.get());
         multipliers.insert(multipliers.end(), values.begin(), values.end());
     }
-    cache.precalculate_matrices(multipliers, lengths.result());
+    cache.precalculate_matrices(multipliers, _p_tree->get_branch_lengths());
 }
 
 void gamma_model::perturb_lambda()
@@ -162,11 +160,10 @@ bool gamma_model::can_infer() const
     if (_alpha < 0)
         return false;
 
-    branch_length_finder lengths;
-    _p_tree->apply_prefix_order(lengths);
     auto v = get_lambda_values(_p_lambda);
 
-    double longest_branch = lengths.longest();
+    auto lengths = _p_tree->get_branch_lengths();
+    auto longest_branch = *max_element(lengths.begin(), lengths.end());
     double largest_multiplier = *max_element(_lambda_multipliers.begin(), _lambda_multipliers.end());
     double largest_lambda = *max_element(v.begin(), v.end());
 
@@ -204,6 +201,8 @@ bool gamma_model::prune(const gene_family& family, root_equilibrium_distribution
 double gamma_model::infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) {
 
     _monitor.Event_InferenceAttempt_Started();
+
+    results.clear();
 
     if (!can_infer())
     {
@@ -287,19 +286,19 @@ inference_optimizer_scorer *gamma_model::get_lambda_optimizer(user_data& data)
 
     if (estimate_lambda && estimate_alpha)
     {
-        branch_length_finder finder;
-        _p_tree->apply_prefix_order(finder);
+        auto lengths = _p_tree->get_branch_lengths();
+        auto longest_branch = *max_element(lengths.begin(), lengths.end());
 
         initialize_lambda(data.p_lambda_tree);
-        return new gamma_lambda_optimizer(_p_lambda, this, data.p_prior.get(), data.rootdist, finder.longest());
+        return new gamma_lambda_optimizer(_p_lambda, this, data.p_prior.get(), data.rootdist, longest_branch);
     }
     else if (estimate_lambda && !estimate_alpha)
     {
-        branch_length_finder finder;
-        _p_tree->apply_prefix_order(finder);
+        auto lengths = _p_tree->get_branch_lengths();
+        auto longest_branch = *max_element(lengths.begin(), lengths.end());
 
         initialize_lambda(data.p_lambda_tree);
-        return new lambda_optimizer(_p_lambda, this, data.p_prior.get(), finder.longest(), data.rootdist);
+        return new lambda_optimizer(_p_lambda, this, data.p_prior.get(), longest_branch, data.rootdist);
     }
     else if (!estimate_lambda && estimate_alpha)
     {
@@ -348,13 +347,11 @@ void gamma_model::reconstruct_family(const gene_family& family, matrix_cache *ca
     compute_increase_decrease(rc.reconstruction.clade_counts, rc.reconstruction.size_deltas);
 }
 
-reconstruction* gamma_model::reconstruct_ancestral_states(matrix_cache *calc, root_equilibrium_distribution*prior)
+reconstruction* gamma_model::reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache *calc, root_equilibrium_distribution*prior)
 {
     _monitor.Event_Reconstruction_Started("Gamma");
-    gamma_model_reconstruction* result = new gamma_model_reconstruction(_p_gene_families->size(), _lambda_multipliers);
+    gamma_model_reconstruction* result = new gamma_model_reconstruction(families.size(), _lambda_multipliers);
 
-    branch_length_finder lengths;
-    _p_tree->apply_prefix_order(lengths);
     auto values = get_lambda_values(_p_lambda);
     vector<double> all;
     for (double multiplier : _lambda_multipliers)
@@ -365,14 +362,14 @@ reconstruction* gamma_model::reconstruct_ancestral_states(matrix_cache *calc, ro
         }
     }
 
-    calc->precalculate_matrices(all, lengths.result());
+    calc->precalculate_matrices(all, _p_tree->get_branch_lengths());
 
 #pragma omp parallel for
-    for (size_t i = 0; i<_p_gene_families->size(); ++i)
+    for (size_t i = 0; i<families.size(); ++i)
     {
-        result->_families[i].reconstruction.id = _p_gene_families->at(i).id();
+        result->_families[i].reconstruction.id = families[i]->id();
 
-        reconstruct_family(_p_gene_families->at(i), calc, prior, result->_families[i]);
+        reconstruct_family(*families[i], calc, prior, result->_families[i]);
 
         result->_families[i]._category_likelihoods = _category_likelihoods[i];
     }
@@ -382,7 +379,24 @@ reconstruction* gamma_model::reconstruct_ancestral_states(matrix_cache *calc, ro
     return result;
 }
 
-void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<gene_family>& gene_families, const clade *p_tree)
+bool gamma_model::should_calculate_pvalue(const gene_family& gf) const
+{
+    vector<const family_info_stash*> values;
+    for (auto& s : results) {
+        if (s.family_id == gf.id())
+            values.push_back(&s);
+    }
+    auto highest_likelihood = max_element(values.begin(), values.end(), [](const family_info_stash * a, const family_info_stash* b) { return a->category_likelihood < b->category_likelihood; });
+    auto fastest_rate = max_element(values.begin(), values.end(), [](const family_info_stash* a, const family_info_stash* b) { return a->lambda_multiplier < b->lambda_multiplier; });
+    return fastest_rate == highest_likelihood;
+}
+
+lambda* gamma_model::get_pvalue_lambda() const
+{
+    return _p_lambda->multiply(_lambda_multipliers.back());
+}
+
+void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family *>& gene_families, const clade *p_tree)
 {
     if (_families.empty())
         return;
@@ -392,7 +406,7 @@ void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost, c
     ost << "#NEXUS\nBEGIN TREES;\n";
     for (size_t i = 0; i<gene_families.size(); ++i)
     {
-        auto& gene_family = gene_families[i];
+        auto& gene_family = *gene_families[i];
 
         auto g = [i, gene_family, this](const clade *node) {
             std::ostringstream ost;

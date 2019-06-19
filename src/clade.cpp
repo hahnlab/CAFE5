@@ -176,3 +176,14 @@ string clade_index_or_name(const clade* node, const cladevector& order)
         return to_string(distance(order.begin(), find(order.begin(), order.end(), node)));
     }
 }
+
+std::set<double> clade::get_branch_lengths() const
+{
+    set<double> result;
+    auto branch_length_func = [&result](const clade* c) { 
+        if (c->get_branch_length() > 0.0)
+            result.insert(c->get_branch_length()); 
+    };
+    apply_prefix_order(branch_length_func);
+    return result;
+}

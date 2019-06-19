@@ -371,3 +371,60 @@ size_t adjust_for_error_model(size_t c, const error_model *p_error_model)
 
     return c;
 }
+
+double pvalue(double v, const vector<double>& conddist)
+{
+    int idx = conddist.size() - 1;
+
+    auto bound = std::upper_bound(conddist.begin(), conddist.end(), v);
+    if (bound != conddist.end())
+    {
+        idx = bound - conddist.begin();
+    }
+    return  idx / (double)conddist.size();
+}
+
+//! Compute pvalues for each family based on the given lambda
+vector<double> compute_pvalues(const clade* p_tree, const std::vector<const gene_family*>& families, const lambda* p_lambda, int number_of_simulations, int max_family_size, int max_root_family_size)
+{
+#ifndef SILENT
+    cout << "Computing pvalues..." << flush;
+#endif
+    const int mx = max_family_size;
+    const int mxr = max_root_family_size;
+    matrix_cache cache(max(mx, mxr) + 1);
+    cache.precalculate_matrices(get_lambda_values(p_lambda), p_tree->get_branch_lengths());
+
+    std::vector<std::vector<double> > conditional_distribution(mxr);
+    for (int i = 0; i < mxr; ++i)
+    {
+        conditional_distribution[i] = get_random_probabilities(p_tree, number_of_simulations, i, mx, mxr, p_lambda, cache, NULL);
+    }
+
+    vector<double> result(families.size());
+
+    std::map<const clade*, std::vector<double> > family_likelihoods;
+    transform(families.begin(), families.end(), result.begin(), [&](const gene_family* gf)
+        {
+            auto init_func = [&](const clade* node) { family_likelihoods[node].resize(node->is_root() ? mxr : mx + 1); };
+            p_tree->apply_reverse_level_order(init_func);
+
+            auto compute_func = [&](const clade* c) { compute_node_probability(c, *gf, NULL, family_likelihoods, mxr, mx, p_lambda, cache); };
+            p_tree->apply_reverse_level_order(compute_func);
+
+            double observed_max_likelihood = *std::max_element(family_likelihoods.at(p_tree).begin(), family_likelihoods.at(p_tree).end());
+
+            vector<double> pvalues(mxr);
+            for (int s = 0; s < mxr; s++)
+            {
+                pvalues[s] = pvalue(observed_max_likelihood, conditional_distribution[s]);
+            }
+            return *max_element(pvalues.begin(), pvalues.end());
+        });
+
+#ifndef SILENT
+    cout << "done!\n";
+#endif
+    return result;
+}
+

@@ -632,22 +632,21 @@ TEST(Inference, base_model_reconstruction)
     rd.vectorize_increasing(6);
     uniform_distribution dist;
     dist.initialize(&rd);
-    std::unique_ptr<reconstruction> rec(model.reconstruct_ancestral_states(&calc, &dist));
+
+    std::unique_ptr<base_model_reconstruction> rec(dynamic_cast<base_model_reconstruction *>(model.reconstruct_ancestral_states({ &families[0] }, &calc, &dist)));
+
+    LONGS_EQUAL(1, rec->families.size());
 
 }
 
 TEST(Inference, branch_length_finder)
 {
-    branch_length_finder finder;
     newick_parser parser(false);
     parser.newick_string = "((A:1,B:3):7,(C:11,D:17):23);";
-    clade *p_tree = parser.parse_newick();
-    p_tree->apply_prefix_order(finder);
-    LONGS_EQUAL(finder.longest(), 23);
+    unique_ptr<clade> p_tree(parser.parse_newick());
+    auto actual = p_tree->get_branch_lengths();
     auto expected = set<double>{ 1, 3, 7, 11, 17, 23 };
-    CHECK(finder.result() == expected);
-    delete p_tree;
-
+    CHECK(actual == expected);
 }
 
 TEST(Inference, increase_decrease)
@@ -769,7 +768,7 @@ TEST(Reconstruction, gamma_model_reconstruction__print_reconstructed_states__pri
     gmr._families[0].reconstruction.clade_counts[p_tree->find_descendant("CD")] = 6;
 
     ostringstream ost;
-    gmr.print_reconstructed_states(ost, order, vector<gene_family>({ fam }), p_tree.get());
+    gmr.print_reconstructed_states(ost, order, { &fam }, p_tree.get());
     STRCMP_CONTAINS("  TREE Family5 = ((A_11:1,B_2:3)4_0_8:7,(C_5:11,D_6:17)5_0_6:23)6_7_7;", ost.str().c_str());
 }
 
@@ -815,8 +814,7 @@ TEST(Reconstruction, gamma_model_reconstruction)
     gmr._families[0].reconstruction.clade_counts[p_tree->find_descendant("CD")] = 6;
 
     std::ostringstream ost;
-    vector<gene_family> families{ fam };
-    gmr.print_reconstructed_states(ost, order, families, p_tree.get());
+    gmr.print_reconstructed_states(ost, order, { &fam }, p_tree.get());
 
     STRCMP_CONTAINS("#NEXUS", ost.str().c_str());
     STRCMP_CONTAINS("BEGIN TREES;", ost.str().c_str());
@@ -833,8 +831,7 @@ TEST(Reconstruction, print_reconstructed_states_empty)
 {
     base_model_reconstruction bmr(0);
     ostringstream ost;
-    vector<gene_family> families{ fam };
-    bmr.print_reconstructed_states(ost, order, families, p_tree.get());
+    bmr.print_reconstructed_states(ost, order, { &fam }, p_tree.get());
     STRCMP_EQUAL("", ost.str().c_str());
 }
 
@@ -848,8 +845,7 @@ TEST(Reconstruction, print_reconstructed_states_no_print)
     values[p_tree->find_descendant("CD")] = 6;
 
     ostringstream ost;
-    vector<gene_family> families{ fam };
-    bmr.print_reconstructed_states(ost, order, families, p_tree.get());
+    bmr.print_reconstructed_states(ost, order, { &fam }, p_tree.get());
     STRCMP_CONTAINS("#NEXUS", ost.str().c_str());
     STRCMP_CONTAINS("BEGIN TREES;", ost.str().c_str());
     STRCMP_CONTAINS("  TREE Family5 = ((A_11:1,B_2:3)4_8:7,(C_5:11,D_6:17)5_6:23)6_7;", ost.str().c_str());
@@ -1529,17 +1525,17 @@ class mock_model : public model {
     virtual void write_family_likelihoods(std::ostream & ost) override
     {
     }
-    virtual reconstruction* reconstruct_ancestral_states(matrix_cache * p_calc, root_equilibrium_distribution * p_prior) override
+    virtual reconstruction* reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache * p_calc, root_equilibrium_distribution * p_prior) override
     {
         return nullptr;
     }
     virtual inference_optimizer_scorer * get_lambda_optimizer(user_data& data) override
     {
-        branch_length_finder finder;
-        _p_tree->apply_prefix_order(finder);
+        auto lengths = _p_tree->get_branch_lengths();
+        auto longest_branch = *max_element(lengths.begin(), lengths.end());
 
         initialize_lambda(data.p_lambda_tree);
-        auto result = new lambda_optimizer(_p_lambda, this, data.p_prior.get(), finder.longest(), std::map<int, int>());
+        auto result = new lambda_optimizer(_p_lambda, this, data.p_prior.get(), longest_branch, std::map<int, int>());
         result->quiet = true;
         return result;
     }
@@ -1560,9 +1556,7 @@ public:
     // Inherited via model
     virtual void prepare_matrices_for_simulation(matrix_cache & cache) override
     {
-        branch_length_finder lengths;
-        _p_tree->apply_prefix_order(lengths);
-        cache.precalculate_matrices(get_lambda_values(_p_lambda), lengths.result());
+        cache.precalculate_matrices(get_lambda_values(_p_lambda), _p_tree->get_branch_lengths());
     }
 
     // Inherited via model
@@ -1887,9 +1881,10 @@ TEST(Inference, lambda_per_family)
 TEST(Inference, estimator_compute_pvalues)
 {
     input_parameters params;
+    vector<const gene_family*> filtered_families(_user_data.gene_families.size());
+    transform(_user_data.gene_families.begin(), _user_data.gene_families.end(), filtered_families.begin(), [](const gene_family& f) { return &f; });
 
-    estimator v(_user_data, params);
-    auto values = v.compute_pvalues(_user_data, 3);
+    auto values = compute_pvalues(_user_data.p_tree, filtered_families, _user_data.p_lambda, 3, _user_data.max_family_size, _user_data.max_root_family_size);
     LONGS_EQUAL(1, values.size());
     DOUBLES_EQUAL(0.666667, values[0], 0.00001);
 }

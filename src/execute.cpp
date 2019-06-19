@@ -125,71 +125,23 @@ void estimator::execute(std::vector<model *>& models)
 
         compute(models, _user_input);
 
-        auto pvalues = compute_pvalues(data, 1000);
-
         matrix_cache cache(data.max_family_size + 1);
         for (model* p_model : models) {
-            std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(&cache, data.p_prior.get()));
-            rec->write_results(p_model->name(), _user_input.output_prefix, data, pvalues);
+
+            vector<const gene_family*> filtered_families;
+            for (auto& gf : data.gene_families)
+            {
+                if (p_model->should_calculate_pvalue(gf))
+                    filtered_families.push_back(&gf);
+            }
+            
+            unique_ptr<lambda> lam(p_model->get_pvalue_lambda());
+            auto pvalues = compute_pvalues(data.p_tree, filtered_families, lam.get(), 1000, data.max_family_size, data.max_root_family_size);
+
+            std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(filtered_families, &cache, data.p_prior.get()));
+            rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, filtered_families, pvalues);
         }
     }
-}
-
-double pvalue(double v, const vector<double>& conddist)
-{
-    int idx = conddist.size() - 1;
-
-    auto bound = std::upper_bound(conddist.begin(), conddist.end(), v);
-    if (bound != conddist.end())
-    {
-        idx = bound - conddist.begin();
-    }
-    return  idx / (double)conddist.size();
-}
-
-//! Compute pvalues for each family based on the given lambda
-vector<double> estimator::compute_pvalues(const user_data& data, int number_of_simulations) const
-{
-#ifndef SILENT
-    cout << "Computing pvalues..." << flush;
-#endif
-
-    matrix_cache cache(max(data.max_family_size, data.max_root_family_size) + 1);
-    branch_length_finder lengths;
-    data.p_tree->apply_prefix_order(lengths);
-    cache.precalculate_matrices(get_lambda_values(data.p_lambda), lengths.result());
-
-    std::vector<std::vector<double> > cd(data.max_root_family_size);
-    for (int i = 0; i < data.max_root_family_size; ++i)
-    {
-        cd[i] = get_random_probabilities(data.p_tree, number_of_simulations, i, data.max_family_size, data.max_root_family_size, data.p_lambda, cache, NULL);
-    }
-
-    vector<double> result(data.gene_families.size());
-
-    std::map<const clade *, std::vector<double> > family_likelihoods;
-    transform(data.gene_families.begin(), data.gene_families.end(), result.begin(), [&data, &cache, &cd, &family_likelihoods](const gene_family& gf)
-    {
-        auto init_func = [&](const clade* node) { family_likelihoods[node].resize(node->is_root() ? data.max_root_family_size : data.max_family_size + 1); };
-        data.p_tree->apply_reverse_level_order(init_func);
-
-        auto compute_func = [&](const clade *c) { compute_node_probability(c, gf, NULL, family_likelihoods, data.max_root_family_size, data.max_family_size, data.p_lambda, cache); };
-        data.p_tree->apply_reverse_level_order(compute_func);
-
-        double observed_max_likelihood = *std::max_element(family_likelihoods.at(data.p_tree).begin(), family_likelihoods.at(data.p_tree).end());
-
-        vector<double> pvalues(data.max_root_family_size);
-        for (int s = 0; s < data.max_root_family_size; s++)
-        {
-            pvalues[s] = pvalue(observed_max_likelihood, cd[s]);
-        }
-        return *max_element(pvalues.begin(), pvalues.end());
-    });
-
-#ifndef SILENT
-    cout << "done!\n";
-#endif
-    return result;
 }
 
 void chisquare_compare::execute(std::vector<model *>&)

@@ -22,7 +22,7 @@ public:
         }
     }
 
-    void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<gene_family>& gene_families, const clade *p_tree) override;
+    void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family *>& gene_families, const clade *p_tree) override;
     void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues) override;
     void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) override;
 
@@ -78,7 +78,7 @@ public:
     virtual void write_family_likelihoods(std::ostream& ost);
     virtual void write_vital_statistics(std::ostream& ost, double final_likelihood);
 
-    virtual reconstruction* reconstruct_ancestral_states(matrix_cache *, root_equilibrium_distribution* p_prior);
+    virtual reconstruction* reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache *, root_equilibrium_distribution* p_prior);
 
     std::size_t get_gamma_cat_probs_count() const {
         return _gamma_cat_probs.size();
@@ -103,6 +103,10 @@ public:
 
     bool prune(const gene_family& family, root_equilibrium_distribution *eq, matrix_cache& calc, const lambda *p_lambda,
         std::vector<double>& category_likelihoods);
+
+    virtual bool should_calculate_pvalue(const gene_family& gf) const override;
+    virtual lambda* get_pvalue_lambda() const override;
+
 };
 
 //! \ingroup gamma
