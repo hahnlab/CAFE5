@@ -19,10 +19,9 @@ void reconstruct_gene_families(const lambda* lambda, const clade *p_tree,
     matrix_cache *p_calc,
     root_equilibrium_distribution* p_prior, clademap<int>& reconstructed_states);
 
-void compute_increase_decrease(clademap<int>& input, clademap<family_size_change>& output);
-void compute_increase_decrease(clademap<double>& input, clademap<family_size_change>& output);
+void compute_increase_decrease(clademap<int>& input, clademap<int>& output);
+void compute_increase_decrease(clademap<double>& input, clademap<int>& output);
 std::ostream& operator<<(std::ostream & ost, const increase_decrease& val);
-cladevector get_non_root_internal_nodes(const clade* p_tree);
 
 string newick_node(const clade *node, const cladevector& order, std::function<std::string(const clade *c)> textwriter);
 

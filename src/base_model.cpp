@@ -2,6 +2,7 @@
 #include <numeric>
 #include <limits>
 #include <random>
+#include <sstream>
 
 #include "base_model.h"
 #include "gene_family_reconstructor.h"
@@ -204,14 +205,14 @@ void base_model_reconstruction::print_reconstructed_states(std::ostream& ost, co
     ost << "END;\n";
 }
 
-increase_decrease get_increases_decreases(const clademap<family_size_change>& increase_decrease_map, const cladevector& order, double pvalue, string family_id)
+increase_decrease get_increases_decreases(const clademap<int>& increase_decrease_map, const cladevector& order, double pvalue, string family_id)
 {
     increase_decrease result;
     result.change.resize(order.size());
     result.gene_family_id = family_id;
     result.pvalue = pvalue;
 
-    transform(order.begin(), order.end(), result.change.begin(), [increase_decrease_map](const clade *taxon)->family_size_change {
+    transform(order.begin(), order.end(), result.change.begin(), [increase_decrease_map](const clade *taxon)->int {
         return increase_decrease_map.at(taxon);
     });
 
@@ -228,6 +229,26 @@ void base_model_reconstruction::print_increases_decreases_by_clade(std::ostream&
 
     reconstruction::print_increases_decreases_by_clade(ost, order, families.size(), [this, order](int family_index) {
         return get_increases_decreases(families[family_index].size_deltas, order, 0.0, families[family_index].id);
+        });
+}
+
+void base_model_reconstruction::print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
+{
+    reconstruction::print_family_clade_table(ost, order, gene_families, p_tree, [this, gene_families](int family_index, const clade* c) {
+        if (c->is_leaf())
+            return to_string(gene_families[family_index]->get_species_size(c->get_taxon_name()));
+        else
+            return to_string(families[family_index].clade_counts.at(c));
+        });
+}
+
+void base_model_reconstruction::print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
+{
+    reconstruction::print_family_clade_table(ost, order, gene_families, p_tree, [this](int family_index, const clade* c) {
+        int val = families[family_index].size_deltas.at(c);
+        ostringstream ost;
+        ost << showpos << val;
+        return ost.str();
         });
 }
 

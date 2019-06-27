@@ -8,24 +8,6 @@
 #include "gene_family.h"
 #include "user_data.h"
 
-std::ostream& operator<<(std::ostream& ost, family_size_change fsc)
-{
-    switch (fsc)
-    {
-    case Increase:
-        ost << "i";
-        break;
-    case Decrease:
-        ost << "d";
-        break;
-    case Constant:
-        ost << "c";
-        break;
-    }
-
-    return ost;
-}
-
 void reconstruct_leaf_node(const clade * c, const lambda * _lambda, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, int _max_family_size, const gene_family* _gene_family, const matrix_cache *_p_calc)
 {
     auto& C = all_node_Cs[c];
@@ -192,18 +174,18 @@ string newick_node(const clade *node, const cladevector& order, std::function<st
 }
 
 
-bool parent_compare(int a, int b)
+int parent_compare(int a, int b)
 {
-    return a < b;
+    return a - b;
 }
 
-bool parent_compare(double a, double b)
+int parent_compare(double a, double b)
 {
     return parent_compare(int(std::round(a)), int(std::round(b)));
 }
 
 template <typename T>
-void compute_increase_decrease_t(clademap<T>& input, clademap<family_size_change>& output)
+void compute_increase_decrease_t(clademap<T>& input, clademap<int>& output)
 {
     for (auto &clade_state : input)
     {
@@ -212,22 +194,21 @@ void compute_increase_decrease_t(clademap<T>& input, clademap<family_size_change
         if (!p_clade->is_root())
         {
             T parent_size = input[p_clade->get_parent()];
-            if (parent_compare(size, parent_size))
-                output[p_clade] = Decrease;
-            else if (parent_compare(parent_size, size))
-                output[p_clade] = Increase;
-            else
-                output[p_clade] = Constant;
+            output[p_clade] = parent_compare(size, parent_size);
+        }
+        else
+        {
+            output[p_clade] = 0;
         }
     }
 }
 
-void compute_increase_decrease(clademap<int>& input, clademap<family_size_change>& output)
+void compute_increase_decrease(clademap<int>& input, clademap<int>& output)
 {
     compute_increase_decrease_t(input, output);
 }
 
-void compute_increase_decrease(clademap<double>& input, clademap<family_size_change>& output)
+void compute_increase_decrease(clademap<double>& input, clademap<int>& output)
 {
     compute_increase_decrease_t(input, output);
 }
@@ -237,8 +218,15 @@ std::ostream& operator<<(std::ostream & ost, const increase_decrease& val)
     ost << val.gene_family_id << '\t';
     ost << val.pvalue << "\t";
     ost << (val.pvalue < 0.05 ? 'y' : 'n') << "\t";
-    ostream_iterator<family_size_change> out_it(ost, "\t");
-    copy(val.change.begin(), val.change.end(), out_it);
+    ostream_iterator<char> out_it(ost, "\t");
+    transform(val.change.begin(), val.change.end(), out_it, [](int c) {
+        if (c < 0)
+            return 'd';
+        else if (c > 0)
+            return 'i';
+        else
+            return 'c';
+    });
 
     if (!val.category_likelihoods.empty())
     {
@@ -248,13 +236,6 @@ std::ostream& operator<<(std::ostream & ost, const increase_decrease& val)
     ost << endl;
 
     return ost;
-}
-
-cladevector get_non_root_internal_nodes(const clade* p_tree)
-{
-    auto order = p_tree->find_internal_nodes();
-    order.erase(remove_if(order.begin(), order.end(), [](const clade* c) { return c->is_root(); }), order.end());
-    return order;
 }
 
 void reconstruction::print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues, size_t family_count,
@@ -288,9 +269,9 @@ void reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const
         auto incdec = get_by_family(j);
         for (size_t i = 0; i < order.size(); ++i)
         {
-            if (incdec.change[i] == Increase)
+            if (incdec.change[i] > 0)
                 increase_decrease_map[order[i]].first++;
-            if (incdec.change[i] == Decrease)
+            if (incdec.change[i] < 0)
                 increase_decrease_map[order[i]].second++;
         }
     }
@@ -303,13 +284,40 @@ void reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const
     }
 }
 
+void reconstruction::print_family_clade_table(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree, std::function<string(int family_index, const clade *c)> get_family_clade_value)
+{
+    ost << "Family ID";
+    for (auto c : order)
+    {
+        ost << "\t" << clade_index_or_name(c, order);
+    }
+    ost << endl;
+    for (size_t i = 0; i < gene_families.size(); ++i)
+    {
+        ost << gene_families[i]->id();
+        for (auto node : order)
+        {
+            ost << "\t";
+            ost << get_family_clade_value(i, node);
+        }
+        ost << endl;
+    }
+}
 
 void reconstruction::write_results(std::string model_identifier, std::string output_prefix, const clade *p_tree, const std::vector<const gene_family*>& families, std::vector<double>& pvalues)
 {
-    auto order = get_non_root_internal_nodes(p_tree);
+    cladevector order;
+    auto fn = [&order](const clade* c) { order.push_back(c);  };
+    p_tree->apply_reverse_level_order(fn);
 
     std::ofstream ofst(filename(model_identifier + "_asr", output_prefix));
     print_reconstructed_states(ofst, order, families, p_tree);
+
+    std::ofstream counts(filename(model_identifier, output_prefix) + ".count");
+    print_node_counts(counts, order, families, p_tree);
+
+    std::ofstream change(filename(model_identifier, output_prefix) + ".change");
+    print_node_change(change, order, families, p_tree);
 
     std::ofstream family_results(filename(model_identifier + "_family_results", output_prefix));
     print_increases_decreases_by_family(family_results, order, pvalues);

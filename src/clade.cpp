@@ -169,11 +169,12 @@ void clade::write_newick(ostream& ost, std::function<std::string(const clade *c)
 
 string clade_index_or_name(const clade* node, const cladevector& order)
 {
+    auto id = distance(order.begin(), find(order.begin(), order.end(), node));
     if (node->is_leaf())
-        return node->get_taxon_name();
+        return node->get_taxon_name() + "<" + to_string(id) + ">";
     else
     {
-        return to_string(distance(order.begin(), find(order.begin(), order.end(), node)));
+        return "<" + to_string(id) + ">";
     }
 }
 

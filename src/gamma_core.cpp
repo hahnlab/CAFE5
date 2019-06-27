@@ -453,9 +453,9 @@ increase_decrease get_increases_decreases(const gamma_model_reconstruction::gamm
     result.gene_family_id = rc.reconstruction.id;
     result.pvalue = pvalue;
 
-    transform(order.begin(), order.end(), result.change.begin(), [rc](const clade *taxon)->family_size_change {
+    transform(order.begin(), order.end(), result.change.begin(), [rc](const clade *taxon)->int {
         if (taxon->is_leaf() || taxon->is_root())
-            return Constant;
+            return 0;
         else
             return rc.reconstruction.size_deltas.at(taxon);
     });
@@ -479,3 +479,22 @@ void gamma_model_reconstruction::print_increases_decreases_by_clade(std::ostream
         });
 }
 
+void gamma_model_reconstruction::print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
+{
+    reconstruction::print_family_clade_table(ost, order, gene_families, p_tree, [this, gene_families](int family_index, const clade* c) {
+        if (c->is_leaf())
+            return to_string(gene_families[family_index]->get_species_size(c->get_taxon_name()));
+        else
+            return to_string(int(std::round(_families[family_index].reconstruction.clade_counts.at(c))));
+        });
+}
+
+void gamma_model_reconstruction::print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
+{
+    reconstruction::print_family_clade_table(ost, order, gene_families, p_tree, [this](int family_index, const clade* c) {
+        int val = _families[family_index].reconstruction.size_deltas.at(c);
+        ostringstream ost;
+        ost << showpos << val;
+        return ost.str();
+        });
+}

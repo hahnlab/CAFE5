@@ -62,6 +62,8 @@ public:
 
     void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues) override;
     void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) override;
+    void print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) override;
+    void print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) override;
 };
 
 #endif

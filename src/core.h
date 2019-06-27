@@ -41,7 +41,8 @@ class reconstruction {
     virtual void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade *p_tree) = 0;
     virtual void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues) = 0;
     virtual void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) = 0;
-
+    virtual void print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) = 0;
+    virtual void print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) = 0;
 public:
     void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order, size_t family_count,
         std::function<increase_decrease(int family_index)> get_by_family);
@@ -49,6 +50,9 @@ public:
     void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues, size_t family_count,
         std::function<increase_decrease(int family_index)> get_by_family);
         
+    void print_family_clade_table(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree,
+        std::function<string(int family_index, const clade* c)> get_family_clade_value);
+
     void write_results(std::string model_identifier, std::string output_prefix, const clade* p_tree, const std::vector<const gene_family *>& families, std::vector<double>& pvalues);
 
     virtual ~reconstruction()
@@ -157,21 +161,18 @@ public:
 //! and speed up the overall performance
 std::vector<size_t> build_reference_list(const std::vector<gene_family>& families);
 
-enum family_size_change { Increase, Decrease, Constant };
-std::ostream& operator<<(std::ostream& ost, family_size_change fsc);
-
 struct increase_decrease
 {
     std::string gene_family_id;
     double pvalue = 0.0;
-    std::vector<family_size_change> change;
+    std::vector<int> change;
     std::vector<double> category_likelihoods;
 };
 
 template<typename T>
 struct reconstructed_family {
     std::string id;
-    clademap<family_size_change> size_deltas;
+    clademap<int> size_deltas;
     clademap<T> clade_counts;
 };
 
