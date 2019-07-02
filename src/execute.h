@@ -74,6 +74,4 @@ public:
 
 action* get_executor(input_parameters& user_input, user_data& data);
 
-vector<double> compute_pvalues(const clade *p_tree, const std::vector<const gene_family*>& families, const lambda *p_lambda, int number_of_simulations, int max_family_size, int max_root_family_size);
-
 #endif /* EXECUTE_H */

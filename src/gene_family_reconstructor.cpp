@@ -213,38 +213,12 @@ void compute_increase_decrease(clademap<double>& input, clademap<int>& output)
     compute_increase_decrease_t(input, output);
 }
 
-std::ostream& operator<<(std::ostream & ost, const increase_decrease& val)
-{
-    ost << val.gene_family_id << '\t';
-    ost << val.pvalue << "\t";
-    ost << (val.pvalue < 0.05 ? 'y' : 'n') << "\t";
-    ostream_iterator<char> out_it(ost, "\t");
-    transform(val.change.begin(), val.change.end(), out_it, [](int c) {
-        if (c < 0)
-            return 'd';
-        else if (c > 0)
-            return 'i';
-        else
-            return 'c';
-    });
-
-    if (!val.category_likelihoods.empty())
-    {
-        ostream_iterator<double> out_it2(ost, "\t");
-        copy(val.category_likelihoods.begin(), val.category_likelihoods.end(), out_it2);
-    }
-    ost << endl;
-
-    return ost;
-}
-
-void reconstruction::print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues, size_t family_count,
-    std::function<increase_decrease(int family_index)> get_by_family) {
-    if (family_count != pvalues.size())
+void reconstruction::print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const std::vector<double>& pvalues) {
+    if (gene_families.size() != pvalues.size())
     {
         throw std::runtime_error("No pvalues found for family");
     }
-    if (family_count == 0)
+    if (gene_families.empty())
     {
         ost << "No increases or decreases recorded\n";
         return;
@@ -256,22 +230,24 @@ void reconstruction::print_increases_decreases_by_family(std::ostream& ost, cons
     }
     ost << endl;
 
-    for (size_t i = 0; i < family_count; ++i) {
-        ost << get_by_family(i);
+    for (size_t i = 0; i < gene_families.size(); ++i) {
+        ost << gene_families[i]->id() << '\t' << pvalues[i] << '\t';
+        ost << (pvalues[i] < 0.05 ? 'y' : 'n');
+        for (auto c : order)
+            ost << '\t' << get_increase_decrease(gene_families[i], c) ;
     }
 }
 
-void reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order, size_t family_count,
-    std::function<increase_decrease(int family_index)> get_by_family) {
+void reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families) {
     clademap<pair<int, int>> increase_decrease_map;
 
-    for (size_t j = 0; j < family_count; ++j) {
-        auto incdec = get_by_family(j);
+    for (size_t j = 0; j < gene_families.size(); ++j) {
         for (size_t i = 0; i < order.size(); ++i)
         {
-            if (incdec.change[i] > 0)
+            int val = get_delta(gene_families[j], order[i]);
+            if (val > 0)
                 increase_decrease_map[order[i]].first++;
-            if (incdec.change[i] < 0)
+            if (val < 0)
                 increase_decrease_map[order[i]].second++;
         }
     }
@@ -320,9 +296,11 @@ void reconstruction::write_results(std::string model_identifier, std::string out
     print_node_change(change, order, families, p_tree);
 
     std::ofstream family_results(filename(model_identifier + "_family_results", output_prefix));
-    print_increases_decreases_by_family(family_results, order, pvalues);
+    print_increases_decreases_by_family(family_results, order, families, pvalues);
 
     std::ofstream clade_results(filename(model_identifier + "_clade_results", output_prefix));
-    print_increases_decreases_by_clade(clade_results, order);
+    print_increases_decreases_by_clade(clade_results, order, families);
+
+    print_additional_data(order, families, output_prefix);
 }
 

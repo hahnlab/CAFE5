@@ -205,36 +205,28 @@ void base_model_reconstruction::print_reconstructed_states(std::ostream& ost, co
     ost << "END;\n";
 }
 
-increase_decrease get_increases_decreases(const clademap<int>& increase_decrease_map, const cladevector& order, double pvalue, string family_id)
+int base_model_reconstruction::get_delta(const gene_family* gf, const clade* c)
 {
-    increase_decrease result;
-    result.change.resize(order.size());
-    result.gene_family_id = family_id;
-    result.pvalue = pvalue;
-
-    transform(order.begin(), order.end(), result.change.begin(), [increase_decrease_map](const clade *taxon)->int {
-        return increase_decrease_map.at(taxon);
-    });
-
-    return result;
+    auto rc = find_if(families.begin(), families.end(), [gf](const reconstructed_family<int>& f) { return f.id == gf->id();  });
+    return rc->size_deltas.at(c);
 }
 
-void base_model_reconstruction::print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues) {
-    reconstruction::print_increases_decreases_by_family(ost, order, pvalues, families.size(), [this, order, pvalues](int family_index) {
-        return get_increases_decreases(families[family_index].size_deltas, order, pvalues[family_index], families[family_index].id);
-        });
-}
+char base_model_reconstruction::get_increase_decrease(const gene_family* gf, const clade* c)
+{
+    auto rc = find_if(families.begin(), families.end(), [gf](const reconstructed_family<int>& f) { return f.id == gf->id();  });
+    int val = rc->size_deltas.at(c);
+    if (val < 0)
+        return 'd';
+    else if (val > 0)
+        return 'i';
+    else
+        return 'c';
 
-void base_model_reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) {
-
-    reconstruction::print_increases_decreases_by_clade(ost, order, families.size(), [this, order](int family_index) {
-        return get_increases_decreases(families[family_index].size_deltas, order, 0.0, families[family_index].id);
-        });
 }
 
 void base_model_reconstruction::print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
 {
-    reconstruction::print_family_clade_table(ost, order, gene_families, p_tree, [this, gene_families](int family_index, const clade* c) {
+    print_family_clade_table(ost, order, gene_families, p_tree, [this, gene_families](int family_index, const clade* c) {
         if (c->is_leaf())
             return to_string(gene_families[family_index]->get_species_size(c->get_taxon_name()));
         else
@@ -244,7 +236,7 @@ void base_model_reconstruction::print_node_counts(std::ostream& ost, const clade
 
 void base_model_reconstruction::print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
 {
-    reconstruction::print_family_clade_table(ost, order, gene_families, p_tree, [this](int family_index, const clade* c) {
+    print_family_clade_table(ost, order, gene_families, p_tree, [this](int family_index, const clade* c) {
         int val = families[family_index].size_deltas.at(c);
         ostringstream ost;
         ost << showpos << val;

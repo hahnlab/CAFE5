@@ -33,22 +33,21 @@ struct family_info_stash {
 
 std::ostream& operator<<(std::ostream& ost, const family_info_stash& r);
 
-struct increase_decrease;
-
 //! The result of a model reconstruction. Should be able to (a) print reconstructed states with all available information;
 /// (b) print increases and decreases by family; and (c) print increases and decreases by clade.
 class reconstruction {
     virtual void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade *p_tree) = 0;
-    virtual void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues) = 0;
-    virtual void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) = 0;
     virtual void print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) = 0;
     virtual void print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) = 0;
-public:
-    void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order, size_t family_count,
-        std::function<increase_decrease(int family_index)> get_by_family);
 
-    void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues, size_t family_count,
-        std::function<increase_decrease(int family_index)> get_by_family);
+    virtual void print_additional_data(const cladevector& order, const std::vector<const gene_family*>& gene_families, std::string output_prefix) {};
+    
+    virtual int get_delta(const gene_family* gf, const clade* c) = 0;
+    virtual char get_increase_decrease(const gene_family* gf, const clade* c) = 0;
+public:
+    void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families);
+
+    void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const std::vector<double>& pvalues);
         
     void print_family_clade_table(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree,
         std::function<string(int family_index, const clade* c)> get_family_clade_value);
@@ -161,14 +160,6 @@ public:
 //! and speed up the overall performance
 std::vector<size_t> build_reference_list(const std::vector<gene_family>& families);
 
-struct increase_decrease
-{
-    std::string gene_family_id;
-    double pvalue = 0.0;
-    std::vector<int> change;
-    std::vector<double> category_likelihoods;
-};
-
 template<typename T>
 struct reconstructed_family {
     std::string id;
@@ -181,7 +172,7 @@ std::vector<model *> build_models(const input_parameters& my_input_parameters, u
 
 inline std::string filename(std::string base, std::string suffix)
 {
-    return base + (suffix.empty() ? "" : "_") + suffix + ".txt";
+    return (suffix.empty() ? std::string("results") : suffix) + "/" + base + ".txt";
 }
 
 std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, const lambda *_lambda, const clade *_p_tree, double _lambda_multiplier, int _max_root_family_size, int _max_family_size);

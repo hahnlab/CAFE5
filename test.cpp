@@ -674,29 +674,6 @@ TEST(Inference, increase_decrease)
     CHECK(result[ab] == 0);
 }
 
-TEST(Inference, increase_decrease_stream)
-{
-    ostringstream ost;
-    increase_decrease id;
-    id.gene_family_id = "1234";
-    id.pvalue = 0.02;
-    id.change = vector<int>{ -1, 0, 1, 5};
-    ost << id;
-    STRCMP_EQUAL("1234\t0.02\ty\td\tc\ti\ti\t\n", ost.str().c_str());
-}
-
-TEST(Inference, gamma_increase_decrease_stream)
-{
-    ostringstream ost;
-    increase_decrease id;
-    id.gene_family_id = "1234";
-    id.change = vector<int>{ -1, 0, 1, 5 };
-    id.category_likelihoods = vector<double>{ .1,.2,.3,.4 };
-    id.pvalue = 0.02;
-    ost << id;
-    STRCMP_EQUAL("1234\t0.02\ty\td\tc\ti\ti\t0.1\t0.2\t0.3\t0.4\t\n", ost.str().c_str());
-}
-
 TEST(Inference, precalculate_matrices_calculates_all_lambdas_all_branchlengths)
 {
     matrix_cache calc(5);
@@ -772,31 +749,15 @@ TEST(Reconstruction, gamma_model_reconstruction__print_reconstructed_states__pri
     STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_0_8:7,(C<2>_5:11,D<3>_6:17)<5>_0_6:23)<6>_7_7;", ost.str().c_str());
 }
 
-TEST(Reconstruction, get_increases_decreases)
+TEST(Reconstruction, gamma_model_reconstruction__print_additional_data__prints_likelihoods)
 {
-    auto a = p_tree->find_descendant("A");
-    auto ab = p_tree->find_descendant("AB");
-    order = { p_tree.get(), a, ab };
-
-    gamma_model_reconstruction::gamma_reconstruction gr;
-    gr.category_reconstruction.resize(1);
-    gr.category_reconstruction[0].clade_counts[p_tree.get()] = 7;
-    gr.category_reconstruction[0].clade_counts[a] = 11;
-    gr.category_reconstruction[0].clade_counts[ab] = 13;
-
-    gr.reconstruction.clade_counts[p_tree.get()] = 7;
-    gr.reconstruction.clade_counts[a] = 11;
-    gr.reconstruction.clade_counts[ab] = 13;
-
-    gr.reconstruction.size_deltas[ab] = -1;
-
+    gamma_model_reconstruction gmr(1, vector<double>({ 0.3, 0.9, 1.4, 2.0 }));
+    gmr._families[0].id = "Family5";
+    gmr._families[0]._category_likelihoods = { 0.01, 0.03, 0.09, 0.07 };
     ostringstream ost;
-    auto actual = get_increases_decreases(gr, order, 0.05);
-    DOUBLES_EQUAL(0.05, actual.pvalue, 0.000001);
-    LONGS_EQUAL(3, actual.change.size());
-    LONGS_EQUAL(0, actual.change[0]);
-    LONGS_EQUAL(0, actual.change[1]);
-    LONGS_EQUAL(-1, actual.change[2]);
+    gmr.print_category_likelihoods(ost, order, { &fam });
+    STRCMP_CONTAINS("Family ID\t0.3\t0.9\t1.4\t2", ost.str().c_str());
+    STRCMP_CONTAINS("Family5\t0.01\t0.03\0.09\t0.07", ost.str().c_str());
 }
 
 TEST(Reconstruction, gamma_model_reconstruction__print_reconstructed_states)
@@ -1699,42 +1660,41 @@ TEST(Inference, model_vitals)
     STRCMP_EQUAL("Model mockmodel Result: 0.01\nLambda:            0.05\n", ost.str().c_str());
 }
 
-TEST(Inference, base_model_print_increases_decreases_by_family)
+TEST(Reconstruction, base_model_print_increases_decreases_by_family)
 {
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:3):7";
     unique_ptr<clade> p_tree(parser.parse_newick());
 
-    vector<double> pvalues;
     ostringstream empty;
     cladevector order{ p_tree->find_descendant("A"), 
         p_tree->find_descendant("B"),
         p_tree->find_descendant("AB") };
 
     base_model_reconstruction bmr(0);
-    bmr.print_increases_decreases_by_family(empty, order, pvalues);
+    bmr.print_increases_decreases_by_family(empty, order, {}, {});
     STRCMP_CONTAINS("No increases or decreases recorded", empty.str().c_str());
 
     bmr.families.resize(1);
+    bmr.families[0].id = "myid";
     bmr.families[0].size_deltas[p_tree->find_descendant("A")] = 3;
     bmr.families[0].size_deltas[p_tree->find_descendant("B")] = -2;
     bmr.families[0].size_deltas[p_tree->find_descendant("AB")] = 0;
-    bmr.families[0].id = "myid";
 
-    pvalues.push_back(0.07);
+    gene_family fam;
+    fam.set_id("myid");
     ostringstream ost;
-    bmr.print_increases_decreases_by_family(ost, order, pvalues);
+    bmr.print_increases_decreases_by_family(ost, order, {&fam}, {0.07});
     STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA<0>\tB<1>\t<2>", ost.str().c_str());
     STRCMP_CONTAINS("myid\t0.07\tn\ti\td\tc", ost.str().c_str());
 }
 
-TEST(Inference, gamma_model_print_increases_decreases_by_family)
+TEST(Reconstruction, gamma_model_print_increases_decreases_by_family)
 {
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:3):7";
     unique_ptr<clade> p_tree(parser.parse_newick());
 
-    vector<double> pvalues;
     ostringstream empty;
     cladevector order{ p_tree->find_descendant("A"),
         p_tree->find_descendant("B"),
@@ -1743,7 +1703,7 @@ TEST(Inference, gamma_model_print_increases_decreases_by_family)
     vector<double> multipliers({ .2, .75 });
     vector<gamma_bundle *> bundles; //  ({ &bundle });
     gamma_model_reconstruction gmr(0, vector<double>());
-    gmr.print_increases_decreases_by_family(empty, order, pvalues);
+    gmr.print_increases_decreases_by_family(empty, order, {}, {});
     STRCMP_CONTAINS("No increases or decreases recorded", empty.str().c_str());
 
     gmr._families.resize(1);
@@ -1752,16 +1712,13 @@ TEST(Inference, gamma_model_print_increases_decreases_by_family)
     gmr._families[0].reconstruction.size_deltas[p_tree->find_descendant("AB")] = 0;
     gmr._families[0].reconstruction.id = "myid";
 
-    pvalues.push_back(0.07);
     gene_family gf;
     gf.set_id("myid");
     std::vector<reconstructed_family<int>> category_reconstruction(1);
     reconstructed_family<double> reconstruction;
 
-    //gamma_bundle bundle(category_reconstruction, reconstruction, p_tree.get(), &gf);
-    //bundles.push_back(&bundle);
     ostringstream ost;
-    gmr.print_increases_decreases_by_family(ost, order, pvalues);
+    gmr.print_increases_decreases_by_family(ost, order, { &gf }, { 0.07 });
     STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA<0>\tB<1>\t<2>", ost.str().c_str());
     STRCMP_CONTAINS("myid\t0.07\tn\tc\tc\tc", ost.str().c_str());
 }
@@ -1780,34 +1737,29 @@ TEST(Inference, gamma_model_print_increases_decreases_by_clade)
     ostringstream empty;
 
     vector<double> multipliers({ .2, .75 });
-    vector<gamma_bundle *> bundles; //  ({ &bundle });
+    vector<gamma_bundle*> bundles; //  ({ &bundle });
     gamma_model_reconstruction gmr(0, vector<double>());
 
-    gmr.print_increases_decreases_by_clade(empty, order);
+    gmr.print_increases_decreases_by_clade(empty, order, {});
     STRCMP_EQUAL("#Taxon_ID\t#Taxon_Name\tIncrease/Decrease\n", empty.str().c_str());
 
-#if 0
-    bmr.families.resize(1);
-    bmr.families.resize(1);
-    bmr.families[0].size_deltas[p_tree->find_descendant("A")] = Increase;
-    bmr.families[0].size_deltas[p_tree->find_descendant("B")] = Decrease;
-    bmr.families[0].size_deltas[p_tree->find_descendant("AB")] = Constant;
-#endif
+    gmr._families.resize(1);
+    gmr._families[0].reconstruction.size_deltas[p_tree->find_descendant("A")] = 6;
+    gmr._families[0].reconstruction.size_deltas[p_tree->find_descendant("B")] = -5;
+    gmr._families[0].reconstruction.size_deltas[p_tree->find_descendant("AB")] = 0;
+    gmr._families[0].id = "myid";
 
-    gene_family gf;
-    gf.set_id("myid");
     std::vector<reconstructed_family<int>> category_reconstruction(1);
     reconstructed_family<double> reconstruction;
 
-    //gamma_bundle bundle(category_reconstruction, reconstruction, p_tree.get(), &gf);
-    //bundles.push_back(&bundle);
+    gene_family gf;
+    gf.set_id("myid");
 
-    gmr._families.resize(1);
     ostringstream ost;
-    gmr.print_increases_decreases_by_clade(ost, order);
+    gmr.print_increases_decreases_by_clade(ost, order, { &gf });
     STRCMP_CONTAINS("#Taxon_ID\t#Taxon_Name\tIncrease/Decrease", ost.str().c_str());
-//    STRCMP_CONTAINS("A\t1/0", ost.str().c_str());
-//    STRCMP_CONTAINS("B\t0/1", ost.str().c_str());
+    STRCMP_CONTAINS("A\t1/0", ost.str().c_str());
+    STRCMP_CONTAINS("B\t0/1", ost.str().c_str());
 }
 
 TEST(Inference, base_model_print_increases_decreases_by_clade)
@@ -1824,17 +1776,20 @@ TEST(Inference, base_model_print_increases_decreases_by_clade)
 
     base_model_reconstruction bmr(0);
 
-    bmr.print_increases_decreases_by_clade(empty, order);
+    bmr.print_increases_decreases_by_clade(empty, order, {});
     STRCMP_EQUAL("#Taxon_ID\t#Taxon_Name\tIncrease/Decrease\n", empty.str().c_str());
 
     bmr.families.resize(1);
-    bmr.families.resize(1);
+    bmr.families[0].id = "myid";
     bmr.families[0].size_deltas[p_tree->find_descendant("A")] = 4;
     bmr.families[0].size_deltas[p_tree->find_descendant("B")] = -3;
     bmr.families[0].size_deltas[p_tree->find_descendant("AB")] = 0;
 
+    gene_family gf;
+    gf.set_id("myid");
+
     ostringstream ost;
-    bmr.print_increases_decreases_by_clade(ost, order);
+    bmr.print_increases_decreases_by_clade(ost, order, { &gf });
     STRCMP_CONTAINS("#Taxon_ID\t#Taxon_Name\tIncrease/Decrease", ost.str().c_str());
     STRCMP_CONTAINS("A\t1/0", ost.str().c_str());
     STRCMP_CONTAINS("B\t0/1", ost.str().c_str());

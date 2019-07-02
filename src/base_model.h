@@ -60,8 +60,9 @@ public:
 
     std::vector<reconstructed_family<int>> families;
 
-    void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues) override;
-    void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) override;
+    virtual int get_delta(const gene_family* gf, const clade* c) override;
+    virtual char get_increase_decrease(const gene_family* gf, const clade* c) override;
+
     void print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) override;
     void print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) override;
 };

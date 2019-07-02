@@ -332,6 +332,7 @@ clademap<double> get_weighted_averages(const std::vector<reconstructed_family<in
 
 void gamma_model::reconstruct_family(const gene_family& family, matrix_cache *calc, root_equilibrium_distribution*prior, gamma_model_reconstruction::gamma_reconstruction& rc) const
 {
+    rc.id = family.id();
     auto& cat_rec = rc.category_reconstruction;
 
     for (size_t k = 0; k < _gamma_cat_probs.size(); ++k)
@@ -446,37 +447,29 @@ void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost, c
     ost << endl;
 }
 
-increase_decrease get_increases_decreases(const gamma_model_reconstruction::gamma_reconstruction& rc, const cladevector& order, double pvalue)
+char gamma_model_reconstruction::get_increase_decrease(const gene_family* gf, const clade* c)
 {
-    increase_decrease result;
-    result.change.resize(order.size());
-    result.gene_family_id = rc.reconstruction.id;
-    result.pvalue = pvalue;
+    auto rc = find_if(_families.begin(), _families.end(), [gf](const gamma_reconstruction& f) { return f.id == gf->id();  });
 
-    transform(order.begin(), order.end(), result.change.begin(), [rc](const clade *taxon)->int {
-        if (taxon->is_leaf() || taxon->is_root())
-            return 0;
-        else
-            return rc.reconstruction.size_deltas.at(taxon);
-    });
-
-    result.category_likelihoods = rc._category_likelihoods;
-    return result;
+    int val = 0;
+    if (!c->is_leaf() && !c->is_root())
+        val = rc->reconstruction.size_deltas.at(c);
+    if (val < 0)
+        return 'd';
+    else if (val > 0)
+        return 'i';
+    else
+        return 'c';
 }
 
-
-void gamma_model_reconstruction::print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues)
+int gamma_model_reconstruction::get_delta(const gene_family* gf, const clade* c)
 {
-    reconstruction::print_increases_decreases_by_family(ost, order, pvalues, _families.size(), [this, order, pvalues](int family_index) {
-        return get_increases_decreases(_families[family_index], order, pvalues[family_index]);
-        });
-}
-
-void gamma_model_reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order)
-{
-    reconstruction::print_increases_decreases_by_clade(ost, order, _families.size(), [this, order](int family_index) {
-        return get_increases_decreases(_families[family_index], order, 0.0);
-        });
+    auto rc = find_if(_families.begin(), _families.end(), [gf](const gamma_reconstruction& f) { return f.id == gf->id();  });
+    auto& d = rc->reconstruction.size_deltas;
+    auto it = d.find(c);
+    if (it == d.end())
+        return 0;
+    return it->second;
 }
 
 void gamma_model_reconstruction::print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
@@ -492,9 +485,35 @@ void gamma_model_reconstruction::print_node_counts(std::ostream& ost, const clad
 void gamma_model_reconstruction::print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
 {
     reconstruction::print_family_clade_table(ost, order, gene_families, p_tree, [this](int family_index, const clade* c) {
-        int val = _families[family_index].reconstruction.size_deltas.at(c);
+        auto& d = _families[family_index].reconstruction.size_deltas;
+        auto it = d.find(c);
+        if (it == d.end())
+            return string("0");
         ostringstream ost;
-        ost << showpos << val;
+        ost << showpos << it->second;
         return ost.str();
         });
+}
+
+void gamma_model_reconstruction::print_category_likelihoods(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families)
+{
+    ost << "Family ID\t";
+    ostream_iterator<double> lm(ost, "\t");
+    copy(_lambda_multipliers.begin(), _lambda_multipliers.end(), lm);
+
+    for (auto gf : gene_families)
+    {
+        ost << gf->id() << '\t';
+        auto rc = find_if(_families.begin(), _families.end(), [gf](const gamma_reconstruction& f) { return f.id == gf->id();  });
+        ostream_iterator<double> ct(ost, "\t");
+        copy(rc->_category_likelihoods.begin(), rc->_category_likelihoods.end(), ct);
+        ost << endl;
+    }
+}
+
+void gamma_model_reconstruction::print_additional_data(const cladevector& order, const std::vector<const gene_family*>& gene_families, std::string output_prefix)
+{
+    std::ofstream cat_likelihoods(filename("Gamma_category_likelihoods", output_prefix));
+    print_category_likelihoods(cat_likelihoods, order, gene_families);
+
 }

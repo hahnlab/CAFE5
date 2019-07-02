@@ -22,16 +22,21 @@ public:
         }
     }
 
+    virtual int get_delta(const gene_family* gf, const clade* c) override;
+    virtual char get_increase_decrease(const gene_family* gf, const clade* c) override;
+
+    void print_additional_data(const cladevector& order, const std::vector<const gene_family*>& gene_families, std::string output_prefix) override;
+
     void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family *>& gene_families, const clade *p_tree) override;
-    void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues) override;
-    void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order) override;
     void print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) override;
     void print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) override;
+    void print_category_likelihoods(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families);
 
     struct gamma_reconstruction {
         std::vector<reconstructed_family<int>> category_reconstruction;
         reconstructed_family<double> reconstruction;
         std::vector<double> _category_likelihoods;
+        std::string id;
     };
 
     std::vector<gamma_reconstruction> _families;
@@ -110,9 +115,6 @@ public:
     virtual lambda* get_pvalue_lambda() const override;
 
 };
-
-//! \ingroup gamma
-increase_decrease get_increases_decreases(const gamma_model_reconstruction::gamma_reconstruction& rc, const cladevector& order, double pvalue);
 
 //! \ingroup gamma
 clademap<double> get_weighted_averages(const std::vector<reconstructed_family<int>>& m, const vector<double>& probabilities);

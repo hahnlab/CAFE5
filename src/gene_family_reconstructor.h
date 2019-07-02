@@ -21,7 +21,6 @@ void reconstruct_gene_families(const lambda* lambda, const clade *p_tree,
 
 void compute_increase_decrease(clademap<int>& input, clademap<int>& output);
 void compute_increase_decrease(clademap<double>& input, clademap<int>& output);
-std::ostream& operator<<(std::ostream & ost, const increase_decrease& val);
 
 string newick_node(const clade *node, const cladevector& order, std::function<std::string(const clade *c)> textwriter);
 

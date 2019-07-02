@@ -1,6 +1,8 @@
 #include <cmath>
 #include <set>
 
+#include <sys/stat.h>
+
 #include "execute.h"
 #include "core.h"
 #include "user_data.h"
@@ -113,6 +115,14 @@ void estimator::estimate_lambda_per_family(model *p_model, ostream& ost)
     calls \ref estimate_missing_variables; \ref compute; \ref compute_pvalues, and \ref model::reconstruct_ancestral_states */
 void estimator::execute(std::vector<model *>& models)
 {
+    string dir = _user_input.output_prefix;
+    if (dir.empty()) dir = "results";
+    if (mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
+    {
+        if (errno != EEXIST)
+            throw std::runtime_error("Failed to create directory");
+    }
+    
     if (_user_input.lambda_per_family)
     {
         auto p_model = models[0];   // no support for multiple models
