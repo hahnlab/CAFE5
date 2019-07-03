@@ -33,11 +33,11 @@ public:
     //! Mainly for debugging: In case one want to grab the gene count for a given species
     int get_species_size(std::string species) const;
 
-    //! Returns true if every species size for both gene families are identical
     std::map<std::string, int> get_species_map() const {
         return _species_size_map;
     }
 
+    //! Returns true if every species size for both gene families are identical
     bool species_size_match(const gene_family& other) const
     {
         return _species_size_map == other._species_size_map;

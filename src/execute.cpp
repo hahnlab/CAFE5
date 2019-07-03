@@ -131,27 +131,59 @@ void estimator::execute(std::vector<model *>& models)
     }
     else
     {
-        estimate_missing_variables(models, data);
+        try
+        {
+            estimate_missing_variables(models, data);
 
-        compute(models, _user_input);
+            compute(models, _user_input);
 
-        matrix_cache cache(data.max_family_size + 1);
-        for (model* p_model : models) {
+            matrix_cache cache(data.max_family_size + 1);
+            for (model* p_model : models) {
 
-            vector<const gene_family*> filtered_families;
-            for (auto& gf : data.gene_families)
-            {
-                if (p_model->should_calculate_pvalue(gf))
-                    filtered_families.push_back(&gf);
+                vector<const gene_family*> filtered_families;
+                for (auto& gf : data.gene_families)
+                {
+                    if (p_model->should_calculate_pvalue(gf))
+                        filtered_families.push_back(&gf);
+                }
+
+                unique_ptr<lambda> lam(p_model->get_pvalue_lambda());
+                auto pvalues = compute_pvalues(data.p_tree, filtered_families, lam.get(), 1000, data.max_family_size, data.max_root_family_size);
+
+                std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(filtered_families, &cache, data.p_prior.get()));
+                rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, filtered_families, pvalues);
             }
-            
-            unique_ptr<lambda> lam(p_model->get_pvalue_lambda());
-            auto pvalues = compute_pvalues(data.p_tree, filtered_families, lam.get(), 1000, data.max_family_size, data.max_root_family_size);
-
-            std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(filtered_families, &cache, data.p_prior.get()));
-            rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, filtered_families, pvalues);
+        }
+        catch (const OptimizerInitializationFailure& e )
+        {
+            initialization_failure_advice(cerr, data.gene_families);
+            throw;
         }
     }
+}
+
+int max_diff(const gene_family& gf)
+{
+    auto sp = gf.get_species_map();
+
+    auto compare = [](const std::pair<string, int>& a, const std::pair<string, int>& b) { return a.second < b.second; };
+    return max_element(sp.begin(), sp.end(), compare)->second - min_element(sp.begin(), sp.end(), compare)->second;
+}
+
+void initialization_failure_advice(std::ostream& ost, const std::vector<gene_family>& families)
+{
+    std::vector<std::pair<std::string, int>> m;
+    transform(families.begin(), families.end(), std::inserter(m, m.end()),
+        [](const gene_family& gf) { return std::make_pair(gf.id(), max_diff(gf)); });
+    auto compare = [](const std::pair<string, int>& a, const std::pair<string, int>& b) { return a.second > b.second; };
+    sort(m.begin(), m.end(), compare);
+    if (m.size() > 20)
+        m.resize(20);
+
+    ost << "Families with largest size differentials:\n";
+    for (auto& t : m)
+        ost << t.first << ": " << t.second << "\n";
+    ost << "An analysis without these families may succeed.\n";
 }
 
 void chisquare_compare::execute(std::vector<model *>&)

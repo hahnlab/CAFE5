@@ -145,6 +145,14 @@ public:
 
 std::ostream& operator<<(std::ostream& ost, const optimizer::result& r);
 
+class OptimizerInitializationFailure : public std::runtime_error {
+public:
+    OptimizerInitializationFailure() : std::runtime_error("Failed to initialize any reasonable values")
+    {
+
+    }
+};
+
 //! \ingroup optimizer
 enum strategies { RangeWidely, InitialVar, Perturb, Standard, SimilarityCutoff, NLOpt, LBFGS};
 #if defined(OPTIMIZER_STRATEGY_RANGE_WIDELY_THEN_HOME_IN)

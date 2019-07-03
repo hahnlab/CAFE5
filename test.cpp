@@ -46,6 +46,7 @@ TEST_GROUP(Inference)
         _user_data.max_family_size = 10;
         _user_data.max_root_family_size = 8;
         _user_data.gene_families.resize(1);
+        _user_data.gene_families[0].set_id("TestFamily1");
         _user_data.gene_families[0].set_species_size("A", 1);
         _user_data.gene_families[0].set_species_size("B", 2);
 
@@ -2036,6 +2037,20 @@ TEST(Inference, event_monitor_does_not_show_decent_performing_families)
 
     evm.summarize(ost);
     STRCMP_EQUAL("5 values were attempted (0% rejected)\n", ost.str().c_str());
+}
+
+TEST(Inference, initialization_failure_advice_shows_20_families_with_largest_differentials)
+{
+    std::ostringstream ost;
+    _user_data.gene_families.resize(2);
+    _user_data.gene_families[1].set_id("TestFamily2");
+    _user_data.gene_families[1].set_species_size("A", 34);
+    _user_data.gene_families[1].set_species_size("B", 86);
+
+    initialization_failure_advice(ost, _user_data.gene_families);
+    STRCMP_CONTAINS("Families with largest size differentials:", ost.str().c_str());
+    STRCMP_CONTAINS("An analysis without these families may succeed.", ost.str().c_str());
+    STRCMP_CONTAINS("TestFamily2: 52\nTestFamily1: 1", ost.str().c_str());
 }
 
 TEST(Simulation, base_prepare_matrices_for_simulation_creates_matrix_for_each_branch)

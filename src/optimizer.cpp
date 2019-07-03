@@ -330,9 +330,11 @@ optimizer::~optimizer()
     fminsearch_free(pfm);
 }
 
+
 std::vector<double> optimizer::get_initial_guesses()
 {
     auto initial = _p_scorer->initial_guesses();
+
     int i = 0;
     double first_run = _p_scorer->calculate_score(&initial[0]);
     while (std::isinf(first_run) && i < NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS)
@@ -343,7 +345,7 @@ std::vector<double> optimizer::get_initial_guesses()
     }
     if (std::isinf(first_run))
     {
-        throw std::runtime_error("Failed to initialize any reasonable values");
+        throw OptimizerInitializationFailure();
     }
 
     return initial;
