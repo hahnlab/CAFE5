@@ -35,9 +35,9 @@ AC_SEARCH_LIBS(vdExp, mkl_intel_lp64,
 		[AC_DEFINE([HAVE_VECTOR_EXP],[1], [Have a vector exponential function])],,
 		[])
 
-AC_DEFINE(NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS, 40, [Number of times optimizer will restart if it fails to find legal values])
+AC_DEFINE(NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS, 100, [Number of times optimizer will restart if it fails to find legal values])
 AC_DEFINE(LAMBDA_PERTURBATION_STEP_SIZE, 50, [Number of values simulator will generate before modifying lambda value])
-AC_DEFINE(OPTIMIZER_STRATEGY_STANDARD,,[Optimizer will not make any particular attempt to avoid local optima]
+AC_DEFINE(OPTIMIZER_STRATEGY_SIMILARITY_CUTOFF,,[Optimizer will stop after 12 iterations with no significant change in -ln likelihood]
 )
 AC_DEFINE(PHASED_OPTIMIZER_PHASE1_ATTEMPTS, 4, [Number of attempts optimizer will make to initialize to a good value])
 AC_DEFINE(OPTIMIZER_LOW_PRECISION, 1e-3, Precision of values optimizer will use before abandoning a set of values)

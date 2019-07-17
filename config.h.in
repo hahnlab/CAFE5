@@ -27,8 +27,9 @@
 /* Precision of values optimizer will use before abandoning a set of values */
 #undef OPTIMIZER_LOW_PRECISION
 
-/* Optimizer will not make any particular attempt to avoid local optima */
-#undef OPTIMIZER_STRATEGY_STANDARD
+/* Optimizer will stop after 12 iterations with no significant change in -ln
+   likelihood */
+#undef OPTIMIZER_STRATEGY_SIMILARITY_CUTOFF
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT

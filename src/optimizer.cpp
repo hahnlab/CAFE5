@@ -16,7 +16,7 @@
 #include "optimizer_scorer.h"
 
 #define PHASED_OPTIMIZER_PHASE2_PRECISION 1e-6
-
+#define OPTIMIZER_SIMILARITY_CUTOFF_SIZE    12
 
 using namespace std;
 
@@ -398,10 +398,10 @@ bool NelderMeadSimilarityCutoff::threshold_achieved_checking_similarity(FMinSear
 
     double current = get_best_result(pfm)->score;
     scores.push_back(current);
-    if (scores.size() < 10)
+    if (scores.size() < OPTIMIZER_SIMILARITY_CUTOFF_SIZE)
         return false;
 
-    if (scores.size() > 10)
+    if (scores.size() > OPTIMIZER_SIMILARITY_CUTOFF_SIZE)
         scores.pop_front();
 
     double mx = *std::max_element(scores.begin(), scores.end());
