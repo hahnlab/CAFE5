@@ -10,4 +10,5 @@ README.tex: ../README.md
 
 clean:
 	latexmk -CA
+	rm -f README.tex
 

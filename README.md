@@ -220,7 +220,7 @@ Parameters
 
 -   **--output\_prefix, -o**
 
-    Output prefix - added to output file names
+    Directory to place output files. Defaults to "results"
 
 -   **--poisson, -p**
 
@@ -324,7 +324,11 @@ Input files
 Output
 ------
 
--   _asr.txt
+All output will be stored to the "results" directory, unless another directory is specified with the "-o"
+parameter.
+
+
+-   _model_\_asr.txt
 
     The file will be named Base\_asr.txt or Gamma\_asr.txt, based on
     which model is in play. It contains the reconstructed states of the
@@ -341,7 +345,7 @@ Output
     In the case of the Gamma reconstruction, the Lambda multipliers for
     each category are given their own section in this file.
 
--   _family\_results.txt
+-   _model_\_family\_results.txt
 
     The file will be named Base\_family\_results.txt or
     Gamma\_family\_results.txt, based on which model is in play. It
@@ -361,7 +365,7 @@ Output
     representing the likelihood of the family belonging to each gamma
     category.
 
--   \_clade\_results.txt
+-   _model_\_clade\_results.txt
 
     The file will be named Base\_clade\_results.txt or
     Gamma\_clade\_results.txt, based on which model is in play. It
@@ -369,7 +373,7 @@ Output
     node in the tree, a tab-separated count of the number of families
     which have increased and decreased for that node.
 
--   \_family\_lks.txt
+-   _model_\_family\_lks.txt
 
     Using the Base model, a tab-separated file consisting of the header
     line “\#FamilyID Likelihood of Family”, and additional tab-separated
@@ -398,6 +402,13 @@ Output
     rate of change of families (Lambda) that was calculated, and, if an
     error model was specified, the final value of that value (Epsilon).
 
+-	[_model_.txt.change] - A tab-separated file listing, for each family 
+        and clade, the difference between it and its parent clade in the 
+		reconstruction that was performed.
+		
+-	[_model_.txt.count] - A tab-separated file listing, for each family 
+        and clade, the reconstructed value in that clade.
+		
 -   simulation\_.txt
 
     In the case of simulation, a family file is
@@ -590,6 +601,13 @@ For epsilon values, the initial guesses are taken directly from the
 provided error model. For gamma values, a random value taken from an
 exponential distribution is used.
 
+In some situations the values may fail. In this case, the scorer will
+return an infinite value and the optimizer will retry initialization,
+up to a number of attempts determined at compile time. If, after this number
+of attempts, the optimizer continues to fail, it will abort. The most
+likely cause of failure is too wide a variety of species sizes inside
+certain families, and a message will be shown giving the most likely
+families to remove from the analysis for success. 	
 
 Acknowledgements
 ================
@@ -597,12 +615,16 @@ Acknowledgements
 Many people have contributed to the CAFE project, either by code or
 ideas. Thanks to:
 
--   Mira Han
-
--   Gregg Thomas
-
 -   Ben Fulton
 
 -   Matthew Hahn
+
+-   Mira Han
+
+-	Fabio Mendes
+
+-   Gregg Thomas
+
+-	Dan Vanderpool
 
 
