@@ -10,6 +10,8 @@
 #include "gamma_core.h"
 #include "gamma.h"
 
+#define GAMMA_INITIAL_GUESS_EXPONENTIAL_DISTRIBUTION_LAMBDA 1.75
+
 extern std::mt19937 randomizer_engine;
 
 using namespace std;
@@ -108,7 +110,7 @@ gamma_optimizer::gamma_optimizer(gamma_model* p_model, root_equilibrium_distribu
 
 std::vector<double> gamma_optimizer::initial_guesses()
 {
-    std::exponential_distribution<double> distribution(1.0);
+    std::exponential_distribution<double> distribution(GAMMA_INITIAL_GUESS_EXPONENTIAL_DISTRIBUTION_LAMBDA);
     return std::vector<double>({ distribution(randomizer_engine) });
 }
 
