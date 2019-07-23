@@ -2551,7 +2551,7 @@ TEST(Optimizer, NelderMeadSimilarityCutoff__threshold__returns_true_if_all_attem
     c2.values[0] = .0005;
     c2.score = 101;
     fm.candidates = { &c, &c2 };
-    for (int i = 0; i < 9; ++i)
+    for (int i = 0; i < OPTIMIZER_SIMILARITY_CUTOFF_SIZE-1; ++i)
         strat.threshold_achieved_checking_similarity(&fm);
 
     CHECK_TRUE(strat.threshold_achieved_checking_similarity(&fm));
@@ -2586,7 +2586,7 @@ TEST(Optimizer, NelderMeadSimilarityCutoff__threshold__returns_true_if_attempt_v
     c2.values[0] = .0005;
     c2.score = 101;
     fm.candidates = { &c, &c2 };
-    for (int i = 0; i < 9; ++i)
+    for (int i = 0; i < OPTIMIZER_SIMILARITY_CUTOFF_SIZE-1; ++i)
         strat.threshold_achieved_checking_similarity(&fm);
 
     fm.candidates[0]->score = 100.0001;

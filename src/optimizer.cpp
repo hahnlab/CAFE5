@@ -16,7 +16,6 @@
 #include "optimizer_scorer.h"
 
 #define PHASED_OPTIMIZER_PHASE2_PRECISION 1e-6
-#define OPTIMIZER_SIMILARITY_CUTOFF_SIZE    12
 
 using namespace std;
 

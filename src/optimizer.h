@@ -167,5 +167,6 @@ const strategies strategy = SimilarityCutoff;
 const strategies strategy = Standard;
 #endif
 
+#define OPTIMIZER_SIMILARITY_CUTOFF_SIZE    12
 
 #endif
