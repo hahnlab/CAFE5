@@ -145,17 +145,14 @@ reconstruction* base_model::reconstruct_ancestral_states(const vector<const gene
 {
     _monitor.Event_Reconstruction_Started("Base");
 
-    auto result = new base_model_reconstruction(families.size());
+    auto result = new base_model_reconstruction();
 
     p_calc->precalculate_matrices(get_lambda_values(_p_lambda), _p_tree->get_branch_lengths());
 
     for (size_t i = 0; i< families.size(); ++i)
     {
-        result->families[i].id = families[i]->id();
-
         reconstruct_gene_families(_p_lambda, _p_tree, _max_family_size, _max_root_family_size,
-            families[i], p_calc, p_prior, result->families[i].clade_counts);
-        compute_increase_decrease(result->families[i].clade_counts, result->families[i].size_deltas);
+            families[i], p_calc, p_prior, result->_reconstructions[families[i]->id()]);
     }
 
     _monitor.Event_Reconstruction_Complete();
@@ -181,7 +178,7 @@ void base_model::perturb_lambda()
 }
 
 void base_model_reconstruction::print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade *p_tree) {
-    if (families.empty())
+    if (_reconstructions.empty())
         return;
 
     ost << "#NEXUS\nBEGIN TREES;\n";
@@ -189,7 +186,7 @@ void base_model_reconstruction::print_reconstructed_states(std::ostream& ost, co
     {
         auto& gene_family = *gene_families[i];
         auto g = [i, gene_family, this](const clade *node) {
-            int value = node->is_leaf() ? gene_family.get_species_size(node->get_taxon_name()) : families[i].clade_counts.at(node);
+            int value = node->is_leaf() ? gene_family.get_species_size(node->get_taxon_name()) : _reconstructions[gene_family.id()].at(node);
             return to_string(value);
         };
 
@@ -207,14 +204,14 @@ void base_model_reconstruction::print_reconstructed_states(std::ostream& ost, co
 
 int base_model_reconstruction::get_delta(const gene_family* gf, const clade* c)
 {
-    auto rc = find_if(families.begin(), families.end(), [gf](const reconstructed_family<int>& f) { return f.id == gf->id();  });
-    return rc->size_deltas.at(c);
+    clademap<int> size_deltas;
+    compute_increase_decrease(_reconstructions[gf->id()], size_deltas);
+    return size_deltas.at(c);
 }
 
 char base_model_reconstruction::get_increase_decrease(const gene_family* gf, const clade* c)
 {
-    auto rc = find_if(families.begin(), families.end(), [gf](const reconstructed_family<int>& f) { return f.id == gf->id();  });
-    int val = rc->size_deltas.at(c);
+    int val = get_delta(gf, c);
     if (val < 0)
         return 'd';
     else if (val > 0)
@@ -227,17 +224,20 @@ char base_model_reconstruction::get_increase_decrease(const gene_family* gf, con
 void base_model_reconstruction::print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
 {
     print_family_clade_table(ost, order, gene_families, p_tree, [this, gene_families](int family_index, const clade* c) {
+        auto& gf = *gene_families[family_index];
         if (c->is_leaf())
-            return to_string(gene_families[family_index]->get_species_size(c->get_taxon_name()));
+            return to_string(gf.get_species_size(c->get_taxon_name()));
         else
-            return to_string(families[family_index].clade_counts.at(c));
+            return to_string(_reconstructions[gf.id()].at(c));
         });
 }
 
 void base_model_reconstruction::print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
 {
-    print_family_clade_table(ost, order, gene_families, p_tree, [this](int family_index, const clade* c) {
-        int val = families[family_index].size_deltas.at(c);
+    print_family_clade_table(ost, order, gene_families, p_tree, [this, &gene_families](int family_index, const clade* c) {
+        clademap<int> size_deltas;
+        compute_increase_decrease(_reconstructions[gene_families[family_index]->id()], size_deltas);
+        int val = size_deltas.at(c);
         ostringstream ost;
         ost << showpos << val;
         return ost.str();

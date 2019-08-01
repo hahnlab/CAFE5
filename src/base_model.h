@@ -51,14 +51,14 @@ class base_model_reconstruction : public reconstruction
 {
 public:
 
-    base_model_reconstruction(size_t num_families) : families(num_families)
+    base_model_reconstruction()
     {
 
     }
 
     void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family *>& gene_families, const clade *p_tree) override;
 
-    std::vector<reconstructed_family<int>> families;
+    std::map<string, clademap<int>> _reconstructions;
 
     virtual int get_delta(const gene_family* gf, const clade* c) override;
     virtual char get_increase_decrease(const gene_family* gf, const clade* c) override;

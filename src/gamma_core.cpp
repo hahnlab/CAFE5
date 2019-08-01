@@ -311,10 +311,10 @@ inference_optimizer_scorer *gamma_model::get_lambda_optimizer(user_data& data)
     }
 }
 
-clademap<double> get_weighted_averages(const std::vector<reconstructed_family<int>>& m, const vector<double>& probabilities)
+clademap<double> get_weighted_averages(const std::vector<clademap<int>>& m, const vector<double>& probabilities)
 {
-    cladevector nodes(m[0].clade_counts.size());
-    std::transform(m[0].clade_counts.begin(), m[0].clade_counts.end(), nodes.begin(), [](std::pair<const clade *, int> v) { return v.first;  });
+    cladevector nodes(m[0].size());
+    std::transform(m[0].begin(), m[0].end(), nodes.begin(), [](std::pair<const clade *, int> v) { return v.first;  });
 
     clademap<double> result;
     for (auto node : nodes)
@@ -322,7 +322,7 @@ clademap<double> get_weighted_averages(const std::vector<reconstructed_family<in
         double val = 0.0;
         for (size_t i = 0; i<probabilities.size(); ++i)
         {
-            val += probabilities[i] * double(m[i].clade_counts.at(node));
+            val += probabilities[i] * double(m[i].at(node));
         }
         result[node] = val;
     }
@@ -332,26 +332,23 @@ clademap<double> get_weighted_averages(const std::vector<reconstructed_family<in
 
 void gamma_model::reconstruct_family(const gene_family& family, matrix_cache *calc, root_equilibrium_distribution*prior, gamma_model_reconstruction::gamma_reconstruction& rc) const
 {
-    rc.id = family.id();
     auto& cat_rec = rc.category_reconstruction;
+    cat_rec.resize(_lambda_multipliers.size());
 
     for (size_t k = 0; k < _gamma_cat_probs.size(); ++k)
     {
         unique_ptr<lambda> ml(_p_lambda->multiply(_lambda_multipliers[k]));
-        reconstruct_gene_families(ml.get(), _p_tree, _max_family_size, _max_root_family_size, &family, calc, prior, cat_rec[k].clade_counts);
-        compute_increase_decrease(cat_rec[k].clade_counts, cat_rec[k].size_deltas);
+        reconstruct_gene_families(ml.get(), _p_tree, _max_family_size, _max_root_family_size, &family, calc, prior, cat_rec[k]);
     }
 
     // multiply every reconstruction by gamma_cat_prob
-    rc.reconstruction.clade_counts = get_weighted_averages(cat_rec, _gamma_cat_probs);
-
-    compute_increase_decrease(rc.reconstruction.clade_counts, rc.reconstruction.size_deltas);
+    rc.reconstruction = get_weighted_averages(cat_rec, _gamma_cat_probs);
 }
 
 reconstruction* gamma_model::reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache *calc, root_equilibrium_distribution*prior)
 {
     _monitor.Event_Reconstruction_Started("Gamma");
-    gamma_model_reconstruction* result = new gamma_model_reconstruction(families.size(), _lambda_multipliers);
+    gamma_model_reconstruction* result = new gamma_model_reconstruction(_lambda_multipliers);
 
     auto values = get_lambda_values(_p_lambda);
     vector<double> all;
@@ -368,11 +365,9 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<const gen
 #pragma omp parallel for
     for (size_t i = 0; i<families.size(); ++i)
     {
-        result->_families[i].reconstruction.id = families[i]->id();
-
-        reconstruct_family(*families[i], calc, prior, result->_families[i]);
-
-        result->_families[i]._category_likelihoods = _category_likelihoods[i];
+        auto& rec = result->_reconstructions[families[i]->id()];
+        reconstruct_family(*families[i], calc, prior, rec);
+        rec._category_likelihoods = _category_likelihoods[i];
     }
 
     _monitor.Event_Reconstruction_Complete();
@@ -399,10 +394,8 @@ lambda* gamma_model::get_pvalue_lambda() const
 
 void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family *>& gene_families, const clade *p_tree)
 {
-    if (_families.empty())
+    if (_reconstructions.empty())
         return;
-
-    auto rec = _families[0];
 
     ost << "#NEXUS\nBEGIN TREES;\n";
     for (size_t i = 0; i<gene_families.size(); ++i)
@@ -418,11 +411,11 @@ void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost, c
             }
             else
             {
-                for (auto& r : _families[i].category_reconstruction)
+                for (auto& r : _reconstructions[gene_family.id()].category_reconstruction)
                 {
-                    ost << r.clade_counts.at(node) << '_';
+                    ost << r.at(node) << '_';
                 }
-                ost << std::round(_families[i].reconstruction.clade_counts.at(node));
+                ost << std::round(_reconstructions[gene_family.id()].reconstruction.at(node));
             }
             return ost.str();
         };
@@ -449,11 +442,12 @@ void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost, c
 
 char gamma_model_reconstruction::get_increase_decrease(const gene_family* gf, const clade* c)
 {
-    auto rc = find_if(_families.begin(), _families.end(), [gf](const gamma_reconstruction& f) { return f.id == gf->id();  });
+    clademap<int> size_deltas;
+    compute_increase_decrease(_reconstructions[gf->id()].reconstruction, size_deltas);
 
     int val = 0;
     if (!c->is_leaf() && !c->is_root())
-        val = rc->reconstruction.size_deltas.at(c);
+        val = size_deltas.at(c);
     if (val < 0)
         return 'd';
     else if (val > 0)
@@ -464,8 +458,9 @@ char gamma_model_reconstruction::get_increase_decrease(const gene_family* gf, co
 
 int gamma_model_reconstruction::get_delta(const gene_family* gf, const clade* c)
 {
-    auto rc = find_if(_families.begin(), _families.end(), [gf](const gamma_reconstruction& f) { return f.id == gf->id();  });
-    auto& d = rc->reconstruction.size_deltas;
+    clademap<int> size_deltas;
+    compute_increase_decrease(_reconstructions[gf->id()].reconstruction, size_deltas);
+    auto& d = size_deltas;
     auto it = d.find(c);
     if (it == d.end())
         return 0;
@@ -475,19 +470,21 @@ int gamma_model_reconstruction::get_delta(const gene_family* gf, const clade* c)
 void gamma_model_reconstruction::print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
 {
     reconstruction::print_family_clade_table(ost, order, gene_families, p_tree, [this, gene_families](int family_index, const clade* c) {
+        auto& gf = *gene_families[family_index];
         if (c->is_leaf())
-            return to_string(gene_families[family_index]->get_species_size(c->get_taxon_name()));
+            return to_string(gf.get_species_size(c->get_taxon_name()));
         else
-            return to_string(int(std::round(_families[family_index].reconstruction.clade_counts.at(c))));
+            return to_string(int(std::round(_reconstructions[gf.id()].reconstruction.at(c))));
         });
 }
 
 void gamma_model_reconstruction::print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
 {
-    reconstruction::print_family_clade_table(ost, order, gene_families, p_tree, [this](int family_index, const clade* c) {
-        auto& d = _families[family_index].reconstruction.size_deltas;
-        auto it = d.find(c);
-        if (it == d.end())
+    reconstruction::print_family_clade_table(ost, order, gene_families, p_tree, [this, &gene_families](int family_index, const clade* c) {
+        clademap<int> size_deltas;
+        compute_increase_decrease(_reconstructions[gene_families[family_index]->id()].reconstruction, size_deltas);
+        auto it = size_deltas.find(c);
+        if (it == size_deltas.end())
             return string("0");
         ostringstream ost;
         ost << showpos << it->second;
@@ -504,9 +501,9 @@ void gamma_model_reconstruction::print_category_likelihoods(std::ostream& ost, c
     for (auto gf : gene_families)
     {
         ost << gf->id() << '\t';
-        auto rc = find_if(_families.begin(), _families.end(), [gf](const gamma_reconstruction& f) { return f.id == gf->id();  });
+        auto rc = _reconstructions[gf->id()];
         ostream_iterator<double> ct(ost, "\t");
-        copy(rc->_category_likelihoods.begin(), rc->_category_likelihoods.end(), ct);
+        copy(rc._category_likelihoods.begin(), rc._category_likelihoods.end(), ct);
         ost << endl;
     }
 }

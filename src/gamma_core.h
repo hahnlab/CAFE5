@@ -13,13 +13,9 @@ class gamma_model_reconstruction : public reconstruction
     const std::vector<double> _lambda_multipliers;
 
 public:
-    gamma_model_reconstruction(size_t num_families, const std::vector<double>& lambda_multipliers) :
-        _lambda_multipliers(lambda_multipliers), _families(num_families)
+    gamma_model_reconstruction(const std::vector<double>& lambda_multipliers) :
+        _lambda_multipliers(lambda_multipliers)
     {
-        for (auto& f : _families)
-        {
-            f.category_reconstruction.resize(_lambda_multipliers.size());
-        }
     }
 
     virtual int get_delta(const gene_family* gf, const clade* c) override;
@@ -33,13 +29,12 @@ public:
     void print_category_likelihoods(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families);
 
     struct gamma_reconstruction {
-        std::vector<reconstructed_family<int>> category_reconstruction;
-        reconstructed_family<double> reconstruction;
+        std::vector<clademap<int>> category_reconstruction;
+        clademap<double> reconstruction;
         std::vector<double> _category_likelihoods;
-        std::string id;
     };
 
-    std::vector<gamma_reconstruction> _families;
+    std::map<string, gamma_reconstruction> _reconstructions;
 };
 
 //! @brief Represents a model of species change in which lambda values are expected to belong to a gamma distribution
@@ -117,5 +112,5 @@ public:
 };
 
 //! \ingroup gamma
-clademap<double> get_weighted_averages(const std::vector<reconstructed_family<int>>& m, const vector<double>& probabilities);
+clademap<double> get_weighted_averages(const std::vector<clademap<int>>& m, const vector<double>& probabilities);
 

@@ -15,8 +15,6 @@ class user_data;
 class root_distribution;
 class inference_optimizer_scorer;
 
-typedef clademap<int> trial;
-
 struct family_info_stash {
     family_info_stash() : lambda_multiplier(0.0), category_likelihood(0.0), family_likelihood(0.0), 
         posterior_probability(0.0), significant(false) {}
@@ -159,14 +157,6 @@ public:
 //! With this information we can reduce the number of calculations required
 //! and speed up the overall performance
 std::vector<size_t> build_reference_list(const std::vector<gene_family>& families);
-
-template<typename T>
-struct reconstructed_family {
-    std::string id;
-    clademap<int> size_deltas;
-    clademap<T> clade_counts;
-};
-
 
 std::vector<model *> build_models(const input_parameters& my_input_parameters, user_data& user_data);
 
