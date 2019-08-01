@@ -15,4 +15,4 @@ script:
 - make test
 - test/runtests
 notifications:
-  slack: hahnlab-cafe:qWd7TTjmDiENiF99zgek98Rr
+  slack: iu-hpc-users:7OKYnBwu5Cuss5ja7GcwxsLQ
