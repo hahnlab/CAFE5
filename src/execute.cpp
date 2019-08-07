@@ -10,6 +10,7 @@
 #include "optimizer_scorer.h"
 #include "matrix_cache.h"
 #include "optimizer.h"
+#include "gene_family_reconstructor.h"
 
 double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 24.01409824083091, -1.231739572450155, 1.208650973866179e-3,
@@ -148,10 +149,20 @@ void estimator::execute(std::vector<model *>& models)
                 }
 
                 unique_ptr<lambda> lam(p_model->get_pvalue_lambda());
-                auto pvalues = compute_pvalues(data.p_tree, filtered_families, lam.get(), 1000, data.max_family_size, data.max_root_family_size);
+                matrix_cache cache(max(data.max_family_size, data.max_root_family_size) + 1);
+                cache.precalculate_matrices(get_lambda_values(lam.get()), data.p_tree->get_branch_lengths());
+
+                auto pvalues = compute_pvalues(data.p_tree, filtered_families, lam.get(), cache, 1000, data.max_family_size, data.max_root_family_size);
 
                 std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(filtered_families, &cache, data.p_prior.get()));
-                rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, filtered_families, pvalues);
+
+                vector<clademap<double>> branch_probabilities(filtered_families.size());
+
+                transform(filtered_families.begin(), filtered_families.end(), branch_probabilities.begin(), [&](const gene_family* gf)
+                    {
+                        return compute_branch_level_probabilities(data.p_tree, *gf, rec.get(), lam.get(), cache, data.max_family_size, data.max_root_family_size);
+                    });
+                rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, filtered_families, pvalues, branch_probabilities);
             }
         }
         catch (const OptimizerInitializationFailure& e )

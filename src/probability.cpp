@@ -385,15 +385,13 @@ double pvalue(double v, const vector<double>& conddist)
 }
 
 //! Compute pvalues for each family based on the given lambda
-vector<double> compute_pvalues(const clade* p_tree, const std::vector<const gene_family*>& families, const lambda* p_lambda, int number_of_simulations, int max_family_size, int max_root_family_size)
+vector<double> compute_pvalues(const clade* p_tree, const std::vector<const gene_family*>& families, const lambda* p_lambda, const matrix_cache& cache, int number_of_simulations, int max_family_size, int max_root_family_size)
 {
 #ifndef SILENT
     cout << "Computing pvalues..." << flush;
 #endif
     const int mx = max_family_size;
     const int mxr = max_root_family_size;
-    matrix_cache cache(max(mx, mxr) + 1);
-    cache.precalculate_matrices(get_lambda_values(p_lambda), p_tree->get_branch_lengths());
 
     std::vector<std::vector<double> > conditional_distribution(mxr);
     for (int i = 0; i < mxr; ++i)
@@ -419,8 +417,10 @@ vector<double> compute_pvalues(const clade* p_tree, const std::vector<const gene
             {
                 pvalues[s] = pvalue(observed_max_likelihood, conditional_distribution[s]);
             }
+
             return *max_element(pvalues.begin(), pvalues.end());
         });
+
 
 #ifndef SILENT
     cout << "done!\n";

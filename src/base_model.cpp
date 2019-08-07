@@ -151,7 +151,7 @@ reconstruction* base_model::reconstruct_ancestral_states(const vector<const gene
 
     for (size_t i = 0; i< families.size(); ++i)
     {
-        reconstruct_gene_families(_p_lambda, _p_tree, _max_family_size, _max_root_family_size,
+        reconstruct_gene_family(_p_lambda, _p_tree, _max_family_size, _max_root_family_size,
             families[i], p_calc, p_prior, result->_reconstructions[families[i]->id()]);
     }
 
@@ -244,3 +244,7 @@ void base_model_reconstruction::print_node_change(std::ostream& ost, const clade
         });
 }
 
+int base_model_reconstruction::reconstructed_size(const gene_family& family, const clade* clade) const
+{
+    return _reconstructions.at(family.id()).at(clade);
+}

@@ -330,25 +330,9 @@ clademap<double> get_weighted_averages(const std::vector<clademap<int>>& m, cons
     return result;
 }
 
-void gamma_model::reconstruct_family(const gene_family& family, matrix_cache *calc, root_equilibrium_distribution*prior, gamma_model_reconstruction::gamma_reconstruction& rc) const
-{
-    auto& cat_rec = rc.category_reconstruction;
-    cat_rec.resize(_lambda_multipliers.size());
-
-    for (size_t k = 0; k < _gamma_cat_probs.size(); ++k)
-    {
-        unique_ptr<lambda> ml(_p_lambda->multiply(_lambda_multipliers[k]));
-        reconstruct_gene_families(ml.get(), _p_tree, _max_family_size, _max_root_family_size, &family, calc, prior, cat_rec[k]);
-    }
-
-    // multiply every reconstruction by gamma_cat_prob
-    rc.reconstruction = get_weighted_averages(cat_rec, _gamma_cat_probs);
-}
-
 reconstruction* gamma_model::reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache *calc, root_equilibrium_distribution*prior)
 {
     _monitor.Event_Reconstruction_Started("Gamma");
-    gamma_model_reconstruction* result = new gamma_model_reconstruction(_lambda_multipliers);
 
     auto values = get_lambda_values(_p_lambda);
     vector<double> all;
@@ -362,12 +346,31 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<const gen
 
     calc->precalculate_matrices(all, _p_tree->get_branch_lengths());
 
-#pragma omp parallel for
-    for (size_t i = 0; i<families.size(); ++i)
+    gamma_model_reconstruction* result = new gamma_model_reconstruction(_lambda_multipliers);
+    vector<gamma_model_reconstruction::gamma_reconstruction *> recs(families.size());
+    for (size_t i = 0; i < families.size(); ++i)
     {
-        auto& rec = result->_reconstructions[families[i]->id()];
-        reconstruct_family(*families[i], calc, prior, rec);
-        rec._category_likelihoods = _category_likelihoods[i];
+        recs[i] = &result->_reconstructions[families[i]->id()];
+        result->_reconstructions[families[i]->id()]._category_likelihoods = _category_likelihoods[i];
+        result->_reconstructions[families[i]->id()].category_reconstruction.resize(_lambda_multipliers.size());
+    }
+
+
+    for (size_t k = 0; k < _gamma_cat_probs.size(); ++k)
+    {
+        unique_ptr<lambda> ml(_p_lambda->multiply(_lambda_multipliers[k]));
+
+#pragma omp parallel for
+        for (size_t i = 0; i < families.size(); ++i)
+        {
+            reconstruct_gene_family(ml.get(), _p_tree, _max_family_size, _max_root_family_size, families[i], calc, prior, recs[i]->category_reconstruction[k]);
+        }
+    }
+
+    for (auto reconstruction : recs)
+    {
+        // multiply every reconstruction by gamma_cat_prob
+        reconstruction->reconstruction = get_weighted_averages(reconstruction->category_reconstruction, _gamma_cat_probs);
     }
 
     _monitor.Event_Reconstruction_Complete();
@@ -514,3 +517,18 @@ void gamma_model_reconstruction::print_additional_data(const cladevector& order,
     print_category_likelihoods(cat_likelihoods, order, gene_families);
 
 }
+
+int gamma_model_reconstruction::reconstructed_size(const gene_family& family, const clade* clade) const
+{
+    if (clade->is_leaf())
+        return family.get_species_size(clade->get_taxon_name());
+
+    if (_reconstructions.find(family.id()) == _reconstructions.end())
+        throw std::runtime_error("Family " + family.id() + " was not reconstructed");
+    auto& c = _reconstructions.at(family.id()).reconstruction;
+    if (c.find(clade) == c.end())
+        throw std::runtime_error("Clade '" + clade->get_taxon_name() + "' was not reconstructed for family " + family.id());
+
+    return _reconstructions.at(family.id()).reconstruction.at(clade);
+}
+

@@ -126,7 +126,7 @@ void reconstruct_at_node(const clade *c, const lambda *_lambda, clademap<std::ve
     }
 }
 
-void reconstruct_gene_families(const lambda* lambda, const clade *p_tree,
+void reconstruct_gene_family(const lambda* lambda, const clade *p_tree,
     int max_family_size,
     int max_root_family_size,
     const gene_family *gf,
@@ -262,7 +262,7 @@ void reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const
 
 void reconstruction::print_family_clade_table(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree, std::function<string(int family_index, const clade *c)> get_family_clade_value)
 {
-    ost << "Family ID";
+    ost << "FamilyID";
     for (auto c : order)
     {
         ost << "\t" << clade_index_or_name(c, order);
@@ -280,7 +280,24 @@ void reconstruction::print_family_clade_table(std::ostream& ost, const cladevect
     }
 }
 
-void reconstruction::write_results(std::string model_identifier, std::string output_prefix, const clade *p_tree, const std::vector<const gene_family*>& families, std::vector<double>& pvalues)
+void print_branch_probabilities(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const vector<clademap<double>>& branch_probabilities)
+{
+    ost << "#FamilyID\t";
+    for (auto& it : order) {
+        ost << clade_index_or_name(it, order) << "\t";
+    }
+    ost << endl;
+
+    for (size_t i = 0; i < gene_families.size(); ++i) {
+        ost << gene_families[i]->id();
+        for (auto c : order)
+            ost << '\t' << (c->is_leaf() ? 1.0 : branch_probabilities[i].at(c));
+        ost << endl;
+    }
+
+}
+
+void reconstruction::write_results(std::string model_identifier, std::string output_prefix, const clade *p_tree, const std::vector<const gene_family*>& families, std::vector<double>& pvalues, const std::vector<clademap<double>>& branch_probabilities)
 {
     cladevector order;
     auto fn = [&order](const clade* c) { order.push_back(c);  };
@@ -301,6 +318,47 @@ void reconstruction::write_results(std::string model_identifier, std::string out
     std::ofstream clade_results(filename(model_identifier + "_clade_results", output_prefix));
     print_increases_decreases_by_clade(clade_results, order, families);
 
+    std::ofstream branch_probabilities_file(filename(model_identifier + "_branch_probabilities", output_prefix));
+    print_branch_probabilities(branch_probabilities_file, order, families, branch_probabilities);
+
     print_additional_data(order, families, output_prefix);
 }
 
+void viterbi_sum_probabilities(const clade* parent, const gene_family& family, const reconstruction* rec, int max_family_size, const matrix_cache& cache, const lambda* p_lambda, clademap<double>& results)
+{
+    if (parent->is_leaf())
+        return;
+
+    int parent_size = rec->reconstructed_size(family, parent);
+    auto sum_probs_func = [&](const clade* child) {
+        const matrix* probs = cache.get_matrix(child->get_branch_length(), p_lambda->get_value_for_clade(child));
+
+        double p = probs->get(parent_size, rec->reconstructed_size(family, child));
+        for (int m = 0; m < max_family_size; m++)
+        {
+            double prob = probs->get(parent_size, m);
+            if (prob == p)
+            {
+                results[parent] += prob / 2.0;
+            }
+            else if (probs->get(parent_size, m) < p)
+            {
+                results[parent] += prob;
+            }
+}
+
+    };
+    parent->apply_to_descendants(sum_probs_func);
+}
+
+clademap<double> compute_branch_level_probabilities(const clade* p_tree, const gene_family& family, const reconstruction* rec, const lambda* p_lambda, const matrix_cache& cache, int max_family_size, int max_root_family_size)
+{
+    clademap<double> results;
+
+    auto sum_probabilities_func = [&](const clade* parent) {
+        viterbi_sum_probabilities(parent, family, rec, max_family_size, cache, p_lambda, results);
+    };
+    p_tree->apply_reverse_level_order(sum_probabilities_func);
+
+    return results;
+}

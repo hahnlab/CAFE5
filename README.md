@@ -373,6 +373,11 @@ parameter.
     node in the tree, a tab-separated count of the number of families
     which have increased and decreased for that node.
 
+-   _model_\_branch\_probabilities.txt
+
+    A tab-separated list of the probabilities calculated for each clade
+	and family.
+	
 -   _model_\_family\_lks.txt
 
     Using the Base model, a tab-separated file consisting of the header

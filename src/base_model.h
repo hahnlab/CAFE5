@@ -65,6 +65,9 @@ public:
 
     void print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) override;
     void print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) override;
+
+    int reconstructed_size(const gene_family& family, const clade* clade) const override;
+
 };
 
 #endif

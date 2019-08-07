@@ -843,7 +843,7 @@ TEST(Reconstruction, reconstruction_process_internal_node)
     DOUBLES_EQUAL(0.0033465, L[3], 0.0001);
 }
 
-TEST(Reconstruction, gamma_model__reconstruct_family)
+TEST(Reconstruction, reconstruct_gene_family)
 {
     newick_parser parser(false);
     parser.newick_string = "(A:1,B:3):7";
@@ -852,25 +852,18 @@ TEST(Reconstruction, gamma_model__reconstruct_family)
     fam.set_species_size("B", 6);
     unique_ptr<clade> p_tree(parser.parse_newick());
     single_lambda lambda(0.005);
-    const int n_gamma_cats = 2;
     matrix_cache cache(11);
-    multiple_lambda ml(map<string, int>(), { 0.001534264, 0.0084657359 });
-    vector<gene_family> families({ fam });
-    gamma_model model(&lambda, p_tree.get(), &families, 10, 8, n_gamma_cats, 1.0, NULL);
 
-    cache.precalculate_matrices(get_lambda_values(&ml), set<double>{1, 3, 7});
+    cache.precalculate_matrices(get_lambda_values(&lambda), set<double>{1, 3, 7});
     root_distribution rd;
     rd.vector({ 1,2,3,4,5,4,3,2,1 });
     uniform_distribution dist;
     dist.initialize(&rd);
 
-    gamma_model_reconstruction::gamma_reconstruction result;
-    result.category_reconstruction.resize(n_gamma_cats);
-    model.reconstruct_family(fam, &cache, &dist, result);
+    clademap<int> result;
+    reconstruct_gene_family(&lambda, p_tree.get(), 10, 8, &fam, &cache, &dist, result);
     auto AB = p_tree->find_descendant("AB");
-    LONGS_EQUAL(4, result.reconstruction[AB]);
-    LONGS_EQUAL(4, result.category_reconstruction[0][AB]);
-    LONGS_EQUAL(4, result.category_reconstruction[1][AB]);
+    LONGS_EQUAL(4, result[AB]);
 }
 
 TEST(Reconstruction, get_weighted_averages)
@@ -900,7 +893,7 @@ TEST(Reconstruction, print_node_counts)
     p_tree->apply_prefix_order(initializer);
     
     gmr.print_node_counts(ost, order, { &fam }, p_tree.get());
-    STRCMP_CONTAINS("Family ID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
+    STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
     STRCMP_CONTAINS("Family5\t11\t2\t5\t6\t5\t5\t5", ost.str().c_str());
 }
 
@@ -915,7 +908,7 @@ TEST(Reconstruction, print_node_change)
     p_tree->apply_prefix_order(initializer);
 
     gmr.print_node_change(ost, order, { &fam }, p_tree.get());
-    STRCMP_CONTAINS("Family ID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
+    STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
     STRCMP_CONTAINS("Family5\t-10\t-14\t+29\t+16\t+17\t-2\t+0", ost.str().c_str());
 }
 
@@ -928,6 +921,30 @@ TEST(Reconstruction, clade_index_or_name__returns_node_name_plus_index_in_angle_
 {
     auto a = p_tree->find_descendant("A");
     STRCMP_EQUAL("A<1>", clade_index_or_name(a, { p_tree.get(), a }).c_str())
+}
+
+TEST(Reconstruction, print_branch_probabilities)
+{
+    std::ostringstream ost;
+    vector<clademap<double>> probs(1);
+    for (auto c : order)
+        probs[0][c] = 0.05;
+    print_branch_probabilities(ost, order, { &fam }, probs);
+    STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
+    STRCMP_CONTAINS("Family5\t1\t1\t1\t1\t0.05\t0.05\t0.05\n", ost.str().c_str());
+}
+
+TEST(Reconstruction, viterbi_sum_probabilities)
+{
+    matrix_cache cache(11);
+    cache.precalculate_matrices({ 0.05 }, { 1,3,7 });
+    base_model_reconstruction rec;
+    for (auto c : order)
+        rec._reconstructions[fam.id()][c] = 6;
+    single_lambda lm(0.05);
+    clademap<double> results;
+    viterbi_sum_probabilities(p_tree->find_descendant("AB"), fam, &rec, 10, cache, &lm, results);
+    DOUBLES_EQUAL(1.525833, results[p_tree->find_descendant("AB")], 0.000001);
 }
 
 TEST(Inference, gamma_model_prune)
@@ -1856,8 +1873,10 @@ TEST(Inference, estimator_compute_pvalues)
     input_parameters params;
     vector<const gene_family*> filtered_families(_user_data.gene_families.size());
     transform(_user_data.gene_families.begin(), _user_data.gene_families.end(), filtered_families.begin(), [](const gene_family& f) { return &f; });
+    matrix_cache cache(max(_user_data.max_family_size, _user_data.max_root_family_size) + 1);
+    cache.precalculate_matrices(get_lambda_values(_user_data.p_lambda), _user_data.p_tree->get_branch_lengths());
 
-    auto values = compute_pvalues(_user_data.p_tree, filtered_families, _user_data.p_lambda, 3, _user_data.max_family_size, _user_data.max_root_family_size);
+    auto values = compute_pvalues(_user_data.p_tree, filtered_families, _user_data.p_lambda, cache, 3, _user_data.max_family_size, _user_data.max_root_family_size);
     LONGS_EQUAL(1, values.size());
     DOUBLES_EQUAL(0.666667, values[0], 0.00001);
 }

@@ -381,7 +381,7 @@ void NelderMeadSimilarityCutoff::Run(FMinSearch* pfm, optimizer::result& r, std:
 {
     pfm->tolx = 1e-6;
     pfm->tolf = 1e-6;
-    pfm->maxiters = 25;
+    pfm->maxiters = 300;
     fminsearch_min(pfm, &initial[0], [this](FMinSearch* pfm) { return threshold_achieved_checking_similarity(pfm); });
     auto result = get_best_result(pfm);
 

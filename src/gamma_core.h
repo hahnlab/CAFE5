@@ -28,6 +28,8 @@ public:
     void print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) override;
     void print_category_likelihoods(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families);
 
+    int reconstructed_size(const gene_family& family, const clade* clade) const override;
+
     struct gamma_reconstruction {
         std::vector<clademap<int>> category_reconstruction;
         clademap<double> reconstruction;
@@ -100,8 +102,6 @@ public:
     void perturb_lambda();
 
     bool can_infer() const;
-
-    void reconstruct_family(const gene_family& family, matrix_cache *calc, root_equilibrium_distribution*prior, gamma_model_reconstruction::gamma_reconstruction& result) const;
 
     bool prune(const gene_family& family, root_equilibrium_distribution *eq, matrix_cache& calc, const lambda *p_lambda,
         std::vector<double>& category_likelihoods);
