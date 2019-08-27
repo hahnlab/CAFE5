@@ -235,6 +235,7 @@ void reconstruction::print_increases_decreases_by_family(std::ostream& ost, cons
         ost << (pvalues[i] < 0.05 ? 'y' : 'n');
         for (auto c : order)
             ost << '\t' << get_increase_decrease(gene_families[i], c) ;
+        ost << endl;
     }
 }
 

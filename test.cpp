@@ -1702,8 +1702,8 @@ TEST(Reconstruction, base_model_print_increases_decreases_by_family)
     fam.set_id("myid");
     ostringstream ost;
     bmr.print_increases_decreases_by_family(ost, order, {&fam}, {0.07});
-    STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA<0>\tB<1>\t<2>", ost.str().c_str());
-    STRCMP_CONTAINS("myid\t0.07\tn\ti\td\tc", ost.str().c_str());
+    STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA<0>\tB<1>\t<2>\t\n", ost.str().c_str());
+    STRCMP_CONTAINS("myid\t0.07\tn\ti\td\tc\n", ost.str().c_str());
 }
 
 TEST(Reconstruction, gamma_model_print_increases_decreases_by_family)
