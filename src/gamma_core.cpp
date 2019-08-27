@@ -500,6 +500,7 @@ void gamma_model_reconstruction::print_category_likelihoods(std::ostream& ost, c
     ost << "Family ID\t";
     ostream_iterator<double> lm(ost, "\t");
     copy(_lambda_multipliers.begin(), _lambda_multipliers.end(), lm);
+    ost << endl;
 
     for (auto gf : gene_families)
     {

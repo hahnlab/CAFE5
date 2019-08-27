@@ -758,7 +758,7 @@ TEST(Reconstruction, gamma_model_reconstruction__print_additional_data__prints_l
     gmr._reconstructions["Family5"]._category_likelihoods = { 0.01, 0.03, 0.09, 0.07 };
     ostringstream ost;
     gmr.print_category_likelihoods(ost, order, { &fam });
-    STRCMP_CONTAINS("Family ID\t0.3\t0.9\t1.4\t2", ost.str().c_str());
+    STRCMP_CONTAINS("Family ID\t0.3\t0.9\t1.4\t2\t\n", ost.str().c_str());
     STRCMP_CONTAINS("Family5\t0.01\t0.03\0.09\t0.07", ost.str().c_str());
 }
 
