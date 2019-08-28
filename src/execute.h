@@ -13,8 +13,6 @@ class root_equilibrium_distribution;
 class user_data;
 class simulation_data;
     
-typedef clademap<int> trial;
-
 /*! @brief All of the actions that the application can perform 
 
     Based on user input, CAFExp creates an action which drives the rest of the program.

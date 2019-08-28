@@ -3,6 +3,8 @@
 
 #include "execute.h"
 
+typedef clademap<int> trial;
+
 class root_distribution;
 
 /*! @brief Build simulated families based on the user's input
