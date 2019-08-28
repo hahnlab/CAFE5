@@ -7,11 +7,30 @@
 
 class clade;
 
+struct ci_less
+{
+    // case-independent (ci) compare_less binary function
+    struct nocase_compare
+    {
+        bool operator() (const unsigned char& c1, const unsigned char& c2) const {
+            return tolower(c1) < tolower(c2);
+        }
+    };
+    bool operator() (const std::string& s1, const std::string& s2) const {
+        return std::lexicographical_compare
+        (s1.begin(), s1.end(),   // source range
+            s2.begin(), s2.end(),   // dest range
+            nocase_compare());  // comparison
+    }
+};
+
+
 class gene_family {
 private:
     std::string _id; //!< Gene family ID
     std::string _desc; //!< Gene family description
-    std::map<std::string, int> _species_size_map; //!< Map that stores each species gene family count: {sp1_name:count1, ...}
+
+    std::map<std::string, int, ci_less> _species_size_map; //!< Map that stores each species gene family count: {sp1_name:count1, ...}
 
 public:
     gene_family() { }
@@ -33,7 +52,7 @@ public:
     //! Mainly for debugging: In case one want to grab the gene count for a given species
     int get_species_size(std::string species) const;
 
-    std::map<std::string, int> get_species_map() const {
+    std::map<std::string, int, ci_less> get_species_map() const {
         return _species_size_map;
     }
 

@@ -206,7 +206,10 @@ int base_model_reconstruction::get_delta(const gene_family* gf, const clade* c)
 {
     clademap<int> size_deltas;
     compute_increase_decrease(_reconstructions[gf->id()], size_deltas);
-    return size_deltas.at(c);
+    auto it = size_deltas.find(c);
+    if (it == size_deltas.end())
+        return 0;
+    return it->second;
 }
 
 char base_model_reconstruction::get_increase_decrease(const gene_family* gf, const clade* c)
@@ -237,14 +240,25 @@ void base_model_reconstruction::print_node_change(std::ostream& ost, const clade
     print_family_clade_table(ost, order, gene_families, p_tree, [this, &gene_families](int family_index, const clade* c) {
         clademap<int> size_deltas;
         compute_increase_decrease(_reconstructions[gene_families[family_index]->id()], size_deltas);
-        int val = size_deltas.at(c);
+        auto it = size_deltas.find(c);
+        if (it == size_deltas.end())
+            return string("0");
         ostringstream ost;
-        ost << showpos << val;
+        ost << showpos << it->second;
         return ost.str();
         });
 }
 
 int base_model_reconstruction::reconstructed_size(const gene_family& family, const clade* clade) const
 {
+    if (clade->is_leaf())
+        return family.get_species_size(clade->get_taxon_name());
+
+    if (_reconstructions.find(family.id()) == _reconstructions.end())
+        throw std::runtime_error("Family " + family.id() + " was not reconstructed");
+    auto& c = _reconstructions.at(family.id());
+    if (c.find(clade) == c.end())
+        throw std::runtime_error("Clade '" + clade->get_taxon_name() + "' was not reconstructed for family " + family.id());
+
     return _reconstructions.at(family.id()).at(clade);
 }

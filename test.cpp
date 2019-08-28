@@ -27,6 +27,57 @@
 
 std::mt19937 randomizer_engine(10); // seeding random number engine
 
+class mock_model : public model {
+    // Inherited via model
+    virtual std::string name() override
+    {
+        return "mockmodel";
+    }
+    virtual void write_family_likelihoods(std::ostream& ost) override
+    {
+    }
+    virtual reconstruction* reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache* p_calc, root_equilibrium_distribution* p_prior) override
+    {
+        return nullptr;
+    }
+    virtual inference_optimizer_scorer* get_lambda_optimizer(user_data& data) override
+    {
+        auto lengths = _p_tree->get_branch_lengths();
+        auto longest_branch = *max_element(lengths.begin(), lengths.end());
+
+        initialize_lambda(data.p_lambda_tree);
+        auto result = new lambda_optimizer(_p_lambda, this, data.p_prior.get(), longest_branch, std::map<int, int>());
+        result->quiet = true;
+        return result;
+    }
+public:
+    mock_model() : model(NULL, NULL, NULL, 0, 0, NULL)
+    {
+
+    }
+    void set_lambda(lambda* lambda)
+    {
+        _p_lambda = lambda;
+    }
+    void set_tree(clade* tree)
+    {
+        _p_tree = tree;
+    }
+
+    // Inherited via model
+    virtual void prepare_matrices_for_simulation(matrix_cache& cache) override
+    {
+        cache.precalculate_matrices(get_lambda_values(_p_lambda), _p_tree->get_branch_lengths());
+    }
+
+    // Inherited via model
+    virtual double infer_family_likelihoods(root_equilibrium_distribution* prior, const std::map<int, int>& root_distribution_map, const lambda* p_lambda) override
+    {
+        return 0.0;
+    }
+};
+
+
 TEST_GROUP(GeneFamilies)
 {
 };
@@ -320,6 +371,39 @@ TEST(GeneFamilies, read_gene_families_reads_simulation_files)
     LONGS_EQUAL(36, families.at(0).get_species_size("C"));
     LONGS_EQUAL(34, families.at(0).get_species_size("D"));
     delete p_tree;
+}
+
+TEST(GeneFamilies, model_set_families)
+{
+    mock_model m;
+
+    vector<gene_family> fams;
+    m.set_families(&fams);
+    LONGS_EQUAL(0, m.get_gene_family_count());
+
+    fams.resize(5);
+    LONGS_EQUAL(5, m.get_gene_family_count());
+}
+
+TEST(GeneFamilies, species_size_is_case_insensitive)
+{
+    gene_family gf;
+    auto g = gf.get_species_map();
+    g["Rat"] = 2;
+    LONGS_EQUAL(2, g["Rat"]);
+    CHECK(g.find("Rat") != g.end());
+    gf.set_species_size("Human", 5);
+    LONGS_EQUAL(5, gf.get_species_size("human"));
+}
+
+TEST(GeneFamilies, species_size_ffdsdsf)
+{
+    gene_family gf;
+    gf.set_species_size("Cat", 5);
+    gf.set_species_size("Horse", 3);
+    gf.set_species_size("Cow", 1);
+
+    LONGS_EQUAL(3, gf.get_species_size("horse"))
 }
 
 TEST(Inference, infer_processes)
@@ -936,15 +1020,15 @@ TEST(Reconstruction, print_branch_probabilities)
 
 TEST(Reconstruction, viterbi_sum_probabilities)
 {
-    matrix_cache cache(11);
+    matrix_cache cache(25);
     cache.precalculate_matrices({ 0.05 }, { 1,3,7 });
     base_model_reconstruction rec;
     for (auto c : order)
         rec._reconstructions[fam.id()][c] = 6;
     single_lambda lm(0.05);
     clademap<double> results;
-    viterbi_sum_probabilities(p_tree->find_descendant("AB"), fam, &rec, 10, cache, &lm, results);
-    DOUBLES_EQUAL(1.525833, results[p_tree->find_descendant("AB")], 0.000001);
+    viterbi_sum_probabilities(p_tree->find_descendant("AB"), fam, &rec, 24, cache, &lm, results);
+    DOUBLES_EQUAL(0.004033264, results[p_tree->find_descendant("AB")], 0.000001);
 }
 
 TEST(Inference, gamma_model_prune)
@@ -1523,56 +1607,6 @@ public:
 
 };
 
-class mock_model : public model {
-    // Inherited via model
-    virtual std::string name() override
-    {
-        return "mockmodel";
-    }
-    virtual void write_family_likelihoods(std::ostream & ost) override
-    {
-    }
-    virtual reconstruction* reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache * p_calc, root_equilibrium_distribution * p_prior) override
-    {
-        return nullptr;
-    }
-    virtual inference_optimizer_scorer * get_lambda_optimizer(user_data& data) override
-    {
-        auto lengths = _p_tree->get_branch_lengths();
-        auto longest_branch = *max_element(lengths.begin(), lengths.end());
-
-        initialize_lambda(data.p_lambda_tree);
-        auto result = new lambda_optimizer(_p_lambda, this, data.p_prior.get(), longest_branch, std::map<int, int>());
-        result->quiet = true;
-        return result;
-    }
-public:
-    mock_model() : model(NULL, NULL, NULL, 0, 0, NULL)
-    {
-
-    }
-    void set_lambda(lambda * lambda)
-    {
-        _p_lambda = lambda;
-    }
-    void set_tree(clade * tree)
-    {
-        _p_tree = tree;
-    }
-
-    // Inherited via model
-    virtual void prepare_matrices_for_simulation(matrix_cache & cache) override
-    {
-        cache.precalculate_matrices(get_lambda_values(_p_lambda), _p_tree->get_branch_lengths());
-    }
-
-    // Inherited via model
-    virtual double infer_family_likelihoods(root_equilibrium_distribution * prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) override
-    {
-        return 0.0;
-    }
-};
-
 TEST(Simulation, select_root_size_returns_less_than_100_without_rootdist)
 {
     root_distribution rd;
@@ -1737,6 +1771,9 @@ TEST(Reconstruction, gamma_model_print_increases_decreases_by_family)
     STRCMP_CONTAINS("myid\t0.07\tn\tc\tc\tc", ost.str().c_str());
 }
 
+TEST(Reconstruction, foo)
+{
+}
 
 TEST(Inference, gamma_model_print_increases_decreases_by_clade)
 {
@@ -1778,9 +1815,10 @@ TEST(Inference, base_model_print_increases_decreases_by_clade)
     parser.newick_string = "(A:1,B:3):7";
     unique_ptr<clade> p_tree(parser.parse_newick());
 
+    clade invalid;
     cladevector order{ p_tree->find_descendant("A"),
         p_tree->find_descendant("B"),
-        p_tree->find_descendant("AB") };
+        p_tree->find_descendant("AB")};
 
     ostringstream empty;
 
@@ -1826,18 +1864,6 @@ TEST(Inference, lambda_epsilon_optimizer)
     actual = err.get_probs(0);
     expected = { 0, .96, .04 };
     CHECK(expected == actual);
-}
-
-TEST(GeneFamilies, model_set_families)
-{
-    mock_model m;
-
-    vector<gene_family> fams;
-    m.set_families(&fams);
-    LONGS_EQUAL(0, m.get_gene_family_count());
-
-    fams.resize(5);
-    LONGS_EQUAL(5, m.get_gene_family_count());
 }
 
 TEST(Inference, lambda_per_family)
