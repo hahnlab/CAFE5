@@ -49,12 +49,7 @@ public:
 
     std::string id() const { return _id; }
 
-    //! Mainly for debugging: In case one want to grab the gene count for a given species
     int get_species_size(std::string species) const;
-
-    std::map<std::string, int, ci_less> get_species_map() const {
-        return _species_size_map;
-    }
 
     //! Returns true if every species size for both gene families are identical
     bool species_size_match(const gene_family& other) const
@@ -64,6 +59,9 @@ public:
 
     /// returns true if the family exists at the root of the given tree, according to their parsimony reconstruction.
     bool exists_at_root(const clade *p_tree) const;
+
+    //! Returns largest species size minus smallest species size
+    int species_size_differential() const;
 
 };
 #endif

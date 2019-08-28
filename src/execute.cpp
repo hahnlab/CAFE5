@@ -173,19 +173,11 @@ void estimator::execute(std::vector<model *>& models)
     }
 }
 
-int max_diff(const gene_family& gf)
-{
-    auto sp = gf.get_species_map();
-
-    auto compare = [](const std::pair<string, int>& a, const std::pair<string, int>& b) { return a.second < b.second; };
-    return max_element(sp.begin(), sp.end(), compare)->second - min_element(sp.begin(), sp.end(), compare)->second;
-}
-
 void initialization_failure_advice(std::ostream& ost, const std::vector<gene_family>& families)
 {
     std::vector<std::pair<std::string, int>> m;
     transform(families.begin(), families.end(), std::inserter(m, m.end()),
-        [](const gene_family& gf) { return std::make_pair(gf.id(), max_diff(gf)); });
+        [](const gene_family& gf) { return std::make_pair(gf.id(), gf.species_size_differential()); });
     auto compare = [](const std::pair<string, int>& a, const std::pair<string, int>& b) { return a.second > b.second; };
     sort(m.begin(), m.end(), compare);
     if (m.size() > 20)

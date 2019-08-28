@@ -388,22 +388,23 @@ TEST(GeneFamilies, model_set_families)
 TEST(GeneFamilies, species_size_is_case_insensitive)
 {
     gene_family gf;
-    auto g = gf.get_species_map();
-    g["Rat"] = 2;
-    LONGS_EQUAL(2, g["Rat"]);
-    CHECK(g.find("Rat") != g.end());
     gf.set_species_size("Human", 5);
     LONGS_EQUAL(5, gf.get_species_size("human"));
+    LONGS_EQUAL(5, gf.get_species_size("HUMAN"));
+    LONGS_EQUAL(5, gf.get_species_size("hUmAn"));
 }
 
-TEST(GeneFamilies, species_size_ffdsdsf)
+TEST(GeneFamilies, species_size_differential)
 {
     gene_family gf;
     gf.set_species_size("Cat", 5);
     gf.set_species_size("Horse", 3);
     gf.set_species_size("Cow", 1);
 
-    LONGS_EQUAL(3, gf.get_species_size("horse"))
+    LONGS_EQUAL(4, gf.species_size_differential());
+
+    gf.set_species_size("Chicken", 12);
+    LONGS_EQUAL(11, gf.species_size_differential());
 }
 
 TEST(Inference, infer_processes)

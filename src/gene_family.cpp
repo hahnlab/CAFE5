@@ -78,3 +78,11 @@ bool gene_family::exists_at_root(const clade *p_tree) const
     return exists_at_all_children;
 }
 
+int gene_family::species_size_differential() const
+{
+    auto compare = [](const std::pair<string, int>& a, const std::pair<string, int>& b) { return a.second < b.second; };
+    int max_species_size = max_element(_species_size_map.begin(), _species_size_map.end(), compare)->second;
+    int min_species_size = min_element(_species_size_map.begin(), _species_size_map.end(), compare)->second;
+    return max_species_size - min_species_size;
+}
+
