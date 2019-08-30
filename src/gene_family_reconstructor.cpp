@@ -292,7 +292,7 @@ void print_branch_probabilities(std::ostream& ost, const cladevector& order, con
     for (size_t i = 0; i < gene_families.size(); ++i) {
         ost << gene_families[i]->id();
         for (auto c : order)
-            ost << '\t' << (c->is_leaf() ? 1.0 : branch_probabilities[i].at(c));
+            ost << '\t' << branch_probabilities[i].at(c);
         ost << endl;
     }
 
@@ -325,31 +325,30 @@ void reconstruction::write_results(std::string model_identifier, std::string out
     print_additional_data(order, families, output_prefix);
 }
 
-void viterbi_sum_probabilities(const clade* parent, const gene_family& family, const reconstruction* rec, int max_family_size, const matrix_cache& cache, const lambda* p_lambda, clademap<double>& results)
+void viterbi_sum_probabilities(const clade* c, const gene_family& family, const reconstruction* rec, int max_family_size, const matrix_cache& cache, const lambda* p_lambda, clademap<double>& results)
 {
-    if (parent->is_leaf())
+    if (c->is_root())
+    {
+        results[c] = 0;
         return;
+    }
 
-    int parent_size = rec->reconstructed_size(family, parent);
-    auto sum_probs_func = [&](const clade* child) {
-        const matrix* probs = cache.get_matrix(child->get_branch_length(), p_lambda->get_value_for_clade(child));
+    const matrix* probs = cache.get_matrix(c->get_branch_length(), p_lambda->get_value_for_clade(c));
 
-        double p = probs->get(parent_size, rec->reconstructed_size(family, child));
-        for (int m = 0; m < max_family_size; m++)
+    int parent_size = rec->reconstructed_size(family, c->get_parent());
+    double calculated_probability = probs->get(parent_size, rec->reconstructed_size(family, c));
+    for (int m = 0; m < max_family_size; m++)
+    {
+        double probability_to_m = probs->get(parent_size, m);
+        if (probability_to_m == calculated_probability)
         {
-            double prob = probs->get(parent_size, m);
-            if (prob == p)
-            {
-                results[parent] += prob / 2.0;
-            }
-            else if (probs->get(parent_size, m) < p)
-            {
-                results[parent] += prob;
-            }
-}
-
-    };
-    parent->apply_to_descendants(sum_probs_func);
+            results[c] += probability_to_m / 2.0;
+        }
+        else if (probability_to_m < calculated_probability)
+        {
+            results[c] += probability_to_m;
+        }
+    }
 }
 
 clademap<double> compute_branch_level_probabilities(const clade* p_tree, const gene_family& family, const reconstruction* rec, const lambda* p_lambda, const matrix_cache& cache, int max_family_size, int max_root_family_size)

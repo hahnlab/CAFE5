@@ -1016,7 +1016,7 @@ TEST(Reconstruction, print_branch_probabilities)
         probs[0][c] = 0.05;
     print_branch_probabilities(ost, order, { &fam }, probs);
     STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
-    STRCMP_CONTAINS("Family5\t1\t1\t1\t1\t0.05\t0.05\t0.05\n", ost.str().c_str());
+    STRCMP_CONTAINS("Family5\t0.05\t0.05\t0.05\t0.05\t0.05\t0.05\t0.05\n", ost.str().c_str());
 }
 
 TEST(Reconstruction, viterbi_sum_probabilities)
@@ -1029,7 +1029,7 @@ TEST(Reconstruction, viterbi_sum_probabilities)
     single_lambda lm(0.05);
     clademap<double> results;
     viterbi_sum_probabilities(p_tree->find_descendant("AB"), fam, &rec, 24, cache, &lm, results);
-    DOUBLES_EQUAL(0.004033264, results[p_tree->find_descendant("AB")], 0.000001);
+    DOUBLES_EQUAL(0.9002482, results[p_tree->find_descendant("AB")], 0.000001);
 }
 
 TEST(Inference, gamma_model_prune)
