@@ -533,7 +533,7 @@ optimizer::result optimizer::optimize()
 
     if (!quiet)
     {
-        cout << "Optimizer strategy: " << strat->Description() << endl;
+        cout << "\nOptimizer strategy: " << strat->Description() << "\n" << endl;
     }
 
     using clock = std::chrono::system_clock;

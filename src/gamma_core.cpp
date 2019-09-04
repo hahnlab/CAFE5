@@ -400,7 +400,7 @@ void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost, c
     if (_reconstructions.empty())
         return;
 
-    ost << "#NEXUS\nBEGIN TREES;\n";
+    ost << "#nexus\nBEGIN TREES;\n";
     for (size_t i = 0; i<gene_families.size(); ++i)
     {
         auto& gene_family = *gene_families[i];

@@ -38,7 +38,7 @@ float uniform_distribution::compute(size_t val) const
 
     auto result = opt.optimize();
 
-    cout << "Empirical Prior Estimation Result : (" << result.num_iterations << " iterations)" << endl;
+    cout << "\nEmpirical Prior Estimation Result : (" << result.num_iterations << " iterations)" << endl;
     cout << "Poisson lambda: " << result.values[0] << " &  Score: " << result.score << endl;
 
     _poisson_lambda = result.values[0];
