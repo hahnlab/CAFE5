@@ -133,7 +133,7 @@ void event_monitor::Event_Reconstruction_Started(std::string model)
 void event_monitor::Event_Reconstruction_Complete()
 {
 #ifndef SILENT
-    cout << "Done!" << endl;
+    cout << "Done!\n" << endl;
 #endif
 }
 
