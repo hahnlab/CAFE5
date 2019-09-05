@@ -562,7 +562,7 @@ std::ostream& operator<<(std::ostream& ost, const optimizer::result& r)
     }
     else
     {
-        ost << "Completed " << r.num_iterations << " iterations" << endl;
+        ost << "\nCompleted " << r.num_iterations << " iterations" << endl;
         ost << "Time: " << chrono::duration_cast<chrono::hours>(r.duration).count() << "H";
         ost << " " << chrono::duration_cast<chrono::minutes>(r.duration).count() % 60 << "M";
         ost << " " << chrono::duration_cast<chrono::seconds>(r.duration).count() % 60 << "S" << endl;
