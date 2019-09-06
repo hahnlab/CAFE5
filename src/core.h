@@ -161,9 +161,14 @@ std::vector<size_t> build_reference_list(const std::vector<gene_family>& familie
 
 std::vector<model *> build_models(const input_parameters& my_input_parameters, user_data& user_data);
 
+inline std::string filename(std::string base, std::string suffix, std::string extension)
+{
+    return (suffix.empty() ? std::string("results") : suffix) + "/" + base + "." + extension;
+}
+
 inline std::string filename(std::string base, std::string suffix)
 {
-    return (suffix.empty() ? std::string("results") : suffix) + "/" + base + ".txt";
+    return filename(base, suffix, "txt");
 }
 
 std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, const lambda *_lambda, const clade *_p_tree, double _lambda_multiplier, int _max_root_family_size, int _max_family_size);

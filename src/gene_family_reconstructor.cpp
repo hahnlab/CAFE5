@@ -304,13 +304,13 @@ void reconstruction::write_results(std::string model_identifier, std::string out
     auto fn = [&order](const clade* c) { order.push_back(c);  };
     p_tree->apply_reverse_level_order(fn);
 
-    std::ofstream ofst(filename(model_identifier + "_asr", output_prefix));
+    std::ofstream ofst(filename(model_identifier + "_asr", output_prefix, "tre"));
     print_reconstructed_states(ofst, order, families, p_tree);
 
-    std::ofstream counts(filename(model_identifier, output_prefix) + ".count");
+    std::ofstream counts(filename(model_identifier + "_count", output_prefix, "tab"));
     print_node_counts(counts, order, families, p_tree);
 
-    std::ofstream change(filename(model_identifier, output_prefix) + ".change");
+    std::ofstream change(filename(model_identifier + "_change", output_prefix, "tab"));
     print_node_change(change, order, families, p_tree);
 
     std::ofstream family_results(filename(model_identifier + "_family_results", output_prefix));
@@ -319,7 +319,7 @@ void reconstruction::write_results(std::string model_identifier, std::string out
     std::ofstream clade_results(filename(model_identifier + "_clade_results", output_prefix));
     print_increases_decreases_by_clade(clade_results, order, families);
 
-    std::ofstream branch_probabilities_file(filename(model_identifier + "_branch_probabilities", output_prefix));
+    std::ofstream branch_probabilities_file(filename(model_identifier + "_branch_probabilities", output_prefix, "tab"));
     print_branch_probabilities(branch_probabilities_file, order, families, branch_probabilities);
 
     print_additional_data(order, families, output_prefix);
