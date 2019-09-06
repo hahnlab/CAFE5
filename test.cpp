@@ -209,6 +209,24 @@ TEST(Options, simulate_short)
     CHECK_EQUAL(1000, actual.nsims);
 }
 
+TEST(Options, optimizer_long)
+{
+    initialize({ "cafexp", "--optimizer_expansion=0.05", "--optimizer_reflection=3.2" });
+
+    auto actual = read_arguments(argc, values);
+    CHECK_EQUAL(0.05, actual.optimizer_params.neldermead_expansion);
+    CHECK_EQUAL(3.2, actual.optimizer_params.neldermead_reflection);
+}
+
+TEST(Options, optimizer_short)
+{
+    initialize({ "cafexp", "-E", "0.05", "-R", "3.2" });
+
+    auto actual = read_arguments(argc, values);
+    CHECK_EQUAL(0.05, actual.optimizer_params.neldermead_expansion);
+    CHECK_EQUAL(3.2, actual.optimizer_params.neldermead_reflection);
+}
+
 TEST(Options, cannot_have_space_before_optional_parameter)
 {
     try
@@ -1922,8 +1940,8 @@ TEST(Inference, poisson_scorer_optimizes_correct_value)
 {
     poisson_scorer scorer(_user_data.gene_families);
     optimizer opt(&scorer);
-
-    auto result = opt.optimize();
+    optimizer_parameters params;
+    auto result = opt.optimize(params);
 
    // DOUBLES_EQUAL(0.5, result.values[0], 0.0001)
 }

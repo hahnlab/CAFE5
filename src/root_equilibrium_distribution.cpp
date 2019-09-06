@@ -35,8 +35,8 @@ float uniform_distribution::compute(size_t val) const
 {
     poisson_scorer scorer(*p_gene_families);
     optimizer opt(&scorer);
-
-    auto result = opt.optimize();
+    optimizer_parameters params;
+    auto result = opt.optimize(params);
 
     cout << "\nEmpirical Prior Estimation Result : (" << result.num_iterations << " iterations)" << endl;
     cout << "Poisson lambda: " << result.values[0] << " &  Score: " << result.score << endl;

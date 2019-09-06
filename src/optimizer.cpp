@@ -12,7 +12,7 @@
 #include "../config.h"
 
 #include "optimizer.h"
-
+#include "io.h"
 #include "optimizer_scorer.h"
 
 #define PHASED_OPTIMIZER_PHASE2_PRECISION 1e-6
@@ -20,6 +20,21 @@
 using namespace std;
 
 const double MAX_DOUBLE = std::numeric_limits<double>::max();
+
+optimizer_parameters::optimizer_parameters() : neldermead_expansion(2.0), neldermead_reflection(1.0)
+{
+#if defined(OPTIMIZER_STRATEGY_RANGE_WIDELY_THEN_HOME_IN)
+    strategy = RangeWidely;
+#elif defined(OPTIMIZER_STRATEGY_INITIAL_VARIANTS)
+    strategy = InitialVar;
+#elif defined(OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE)
+    strategy = Perturb;
+#elif defined(OPTIMIZER_STRATEGY_SIMILARITY_CUTOFF)
+    strategy = SimilarityCutoff;
+#else
+    strategy = Standard;
+#endif
+}
 
 // TODO: If fminsearch is slow, replacing this with a single array might be more efficient
 void** calloc_2dim(int row, int col, int size)
@@ -359,8 +374,8 @@ public:
     {
         if (explode)
         {
-            pfm->rho = 1.5;				// reflection
-            pfm->chi = 50;				// expansion
+            pfm->rho *= 1.5;				// reflection
+            pfm->chi *= 25;				// expansion
             pfm->delta = 0.4;
         }
         pfm->tolx = 1e-6;
@@ -416,8 +431,8 @@ public:
     {
         if (explode)
         {
-            pfm->rho = 1.5;				// reflection
-            pfm->chi = 50;				// expansion
+            pfm->rho *= 1.5;				// reflection
+            pfm->chi *= 25;				// expansion
             pfm->delta = 0.4;
         }
         pfm->tolf = OPTIMIZER_LOW_PRECISION;
@@ -427,8 +442,8 @@ public:
 
         cout << "\n*****Threshold achieved, move to Phase 2*****\n\n";
         int phase1_iters = pfm->iters;
-        pfm->rho = 1.3;				// reflection
-        pfm->chi = 30;				// expansion
+        pfm->rho *= 1.3;				// reflection
+        pfm->chi *= 15;				// expansion
         pfm->delta = 0.4;
         pfm->tolf = OPTIMIZER_HIGH_PRECISION;
         pfm->tolx = OPTIMIZER_HIGH_PRECISION;
@@ -496,8 +511,8 @@ class RangeWidelyThenHomeIn : public OptimizerStrategy
 public:
     void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial)
     {
-        pfm->rho = 1.5;				// reflection
-        pfm->chi = 50;				// expansion
+        pfm->rho *= 1.5;				// reflection
+        pfm->chi *= 25;				// expansion
         pfm->delta = 0.4;
 
         pfm->tolf = OPTIMIZER_LOW_PRECISION;
@@ -507,8 +522,8 @@ public:
 
         cout << "\n*****Threshold achieved, move to Phase 2*****\n\n";
 
-        pfm->rho = 1;				// reflection
-        pfm->chi = 2;				// expansion
+        pfm->rho /= 1.5;				// reflection
+        pfm->chi /= 25;				// expansion
         pfm->delta = 0.05;
         pfm->tolf = OPTIMIZER_HIGH_PRECISION;
         pfm->tolx = OPTIMIZER_HIGH_PRECISION;
@@ -527,9 +542,9 @@ public:
 };    
 
 
-optimizer::result optimizer::optimize()
+optimizer::result optimizer::optimize(const optimizer_parameters& params)
 {
-    unique_ptr<OptimizerStrategy> strat(get_strategy());
+    unique_ptr<OptimizerStrategy> strat(get_strategy(params));
 
     if (!quiet)
     {
@@ -581,9 +596,12 @@ bool threshold_achieved(FMinSearch* pfm)
     return __fminsearch_checkV(pfm) && __fminsearch_checkF(pfm);
 }
 
-OptimizerStrategy *optimizer::get_strategy()
+OptimizerStrategy *optimizer::get_strategy(const optimizer_parameters& params)
 {
-    switch (strategy)
+    pfm->chi = params.neldermead_expansion;
+    pfm->rho = params.neldermead_reflection;
+
+    switch (params.strategy)
     {
     case RangeWidely:
         return new RangeWidelyThenHomeIn();
@@ -595,6 +613,9 @@ OptimizerStrategy *optimizer::get_strategy()
         return new NelderMeadSimilarityCutoff();
     case Standard:
         return new StandardNelderMead();
+    case NLOpt:
+    case LBFGS:
+        throw std::runtime_error("Optimizer strategy not supported");
     }
 
     return new StandardNelderMead();

@@ -21,6 +21,16 @@
 //! purposes.
 class optimizer_scorer;
 
+//! \ingroup optimizer
+enum strategies { RangeWidely, InitialVar, Perturb, Standard, SimilarityCutoff, NLOpt, LBFGS };
+
+struct optimizer_parameters {
+    double neldermead_expansion;
+    double neldermead_reflection;
+    strategies strategy;
+    optimizer_parameters();
+};
+
 //! @brief Values and score for a potential optimization
 //! \ingroup optimizer
 struct candidate {
@@ -107,7 +117,7 @@ public:
     };
 
     //! The main function that returns optimized values
-    result optimize();
+    result optimize(const optimizer_parameters& params);
 
     bool quiet = false;
 //    bool explode = false;
@@ -119,7 +129,7 @@ public:
     std::vector<double> get_initial_guesses();
 
 
-    OptimizerStrategy* get_strategy();
+    OptimizerStrategy* get_strategy(const optimizer_parameters& params);
 };
 
 //! @brief Base class for the optimizer strategy to be used
@@ -152,20 +162,6 @@ public:
 
     }
 };
-
-//! \ingroup optimizer
-enum strategies { RangeWidely, InitialVar, Perturb, Standard, SimilarityCutoff, NLOpt, LBFGS};
-#if defined(OPTIMIZER_STRATEGY_RANGE_WIDELY_THEN_HOME_IN)
-const strategies strategy = RangeWidely;
-#elif defined(OPTIMIZER_STRATEGY_INITIAL_VARIANTS)
-const strategies strategy = InitialVar;
-#elif defined(OPTIMIZER_STRATEGY_PERTURB_WHEN_CLOSE)
-const strategies strategy = Perturb;
-#elif defined(OPTIMIZER_STRATEGY_SIMILARITY_CUTOFF)
-const strategies strategy = SimilarityCutoff;
-#else
-const strategies strategy = Standard;
-#endif
 
 #define OPTIMIZER_SIMILARITY_CUTOFF_SIZE    12
 

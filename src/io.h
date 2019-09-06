@@ -1,13 +1,15 @@
 #ifndef io_h
 #define io_h
 
-#include "utils.h"
-#include "clade.h"
 #include <string>
 #include <map>
 #include <vector>
 #include <map>
 #include <iosfwd>
+
+#include "utils.h"
+#include "clade.h"
+#include "optimizer.h"
 
 using namespace std;
 
@@ -43,6 +45,8 @@ public:
     bool use_uniform_eq_freq = true;
     bool exclude_zero_root_families = false;
     bool lambda_per_family = false;
+
+    optimizer_parameters optimizer_params;
     bool help = false;
 
     //! Check calls

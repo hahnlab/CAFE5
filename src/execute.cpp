@@ -65,7 +65,7 @@ void estimator::estimate_missing_variables(std::vector<model *>& models, user_da
             for (double epsilon = 0.05; epsilon < .5; epsilon += .1)
             {
                 data.p_error_model->update_single_epsilon(epsilon);
-                results.push_back(opt.optimize());
+                results.push_back(opt.optimize(_user_input.optimizer_params));
             }
             auto best = min_element(results.begin(), results.end(), compare_result);
             scorer->finalize(&best->values[0]);
@@ -73,7 +73,7 @@ void estimator::estimate_missing_variables(std::vector<model *>& models, user_da
         }
         else
         {
-            auto result = opt.optimize();
+            auto result = opt.optimize(_user_input.optimizer_params);
             scorer->finalize(&result.values[0]);
         }
 #ifndef SILENT
