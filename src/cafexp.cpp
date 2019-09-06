@@ -147,7 +147,7 @@ void show_help()
         "   --n_gamma_cats, -k\t\tNumber of gamma rate categories to use. If specified, the Gamma model will be used to run\n \t\t\t\t  calculations, otherwise the Base model will be used.\n"
         "   --fixed_lambda, -l\t\tValue (between 0 and 1) for a single user provided lambda value, otherwise lambda is estimated.\n"
         "   --fixed_multiple_lambdas\tMultiple lambda values, comma separated\n"
-        "   --output_prefix, -o\t\tOutput prefix - added to output file names\n"
+        "   --output_prefix, -o\t\tOutput directory - Name of directory automatically created for output\n"
         "   --poisson, -p\t\tUse a Poisson distribution for the root frequency distribution. Without specifying this, a\n \t\t\t\t  normal distribution will be used. A value can be specified (-p10, or --poisson = 10),\n \t\t\t\t  otherwise the distribution will be estimated from the gene families.\n"
         "   --chisquare_compare, -r\tChi square compare\n"
         "   --simulate, -s\t\tSimulate families. Optionally provide the number of simulations to generate (-s100, or --simulate = 100)\n"
