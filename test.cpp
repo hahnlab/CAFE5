@@ -865,7 +865,7 @@ TEST(Reconstruction, gamma_model_reconstruction__print_reconstructed_states)
     std::ostringstream ost;
     gmr.print_reconstructed_states(ost, order, { &fam }, p_tree.get());
 
-    STRCMP_CONTAINS("#NEXUS", ost.str().c_str());
+    STRCMP_CONTAINS("#nexus", ost.str().c_str());
     STRCMP_CONTAINS("BEGIN TREES;", ost.str().c_str());
     STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8_8:7,(C<2>_5:11,D<3>_6:17)<5>_6_6:23)<6>_7_7;", ost.str().c_str());
     STRCMP_CONTAINS("END;", ost.str().c_str());
@@ -895,7 +895,7 @@ TEST(Reconstruction, base_model_reconstruction__print_reconstructed_states)
 
     ostringstream ost;
     bmr.print_reconstructed_states(ost, order, { &fam }, p_tree.get());
-    STRCMP_CONTAINS("#NEXUS", ost.str().c_str());
+    STRCMP_CONTAINS("#nexus", ost.str().c_str());
     STRCMP_CONTAINS("BEGIN TREES;", ost.str().c_str());
     STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", ost.str().c_str());
     STRCMP_CONTAINS("END;", ost.str().c_str());
