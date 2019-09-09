@@ -25,7 +25,7 @@ input_parameters read_arguments(int argc, char *const argv[])
     int args; // getopt_long returns int or char
     int prev_arg;
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:E:R:l:m:k:a:s::g::p::r:xb", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:l:m:k:a:s::g::p::r:xb", longopts, NULL)) != -1) {
         // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && optarg && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -75,12 +75,9 @@ input_parameters read_arguments(int argc, char *const argv[])
         case 'a':
             my_input_parameters.fixed_alpha = atof(optarg);
             break;
-        case 'E':
-            my_input_parameters.optimizer_params.neldermead_expansion = atof(optarg);
-            break;
-        case 'R':
-            my_input_parameters.optimizer_params.neldermead_reflection = atof(optarg);
-            break;
+            //            case 'n':
+            //		my_input_parameters.nsims = atoi(optarg);
+            //                break;
         case 'f':
             my_input_parameters.rootdist = optarg;
             break;
@@ -155,7 +152,10 @@ void show_help()
         "   --chisquare_compare, -r\tChi square compare\n"
         "   --simulate, -s\t\tSimulate families. Optionally provide the number of simulations to generate (-s100, or --simulate = 100)\n"
         "   --tree, -t\t\t\tTree file path - Required for estimation\n"
-        "   --lambda_tree, -y\t\tLambda tree file path\n";
+        "   --lambda_tree, -y\t\tLambda tree file path\n"
+        "   --filter, -x\t\t\tFilter out gene families that don't exist at the root.\n"
+        "   --Expansion, -E\t\t\tExpansion parameter for Nelder-Mead optimizer.\n"
+        "   --Reflection, -R\t\t\tReflection parameter for Nelder-Mead optimizer.\n";
 
         std::cout << text;
 }
@@ -182,9 +182,9 @@ int cafexp(int argc, char *const argv[]) {
                 return !fam.exists_at_root(data.p_tree);
             });
 
-            cout << "Filtering the number of families from: " << data.gene_families.size();
+            cout << "\nFiltering the number of families from: " << data.gene_families.size();
             data.gene_families.erase(rem, data.gene_families.end());
-            cout << " ==> " << data.gene_families.size() << endl;
+            cout << " ==> " << data.gene_families.size() <<  endl;
 
         }
 
