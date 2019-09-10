@@ -146,7 +146,7 @@ void show_help()
         "   --infile, -i\t\t\tCharacter or gene family file path\n"
         "   --n_gamma_cats, -k\t\tNumber of gamma rate categories to use. If specified, the Gamma model will be used to run\n \t\t\t\t  calculations, otherwise the Base model will be used.\n"
         "   --fixed_lambda, -l\t\tValue (between 0 and 1) for a single user provided lambda value, otherwise lambda is estimated.\n"
-        "   --fixed_multiple_lambdas\tMultiple lambda values, comma separated\n"
+        "   --fixed_multiple_lambdas, -m\tMultiple lambda values, comma separated\n"
         "   --output_prefix, -o\t\tOutput directory - Name of directory automatically created for output\n"
         "   --poisson, -p\t\tUse a Poisson distribution for the root frequency distribution. Without specifying this, a\n \t\t\t\t  normal distribution will be used. A value can be specified (-p10, or --poisson = 10),\n \t\t\t\t  otherwise the distribution will be estimated from the gene families.\n"
         "   --chisquare_compare, -r\tChi square compare\n"
@@ -155,7 +155,9 @@ void show_help()
         "   --lambda_tree, -y\t\tLambda tree file path\n"
         "   --filter, -x\t\t\tFilter out gene families that don't exist at the root.\n"
         "   --Expansion, -E\t\tExpansion parameter for Nelder-Mead optimizer.\n"
-        "   --Reflection, -R\t\tReflection parameter for Nelder-Mead optimizer.\n";
+        "   --Reflection, -R\t\tReflection parameter for Nelder-Mead optimizer.\n"
+        "   --log, -g\t\t\tName of log file to output.\n"
+        "   --lambda_per_family, -b\tEstimate lambda by family (for testing purposes only)\n";
 
         std::cout << text;
 }
