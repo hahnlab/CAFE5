@@ -25,7 +25,7 @@ input_parameters read_arguments(int argc, char *const argv[])
     int args; // getopt_long returns int or char
     int prev_arg;
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:l:m:k:a:s::g::p::r:xb", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:E:R:l:m:k:a:s::g::p::r:xb", longopts, NULL)) != -1) {
         // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && optarg && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -75,9 +75,12 @@ input_parameters read_arguments(int argc, char *const argv[])
         case 'a':
             my_input_parameters.fixed_alpha = atof(optarg);
             break;
-            //            case 'n':
-            //		my_input_parameters.nsims = atoi(optarg);
-            //                break;
+        case 'E':
+            my_input_parameters.optimizer_params.neldermead_expansion = atof(optarg);
+            break;
+        case 'R':
+            my_input_parameters.optimizer_params.neldermead_reflection = atof(optarg);
+            break;
         case 'f':
             my_input_parameters.rootdist = optarg;
             break;
@@ -184,9 +187,9 @@ int cafexp(int argc, char *const argv[]) {
                 return !fam.exists_at_root(data.p_tree);
             });
 
-            cout << "\nFiltering the number of families from: " << data.gene_families.size();
+            cout << "Filtering the number of families from: " << data.gene_families.size();
             data.gene_families.erase(rem, data.gene_families.end());
-            cout << " ==> " << data.gene_families.size() <<  endl;
+            cout << " ==> " << data.gene_families.size() << endl;
 
         }
 
