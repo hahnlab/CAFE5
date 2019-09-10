@@ -154,8 +154,8 @@ void show_help()
         "   --tree, -t\t\t\tTree file path - Required for estimation\n"
         "   --lambda_tree, -y\t\tLambda tree file path\n"
         "   --filter, -x\t\t\tFilter out gene families that don't exist at the root.\n"
-        "   --Expansion, -E\t\t\tExpansion parameter for Nelder-Mead optimizer.\n"
-        "   --Reflection, -R\t\t\tReflection parameter for Nelder-Mead optimizer.\n";
+        "   --Expansion, -E\t\tExpansion parameter for Nelder-Mead optimizer.\n"
+        "   --Reflection, -R\t\tReflection parameter for Nelder-Mead optimizer.\n";
 
         std::cout << text;
 }
