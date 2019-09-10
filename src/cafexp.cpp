@@ -160,7 +160,7 @@ void show_help()
         "   --Expansion, -E\t\tExpansion parameter for Nelder-Mead optimizer.\n"
         "   --Reflection, -R\t\tReflection parameter for Nelder-Mead optimizer.\n"
         "   --log, -g\t\t\tName of log file to output.\n"
-        "   --lambda_per_family, -b\tEstimate lambda by family (for testing purposes only)\n";
+        "   --lambda_per_family, -b\tEstimate lambda by family (for testing purposes only).\n";
 
         std::cout << text;
 }
@@ -187,7 +187,7 @@ int cafexp(int argc, char *const argv[]) {
                 return !fam.exists_at_root(data.p_tree);
             });
 
-            cout << "Filtering the number of families from: " << data.gene_families.size();
+            cout << "\nFiltering the number of families from: " << data.gene_families.size();
             data.gene_families.erase(rem, data.gene_families.end());
             cout << " ==> " << data.gene_families.size() << endl;
 
