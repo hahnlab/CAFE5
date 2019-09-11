@@ -573,7 +573,7 @@ std::ostream& operator<<(std::ostream& ost, const optimizer::result& r)
 {
     if (r.score == -log(0))
     {
-        ost << "Failed to find any reasonable values" << endl;
+        ost << "\nFailed to find reasonable starting values to initialize search." << endl;
     }
     else
     {

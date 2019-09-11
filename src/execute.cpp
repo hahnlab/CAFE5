@@ -173,6 +173,7 @@ void estimator::execute(std::vector<model *>& models)
     }
 }
 
+//Calculate the difference between the Max and Min count for each family, report the 20 families with the largest difference.
 void initialization_failure_advice(std::ostream& ost, const std::vector<gene_family>& families)
 {
     std::vector<std::pair<std::string, int>> m;
@@ -183,10 +184,10 @@ void initialization_failure_advice(std::ostream& ost, const std::vector<gene_fam
     if (m.size() > 20)
         m.resize(20);
 
-    ost << "Families with largest size differentials:\n";
+    ost << "\nFamilies with largest size differentials:\n";
     for (auto& t : m)
         ost << t.first << ": " << t.second << "\n";
-    ost << "An analysis without these families may succeed.\n";
+    ost << "You may want to try removing the top few families with the largest difference\nbetween the max and min counts and then re-run the analysis.\n";
 }
 
 void chisquare_compare::execute(std::vector<model *>&)
