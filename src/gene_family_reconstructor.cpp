@@ -213,6 +213,20 @@ void compute_increase_decrease(clademap<double>& input, clademap<int>& output)
     compute_increase_decrease_t(input, output);
 }
 
+void reconstruction::print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
+{
+    print_family_clade_table(ost, order, gene_families, p_tree, [this, &gene_families](int family_index, const clade* c) {
+        clademap<int> size_deltas = get_increase_decrease(*gene_families[family_index]);
+        auto it = size_deltas.find(c);
+        if (it == size_deltas.end())
+            return string("0");
+        ostringstream ost;
+        ost << showpos << it->second;
+        return ost.str();
+        });
+}
+
+
 void reconstruction::print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const std::vector<double>& pvalues) {
     if (gene_families.size() != pvalues.size())
     {
@@ -297,6 +311,42 @@ void print_branch_probabilities(std::ostream& ost, const cladevector& order, con
     }
 
 }
+
+void reconstruction::print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
+{
+    ost << "#nexus\nBEGIN TREES;\n";
+    for (size_t i = 0; i < gene_families.size(); ++i)
+    {
+        auto& gene_family = *gene_families[i];
+        auto g = [i, gene_family, this](const clade* node) {
+            return get_reconstructed_state(gene_family, node);
+        };
+
+        auto f = [g, order, this](const clade* node) {
+            return newick_node(node, order, g);
+        };
+
+        ost << "  TREE " << gene_family.id() << " = ";
+        p_tree->write_newick(ost, f);
+
+        ost << ';' << endl;
+    }
+
+    write_nexus_extensions(ost);
+    ost << "END;\n";
+}
+
+void reconstruction::print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
+{
+    print_family_clade_table(ost, order, gene_families, p_tree, [this, gene_families](int family_index, const clade* c) {
+        auto& gf = *gene_families[family_index];
+        if (c->is_leaf())
+            return to_string(gf.get_species_size(c->get_taxon_name()));
+        else
+            return to_string(get_node_count(gf, c));
+        });
+}
+
 
 void reconstruction::write_results(std::string model_identifier, std::string output_prefix, const clade *p_tree, const std::vector<const gene_family*>& families, std::vector<double>& pvalues, const std::vector<clademap<double>>& branch_probabilities)
 {

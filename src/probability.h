@@ -41,6 +41,12 @@ void set_weighted_random_family_size(const clade *node, clademap<int> *sizemap, 
 std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, int max_root_family_size, const lambda *p_lambda, const matrix_cache& cache, error_model *p_error_model);
 size_t adjust_for_error_model(size_t c, const error_model *p_error_model);
 
+double pvalue(double v, const vector<double>& conddist);
+
 //! computes a pvalue for each family. Returns a vector of pvalues matching the list of families
 std::vector<double> compute_pvalues(const clade* p_tree, const std::vector<const gene_family*>& families, const lambda* p_lambda, const matrix_cache& cache, int number_of_simulations, int max_family_size, int max_root_family_size);
+
+/// Run a computation on each node of the tree and calculate a pvalue based on the results
+/// compute_func puts its results into clade_storage
+double compute_tree_pvalue(const clade* p_tree, function<void(const clade*)> compute_func, size_t sz, const std::vector<std::vector<double>>& conditional_distribution, clademap<std::vector<double>>& clade_storage);
 #endif

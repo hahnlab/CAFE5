@@ -395,52 +395,33 @@ lambda* gamma_model::get_pvalue_lambda() const
     return _p_lambda->multiply(_lambda_multipliers.back());
 }
 
-void gamma_model_reconstruction::print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family *>& gene_families, const clade *p_tree)
+std::string gamma_model_reconstruction::get_reconstructed_state(const gene_family& gf, const clade* node)
 {
-    if (_reconstructions.empty())
-        return;
+    std::ostringstream ost;
 
-    ost << "#nexus\nBEGIN TREES;\n";
-    for (size_t i = 0; i<gene_families.size(); ++i)
+    if (node->is_leaf())
     {
-        auto& gene_family = *gene_families[i];
-
-        auto g = [i, gene_family, this](const clade *node) {
-            std::ostringstream ost;
-
-            if (node->is_leaf())
-            {
-                ost << gene_family.get_species_size(node->get_taxon_name());
-            }
-            else
-            {
-                for (auto& r : _reconstructions[gene_family.id()].category_reconstruction)
-                {
-                    ost << r.at(node) << '_';
-                }
-                ost << std::round(_reconstructions[gene_family.id()].reconstruction.at(node));
-            }
-            return ost.str();
-        };
-
-        auto f = [order, g, this](const clade *node) {
-            return newick_node(node, order, g);
-        };
-
-        ost << "  TREE " << gene_family.id() << " = ";
-        p_tree->write_newick(ost, f);
-
-        ost << ';' << endl;
+        ost << gf.get_species_size(node->get_taxon_name());
     }
-    ost << "END;\n\n";
+    else
+    {
+        for (auto& r : _reconstructions[gf.id()].category_reconstruction)
+        {
+            ost << r.at(node) << '_';
+        }
+        ost << std::round(_reconstructions[gf.id()].reconstruction.at(node));
+    }
+    return ost.str();
+}
 
+void gamma_model_reconstruction::write_nexus_extensions(std::ostream& ost)
+{
     ost << "BEGIN LAMBDA_MULTIPLIERS;\n";
     for (auto& lm : _lambda_multipliers)
     {
         ost << "  " << lm << ";\n";
     }
-    ost << "END;\n";
-    ost << endl;
+    ost << "END;\n\n";
 }
 
 char gamma_model_reconstruction::get_increase_decrease(const gene_family* gf, const clade* c)
@@ -470,29 +451,17 @@ int gamma_model_reconstruction::get_delta(const gene_family* gf, const clade* c)
     return it->second;
 }
 
-void gamma_model_reconstruction::print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
+int gamma_model_reconstruction::get_node_count(const gene_family& gf, const clade* c)
 {
-    reconstruction::print_family_clade_table(ost, order, gene_families, p_tree, [this, gene_families](int family_index, const clade* c) {
-        auto& gf = *gene_families[family_index];
-        if (c->is_leaf())
-            return to_string(gf.get_species_size(c->get_taxon_name()));
-        else
-            return to_string(int(std::round(_reconstructions[gf.id()].reconstruction.at(c))));
-        });
+    return int(std::round(_reconstructions[gf.id()].reconstruction.at(c)));
 }
 
-void gamma_model_reconstruction::print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
+clademap<int> gamma_model_reconstruction::get_increase_decrease(const gene_family& gf)
 {
-    reconstruction::print_family_clade_table(ost, order, gene_families, p_tree, [this, &gene_families](int family_index, const clade* c) {
-        clademap<int> size_deltas;
-        compute_increase_decrease(_reconstructions[gene_families[family_index]->id()].reconstruction, size_deltas);
-        auto it = size_deltas.find(c);
-        if (it == size_deltas.end())
-            return string("0");
-        ostringstream ost;
-        ost << showpos << it->second;
-        return ost.str();
-        });
+    clademap<int> size_deltas;
+    compute_increase_decrease(_reconstructions[gf.id()].reconstruction, size_deltas);
+
+    return size_deltas;
 }
 
 void gamma_model_reconstruction::print_category_likelihoods(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families)

@@ -177,29 +177,10 @@ void base_model::perturb_lambda()
     simulation_lambda_multiplier = dist(randomizer_engine);
 }
 
-void base_model_reconstruction::print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade *p_tree) {
-    if (_reconstructions.empty())
-        return;
-
-    ost << "#nexus\nBEGIN TREES;\n";
-    for (size_t i = 0; i<gene_families.size(); ++i)
-    {
-        auto& gene_family = *gene_families[i];
-        auto g = [i, gene_family, this](const clade *node) {
-            int value = node->is_leaf() ? gene_family.get_species_size(node->get_taxon_name()) : _reconstructions[gene_family.id()].at(node);
-            return to_string(value);
-        };
-
-        auto f = [g, order, this](const clade *node) {
-            return newick_node(node, order, g);
-        };
-
-        ost << "  TREE " << gene_family.id() << " = ";
-        p_tree->write_newick(ost, f);
-
-        ost << ';' << endl;
-    }
-    ost << "END;\n";
+std::string base_model_reconstruction::get_reconstructed_state(const gene_family&gf, const clade* node)
+{
+    int value = node->is_leaf() ? gf.get_species_size(node->get_taxon_name()) : _reconstructions[gf.id()].at(node);
+    return to_string(value);
 }
 
 int base_model_reconstruction::get_delta(const gene_family* gf, const clade* c)
@@ -224,29 +205,17 @@ char base_model_reconstruction::get_increase_decrease(const gene_family* gf, con
 
 }
 
-void base_model_reconstruction::print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
+int base_model_reconstruction::get_node_count(const gene_family& gf, const clade *c)
 {
-    print_family_clade_table(ost, order, gene_families, p_tree, [this, gene_families](int family_index, const clade* c) {
-        auto& gf = *gene_families[family_index];
-        if (c->is_leaf())
-            return to_string(gf.get_species_size(c->get_taxon_name()));
-        else
-            return to_string(_reconstructions[gf.id()].at(c));
-        });
+    return _reconstructions[gf.id()].at(c);
 }
 
-void base_model_reconstruction::print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
+clademap<int> base_model_reconstruction::get_increase_decrease(const gene_family& gf)
 {
-    print_family_clade_table(ost, order, gene_families, p_tree, [this, &gene_families](int family_index, const clade* c) {
-        clademap<int> size_deltas;
-        compute_increase_decrease(_reconstructions[gene_families[family_index]->id()], size_deltas);
-        auto it = size_deltas.find(c);
-        if (it == size_deltas.end())
-            return string("0");
-        ostringstream ost;
-        ost << showpos << it->second;
-        return ost.str();
-        });
+    clademap<int> size_deltas;
+    compute_increase_decrease(_reconstructions[gf.id()], size_deltas);
+
+    return size_deltas;
 }
 
 int base_model_reconstruction::reconstructed_size(const gene_family& family, const clade* clade) const

@@ -894,14 +894,6 @@ TEST(Reconstruction, gamma_model_reconstruction__print_reconstructed_states)
     STRCMP_CONTAINS("END;", ost.str().c_str());
 }
 
-TEST(Reconstruction, print_reconstructed_states_empty)
-{
-    base_model_reconstruction bmr;
-    ostringstream ost;
-    bmr.print_reconstructed_states(ost, order, { &fam }, p_tree.get());
-    STRCMP_EQUAL("", ost.str().c_str());
-}
-
 TEST(Reconstruction, base_model_reconstruction__print_reconstructed_states)
 {
     base_model_reconstruction bmr;
@@ -1048,6 +1040,55 @@ TEST(Reconstruction, viterbi_sum_probabilities)
     clademap<double> results;
     viterbi_sum_probabilities(p_tree->find_descendant("AB"), fam, &rec, 24, cache, &lm, results);
     DOUBLES_EQUAL(0.9002482, results[p_tree->find_descendant("AB")], 0.000001);
+}
+
+TEST(Reconstruction, pvalues)
+{
+	vector<double> cd(10);
+	double n = 0;
+	std::generate(cd.begin(), cd.end(), [&n]() mutable { return n += 0.01; });
+	DOUBLES_EQUAL(0.5, pvalue(0.05, cd), 0.001);
+	DOUBLES_EQUAL(0.0, pvalue(0.0001, cd), 0.001);
+	DOUBLES_EQUAL(0.9, pvalue(0.099, cd), 0.001);
+}
+
+TEST(Reconstruction, tree_pvalues)
+{
+	vector<vector<double>> cd(10);
+	for (auto& d : cd)
+	{
+		d.resize(10);
+		double n = 0;
+		std::generate(d.begin(), d.end(), [&n]() mutable { return n += 0.01; });
+	}
+	clademap<vector<double>> results;
+	results[p_tree.get()] = { 0, 0, 0 };
+	auto fn = [this, &results](const clade* c) 
+	{ 
+		if (c == p_tree.get())
+			results[c][1] = 0.05;
+	};
+	DOUBLES_EQUAL(0.5, compute_tree_pvalue(p_tree.get(), fn, 10, cd, results), 0.001);
+}
+
+
+TEST(Reconstruction, tree_pvalues_clears_results_before_using)
+{
+	vector<vector<double>> cd(10);
+	for (auto& d : cd)
+	{
+		d.resize(10);
+	}
+	clademap<vector<double>> results;
+	results[p_tree.get()] = { 1, 1, 1 };
+	auto fn = [this, &results](const clade* c)
+	{
+		if (c == p_tree.get())
+			results[c][1] = 0.05;
+	};
+	compute_tree_pvalue(p_tree.get(), fn, 10, cd, results);
+
+	CHECK(vector<double>({0, 0.05, 0}) == results[p_tree.get()]);
 }
 
 TEST(Inference, gamma_model_prune)

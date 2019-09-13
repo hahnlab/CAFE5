@@ -11,6 +11,7 @@ class gamma_bundle;
 class gamma_model_reconstruction : public reconstruction
 {
     const std::vector<double> _lambda_multipliers;
+    virtual void write_nexus_extensions(std::ostream& ost) override;
 
 public:
     gamma_model_reconstruction(const std::vector<double>& lambda_multipliers) :
@@ -20,15 +21,16 @@ public:
 
     virtual int get_delta(const gene_family* gf, const clade* c) override;
     virtual char get_increase_decrease(const gene_family* gf, const clade* c) override;
+    virtual clademap<int> get_increase_decrease(const gene_family& gf) override;
 
     void print_additional_data(const cladevector& order, const std::vector<const gene_family*>& gene_families, std::string output_prefix) override;
 
-    void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family *>& gene_families, const clade *p_tree) override;
-    void print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) override;
-    void print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) override;
+    std::string get_reconstructed_state(const gene_family& gf, const clade* node) override;
+
     void print_category_likelihoods(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families);
 
     int reconstructed_size(const gene_family& family, const clade* clade) const override;
+    int get_node_count(const gene_family& gf, const clade* c) override;
 
     struct gamma_reconstruction {
         std::vector<clademap<int>> category_reconstruction;

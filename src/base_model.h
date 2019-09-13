@@ -56,15 +56,15 @@ public:
 
     }
 
-    void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family *>& gene_families, const clade *p_tree) override;
+    std::string get_reconstructed_state(const gene_family& gf, const clade* node) override;
 
     std::map<string, clademap<int>> _reconstructions;
 
     virtual int get_delta(const gene_family* gf, const clade* c) override;
     virtual char get_increase_decrease(const gene_family* gf, const clade* c) override;
 
-    void print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) override;
-    void print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree) override;
+    virtual clademap<int> get_increase_decrease(const gene_family& gf) override;
+    int get_node_count(const gene_family& gf, const clade* c) override;
 
     int reconstructed_size(const gene_family& family, const clade* clade) const override;
 

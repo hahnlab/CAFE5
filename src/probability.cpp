@@ -384,6 +384,25 @@ double pvalue(double v, const vector<double>& conddist)
     return  idx / (double)conddist.size();
 }
 
+double compute_tree_pvalue(const clade* p_tree, function<void(const clade*)> compute_func, size_t sz, const std::vector<std::vector<double>>& conditional_distribution, clademap<std::vector<double>>& clade_storage)
+{
+	for (auto& it : clade_storage)
+	{
+		fill(it.second.begin(), it.second.end(), 0);
+	}
+	p_tree->apply_reverse_level_order(compute_func);
+
+	double observed_max_likelihood = *std::max_element(clade_storage.at(p_tree).begin(), clade_storage.at(p_tree).end());
+
+	vector<double> pvalues(sz);
+	for (size_t s = 0; s < sz; s++)
+	{
+		pvalues[s] = pvalue(observed_max_likelihood, conditional_distribution[s]);
+	}
+
+	return *max_element(pvalues.begin(), pvalues.end());
+}
+
 //! Compute pvalues for each family based on the given lambda
 vector<double> compute_pvalues(const clade* p_tree, const std::vector<const gene_family*>& families, const lambda* p_lambda, const matrix_cache& cache, int number_of_simulations, int max_family_size, int max_root_family_size)
 {
@@ -401,24 +420,16 @@ vector<double> compute_pvalues(const clade* p_tree, const std::vector<const gene
 
     vector<double> result(families.size());
 
-    std::map<const clade*, std::vector<double> > family_likelihoods;
-    transform(families.begin(), families.end(), result.begin(), [&](const gene_family* gf)
+	std::map<const clade*, std::vector<double> > family_likelihoods;
+
+	auto init_func = [&](const clade* node) { family_likelihoods[node].resize(node->is_root() ? mxr : mx + 1); };
+	p_tree->apply_reverse_level_order(init_func);
+
+	transform(families.begin(), families.end(), result.begin(), [&](const gene_family* gf)
         {
-            auto init_func = [&](const clade* node) { family_likelihoods[node].resize(node->is_root() ? mxr : mx + 1); };
-            p_tree->apply_reverse_level_order(init_func);
+			auto compute_func = [&](const clade* c) { compute_node_probability(c, *gf, NULL, family_likelihoods, mxr, mx, p_lambda, cache); };
 
-            auto compute_func = [&](const clade* c) { compute_node_probability(c, *gf, NULL, family_likelihoods, mxr, mx, p_lambda, cache); };
-            p_tree->apply_reverse_level_order(compute_func);
-
-            double observed_max_likelihood = *std::max_element(family_likelihoods.at(p_tree).begin(), family_likelihoods.at(p_tree).end());
-
-            vector<double> pvalues(mxr);
-            for (int s = 0; s < mxr; s++)
-            {
-                pvalues[s] = pvalue(observed_max_likelihood, conditional_distribution[s]);
-            }
-
-            return *max_element(pvalues.begin(), pvalues.end());
+			return compute_tree_pvalue(p_tree, compute_func, mxr, conditional_distribution, family_likelihoods);
         });
 
 
