@@ -1597,6 +1597,16 @@ TEST(Clade, get_branch_length_throws_from_lambda_tree)
 
 }
 
+TEST(Clade, lambda_tree_root_index_is_1_if_not_specified)
+{
+	ostringstream ost;
+	newick_parser parser(false);
+	parser.newick_string = "(A:1,B:2)";
+	parser.parse_to_lambdas = true;
+	unique_ptr<clade> p_tree(parser.parse_newick());
+	LONGS_EQUAL(1, p_tree->get_lambda_index());
+}
+
 TEST(Clade, exists_at_root_returns_false_if_not_all_children_exist)
 {
     newick_parser parser(false);
