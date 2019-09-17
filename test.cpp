@@ -2154,7 +2154,7 @@ TEST(Inference, initialization_failure_advice_shows_20_families_with_largest_dif
 
     initialization_failure_advice(ost, _user_data.gene_families);
     STRCMP_CONTAINS("Families with largest size differentials:", ost.str().c_str());
-    STRCMP_CONTAINS("An analysis without these families may succeed.", ost.str().c_str());
+    STRCMP_CONTAINS("\nYou may want to try removing the top few families with the largest difference\nbetween the max and min counts and then re-run the analysis.\n", ost.str().c_str());
     STRCMP_CONTAINS("TestFamily2: 52\nTestFamily1: 1", ost.str().c_str());
 }
 
