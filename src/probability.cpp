@@ -7,6 +7,10 @@
 #include <cmath>
 #include <memory>
 
+#ifdef HAVE_VECTOR_EXP
+#include "mkl.h"
+#endif
+
 #include "clade.h"
 #include "probability.h"
 #include "matrix_cache.h"
