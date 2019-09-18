@@ -25,7 +25,6 @@ release: $(BINDIR)/$(TARGET)
 
 
 SOURCES := $(wildcard $(SRCDIR)/*.cpp)
-INCLUDES := -I$(SRCDIR)/LBFGSpp/include
 OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 rm = rm -f
 
