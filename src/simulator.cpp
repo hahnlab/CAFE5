@@ -1,4 +1,6 @@
 #include <numeric>
+#include <algorithm>
+#include <fstream>
 
 #include "../config.h"
 #include "simulator.h"

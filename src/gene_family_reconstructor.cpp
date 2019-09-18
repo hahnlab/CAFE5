@@ -1,5 +1,7 @@
 #include <cmath>
 #include <sstream>
+#include <algorithm>
+#include <fstream>
 
 #include "gene_family_reconstructor.h"
 #include "lambda.h"

@@ -3,6 +3,7 @@
 #include <limits>
 #include <random>
 #include <sstream>
+#include <algorithm>
 
 #include "base_model.h"
 #include "gene_family_reconstructor.h"

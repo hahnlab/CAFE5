@@ -1,6 +1,9 @@
+#include <iostream>
+#include <algorithm>
+#include <regex>
+
 #include "clade.h"
 #include "gene_family.h"
-#include "utils.h"
 #include "io.h"
 
 using namespace std;
@@ -187,4 +190,121 @@ std::set<double> clade::get_branch_lengths() const
     };
     apply_prefix_order(branch_length_func);
     return result;
+}
+
+clade* parse_newick(std::string newick_string, bool parse_to_lambdas) {
+
+	std::regex tokenizer("\\(|\\)|[^\\s\\(\\)\\:\\;\\,]+|\\:[+-]?[0-9]*\\.?[0-9]+([eE][+-]?[0-9]+)?|\\,|\\;");
+
+	auto new_clade = [](clade* p_parent) {
+		clade* p_new_clade = new clade();
+		if (p_parent != NULL) {
+			p_new_clade->_p_parent = p_parent;
+		}
+
+		return p_new_clade;
+	};
+
+	int lp_count, rp_count;
+	sregex_iterator regex_it(newick_string.begin(), newick_string.end(), tokenizer);
+	sregex_iterator regex_it_end;
+	clade* p_root_clade = new_clade(NULL);
+	p_root_clade->is_lambda_clade = parse_to_lambdas; // if user does not provide lambda for root, we need to make the root specifically a lambda clade if we are parsing to lambdas
+
+	clade* p_current_clade = p_root_clade; // current_clade starts as the root
+
+	// The first element below is empty b/c I initialized it in the class body
+	for (; regex_it != regex_it_end; regex_it++) {
+		/* Checking all regex */
+		// cout << regex_it->str() << endl;
+
+		/* Start new clade */
+		if (regex_it->str() == "(") {
+			/* Checking '(' regex */
+			// cout << "Found (: " << regex_it->str() << endl;
+
+			p_current_clade = new_clade(p_current_clade); // move down the tree (towards the present)
+			p_current_clade->get_parent()->add_descendant(p_current_clade); // can't forget to add the now current clade to its parent's descendants vector
+			lp_count++;
+		}
+
+		else if (regex_it->str() == ",") {
+			/* Checking ',' regex */
+			// cout << "Found ,: " << regex_it->str() << endl;
+
+			/* The if block below is for when the newick notation omits the external parentheses, which is legal */
+			if (p_current_clade == p_root_clade) {
+				cout << "Found root!" << endl;
+				p_root_clade = new_clade(NULL);
+				p_current_clade->_p_parent = p_root_clade; // note that get_parent() cannot be used here because get_parent() copies the pointer and it would be the copy that would be assigned p_root_clade... and then the copy would just be thrown away
+				p_current_clade->get_parent()->add_descendant(p_current_clade);
+			}
+
+			/* Start new clade at same level as the current clade */
+			p_current_clade = new_clade(p_current_clade->get_parent()); // move to the side of the tree
+			p_current_clade->get_parent()->add_descendant(p_current_clade); // adding current clade as descendant of its parent
+		}
+
+		/* Finished current clade */
+		else if (regex_it->str() == ")") {
+			/* checking ')' regex */
+			// cout << "Found ): " << regex_it->str() << endl;
+
+			p_current_clade = p_current_clade->get_parent(); // move up the tree (into the past)
+			rp_count++;
+		}
+
+		/* Finished newick string */
+		else if (regex_it->str() == ";") {
+			/* Checking ';' regex */
+			// cout << "Found ;: " << regex_it->str() << endl;
+			break;
+		}
+
+		/* Reading branch length */
+		else if (regex_it->str()[0] == ':') {
+			/* Checking ':' regex */
+			// cout << "Found :: " << regex_it->str() << endl;
+
+			if (parse_to_lambdas)
+			{
+				int ind = strtol(regex_it->str().substr(1).c_str(), nullptr, 0);
+				p_current_clade->_lambda_index = ind;
+				p_current_clade->is_lambda_clade = true;
+			}
+			else
+			{
+				p_current_clade->_branch_length = atof(regex_it->str().substr(1).c_str()); // atof() converts string into float
+				p_current_clade->is_lambda_clade = false;
+			}
+		}
+
+		/* Reading taxon name */
+		else {
+			/* Checking species name string regex */
+			// cout << "Found species name: " << regex_it->str() << endl;
+
+			p_current_clade->_taxon_name = regex_it->str();
+			clade* p_parent = p_current_clade->get_parent();
+			/* If this species has a parent, we need to update the parent's name */
+			if (p_parent != NULL) {
+				p_parent->_name_interior_clade(); // update parent's name, _name_interior_clade() is a void method
+			}
+		}
+	}
+
+	// since user is not required to set a lambda index for the root, go ahead and assign it to the first lambda
+	// so the rest of the code doesn't get confused
+	if (p_root_clade->is_lambda_clade)
+	{
+		if (p_root_clade->get_lambda_index() == 0)
+			p_root_clade->_lambda_index = 1;
+
+		auto validator = [](const clade* c) {
+			if (c->_lambda_index < 1)
+				throw std::runtime_error("Invalid lambda index set for " + c->get_taxon_name());
+		};
+		p_root_clade->apply_reverse_level_order(validator);
+	}
+	return p_root_clade;
 }

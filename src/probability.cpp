@@ -7,7 +7,6 @@
 #include <cmath>
 #include <memory>
 
-#include "utils.h" // for gene_family class
 #include "clade.h"
 #include "probability.h"
 #include "matrix_cache.h"

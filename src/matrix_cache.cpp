@@ -1,6 +1,8 @@
 #include <algorithm>
 #include <omp.h>
 #include <iostream>
+#include <algorithm>
+#include <sstream>
 
 #include "matrix_cache.h"
 #include "probability.h"

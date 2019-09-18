@@ -7,7 +7,6 @@
 #include <map>
 #include <iosfwd>
 
-#include "utils.h"
 #include "clade.h"
 #include "optimizer.h"
 
@@ -87,4 +86,7 @@ public:
   void update_single_epsilon(double new_epsilon);
 
 };
+
+std::vector<std::string> tokenize_str(std::string some_string, char some_delim);
+
 #endif

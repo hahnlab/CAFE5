@@ -1,5 +1,7 @@
 #include <map>
 #include <random>
+#include <algorithm>
+#include <fstream>
 
 #include <getopt.h>
 

@@ -3,7 +3,6 @@
 #include <random>
 
 #include "poisson.h"
-#include "utils.h"
 #include "clade.h"
 #include "optimizer.h"
 #include "probability.h"

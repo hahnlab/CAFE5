@@ -4,6 +4,9 @@
 #include <cmath>
 #include <random>
 #include <sstream>
+#include <iterator>
+#include <algorithm>
+#include <fstream>
 
 #include "gamma_core.h"
 #include "gamma.h"

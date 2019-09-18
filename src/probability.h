@@ -7,7 +7,6 @@
 
 #include <iostream>
 #include <set>
-#include "utils.h"
 #include "io.h"
 #include "lambda.h"
 

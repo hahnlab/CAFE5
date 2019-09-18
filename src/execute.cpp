@@ -1,5 +1,8 @@
 #include <cmath>
 #include <set>
+#include <fstream>
+#include <algorithm>
+#include <iterator>
 
 #include <sys/stat.h>
 

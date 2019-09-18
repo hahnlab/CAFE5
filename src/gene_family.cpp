@@ -2,10 +2,20 @@
 #include <set>
 
 #include "gene_family.h"
-#include "utils.h"
 #include "clade.h"
 
 using namespace std;
+
+// these functions are intended to work with maps (key, value pairs)
+template <typename T, typename U>
+bool max_key(const std::pair<T, U>& p1, const std::pair<T, U>& p2) {
+	return p1.first < p2.first;
+}
+
+template <typename T, typename U>
+bool max_value(const std::pair<T, U>& p1, const std::pair<T, U>& p2) {
+	return p1.second < p2.second;
+}
 
 //! Find and set _max_family_size and _parsed_max_family_size for this family
 /*!

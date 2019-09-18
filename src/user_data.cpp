@@ -2,6 +2,8 @@
 
 #include <fstream>
 #include <cmath>
+#include <algorithm>
+#include <sstream>
 
 #include "io.h"
 #include "lambda.h"

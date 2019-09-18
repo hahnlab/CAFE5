@@ -8,9 +8,9 @@
 #include <numeric>
 #include <cassert>
 #include <cmath>
+#include <algorithm>
 
 #include "io.h"
-#include "utils.h"
 #include "gene_family.h"
 
 using namespace std;
@@ -94,13 +94,6 @@ void input_parameters::check_input() {
   This function is called by CAFExp's main function when "--tree"/"-t" is specified
 */
 clade* read_tree(string tree_file_path, bool lambda_tree) {
-    newick_parser parser(false);
-    
-    // if this function is used to read lambda tree instead of phylogenetic tree
-    if (lambda_tree) {
-       parser.parse_to_lambdas = true;
-    }
-    
     ifstream tree_file(tree_file_path.c_str()); // the constructor for ifstream takes const char*, not string, so we need to use c_str()
     if (!tree_file.is_open())
     {
@@ -114,8 +107,7 @@ clade* read_tree(string tree_file_path, bool lambda_tree) {
     }
     tree_file.close();
     
-    parser.newick_string = line;
-    clade *p_tree = parser.parse_newick();
+    clade *p_tree = parse_newick(line, lambda_tree);
     
     return p_tree;
 }
@@ -356,4 +348,17 @@ void read_error_model_file(std::istream& error_model_file, error_model *p_error_
         // std::vector<std::string> tokens = tokenize_str(line, '\t'); 
 }
 /* END: Reading in error model data */
+
+//! Split string into vector of strings given delimiter
+std::vector<std::string> tokenize_str(std::string some_string, char some_delim) {
+	std::istringstream ist(some_string);
+	std::string token;
+	std::vector<std::string> tokens;
+
+	while (std::getline(ist, token, some_delim)) {
+		tokens.push_back(token);
+	}
+
+	return tokens;
+}
 

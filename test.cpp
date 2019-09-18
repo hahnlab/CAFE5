@@ -4,6 +4,9 @@
 #include <getopt.h>
 #include <sstream>
 #include <random>
+#include <algorithm>
+
+#include <string.h>
 
 #include "src/io.h"
 #include "src/core.h"
@@ -90,9 +93,7 @@ TEST_GROUP(Inference)
     void setup()
     {
         _p_lambda = new single_lambda(0.05);
-        newick_parser parser(false);
-        parser.newick_string = "(A:1,B:1);";
-        _user_data.p_tree = parser.parse_newick();
+        _user_data.p_tree = parse_newick("(A:1,B:1);");
         _user_data.p_lambda = _p_lambda;
         _user_data.max_family_size = 10;
         _user_data.max_root_family_size = 8;
@@ -378,9 +379,7 @@ TEST(GeneFamilies, read_gene_families_reads_simulation_files)
     std::string str = "#A\n#B\n#AB\n#CD\n#C\n#ABCD\n#D\n35\t36\t35\t35\t36\t34\t34\t1\n98\t96\t97\t98\t98\t98\t98\t1\n";
     std::istringstream ist(str);
 
-    newick_parser parser(false);
-    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-    clade *p_tree = parser.parse_newick();
+    clade *p_tree = parse_newick("((A:1,B:1):1,(C:1,D:1):1);");
 
     std::vector<gene_family> families;
     read_gene_families(ist, p_tree, &families);
@@ -578,9 +577,7 @@ TEST(Probability, probability_of_matrix)
 
 TEST(Probability, get_random_probabilities)
 {
-    newick_parser parser(false);
-    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
 
     single_lambda lam(0.05);
     matrix_cache cache(15);
@@ -627,9 +624,7 @@ TEST(Inference, base_optimizer_guesses_lambda_and_unique_epsilons)
 
 TEST(Inference, gamma_model_creates__gamma_lambda_optimizer_if_nothing_provided)
 {
-    newick_parser parser(false);
-    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
 
     gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, -1, NULL);
     user_data data;
@@ -643,9 +638,7 @@ TEST(Inference, gamma_model_creates__gamma_lambda_optimizer_if_nothing_provided)
 
 TEST(Inference, gamma_model__creates__lambda_optimizer__if_alpha_provided)
 {
-    newick_parser parser(false);
-    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
 
     gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, 0.25, NULL);
 
@@ -660,9 +653,7 @@ TEST(Inference, gamma_model__creates__lambda_optimizer__if_alpha_provided)
 
 TEST(Inference, gamma_model__creates__gamma_optimizer__if_lambda_provided)
 {
-    newick_parser parser(false);
-    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
 
     gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, -1, NULL);
 
@@ -680,9 +671,7 @@ TEST(Inference, gamma_model__creates__gamma_optimizer__if_lambda_provided)
 
 TEST(Inference, gamma_model_creates_nothing_if_lambda_and_alpha_provided)
 {
-    newick_parser parser(false);
-    parser.newick_string = "((A:1,B:1):1,(C:1,D:1):1);";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
 
     gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, .25, NULL);
 
@@ -719,9 +708,7 @@ TEST(Inference, gamma_optimizer__creates_single_initial_guess)
 
 TEST(Inference, base_model_reconstruction)
 {
-    newick_parser parser(false);
-    parser.newick_string = "((A:1,B:1):1";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1"));
     single_lambda sl(0.05);
 
     std::vector<gene_family> families(1);
@@ -745,9 +732,7 @@ TEST(Inference, base_model_reconstruction)
 
 TEST(Inference, branch_length_finder)
 {
-    newick_parser parser(false);
-    parser.newick_string = "((A:1,B:3):7,(C:11,D:17):23);";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("((A:1,B:3):7,(C:11,D:17):23);"));
     auto actual = p_tree->get_branch_lengths();
     auto expected = set<double>{ 1, 3, 7, 11, 17, 23 };
     CHECK(actual == expected);
@@ -758,9 +743,7 @@ TEST(Inference, increase_decrease)
     clademap<int> family_size;
     clademap<int> result;
 
-    newick_parser parser(false);
-    parser.newick_string = "((A:1,B:3):7,(C:11,D:17):23);";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("((A:1,B:3):7,(C:11,D:17):23);"));
 
      auto a = p_tree->find_descendant("A");
      auto b = p_tree->find_descendant("B");
@@ -795,9 +778,7 @@ TEST_GROUP(Reconstruction)
 
     void setup()
     {
-        newick_parser parser(false);
-        parser.newick_string = "((A:1,B:3):7,(C:11,D:17):23);";
-        p_tree.reset(parser.parse_newick());
+        p_tree.reset(parse_newick("((A:1,B:3):7,(C:11,D:17):23);"));
 
         fam.set_id("Family5");
         fam.set_species_size("A", 11);
@@ -940,12 +921,10 @@ TEST(Reconstruction, reconstruction_process_internal_node)
 
 TEST(Reconstruction, reconstruct_gene_family)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
     gene_family fam;
     fam.set_species_size("A", 3);
     fam.set_species_size("B", 6);
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
     single_lambda lambda(0.005);
     matrix_cache cache(11);
 
@@ -1093,12 +1072,10 @@ TEST(Reconstruction, tree_pvalues_clears_results_before_using)
 
 TEST(Inference, gamma_model_prune)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
     vector<gene_family> families(1);
     families[0].set_species_size("A", 3);
     families[0].set_species_size("B", 6);
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
     single_lambda lambda(0.005);
 
     root_distribution rd;
@@ -1121,12 +1098,10 @@ TEST(Inference, gamma_model_prune)
 
 TEST(Inference, gamma_model_prune_returns_false_if_saturated)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
     vector<gene_family> families(1);
     families[0].set_species_size("A", 3);
     families[0].set_species_size("B", 6);
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
     single_lambda lambda(0.9);
 
     root_distribution rd;
@@ -1408,12 +1383,10 @@ TEST(Inference, build_reference_list)
 TEST(Inference, prune)
 {
     ostringstream ost;
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
     gene_family fam;
     fam.set_species_size("A", 3);
     fam.set_species_size("B", 6);
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     single_lambda lambda(0.03);
     matrix_cache cache(21);
@@ -1433,13 +1406,11 @@ TEST(Inference, prune)
 TEST(Inference, likelihood_computer_sets_leaf_nodes_correctly)
 {
     ostringstream ost;
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
     gene_family family;
     family.set_species_size("A", 3);
     family.set_species_size("B", 6);
 
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     single_lambda lambda(0.03);
 
@@ -1479,13 +1450,11 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_correctly)
 TEST(Inference, likelihood_computer_sets_root_nodes_correctly)
 {
     ostringstream ost;
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
     gene_family family;
     family.set_species_size("A", 3);
     family.set_species_size("B", 6);
 
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     single_lambda lambda(0.03);
 
@@ -1517,14 +1486,12 @@ TEST(Inference, likelihood_computer_sets_root_nodes_correctly)
 TEST(Inference, likelihood_computer_sets_leaf_nodes_from_error_model_if_provided)
 {
     ostringstream ost;
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
 
     gene_family family;
     family.set_species_size("A", 3);
     family.set_species_size("B", 6);
 
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     single_lambda lambda(0.03);
 
@@ -1559,9 +1526,7 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_from_error_model_if_provided
 TEST(Clade, get_lambda_index_throws_from_branch_length_tree)
 {
     ostringstream ost;
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     LONGS_EQUAL(7, p_tree->get_branch_length());
     try
@@ -1579,10 +1544,7 @@ TEST(Clade, get_lambda_index_throws_from_branch_length_tree)
 TEST(Clade, get_branch_length_throws_from_lambda_tree)
 {
     ostringstream ost;
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    parser.parse_to_lambdas = true;
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7", true));
     LONGS_EQUAL(7, p_tree->get_lambda_index());
 
     try
@@ -1600,18 +1562,13 @@ TEST(Clade, get_branch_length_throws_from_lambda_tree)
 TEST(Clade, lambda_tree_root_index_is_1_if_not_specified)
 {
 	ostringstream ost;
-	newick_parser parser(false);
-	parser.newick_string = "(A:1,B:2)";
-	parser.parse_to_lambdas = true;
-	unique_ptr<clade> p_tree(parser.parse_newick());
+	unique_ptr<clade> p_tree(parse_newick("(A:1,B:2)", true));
 	LONGS_EQUAL(1, p_tree->get_lambda_index());
 }
 
 TEST(Clade, exists_at_root_returns_false_if_not_all_children_exist)
 {
-    newick_parser parser(false);
-    parser.newick_string= " ((((cat:68.710687,horse:68.710687):4.566771,cow:73.277458):20.722542,(((((chimp:4.444178,human:4.444178):6.682660,orang:11.126837):2.285866,gibbon:13.412704):7.211528,(macaque:4.567239,baboon:4.567239):16.056993):16.060691,marmoset:36.684923):57.315077)mancat:38.738115,(rat:36.302467,mouse:36.302467):96.435648)";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick(" ((((cat:68.710687,horse:68.710687):4.566771,cow:73.277458):20.722542,(((((chimp:4.444178,human:4.444178):6.682660,orang:11.126837):2.285866,gibbon:13.412704):7.211528,(macaque:4.567239,baboon:4.567239):16.056993):16.060691,marmoset:36.684923):57.315077)mancat:38.738115,(rat:36.302467,mouse:36.302467):96.435648)"));
 
     istringstream ist(
     "Desc\tFamily ID\tcat\thorse\tcow\tchimp\thuman\torang\tgibbon\tmacaque\tbaboon\tmarmoset\trat\tmouse\n"
@@ -1626,9 +1583,7 @@ TEST(Clade, exists_at_root_returns_false_if_not_all_children_exist)
 
 TEST(Clade, exists_at_root_returns_true_if_all_children_exist)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     gene_family family;
     family.set_species_size("A", 3);
@@ -1637,12 +1592,32 @@ TEST(Clade, exists_at_root_returns_true_if_all_children_exist)
     CHECK(family.exists_at_root(p_tree.get()));
 }
 
+TEST(Clade, parse_newick_throws_exception_for_invalid_lambdas_in_tree)
+{
+	try
+	{
+		parse_newick("(A:1,B:0):2", true);
+		CHECK(false);
+	}
+	catch (std::runtime_error& r)
+	{
+		STRCMP_EQUAL("Invalid lambda index set for B", r.what());
+	}
+	try
+	{
+		parse_newick("(A:-1,B:2)", true);
+		CHECK(false);
+	}
+	catch (std::runtime_error& r)
+	{
+		STRCMP_EQUAL("Invalid lambda index set for A", r.what());
+	}
+}
+
 TEST(Inference, multiple_lambda_returns_correct_values)
 {
     ostringstream ost;
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     map<string, int> key;
     key["A"] = 5;
@@ -1693,9 +1668,7 @@ TEST(Simulation, select_root_size_returns_less_than_100_without_rootdist)
 
 TEST(Simulation, print_process_prints_in_order)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     std::ostringstream ost;
     trial t;
@@ -1718,9 +1691,7 @@ TEST(Simulation, print_process_prints_in_order)
 
 TEST(Simulation, print_process_can_print_without_internal_nodes)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     std::ostringstream ost;
     trial t;
@@ -1750,10 +1721,8 @@ TEST(Simulation, gamma_model_get_simulation_lambda_selects_random_multiplier_bas
 
 TEST(Simulation, create_trial)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
     single_lambda lam(0.25);
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     user_data data;
     data.p_tree = p_tree.get();
@@ -1785,9 +1754,7 @@ TEST(Inference, model_vitals)
 
 TEST(Reconstruction, base_model_print_increases_decreases_by_family)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     ostringstream empty;
     cladevector order{ p_tree->find_descendant("A"), 
@@ -1812,9 +1779,7 @@ TEST(Reconstruction, base_model_print_increases_decreases_by_family)
 
 TEST(Reconstruction, gamma_model_print_increases_decreases_by_family)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     ostringstream empty;
     cladevector order{ p_tree->find_descendant("A"),
@@ -1847,9 +1812,7 @@ TEST(Reconstruction, foo)
 
 TEST(Inference, gamma_model_print_increases_decreases_by_clade)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     cladevector order{ p_tree->find_descendant("A"),
         p_tree->find_descendant("B"),
@@ -1881,9 +1844,7 @@ TEST(Inference, gamma_model_print_increases_decreases_by_clade)
 
 TEST(Inference, base_model_print_increases_decreases_by_clade)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     clade invalid;
     cladevector order{ p_tree->find_descendant("A"),
@@ -1951,9 +1912,7 @@ TEST(Inference, lambda_per_family)
     input_parameters params;
     params.lambda_per_family = true;
 
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
     ud.p_tree = p_tree.get();
     estimator v(ud, params);
 
@@ -2160,10 +2119,8 @@ TEST(Inference, initialization_failure_advice_shows_20_families_with_largest_dif
 
 TEST(Simulation, base_prepare_matrices_for_simulation_creates_matrix_for_each_branch)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
     single_lambda lam(0.05);
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
     base_model b(&lam, p_tree.get(), NULL, 0, 0, NULL);
     matrix_cache m(25);
     b.prepare_matrices_for_simulation(m);
@@ -2172,10 +2129,8 @@ TEST(Simulation, base_prepare_matrices_for_simulation_creates_matrix_for_each_br
 
 TEST(Simulation, base_prepare_matrices_for_simulation_uses_perturbed_lambda)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
     single_lambda lam(0.05);
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
     base_model b(&lam, p_tree.get(), NULL, 0, 0, NULL);
     b.perturb_lambda();
     matrix_cache m(25);
@@ -2193,10 +2148,8 @@ TEST(Simulation, base_prepare_matrices_for_simulation_uses_perturbed_lambda)
 
 TEST(Simulation, gamma_prepare_matrices_for_simulation_creates_matrix_for_each_branch_and_category)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
     single_lambda lam(0.05);
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
     gamma_model g(&lam, p_tree.get(), NULL, 0, 0, 2, 0.5, NULL);
     matrix_cache m(25);
     g.prepare_matrices_for_simulation(m);
@@ -2205,9 +2158,7 @@ TEST(Simulation, gamma_prepare_matrices_for_simulation_creates_matrix_for_each_b
 
 TEST(Simulation, set_random_node_size_without_error_model)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     single_lambda lambda(0.05);
     trial t;
@@ -2226,9 +2177,7 @@ TEST(Simulation, set_random_node_size_without_error_model)
 
 TEST(Simulation, set_random_node_size_with_error_model)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
     single_lambda lambda(0.05);
     trial t;
@@ -2311,10 +2260,8 @@ TEST(Simulation, rootdist_max_and_sum)
 
 TEST(Simulation, simulate_processes)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
     single_lambda lam(0.05);
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
     mock_model m;
     m.set_tree(p_tree.get());
     m.set_lambda(&lam);
@@ -2334,10 +2281,8 @@ TEST(Simulation, simulate_processes)
 
 TEST(Simulation, simulate_processes_uses_rootdist_if_available)
 {
-    newick_parser parser(false);
-    parser.newick_string = "(A:1,B:3):7";
     single_lambda lam(0.05);
-    unique_ptr<clade> p_tree(parser.parse_newick());
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
     mock_model m;
     m.set_tree(p_tree.get());
     m.set_lambda(&lam);
