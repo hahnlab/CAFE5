@@ -1,8 +1,0 @@
-l	-lnL	eqfreq
-0.005	315160	Unif
-0.006	311389	Unif
-0.007	309663	Unif
-0.008	309186	Unif
-0.009	309504	Unif
-0.01	310340	Unif
-0.011	inf	Unif
