@@ -192,6 +192,81 @@ std::set<double> clade::get_branch_lengths() const
     return result;
 }
 
+void clade::validate_lambda_tree(const clade* p_lambda_tree) const
+{
+	auto g = [](set<string>& s, const clade* c) {
+		s.insert(c->get_taxon_name());
+	};
+	set<string> my_taxa;
+	apply_prefix_order([g, &my_taxa](const clade* c) { g(my_taxa, c);  });
+
+	set<string> lambda_taxa;
+	p_lambda_tree->apply_prefix_order([g, &lambda_taxa](const clade* c) { g(lambda_taxa, c);  });
+
+	if (my_taxa != lambda_taxa)
+	{
+		throw std::runtime_error("The lambda tree structure does not match that of the tree");
+	}
+}
+
+void clade::apply_to_descendants(std::function<void(const clade*)> f) const {
+
+	// apply f to direct descendants
+	// could replace with apply_prefix_order for functions f that recur through descendants
+	//for_each(_descendants.begin(), _descendants.end(), f); // for_each from std
+	// for_each apparently passes by value
+	for (auto desc : _descendants)
+		f(desc);
+}
+
+//! apply the functor f to this clade and also to all descendants.
+void clade::apply_prefix_order(std::function<void(const clade*)> f) const {
+	std::stack<const clade*> stack;
+	stack.push(this);
+	while (!stack.empty())
+	{
+		auto c = stack.top();
+		stack.pop();
+
+		// Moving from right to left in the tree because that's what CAFE does
+		auto it = c->_descendants.rbegin();
+		for (; it != c->_descendants.rend(); ++it)
+		{
+			stack.push(*it);
+		}
+		f(c);
+	}
+}
+
+//! apply the functor f to this clade and also to all descendants, by starting
+// with the leaf nodes and moving up the tree
+void clade::apply_reverse_level_order(std::function<void(const clade*)> f) const {
+	std::stack<const clade*> stack;
+	std::queue<const clade*> q;
+
+	q.push(this);
+	while (!q.empty())
+	{
+		/* Dequeue node and make it current */
+		auto current = q.front();
+		q.pop();
+		stack.push(current);
+
+		for (auto i : current->_descendants)
+		{
+			/* Enqueue child */
+			q.push(i);
+		}
+	}
+
+	while (!stack.empty())
+	{
+		auto current = stack.top();
+		stack.pop();
+		f(current);
+	}
+}
+
 clade* parse_newick(std::string newick_string, bool parse_to_lambdas) {
 
 	std::regex tokenizer("\\(|\\)|[^\\s\\(\\)\\:\\;\\,]+|\\:[+-]?[0-9]*\\.?[0-9]+([eE][+-]?[0-9]+)?|\\,|\\;");
@@ -205,7 +280,7 @@ clade* parse_newick(std::string newick_string, bool parse_to_lambdas) {
 		return p_new_clade;
 	};
 
-	int lp_count, rp_count;
+	int lp_count(0), rp_count(0);
 	sregex_iterator regex_it(newick_string.begin(), newick_string.end(), tokenizer);
 	sregex_iterator regex_it_end;
 	clade* p_root_clade = new_clade(NULL);

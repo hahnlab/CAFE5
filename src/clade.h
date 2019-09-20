@@ -80,65 +80,19 @@ public:
     //! Return a unique list of all brnach lengths for this clade and its descendants
     std::set<double> get_branch_lengths() const;
 
-    //! apply the functor f to direct descendants. Does not automatically recurse.
-    template <typename func> void apply_to_descendants(func& f) const {
+	/// Checks that the list of node names of the lambda tree matches this one
+	/// throw an exception if not
+	void validate_lambda_tree(const clade* p_lambda_tree) const;
 
-        // apply f to direct descendants
-        // could replace with apply_prefix_order for functions f that recur through descendants
-        //for_each(_descendants.begin(), _descendants.end(), f); // for_each from std
-        // for_each apparently passes by value
-        for (auto desc : _descendants)
-            f(desc);
-    }
+    //! apply the function f to direct descendants. Does not automatically recurse.
+	void apply_to_descendants(std::function<void(const clade*)> f) const;
 
-    //! apply the functor f to this clade and also to all descendants.
-    template <typename func> void apply_prefix_order(func& f) const { // f must be passed by reference to avoid copies being made of f 
-      // having a copy made would mean any state variables of f would be lost
-        std::stack<const clade *> stack;
-        stack.push(this);
-        while (!stack.empty())
-        {
-            auto c = stack.top();
-            stack.pop();
+    //! apply the function f to this clade and also to all descendants.
+	void apply_prefix_order(std::function<void(const clade*)> f) const;
 
-            // Moving from right to left in the tree because that's what CAFE does
-            auto it = c->_descendants.rbegin();
-            for (; it != c->_descendants.rend(); ++it)
-            {
-                stack.push(*it);
-            }
-            f(c);
-        }
-    }
-
-    //! apply the functor f to this clade and also to all descendants, by starting
+    //! apply the function f to this clade and also to all descendants, by starting
     // with the leaf nodes and moving up the tree
-    template <typename func> void apply_reverse_level_order(func& f) const {
-        std::stack<const clade *> stack;
-        std::queue<const clade *> q;
-
-        q.push(this);
-        while (!q.empty())
-        {
-            /* Dequeue node and make it current */
-            auto current = q.front();
-            q.pop();
-            stack.push(current);
-
-            for (auto i : current->_descendants)
-            {
-                /* Enqueue child */
-                q.push(i);
-            }
-        }
-
-        while (!stack.empty())
-        {
-            auto current = stack.top();
-            stack.pop();
-            f(current);
-        }
-    }
+	void apply_reverse_level_order(std::function<void(const clade*)> f) const;
 };
 
 template<typename T>

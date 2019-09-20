@@ -127,6 +127,7 @@ void user_data::read_datafiles(const input_parameters& my_input_parameters)
     /* -y */
     if (!my_input_parameters.lambda_tree_file_path.empty()) {
         p_lambda_tree = read_lambda_tree(my_input_parameters);
+		p_tree->validate_lambda_tree(p_lambda_tree);
     }
 
     /* -l/-m (in the absence of -l, estimate) */
