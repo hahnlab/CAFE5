@@ -9,8 +9,6 @@
 #include <chrono>
 #include <memory>
 
-#include "../config.h"
-
 #include "optimizer.h"
 #include "io.h"
 #include "optimizer_scorer.h"

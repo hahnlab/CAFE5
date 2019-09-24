@@ -6,7 +6,6 @@
 
 #include "matrix_cache.h"
 #include "probability.h"
-#include "../config.h"
 
 #ifdef HAVE_BLAS
 #ifdef HAVE_OPENBLAS

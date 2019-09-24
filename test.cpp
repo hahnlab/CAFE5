@@ -24,6 +24,8 @@
 #include "src/poisson.h"
 #include "src/optimizer.h"
 
+#define CPPUTEST_MEM_LEAK_DETECTION_DISABLED
+
 // these need to be at the end to stop weird STL errors
 #include "CppUTest/TestHarness.h"
 #include "CppUTest/CommandLineTestRunner.h"

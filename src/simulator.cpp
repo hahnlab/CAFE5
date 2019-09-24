@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <fstream>
 
-#include "../config.h"
 #include "simulator.h"
 #include "user_data.h"
 #include "core.h"

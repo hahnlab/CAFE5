@@ -8,8 +8,6 @@
 #include <functional>
 #include <deque>
 
-#include "../config.h"
-
 //! \defgroup optimizer Optimization
 //! @brief Classes and functions designed to calculate optimal values for various parameters
 //!

@@ -2,7 +2,6 @@
 #include <iostream>
 #include <random>
 
-#include "../config.h"
 #include "optimizer_scorer.h"
 #include "clade.h"
 #include "lambda.h"
