@@ -235,8 +235,10 @@ Parameters
 
 -   **--simulate, -s**
 
-    Simulate families. Optionally provide the number of simulations to
-    generate (-s100, or --simulate=100)
+    Simulate families. Either provide an argument of the number of families
+	to simulate (-s100, or --simulate=100) or provide a rootdist file giving a set
+	of root family sizes to match. Without such a file, the families will be generated
+	with root sizes selected randomly between 0 and 100.
 
 -   **--tree, -t**
 
@@ -432,10 +434,9 @@ Examples
 Lambda Search
 -------------
 
-Search for a single lambda value using the Newick tree of mammals in the
-Samples folder, and the family files from the CAFE tutorial:
+Search for a single lambda value using the mammal phylogeny and gene family set in the Examples directory:
 
-    cafexp -t examples/mammals_tree.txt -i data/filtered_cafe_input.txt -p
+    ../bin/cafexp -t mammals_tree.txt -i mammal_gene_families.txt -p -o singlelambda
 
 In earlier versions, the following script would have returned the same
 values:
@@ -447,10 +448,9 @@ values:
 Lambda Search with Multiple Lambdas
 -----------------------------------
 
-Search for multiple lambda values using the Newick tree of mammals in
-the Samples folder, and the family files from the CAFE tutorial:
+Search for separate lambda values for the chimp/human clade and the rest of the tree separately, using the mammal phylogeny and gene family set in the Examples directory:
 
-    cafexp -t data/mammals_integral_tree.txt -i data/filtered_cafe_input.txt -p -y examples/mammals_lambda_tree.txt
+    ../bin/cafexp -t mammals_tree.txt -i mammal_gene_families.txt -p -y chimphuman_separate_lambda.txt -o doublelambda
 
 In earlier versions, the following script would have returned the same
 values:

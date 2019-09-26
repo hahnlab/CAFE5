@@ -105,9 +105,11 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
 {
     cout << "Simulating with " << models.size() << " model(s)" << endl;
 
+	if (data.p_tree == nullptr)
+		throw std::runtime_error("No tree specified for simulations");
+
     std::vector<const clade *> order;
-    auto fn = [&order](const clade *c) { order.push_back(c); };
-    data.p_tree->apply_reverse_level_order(fn);
+    data.p_tree->apply_reverse_level_order([&order](const clade* c) { order.push_back(c); });
 
     for (auto p_model : models) {
 
