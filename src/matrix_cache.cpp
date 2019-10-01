@@ -120,45 +120,48 @@ bool matrix_cache::is_saturated(double branch_length, double lambda)
 
 void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, const std::set<double>& branch_lengths)
 {
-    // build a list of required matrices
-    vector<matrix_cache_key> keys;
-    for (double lambda : lambdas)
-    {
-        for (double branch_length : branch_lengths)
-        {
-            matrix_cache_key key(_matrix_size, lambda, branch_length);
-            if (_matrix_cache.find(key) == _matrix_cache.end())
-            {
-                keys.push_back(key);
-            }
-        }
-    }
+	// build a list of required matrices
+	vector<matrix_cache_key> keys;
+	for (double lambda : lambdas)
+	{
+		for (double branch_length : branch_lengths)
+		{
+			matrix_cache_key key(_matrix_size, lambda, branch_length);
+			if (_matrix_cache.find(key) == _matrix_cache.end())
+			{
+				keys.push_back(key);
+			}
+		}
+	}
 
-    // calculate matrices in parallel
-    vector<matrix *> matrices(keys.size());
-    generate(matrices.begin(), matrices.end(), [this] { return new matrix(this->_matrix_size); });
+	// calculate matrices in parallel
+	vector<matrix*> matrices(keys.size());
+	generate(matrices.begin(), matrices.end(), [this] { return new matrix(this->_matrix_size); });
 
-#pragma omp parallel for
-    for (size_t i = 0; i<keys.size(); ++i)
-    {
-        double lambda = keys[i].lambda();
-        double branch_length = keys[i].branch_length();
+	int s = 0;
+	size_t i = 0;
+	size_t num_keys = keys.size();
+#pragma omp parallel for private(s) collapse(2)
+	for (i = 0; i < num_keys; ++i)
+	{
+		for (s = 1; s < _matrix_size; s++) {
+			double lambda = keys[i].lambda();
+			double branch_length = keys[i].branch_length();
 
-        matrix *m = matrices[i];
-        m->set(0, 0, get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0));
-        if (!is_saturated(branch_length, lambda))
-        {
-            for (int i = 0; i < m->size(); ++i)
-            {
-                m->set(0, i, get_from_parent_fam_size_to_c(lambda, branch_length, 0, i));
-            }
-            for (int s = 1; s < _matrix_size; s++) {
-                for (int c = 0; c < _matrix_size; c++) {
-                    m->set(s, c, get_from_parent_fam_size_to_c(lambda, branch_length, s, c));
-                }
-            }
-        }
-    }
+			matrix* m = matrices[i];
+			m->set(0, 0, get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0));
+			if (!is_saturated(branch_length, lambda))
+			{
+				for (int j = 0; j < m->size(); ++j)
+				{
+					m->set(0, j, get_from_parent_fam_size_to_c(lambda, branch_length, 0, j));
+				}
+				for (int c = 0; c < _matrix_size; c++) {
+					m->set(s, c, get_from_parent_fam_size_to_c(lambda, branch_length, s, c));
+				}
+			}
+		}
+	}
 
     // copy matrices to our internal map
     for (size_t i = 0; i < keys.size(); ++i)

@@ -334,9 +334,9 @@ void set_weighted_random_family_size(const clade *node, clademap<int> *sizemap, 
             std::uniform_int_distribution<int> distribution(0, max_family_size - 1);
             c = distribution(randomizer_engine);
         }
-        vector<double> v;
+        vector<double> v(max_family_size);
         for (int i = 0; i < max_family_size; i++) {
-            v.push_back(probabilities->get(parent_family_size, i));
+            v[i] = probabilities->get(parent_family_size, i);
         }
         std::discrete_distribution<int> distribution(v.begin(), v.end());
         c = distribution(randomizer_engine);
