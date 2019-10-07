@@ -109,6 +109,9 @@ clade* read_tree(string tree_file_path, bool lambda_tree) {
     
     clade *p_tree = parse_newick(line, lambda_tree);
     
+    if (p_tree->is_leaf())
+        throw std::runtime_error(tree_file_path + " does not seem to be a valid tree");
+
     return p_tree;
 }
 /* END: Reading in tree data */
