@@ -68,11 +68,11 @@ mcl’s output to use as input for CAFE.
 
 ### 2.2.1 Moving all longest isoforms into a single file ###
 In order to keep all but the longest isoforms, and place all sequences from all species
-into a single .fa file for the next tutorial step, run the following commands on your shell
+into a single .fa file for the next tutorial step, run the following commands in your shell
 from the tutorial folder:
 
 ```
-$ python python_scripts/cafetutorial_longest_iso.py -d twelve_spp_proteins/
+$ python longest_iso.py -d twelve_spp_proteins/
 $ cat twelve_spp_proteins/longest*.fa > makeblastdb_input.fa
 ```
 
@@ -90,23 +90,27 @@ say, four threads) with:
 `$ blastp -num_threads 4 -db blast.db -query makeblastdb_input.fa -outfmt 7 -seg yes > blast_output.txt`
 
 The -seg parameter filters low complexity regions (amino acids coded as X) from
-sequences. Because this job can take many hours, we provide you with its output (a
-tarball named blast output.tar.gz) so you can keep on doing the tutorial.
+sequences. If you prefer, download and uncompress blast output.tar.gz from the tutorial 
+web site.
 
 ### 2.2.3 Clustering sequences with mcl ###
 Now we must use the output of BLAST to find clusters of similar sequences. These
-clusters will essentially be the gene families we will analyse with CAFE. Clustering is
-done with a program called mcl, running a few commands:
+clusters will essentially be the gene families we will analyse with CAFE. First,
+convert the Blast output to the ABC format which is used by MCL:
 
-`$ grep -v "#" blast_output . txt | cut -f 1 ,2 ,11 > blast_output . abc`
+`$ grep -v "#" blast_output.txt | cut -f 1,2,11 >blast_output.abc`
 
-In the command above, we convert the blast output into ABC format, which mcl
-understands. Then with the following commands, we have mcl create a network and a
+Then, with the following commands, we have mcl create a network and a
 dictionary file (.mci and .tab, respectively), and perform the clustering:
 
 ```
 $ mcxload -abc blast_output.abc --stream-mirror --stream-neg-log10 -stream-tf 'ceil(200)' -o blast_output.mci -write-tab blast_output.tab`
-$ mcl blast_output . mci -I 3
+```
+
+If you prefer, download the file mcl_output.tar.gz from the tutorial web site.
+
+```
+$ mcl blast_output.mci -I 3
 $ mcxdump -icl out.blast_output.mci.I30 -tabr blast_output.tab -o dump.blast_output.mci.I30
 ```
 
@@ -120,11 +124,12 @@ number of clusters with just a single sequence.
 
 ### 2.2.4 Final parsing of mcl’s output ###
 The file obtained in the last section (the dump file from mcl) is still not ready to be
-read by CAFE: we need to parse it and filter it. Parsing is quite simple and just involves tabulating the number of gene copies found in each species for each gene family.
+read by CAFE: we need to parse it and filter it. Parsing is quite simple and just involves 
+tabulating the number of gene copies found in each species for each gene family.
 We provide a script that does it for you. From the directory where the dump file was
 written, run the following command:
 
-`$ python python_scripts/cafetutorial_mcl2rawcafe.py -i dump.blast_output.mci.I30 -o unfiltered_cafe_input.txt -sp "ENSG00 ENSPTR ENSPPY ENSPAN ENSNLE ENSMMU ENSCJA ENSRNO ENSMUS ENSFCA ENSECA ENSBTA"`
+`$ python mcl2rawcafe.py -i dump.blast_output.mci.I30 -o unfiltered_cafe_input.txt -sp "ENSG00 ENSPTR ENSPPY ENSPAN ENSNLE ENSMMU ENSCJA ENSRNO ENSMUS ENSFCA ENSECA ENSBTA"`
 
 Then there is one final filtering step we must perform. Gene families that have large
 gene copy number variance can cause parameter estimates to be non-informative. You
@@ -132,13 +137,13 @@ can remove gene families with large variance from your dataset, but we found tha
 putting aside the gene families in which one or more species have ≥ 100 gene copies does
 the trick. You can do this filtering step with another script we provide:
 
-`$ python python_scripts/cafetutorial_clade_and_size_filter.py -i unfiltered_cafe_input.txt -o filtered_cafe_input.txt -s`
+`$ python clade_and_size_filter.py -i unfiltered_cafe_input.txt -o filtered_cafe_input.txt -s`
 
-As you will see, the script will have created two files: filtered cafe input.txt and
-large filtered cafe input.txt. The latter contains gene families where one or more
-species had ≥ 100 gene copies. We can now run CAFE on filtered cafe input.txt,
+As you will see, the script will have created two files: filtered_cafe_input.txt and
+large_filtered_cafe_input.txt. The latter contains gene families where one or more
+species had ≥ 100 gene copies. We can now run CAFE on filtered_cafe_input.txt,
 and use the estimated parameter values to analyse the large gene families that were set
-apart in large filtered cafe input.txt.
+apart in large_filtered_cafe_input.txt.
 For the sake of clarity, we renamed the species ID with the corresponding informal
 species names, so “ENSG00” would read “human”, “ENSPTR” “chimp””, and so on.
 So be sure you do:
@@ -154,8 +159,12 @@ Estimating a species tree takes a number of steps. If genome data is available f
 species of interest, one will need sequence alignments (with one sequence per species,
 from hopefully many genes) and then choose one among the many available species-tree
 estimation methods. Obtaining alignments usually requires finding one-to-one ortholog
-clusters with mcl (see previous section), but other procedures exist. Alternatively, prealigned one-to-one ortholog data from Ensembl or UCSC Genome Browser can sometimes be found and readily used.
-With alignments in hand, one could concatenate all alignments and infer a nonultrametric species tree with a maximum-likelihood (e.g., RAxML or PhyML) or Bayesian phylogenetic program (e.g., MrBayes). Alternatively, coalescent-based methods can be
+clusters with mcl (see previous section), but other procedures exist. Alternatively, 
+prealigned one-to-one ortholog data from Ensembl or UCSC Genome Browser can sometimes 
+be found and readily used.
+With alignments in hand, one could concatenate all alignments and infer a nonultrametric 
+species tree with a maximum-likelihood (e.g., RAxML or PhyML) or Bayesian phylogenetic 
+program (e.g., MrBayes). Alternatively, coalescent-based methods can be
 used (e.g., fast methods such as MP-EST and Astral-II, or full coalescent methods such
 as BPP and *BEAST).
 The species tree from this tutorial should not be problematic, but estimating it from

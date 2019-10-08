@@ -34,6 +34,7 @@ struct option longopts[] = {
   { "lambda_per_family", no_argument, NULL, 'b' },
   { "optimizer_expansion", optional_argument, NULL, 'E' },
   { "optimizer_reflection", optional_argument, NULL, 'R' },
+  { "optimizer_iterations", optional_argument, NULL, 'I' },
   { "help", no_argument, NULL, 'h'},
   { 0, 0, 0, 0 }
 };

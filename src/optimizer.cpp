@@ -378,7 +378,6 @@ public:
         }
         pfm->tolx = 1e-6;
         pfm->tolf = 1e-6;
-        pfm->maxiters = 25;
         fminsearch_min(pfm, &initial[0]);
         auto result = get_best_result(pfm);
 
@@ -394,7 +393,6 @@ void NelderMeadSimilarityCutoff::Run(FMinSearch* pfm, optimizer::result& r, std:
 {
     pfm->tolx = 1e-6;
     pfm->tolf = 1e-6;
-    pfm->maxiters = 300;
     fminsearch_min(pfm, &initial[0], [this](FMinSearch* pfm) { return threshold_achieved_checking_similarity(pfm); });
     auto result = get_best_result(pfm);
 
@@ -547,6 +545,7 @@ optimizer::result optimizer::optimize(const optimizer_parameters& params)
     if (!quiet)
     {
         cout << "\nOptimizer strategy: " << strat->Description() << "\n" << endl;
+        cout << "Iterations: " << params.neldermead_iterations << " Expansion: " << params.neldermead_expansion << " Reflection: " << params.neldermead_reflection << endl;
     }
 
     using clock = std::chrono::system_clock;
@@ -598,6 +597,7 @@ OptimizerStrategy *optimizer::get_strategy(const optimizer_parameters& params)
 {
     pfm->chi = params.neldermead_expansion;
     pfm->rho = params.neldermead_reflection;
+    pfm->maxiters = params.neldermead_iterations;
 
     switch (params.strategy)
     {

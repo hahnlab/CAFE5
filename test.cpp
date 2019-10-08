@@ -214,20 +214,22 @@ TEST(Options, simulate_short)
 
 TEST(Options, optimizer_long)
 {
-    initialize({ "cafexp", "--optimizer_expansion=0.05", "--optimizer_reflection=3.2" });
+    initialize({ "cafexp", "--optimizer_expansion=0.05", "--optimizer_reflection=3.2", "--optimizer_iterations=5" });
 
     auto actual = read_arguments(argc, values);
     CHECK_EQUAL(0.05, actual.optimizer_params.neldermead_expansion);
     CHECK_EQUAL(3.2, actual.optimizer_params.neldermead_reflection);
+    CHECK_EQUAL(5, actual.optimizer_params.neldermead_iterations);
 }
 
 TEST(Options, optimizer_short)
 {
-    initialize({ "cafexp", "-E", "0.05", "-R", "3.2" });
+    initialize({ "cafexp", "-E", "0.05", "-R", "3.2", "-I", "5" });
 
     auto actual = read_arguments(argc, values);
     CHECK_EQUAL(0.05, actual.optimizer_params.neldermead_expansion);
     CHECK_EQUAL(3.2, actual.optimizer_params.neldermead_reflection);
+    CHECK_EQUAL(5, actual.optimizer_params.neldermead_iterations);
 }
 
 TEST(Options, cannot_have_space_before_optional_parameter)
