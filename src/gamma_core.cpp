@@ -419,7 +419,7 @@ std::string gamma_model_reconstruction::get_reconstructed_state(const gene_famil
 
 void gamma_model_reconstruction::write_nexus_extensions(std::ostream& ost)
 {
-    ost << "BEGIN LAMBDA_MULTIPLIERS;\n";
+    ost << "\nBEGIN LAMBDA_MULTIPLIERS;\n";
     for (auto& lm : _lambda_multipliers)
     {
         ost << "  " << lm << ";\n";
