@@ -333,9 +333,9 @@ void reconstruction::print_reconstructed_states(std::ostream& ost, const cladeve
 
         ost << ';' << endl;
     }
-
+	ost << "\nEND;\n";
     write_nexus_extensions(ost);
-    ost << "END;\n";
+    
 }
 
 void reconstruction::print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
