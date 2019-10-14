@@ -131,7 +131,30 @@ written, run the following command:
 
 `$ python mcl2rawcafe.py -i dump.blast_output.mci.I30 -o unfiltered_cafe_input.txt -sp "ENSG00 ENSPTR ENSPPY ENSPAN ENSNLE ENSMMU ENSCJA ENSRNO ENSMUS ENSFCA ENSECA ENSBTA"`
 
-Then there is one final filtering step we must perform. Gene families that have large
+For the sake of clarity, and to make our gene family species match our tree, we would like 
+to rename the species ID with the corresponding informal
+species names, so “ENSG00” would read “human”, “ENSPTR” “chimp””, and so on. We can do this
+via a short Bash SED script:
+
+```
+$ sed -i -e 's/ENSG00/human/g' \
+       -e 's/ENSPTR/chimp/g' \
+       -e 's/ENSPPY/orang/g' \
+       -e 's/ENSPAN/baboon/g' \
+       -e 's/ENSNLE/gibbon/g' \
+       -e 's/ENSMMU/macaque/g' \
+       -e 's/ENSCJA/marmoset/g' \
+       -e 's/ENSRNO/rat/g' \
+       -e 's/ENSMUS/mouse/g' \
+       -e 's/ENSFCA/cat/g' \
+       -e 's/ENSECA/horse/g' \
+       -e 's/ENSBTA/cow/g' \
+	   unfiltered_cafe_input.txt
+```
+	   
+The script "common_names.sh" contains this command. 
+
+There is one final filtering step we must perform. Gene families that have large
 gene copy number variance can cause parameter estimates to be non-informative. You
 can remove gene families with large variance from your dataset, but we found that
 putting aside the gene families in which one or more species have ≥ 100 gene copies does
@@ -144,15 +167,6 @@ large_filtered_cafe_input.txt. The latter contains gene families where one or mo
 species had ≥ 100 gene copies. We can now run CAFE on filtered_cafe_input.txt,
 and use the estimated parameter values to analyse the large gene families that were set
 apart in large_filtered_cafe_input.txt.
-For the sake of clarity, we renamed the species ID with the corresponding informal
-species names, so “ENSG00” would read “human”, “ENSPTR” “chimp””, and so on.
-So be sure you do:
-
-```
-$ mv filtered_cafe_input_names.txt filtered_cafe_input.txt
-$ mv large_filtered_cafe_input_names.txt large_filtered_cafe_input.txt
-```
-
 
 ### 2.3 Estimating a species tree ###
 Estimating a species tree takes a number of steps. If genome data is available for all
@@ -167,9 +181,9 @@ species tree with a maximum-likelihood (e.g., RAxML or PhyML) or Bayesian phylog
 program (e.g., MrBayes). Alternatively, coalescent-based methods can be
 used (e.g., fast methods such as MP-EST and Astral-II, or full coalescent methods such
 as BPP and *BEAST).
-The species tree from this tutorial should not be problematic, but estimating it from
-genome scale data would take time that we do not have. So we provide you with a
-maximum-likelihood tree from concatenated data (in NEWICK format) below:
+Calculating a species tree for our mammal species should not be problematic, but 
+estimating it from genome scale data is outside the scope of this tutorial. So we provide 
+you with a maximum-likelihood tree from concatenated data (in NEWICK format) below:
 
 `((((cat:68.7105,horse:68.7105):4.56678,cow:73.2773):20.7227,(((((chimp:4.44417,human:4.44417):6.68268,orang:11.1268):2.28586,gibbon:13.4127):7.21153,(macaque:4.56724,baboon:4.56724):16.057):16.0607,marmoset:36.6849):57.3151):38.738,(rat:36.3024,mouse:36.3024):96.4356)`
 
