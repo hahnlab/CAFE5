@@ -182,15 +182,12 @@ program (e.g., MrBayes). Alternatively, coalescent-based methods can be
 used (e.g., fast methods such as MP-EST and Astral-II, or full coalescent methods such
 as BPP and *BEAST).
 Calculating a species tree for our mammal species should not be problematic, but 
-estimating it from genome scale data is outside the scope of this tutorial. So we provide 
-you with a maximum-likelihood tree from concatenated data (in NEWICK format) below:
-
-`((((cat:68.7105,horse:68.7105):4.56678,cow:73.2773):20.7227,(((((chimp:4.44417,human:4.44417):6.68268,orang:11.1268):2.28586,gibbon:13.4127):7.21153,(macaque:4.56724,baboon:4.56724):16.057):16.0607,marmoset:36.6849):57.3151):38.738,(rat:36.3024,mouse:36.3024):96.4356)`
-
-We must now make this tree ultrametric, which can be done using the program r8s.
+estimating it from genome scale data is outside the scope of this tutorial. A sample
+result can be found in the file maximum_likelihood_tree.txt.
 
 ### 2.3.1 Making the species tree ultrametric ###
-There are many ways to obtain ultrametric trees (also known as timetrees, these are phylogenetic trees scaled to time, where all paths from root to tips have the same length).
+CAFE requires a tree that is ultramatric. There are many ways to obtain ultrametric trees 
+(also known as timetrees, these are phylogenetic trees scaled to time, where all paths from root to tips have the same length).
 Here, we use a fast program called r8s. You will need to know the number of sites in the
 alignment used to estimate the species tree (the one you want to make ultrametric), and
 then you can specify one or more calibration points (ideally, the age or age window of a
@@ -199,20 +196,19 @@ that prepares the control file for running r8s on the species tree above (the nu
 sites is 35157236, and the calibration point for cats and humans is 94). In your shell,
 type:
 
-`$ python python_scripts/cafetutorial_prep_r8s.py -i twelve_spp_raxml_cat_tree_midpoint_rooted.txt -o r8s_ctl_file.txt -s 35157236 -p 'human,cat' -c '94'`
+`$ python prep_r8s.py -i maximum_likelihood_tree.txt -o r8s_ctl_file.txt -s 35157236 -p 'human,cat' -c '94'`
 
 Then you can finally run r8s, and parse its output with:
 
 ```
 $ r8s -b -f r8s_ctl_file.txt > r8s_tmp.txt
-$ tail -n 1 r8s_tmp.txt | cut -c 16- > twelve_spp_r8s_ultrametric.txt
+$ tail -n 1 r8s_tmp.txt | cut -c 16- > mammals_tree.txt
 ```
 
+A sample mammals_tree.txt may also be found in the examples folder.
+
 ## 3. Running CAFE ##
-In order to run CAFE analyses, you can either enter the desired commands directly
-into CAFE’s shell (that is, if you type cafe on your Terminal and then start entering
-commands after ‘#’), or you can list the commands in a shell (.sh) script and then just
-run cafe shell script.sh.
+
 Some of the steps in this tutorial can take a while to finish, so we provide you with all
 the outputs – we will inform you of which analyses take longer, so you do not accidentally
 overwrite the output files we provide. Please be sure you finish reading a section before
@@ -225,51 +221,40 @@ provided tree and gene family counts. The λ parameter describes the probability
 any gene will be gained or lost.
 
 ### 3.1.1 Estimating a single λ for the whole tree ###
-Estimating λ can be achieved if one types the following commands on CAFE’s shell:
+Now that we have a tree and a list of gene family counts, we can use CAFE to estimate
+a lambda for the tree.
 
-```
-# load -i filtered_cafe_input.txt -t 4 -l reports/log_run1.txt
-# tree ((((cat:68.710507,horse:68.710507):4.566782,cow:73.277289):20.722711,(((((chimp:4.444172,human:4.444172):6.682678,orang:11.126850):2.285855,gibbon:13.412706):7.211527,(macaque:4.567240,baboon:4.567240):16.056992):16.060702,marmoset:36.684935):57.315065):38.738021,(rat:36.302445,mouse:36.302445):96.435575)`
-# lambda -s -t ((((1,1)1,1)1,(((((1,1)1,1)1,1)1,(1,1)1)1,1)1)1,(1,1)1)
-# report reports/report_run1
-```
-
-We provide you with file cafetutorial run1.sh so you do not have to type all those
-commands. Simply run CAFE with:
-
-`$ cafe cafe_shell_scripts/cafetutorial_run1.sh`
+```$ cafexp -i filtered_cafe_input.txt -t mammals_tree.txt```
 
 ### Understanding the output ###
-After CAFE finishes estimating λ, you will want open file reports/report run1.cafe.
+After CAFE finishes estimating λ, you will find a variety of files in the "results"
+directory. The first one to look at is results.txt.
 It should look like this (some numbers might differ, of course):
 
 ```
-Tree:((((cat:68.7105,horse:68.7105):4.56678,cow:73.2773) (...) :96.4356)
-((((cat:68.7105,horse:68.7105):4.56678,cow:73.2773) (...)
-Lambda: 0.00265952
-Lambda tree: ((((1,1)1,1)1,(((((1,1)1,1)1,1)1,(1,1)1)1,1)1)1,(1,1)1)
-# IDs of nodes:((((cat<0>,horse<2>)<1>,cow<4>) (...) (rat<20>,mouse<22>)<21>)<19>
-# Output format for: (...) = (node ID, node ID): (0,2) (1,4) (...)
-(...)
-’ID’ ’Newick’ ’Family-wide P-value’ ’Viterbi P-values’
-8 ((((cat 59:68.7105 (...) mouse 61:36.3024) 62:96.4356) 62 0.438 ((-,-),(-,-) (...)
-10 ((((cat 57:68.7105 (...) mouse 52:36.3024) 53:96.4356) 55 0.916 ((-,-),(-,-) (...)
-11 ((((cat 37:68.7105 (...) mouse 79:36.3024) 69:96.4356) 52 0 ((0.0699637,0.487686),(0.758569,0.202491)
-(...)
+Model Base Result: 203921
+Lambda: 0.0024443005606287
 ```
 
-Some of this output is self-explanatory, but let us point out what is important:
-* On the second line, you will find the estimated value of λ for the whole tree, which for this run of CAFE was 0.00265952.
-* The line that starts with ‘# IDs of nodes’ gives us the number that will represent
-each species and internal node. So for this run of CAFE, for example, ‘0’ represents
-cat, ‘2’ represents horse, and so on.
-* The line that starts with ‘# Output format for:’ shows the pairs of species or
-internal branches for which results will be presented later. Whenever you see pairs
-of values enclosed in parenthesis, one after the other, they shall follow the order
-shown on this line. In the example above, the first pair of values enclosed in
-parenthesis you see will refer to cat and horse (‘(0,2)’), the second pair of values
-will refer to the internal branch subtending (cat,horse) and then cow (‘(1,4)’),
-and so on.
+The first line gives the model that was run, and the final score calculated for the given lambda.
+* On the second line, you will find the estimated value of λ for the whole tree, which for this run of CAFE was 0.0024443005606287.
+
+The file "base_asr.tre" is in the Nexus file format. Each tree looks like the following:
+```  TREE 8 = ((((cat<11>_59:68.7107,horse<10>_62:68.7107)<15>_62:4.56677,cow<14>_63:73.2775)<19>_62:20.7225,
+      (((((chimp<1>_61:4.44418,human<0>_66:4.44418)<3>_63:6.68266,orang<2>_61:11.1268)<7>_63:2.28587,
+	  gibbon<6>_63:13.4127)<9>_63:7.21153,(macaque<5>_64:4.56724,baboon<4>_62:4.56724)<8>_63:16.057)<13>_63:16.0607,
+	  marmoset<12>_66:36.6849)<18>_64:57.3151)<21>_62:38.7381,(rat<17>_63:36.3025,mouse<16>_61:36.3025)<20>_62:96.4356)<22>_62; 
+```
+
+The tree can be read as follows: Each node is labelled with an id inside angle brackets, e.g. <15>.
+The nodes associated with species have that species prefixed to the node label, e.g. cat<11>.
+Each node has a suffix following an underscore which indicates the expected (or actual) count
+of the node for that species, e.g. horse<10>_62 indicates that horse has 62 copies of the gene,
+while <9>_63 indicates that the parent node of gibbon was estimated to have 63 copies.
+
+The file Base_branch_probabilities.tab is a tab-separated file containing the calculated likelihood
+of the gene family size at each node.
+
 * Then finally you have the results for each gene family, one gene family per line. In
 our example above, we are showing the first three gene families, identified by their
 numbers (the first column, ‘ID’), 8, 10 and 11 (see filtered cafe input.txt).
@@ -287,12 +272,7 @@ have not undergone significant shifts in λ, but branch 8 (leading to humans) ha
 (not shown above, but see report run4.cafe).
 
 ### Summarizing the output ###
-We provide a convenient script that summarizes the output described above into tables.
-In order to run it, just enter the following command on your shell:
-
-`$ python python_scripts/cafetutorial_report_analysis.py -i  reports/report_run1.cafe -o reports/summary_run1`
-
-This script should produce a few files that will help you visualize the results. For example, if you open file reports/summary run1 node.txt, you will see, for each branch,
+If you open file results/summary run1 node.txt, you will see, for each branch,
 how many families underwent expansions, contractions, and how many are rapidly evolving. In fact, we provide yet another script that allows you to plot these numbers on a
 phylogenetic tree. Just run the following command:
 
