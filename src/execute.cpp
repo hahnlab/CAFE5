@@ -151,11 +151,13 @@ void estimator::execute(std::vector<model *>& models)
                         filtered_families.push_back(&gf);
                 }
 
-                unique_ptr<lambda> lam(p_model->get_pvalue_lambda());
+                /// For Gamma models, we tried using the most rapidly changing lambda multiplier here, but that
+                /// caused issues in the pvalue calculation. It should be best to use the original lambda
+                /// instead
                 matrix_cache cache(max(data.max_family_size, data.max_root_family_size) + 1);
-                cache.precalculate_matrices(get_lambda_values(lam.get()), data.p_tree->get_branch_lengths());
+                cache.precalculate_matrices(get_lambda_values(p_model->get_lambda()), data.p_tree->get_branch_lengths());
 
-                auto pvalues = compute_pvalues(data.p_tree, filtered_families, lam.get(), cache, 1000, data.max_family_size, data.max_root_family_size);
+                auto pvalues = compute_pvalues(data.p_tree, filtered_families, p_model->get_lambda(), cache, 1000, data.max_family_size, data.max_root_family_size);
 
                 std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(filtered_families, &cache, data.p_prior.get()));
 
@@ -163,7 +165,7 @@ void estimator::execute(std::vector<model *>& models)
 
                 transform(filtered_families.begin(), filtered_families.end(), branch_probabilities.begin(), [&](const gene_family* gf)
                     {
-                        return compute_branch_level_probabilities(data.p_tree, *gf, rec.get(), lam.get(), cache, data.max_family_size, data.max_root_family_size);
+                        return compute_branch_level_probabilities(data.p_tree, *gf, rec.get(), p_model->get_lambda(), cache, data.max_family_size, data.max_root_family_size);
                     });
                 rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, filtered_families, pvalues, branch_probabilities);
             }

@@ -157,7 +157,7 @@ public:
     //! Returns true if the the model is interested in calculating pvalues for this family
     //! Default is to calculate pvalues for all families
     virtual bool should_calculate_pvalue(const gene_family& gf) const { return true; }
-    virtual lambda* get_pvalue_lambda() const;
+
 };
 
 //! @brief Creates a list of families that are identical in all values

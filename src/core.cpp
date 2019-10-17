@@ -96,11 +96,6 @@ lambda* model::get_simulation_lambda()
     return _p_lambda->clone();
 }
 
-lambda* model::get_pvalue_lambda() const
-{
-    return _p_lambda->clone();
-}
-
 //! Computes likelihoods for the given tree and a single family. Uses a lambda value based on the provided lambda
 /// and a given multiplier. Works by calling \ref compute_node_probability on all nodes of the tree
 /// using the species counts for the family. 

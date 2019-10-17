@@ -109,8 +109,6 @@ public:
         std::vector<double>& category_likelihoods);
 
     virtual bool should_calculate_pvalue(const gene_family& gf) const override;
-    virtual lambda* get_pvalue_lambda() const override;
-
 };
 
 //! \ingroup gamma

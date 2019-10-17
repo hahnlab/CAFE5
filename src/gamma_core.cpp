@@ -393,11 +393,6 @@ bool gamma_model::should_calculate_pvalue(const gene_family& gf) const
     return fastest_rate == highest_likelihood;
 }
 
-lambda* gamma_model::get_pvalue_lambda() const
-{
-    return _p_lambda->multiply(_lambda_multipliers.back());
-}
-
 std::string gamma_model_reconstruction::get_reconstructed_state(const gene_family& gf, const clade* node)
 {
     std::ostringstream ost;
