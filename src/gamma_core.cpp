@@ -403,10 +403,6 @@ std::string gamma_model_reconstruction::get_reconstructed_state(const gene_famil
     }
     else
     {
-        for (auto& r : _reconstructions[gf.id()].category_reconstruction)
-        {
-            ost << r.at(node) << '_';
-        }
         ost << std::round(_reconstructions[gf.id()].reconstruction.at(node));
     }
     return ost.str();

@@ -837,7 +837,7 @@ TEST(Reconstruction, gamma_model_reconstruction__print_reconstructed_states__pri
 
     ostringstream ost;
     gmr.print_reconstructed_states(ost, order, { &fam }, p_tree.get());
-    STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_0_8:7,(C<2>_5:11,D<3>_6:17)<5>_0_6:23)<6>_7_7;", ost.str().c_str());
+    STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", ost.str().c_str());
 }
 
 TEST(Reconstruction, gamma_model_reconstruction__print_additional_data__prints_likelihoods)
@@ -850,7 +850,7 @@ TEST(Reconstruction, gamma_model_reconstruction__print_additional_data__prints_l
     STRCMP_CONTAINS("Family5\t0.01\t0.03\0.09\t0.07", ost.str().c_str());
 }
 
-TEST(Reconstruction, gamma_model_reconstruction__print_reconstructed_states)
+TEST(Reconstruction, gamma_model_reconstruction__prints_lambda_multipiers)
 {
     vector<double> multipliers{ 0.13, 1.4 };
     gamma_model_reconstruction gmr(multipliers);
@@ -867,11 +867,6 @@ TEST(Reconstruction, gamma_model_reconstruction__print_reconstructed_states)
 
     std::ostringstream ost;
     gmr.print_reconstructed_states(ost, order, { &fam }, p_tree.get());
-
-    STRCMP_CONTAINS("#nexus", ost.str().c_str());
-    STRCMP_CONTAINS("BEGIN TREES;", ost.str().c_str());
-    STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8_8:7,(C<2>_5:11,D<3>_6:17)<5>_6_6:23)<6>_7_7;", ost.str().c_str());
-    STRCMP_CONTAINS("END;", ost.str().c_str());
 
     STRCMP_CONTAINS("BEGIN LAMBDA_MULTIPLIERS;", ost.str().c_str());
     STRCMP_CONTAINS("  0.13;", ost.str().c_str());
