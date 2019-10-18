@@ -545,7 +545,7 @@ optimizer::result optimizer::optimize(const optimizer_parameters& params)
     if (!quiet)
     {
         cout << "\nOptimizer strategy: " << strat->Description() << "\n" << endl;
-        cout << "Iterations: " << params.neldermead_iterations << "\nExpansion: " << params.neldermead_expansion << "\nReflection: " << params.neldermead_reflection <<"\nStarting Search for Initial Parameter Values\n"<< endl;
+        cout << "Iterations: " << params.neldermead_iterations << "\nExpansion: " << params.neldermead_expansion << "\nReflection: " << params.neldermead_reflection <<"\n\nStarting Search for Initial Parameter Values\n"<< endl;
     }
 
     using clock = std::chrono::system_clock;
