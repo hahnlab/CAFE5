@@ -184,39 +184,19 @@ std::string base_model_reconstruction::get_reconstructed_state(const gene_family
     return to_string(value);
 }
 
-int base_model_reconstruction::get_delta(const gene_family* gf, const clade* c)
+int base_model_reconstruction::get_difference_from_parent(const gene_family* gf, const clade* c)
 {
-    clademap<int> size_deltas;
-    compute_increase_decrease(_reconstructions[gf->id()], size_deltas);
-    auto it = size_deltas.find(c);
-    if (it == size_deltas.end())
+    if (c->is_root())
         return 0;
-    return it->second;
-}
+    int val = c->is_leaf() ? gf->get_species_size(c->get_taxon_name()) : _reconstructions[gf->id()].at(c);
+    int parent_val = _reconstructions[gf->id()].at(c->get_parent());
 
-char base_model_reconstruction::get_increase_decrease(const gene_family* gf, const clade* c)
-{
-    int val = get_delta(gf, c);
-    if (val < 0)
-        return 'd';
-    else if (val > 0)
-        return 'i';
-    else
-        return 'c';
-
+    return val - parent_val;
 }
 
 int base_model_reconstruction::get_node_count(const gene_family& gf, const clade *c)
 {
     return _reconstructions[gf.id()].at(c);
-}
-
-clademap<int> base_model_reconstruction::get_increase_decrease(const gene_family& gf)
-{
-    clademap<int> size_deltas;
-    compute_increase_decrease(_reconstructions[gf.id()], size_deltas);
-
-    return size_deltas;
 }
 
 int base_model_reconstruction::reconstructed_size(const gene_family& family, const clade* clade) const

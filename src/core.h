@@ -36,16 +36,13 @@ std::ostream& operator<<(std::ostream& ost, const family_info_stash& r);
 class reconstruction {
     virtual void print_additional_data(const cladevector& order, const std::vector<const gene_family*>& gene_families, std::string output_prefix) {};
     
-    virtual int get_delta(const gene_family* gf, const clade* c) = 0;
-    virtual char get_increase_decrease(const gene_family* gf, const clade* c) = 0;
+    virtual int get_difference_from_parent(const gene_family* gf, const clade* c) = 0;
     virtual std::string get_reconstructed_state(const gene_family& gf, const clade* node) = 0;
     virtual void write_nexus_extensions(std::ostream& ost) {} ;
     virtual int get_node_count(const gene_family& gf, const clade* c) = 0;
 public:
     void print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree);
 
-    virtual clademap<int> get_increase_decrease(const gene_family& gf) = 0;
-        
     void print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree);
 
     void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree);

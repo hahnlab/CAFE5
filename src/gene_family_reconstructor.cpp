@@ -175,55 +175,11 @@ string newick_node(const clade *node, const cladevector& order, std::function<st
     return ost.str();
 }
 
-
-int parent_compare(int a, int b)
-{
-    return a - b;
-}
-
-int parent_compare(double a, double b)
-{
-    return parent_compare(int(std::round(a)), int(std::round(b)));
-}
-
-template <typename T>
-void compute_increase_decrease_t(clademap<T>& input, clademap<int>& output)
-{
-    for (auto &clade_state : input)
-    {
-        auto p_clade = clade_state.first;
-        T size = clade_state.second;
-        if (!p_clade->is_root())
-        {
-            T parent_size = input[p_clade->get_parent()];
-            output[p_clade] = parent_compare(size, parent_size);
-        }
-        else
-        {
-            output[p_clade] = 0;
-        }
-    }
-}
-
-void compute_increase_decrease(clademap<int>& input, clademap<int>& output)
-{
-    compute_increase_decrease_t(input, output);
-}
-
-void compute_increase_decrease(clademap<double>& input, clademap<int>& output)
-{
-    compute_increase_decrease_t(input, output);
-}
-
 void reconstruction::print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree)
 {
     print_family_clade_table(ost, order, gene_families, p_tree, [this, &gene_families](int family_index, const clade* c) {
-        clademap<int> size_deltas = get_increase_decrease(*gene_families[family_index]);
-        auto it = size_deltas.find(c);
-        if (it == size_deltas.end())
-            return string("0");
         ostringstream ost;
-        ost << showpos << it->second;
+        ost << showpos << get_difference_from_parent(gene_families[family_index], c);
         return ost.str();
         });
 }
@@ -246,11 +202,20 @@ void reconstruction::print_increases_decreases_by_family(std::ostream& ost, cons
     }
     ost << endl;
 
+    auto to_idc = [](int val) {
+        if (val < 0)
+            return 'd';
+        else if (val > 0)
+            return 'i';
+        else
+            return 'c';
+    };
+
     for (size_t i = 0; i < gene_families.size(); ++i) {
         ost << gene_families[i]->id() << '\t' << pvalues[i] << '\t';
         ost << (pvalues[i] < 0.05 ? 'y' : 'n');
         for (auto c : order)
-            ost << '\t' << get_increase_decrease(gene_families[i], c) ;
+            ost << '\t' << to_idc(get_difference_from_parent(gene_families[i], c));
         ost << endl;
     }
 }
@@ -261,7 +226,7 @@ void reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const
     for (size_t j = 0; j < gene_families.size(); ++j) {
         for (size_t i = 0; i < order.size(); ++i)
         {
-            int val = get_delta(gene_families[j], order[i]);
+            int val = get_difference_from_parent(gene_families[j], order[i]);
             if (val > 0)
                 increase_decrease_map[order[i]].first++;
             if (val < 0)
@@ -269,11 +234,11 @@ void reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const
         }
     }
 
-    ost << "#Taxon_ID\t#Taxon_Name\tIncrease/Decrease\n";
+    ost << "#Taxon_ID\tIncrease\tDecrease\n";
     for (auto& it : increase_decrease_map) {
         ost << clade_index_or_name(it.first, order) << "\t";
-        ost << it.first->get_taxon_name() << "\t";
-        ost << it.second.first << "/" << it.second.second << endl;
+        ost << it.second.first << "\t";
+        ost << it.second.second << endl;
     }
 }
 

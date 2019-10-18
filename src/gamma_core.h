@@ -19,9 +19,7 @@ public:
     {
     }
 
-    virtual int get_delta(const gene_family* gf, const clade* c) override;
-    virtual char get_increase_decrease(const gene_family* gf, const clade* c) override;
-    virtual clademap<int> get_increase_decrease(const gene_family& gf) override;
+    virtual int get_difference_from_parent(const gene_family* gf, const clade* c) override;
 
     void print_additional_data(const cladevector& order, const std::vector<const gene_family*>& gene_families, std::string output_prefix) override;
 

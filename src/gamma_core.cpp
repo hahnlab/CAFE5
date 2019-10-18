@@ -418,6 +418,7 @@ void gamma_model_reconstruction::write_nexus_extensions(std::ostream& ost)
     ost << "END;\n\n";
 }
 
+#if 0
 char gamma_model_reconstruction::get_increase_decrease(const gene_family* gf, const clade* c)
 {
     clademap<int> size_deltas;
@@ -433,29 +434,21 @@ char gamma_model_reconstruction::get_increase_decrease(const gene_family* gf, co
     else
         return 'c';
 }
+#endif
 
-int gamma_model_reconstruction::get_delta(const gene_family* gf, const clade* c)
+int gamma_model_reconstruction::get_difference_from_parent(const gene_family* gf, const clade* c)
 {
-    clademap<int> size_deltas;
-    compute_increase_decrease(_reconstructions[gf->id()].reconstruction, size_deltas);
-    auto& d = size_deltas;
-    auto it = d.find(c);
-    if (it == d.end())
+    if (c->is_root())
         return 0;
-    return it->second;
+    double val = c->is_leaf() ? gf->get_species_size(c->get_taxon_name()) : _reconstructions[gf->id()].reconstruction.at(c);
+    double parent_val = _reconstructions[gf->id()].reconstruction.at(c->get_parent());
+
+    return int(val - parent_val);
 }
 
 int gamma_model_reconstruction::get_node_count(const gene_family& gf, const clade* c)
 {
     return int(std::round(_reconstructions[gf.id()].reconstruction.at(c)));
-}
-
-clademap<int> gamma_model_reconstruction::get_increase_decrease(const gene_family& gf)
-{
-    clademap<int> size_deltas;
-    compute_increase_decrease(_reconstructions[gf.id()].reconstruction, size_deltas);
-
-    return size_deltas;
 }
 
 void gamma_model_reconstruction::print_category_likelihoods(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families)

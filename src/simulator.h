@@ -3,8 +3,6 @@
 
 #include "execute.h"
 
-typedef clademap<int> trial;
-
 class root_distribution;
 
 /*! @brief Build simulated families based on the user's input
@@ -18,15 +16,15 @@ public:
     {
 
     }
-    trial* create_trial(const lambda *p_lambda, const root_distribution& rd, int family_number, const matrix_cache& cache);
+    clademap<int>* create_trial(const lambda *p_lambda, const root_distribution& rd, int family_number, const matrix_cache& cache);
 
     virtual void execute(std::vector<model *>& models);
-    void print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<trial *>& results);
+    void print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<clademap<int>*>& results);
 
     //! Does the actual work of simulation. Calls the given model to load simulation parameters,
     //! and places the simulations in results. Every fifty simulations, the model's \ref model::perturb_lambda
     //! is called in order to provide a bit of additional randomness in the simulation.
-    void simulate_processes(model *p_model, std::vector<trial *>& results);
+    void simulate_processes(model *p_model, std::vector<clademap<int>*>& results);
 
 };
 

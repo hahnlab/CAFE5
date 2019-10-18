@@ -60,10 +60,8 @@ public:
 
     std::map<string, clademap<int>> _reconstructions;
 
-    virtual int get_delta(const gene_family* gf, const clade* c) override;
-    virtual char get_increase_decrease(const gene_family* gf, const clade* c) override;
+    virtual int get_difference_from_parent(const gene_family* gf, const clade* c) override;
 
-    virtual clademap<int> get_increase_decrease(const gene_family& gf) override;
     int get_node_count(const gene_family& gf, const clade* c) override;
 
     int reconstructed_size(const gene_family& family, const clade* clade) const override;

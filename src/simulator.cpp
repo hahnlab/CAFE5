@@ -22,14 +22,14 @@ int select_root_size(const user_data& data, const root_distribution& rd, int fam
     }
 }
 
-trial* simulator::create_trial(const lambda *p_lambda, const root_distribution& rd, int family_number, const matrix_cache& cache) {
+clademap<int>* simulator::create_trial(const lambda *p_lambda, const root_distribution& rd, int family_number, const matrix_cache& cache) {
 
     if (data.p_tree == NULL)
         throw runtime_error("No tree specified for simulation");
 
     int max_family_size_sim;
 
-    auto *result = new trial();
+    auto *result = new clademap<int>();
 
     if (data.rootdist.empty()) {
         max_family_size_sim = 100;
@@ -52,7 +52,7 @@ trial* simulator::create_trial(const lambda *p_lambda, const root_distribution& 
 }
 
 
-void simulator::simulate_processes(model *p_model, std::vector<trial *>& results) {
+void simulator::simulate_processes(model *p_model, std::vector<clademap<int> *>& results) {
 
     root_distribution rd;
     int max_size;
@@ -113,7 +113,7 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
 
     for (auto p_model : models) {
 
-        std::vector<trial *> results;
+        std::vector<clademap<int> *> results;
 
         simulate_processes(p_model, results);
 
@@ -130,7 +130,7 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
 }
 
 
-void simulator::print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<trial *>& results) {
+void simulator::print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<clademap<int> *>& results) {
 
     std::vector<const clade *> order;
     auto fn = [&order](const clade *c) { order.push_back(c); };
