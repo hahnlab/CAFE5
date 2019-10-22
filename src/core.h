@@ -34,32 +34,37 @@ std::ostream& operator<<(std::ostream& ost, const family_info_stash& r);
 //! The result of a model reconstruction. Should be able to (a) print reconstructed states with all available information;
 /// (b) print increases and decreases by family; and (c) print increases and decreases by clade.
 class reconstruction {
-    virtual void print_additional_data(const cladevector& order, const std::vector<const gene_family*>& gene_families, std::string output_prefix) {};
-    
-    virtual int get_difference_from_parent(const gene_family* gf, const clade* c) = 0;
-    virtual std::string get_reconstructed_state(const gene_family& gf, const clade* node) = 0;
-    virtual void write_nexus_extensions(std::ostream& ost) {} ;
-    virtual int get_node_count(const gene_family& gf, const clade* c) = 0;
 public:
-    void print_node_change(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree);
+    typedef const std::vector<gene_family> familyvector;
 
-    void print_node_counts(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree);
+    void print_node_change(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree);
 
-    void print_reconstructed_states(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree);
+    void print_node_counts(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree);
 
-    void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families);
+    void print_reconstructed_states(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree);
 
-    void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const std::vector<double>& pvalues);
+    void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order, familyvector& gene_families);
+
+    void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, familyvector& gene_families, const std::vector<double>& pvalues);
         
-    void print_family_clade_table(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families, const clade* p_tree,
+    void print_family_clade_table(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree,
         std::function<string(int family_index, const clade* c)> get_family_clade_value);
 
-    void write_results(std::string model_identifier, std::string output_prefix, const clade* p_tree, const std::vector<const gene_family *>& families, std::vector<double>& pvalues, const std::vector<clademap<double>>& branch_probabilities);
+    void write_results(std::string model_identifier, std::string output_prefix, const clade* p_tree, familyvector& families, std::vector<double>& pvalues, const std::vector<clademap<double>>& branch_probabilities);
 
     virtual int reconstructed_size(const gene_family& family, const clade* clade) const = 0;
     virtual ~reconstruction()
     {
     }
+
+private:
+    virtual void print_additional_data(const cladevector& order, familyvector& gene_families, std::string output_prefix) {};
+
+    virtual int get_difference_from_parent(const gene_family* gf, const clade* c) = 0;
+    virtual std::string get_reconstructed_state(const gene_family& gf, const clade* node) = 0;
+    virtual void write_nexus_extensions(std::ostream& ost) {};
+    virtual int get_node_count(const gene_family& gf, const clade* c) = 0;
+
 };
 
 class event_monitor

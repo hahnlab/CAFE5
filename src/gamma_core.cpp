@@ -451,7 +451,7 @@ int gamma_model_reconstruction::get_node_count(const gene_family& gf, const clad
     return int(std::round(_reconstructions[gf.id()].reconstruction.at(c)));
 }
 
-void gamma_model_reconstruction::print_category_likelihoods(std::ostream& ost, const cladevector& order, const std::vector<const gene_family*>& gene_families)
+void gamma_model_reconstruction::print_category_likelihoods(std::ostream& ost, const cladevector& order, familyvector& gene_families)
 {
     ost << "Family ID\t";
     ostream_iterator<double> lm(ost, "\t");
@@ -460,15 +460,15 @@ void gamma_model_reconstruction::print_category_likelihoods(std::ostream& ost, c
 
     for (auto gf : gene_families)
     {
-        ost << gf->id() << '\t';
-        auto rc = _reconstructions[gf->id()];
+        ost << gf.id() << '\t';
+        auto rc = _reconstructions[gf.id()];
         ostream_iterator<double> ct(ost, "\t");
         copy(rc._category_likelihoods.begin(), rc._category_likelihoods.end(), ct);
         ost << endl;
     }
 }
 
-void gamma_model_reconstruction::print_additional_data(const cladevector& order, const std::vector<const gene_family*>& gene_families, std::string output_prefix)
+void gamma_model_reconstruction::print_additional_data(const cladevector& order, familyvector& gene_families, std::string output_prefix)
 {
     std::ofstream cat_likelihoods(filename("Gamma_category_likelihoods", output_prefix));
     print_category_likelihoods(cat_likelihoods, order, gene_families);

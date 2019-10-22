@@ -167,7 +167,7 @@ void estimator::execute(std::vector<model *>& models)
                     {
                         return compute_branch_level_probabilities(data.p_tree, *gf, rec.get(), p_model->get_lambda(), cache, data.max_family_size, data.max_root_family_size);
                     });
-                rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, filtered_families, pvalues, branch_probabilities);
+                rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, data.gene_families, pvalues, branch_probabilities);
             }
         }
         catch (const OptimizerInitializationFailure& e )

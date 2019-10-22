@@ -836,7 +836,7 @@ TEST(Reconstruction, gamma_model_reconstruction__print_reconstructed_states__pri
     rec.reconstruction[p_tree->find_descendant("CD")] = 6;
 
     ostringstream ost;
-    gmr.print_reconstructed_states(ost, order, { &fam }, p_tree.get());
+    gmr.print_reconstructed_states(ost, order, { fam }, p_tree.get());
     STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", ost.str().c_str());
 }
 
@@ -845,7 +845,7 @@ TEST(Reconstruction, gamma_model_reconstruction__print_additional_data__prints_l
     gamma_model_reconstruction gmr(vector<double>({ 0.3, 0.9, 1.4, 2.0 }));
     gmr._reconstructions["Family5"]._category_likelihoods = { 0.01, 0.03, 0.09, 0.07 };
     ostringstream ost;
-    gmr.print_category_likelihoods(ost, order, { &fam });
+    gmr.print_category_likelihoods(ost, order, { fam });
     STRCMP_CONTAINS("Family ID\t0.3\t0.9\t1.4\t2\t\n", ost.str().c_str());
     STRCMP_CONTAINS("Family5\t0.01\t0.03\0.09\t0.07", ost.str().c_str());
 }
@@ -866,7 +866,7 @@ TEST(Reconstruction, gamma_model_reconstruction__prints_lambda_multipiers)
     rec.reconstruction[p_tree->find_descendant("CD")] = 6;
 
     std::ostringstream ost;
-    gmr.print_reconstructed_states(ost, order, { &fam }, p_tree.get());
+    gmr.print_reconstructed_states(ost, order, { fam }, p_tree.get());
 
     STRCMP_CONTAINS("BEGIN LAMBDA_MULTIPLIERS;", ost.str().c_str());
     STRCMP_CONTAINS("  0.13;", ost.str().c_str());
@@ -884,7 +884,7 @@ TEST(Reconstruction, base_model_reconstruction__print_reconstructed_states)
     values[p_tree->find_descendant("CD")] = 6;
 
     ostringstream ost;
-    bmr.print_reconstructed_states(ost, order, { &fam }, p_tree.get());
+    bmr.print_reconstructed_states(ost, order, { fam }, p_tree.get());
     STRCMP_CONTAINS("#nexus", ost.str().c_str());
     STRCMP_CONTAINS("BEGIN TREES;", ost.str().c_str());
     STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", ost.str().c_str());
@@ -965,7 +965,7 @@ TEST(Reconstruction, print_node_counts)
     auto initializer = [&gmr](const clade* c) { gmr._reconstructions["Family5"].reconstruction[c] = 5;  };
     p_tree->apply_prefix_order(initializer);
     
-    gmr.print_node_counts(ost, order, { &fam }, p_tree.get());
+    gmr.print_node_counts(ost, order, { fam }, p_tree.get());
     STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
     STRCMP_CONTAINS("Family5\t11\t2\t5\t6\t5\t5\t5", ost.str().c_str());
 }
@@ -982,7 +982,7 @@ TEST(Reconstruction, print_node_change)
             gmr._reconstructions["Family5"].reconstruction[c] = dist(randomizer_engine);  
         });
 
-    gmr.print_node_change(ost, order, { &fam }, p_tree.get());
+    gmr.print_node_change(ost, order, { fam }, p_tree.get());
     STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
     STRCMP_CONTAINS("Family5\t+0\t-8\t+5\t+6\t+17\t+7\t+0", ost.str().c_str());
 }
@@ -1004,7 +1004,7 @@ TEST(Reconstruction, print_branch_probabilities)
     vector<clademap<double>> probs(1);
     for (auto c : order)
         probs[0][c] = 0.05;
-    print_branch_probabilities(ost, order, { &fam }, probs);
+    print_branch_probabilities(ost, order, { fam }, probs);
     STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
     STRCMP_CONTAINS("Family5\t0.05\t0.05\t0.05\t0.05\t0.05\t0.05\t0.05\n", ost.str().c_str());
 }
@@ -1774,7 +1774,7 @@ TEST(Reconstruction, base_model_print_increases_decreases_by_family)
     gf.set_species_size("B", 2);
 
     ostringstream ost;
-    bmr.print_increases_decreases_by_family(ost, order, {&gf}, {0.07});
+    bmr.print_increases_decreases_by_family(ost, order, {gf}, {0.07});
     STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA<0>\tB<1>\t<2>\t\n", ost.str().c_str());
     STRCMP_CONTAINS("myid\t0.07\tn\ti\td\tc\n", ost.str().c_str());
 }
@@ -1803,7 +1803,7 @@ TEST(Reconstruction, gamma_model_print_increases_decreases_by_family)
     gf.set_species_size("B", 2);
 
     ostringstream ost;
-    gmr.print_increases_decreases_by_family(ost, order, { &gf }, { 0.07 });
+    gmr.print_increases_decreases_by_family(ost, order, { gf }, { 0.07 });
     STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA<0>\tB<1>\t<2>", ost.str().c_str());
     STRCMP_CONTAINS("myid\t0.07\tn\ti\td\tc", ost.str().c_str());
 }
@@ -1834,7 +1834,7 @@ TEST(Reconstruction, gamma_model_print_increases_decreases_by_clade)
     gf.set_species_size("B", 2);
 
     ostringstream ost;
-    gmr.print_increases_decreases_by_clade(ost, order, { &gf });
+    gmr.print_increases_decreases_by_clade(ost, order, { gf });
     STRCMP_CONTAINS("#Taxon_ID\tIncrease\tDecrease", ost.str().c_str());
     STRCMP_CONTAINS("A<0>\t1\t0", ost.str().c_str());
     STRCMP_CONTAINS("B<1>\t0\t1", ost.str().c_str());
@@ -1866,7 +1866,7 @@ TEST(Reconstruction, base_model_print_increases_decreases_by_clade)
     gf.set_species_size("B", 2);
 
     ostringstream ost;
-    bmr.print_increases_decreases_by_clade(ost, order, { &gf });
+    bmr.print_increases_decreases_by_clade(ost, order, { gf });
     STRCMP_CONTAINS("#Taxon_ID\tIncrease\tDecrease", ost.str().c_str());
     STRCMP_CONTAINS("A<0>\t1\t0", ost.str().c_str());
     STRCMP_CONTAINS("B<1>\t0\t1", ost.str().c_str());
