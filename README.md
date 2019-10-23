@@ -247,6 +247,11 @@ Parameters
 -   **--lambda\_tree, -y**
 
     Lambda tree file path
+	
+-   **--zero_root, -z
+
+	By default, families that do not exist at the root, according to their parsimony reconstruction, will be excluded from
+	the analysis. If this flag is set, these families will not be excluded from the analysis.
 
 Input files
 -----------

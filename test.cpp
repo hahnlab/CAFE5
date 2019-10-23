@@ -248,6 +248,17 @@ TEST(Options, optimizer_short)
     CHECK_EQUAL(5, actual.optimizer_params.neldermead_iterations);
 }
 
+TEST(Options, zero_root_familes)
+{
+    input_parameters by_default;
+    CHECK(by_default.exclude_zero_root_families);
+
+    initialize({ "cafexp", "-z" });
+
+    auto actual = read_arguments(argc, values);
+    CHECK_FALSE(actual.exclude_zero_root_families);
+}
+
 TEST(Options, cannot_have_space_before_optional_parameter)
 {
     try

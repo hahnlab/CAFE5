@@ -27,7 +27,7 @@ input_parameters read_arguments(int argc, char *const argv[])
     int args; // getopt_long returns int or char
     int prev_arg;
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:E:R:P:I:l:m:k:a:s::g::p::r:xb", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:E:R:P:I:l:m:k:a:s::g::p::r:zb", longopts, NULL)) != -1) {
         // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && optarg && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -101,8 +101,8 @@ input_parameters read_arguments(int argc, char *const argv[])
         case 'h':
             my_input_parameters.help = true;
             break;
-        case 'x':
-            my_input_parameters.exclude_zero_root_families = true;
+        case 'z':
+            my_input_parameters.exclude_zero_root_families = false;
             break;
         case ':':   // missing argument
             fprintf(stderr, "%s: option `-%c' requires an argument",
@@ -164,7 +164,7 @@ void show_help()
         "   --simulate, -s\t\tSimulate families. Optionally provide the number of simulations to generate (-s100, or --simulate = 100)\n"
         "   --tree, -t\t\t\tTree file path - Required for estimation\n"
         "   --lambda_tree, -y\t\tLambda tree file path\n"
-        "   --filter, -x\t\t\tFilter out gene families that don't exist at the root.\n"
+        "   --zero_root, -z\t\t\tInclude gene families that don't exist at the root.\n"
         "   --Expansion, -E\t\tExpansion parameter for Nelder-Mead optimizer.\n"
         "   --Reflection, -R\t\tReflection parameter for Nelder-Mead optimizer.\n"
         "   --log, -g\t\t\tName of log file to output.\n"

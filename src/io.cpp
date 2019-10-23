@@ -31,7 +31,7 @@ struct option longopts[] = {
   { "chisquare_compare", required_argument, NULL, 'r' },
   { "pvalue", required_argument, NULL, 'P' },
   { "log", optional_argument, NULL, 'g'},
-  { "exclude", no_argument, NULL, 'x' },
+  { "zero_root", no_argument, NULL, 'z' },
   { "lambda_per_family", no_argument, NULL, 'b' },
   { "optimizer_expansion", optional_argument, NULL, 'E' },
   { "optimizer_reflection", optional_argument, NULL, 'R' },

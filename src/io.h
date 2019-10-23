@@ -43,7 +43,7 @@ public:
     int n_gamma_cats = 1;
     bool do_log = false;
     bool use_uniform_eq_freq = true;
-    bool exclude_zero_root_families = false;
+    bool exclude_zero_root_families = true;
     bool lambda_per_family = false;
 
     optimizer_parameters optimizer_params;
