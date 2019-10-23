@@ -1017,14 +1017,23 @@ TEST(Reconstruction, clade_index_or_name__returns_node_name_plus_index_in_angle_
 TEST(Reconstruction, print_branch_probabilities)
 {
     std::ostringstream ost;
-    vector<clademap<double>> probs(1);
+    map<string, clademap<double>> probs;
     for (auto c : order)
-        probs[0][c] = 0.05;
-    probs[0][p_tree->find_descendant("B")] = -1;
+        probs["Family5"][c] = 0.05;
+    probs["Family5"][p_tree->find_descendant("B")] = -1;
 
     print_branch_probabilities(ost, order, { fam }, probs);
     STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
     STRCMP_CONTAINS("Family5\t0.05\tN/A\t0.05\t0.05\t0.05\t0.05\t0.05\n", ost.str().c_str());
+}
+
+TEST(Reconstruction, print_branch_probabilities__skips_families_without_reconstructions)
+{
+    std::ostringstream ost;
+    map<string, clademap<double>> probs;
+
+    print_branch_probabilities(ost, order, { fam }, probs);
+    CHECK(ost.str().find("Family5") == string::npos);
 }
 
 TEST(Reconstruction, viterbi_sum_probabilities)

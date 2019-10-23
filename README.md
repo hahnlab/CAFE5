@@ -374,9 +374,10 @@ parameter.
 
 -   _model_\_branch\_probabilities.txt
 
-    A tab-separated list of the probabilities calculated for each clade
-	and family. Probabilities are displayed as "N/A" if the parent
-	and child have the same value.
+	Contains a tab-separated list of the probabilities calculated for each clade
+	and significant family. Probabilities are displayed as "N/A" if the parent
+	and child have the same value. In the case of the Gamma model, only
+	contains significant families that are calculated to be rapidly changing.
 	
 -   _model_\_family\_likelihoods.txt
 

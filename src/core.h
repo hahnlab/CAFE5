@@ -50,7 +50,7 @@ public:
     void print_family_clade_table(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree,
         std::function<string(int family_index, const clade* c)> get_family_clade_value);
 
-    void write_results(std::string model_identifier, std::string output_prefix, const clade* p_tree, familyvector& families, std::vector<double>& pvalues, const std::vector<clademap<double>>& branch_probabilities);
+    void write_results(std::string model_identifier, std::string output_prefix, const clade* p_tree, familyvector& families, std::vector<double>& pvalues, double test_pvalue, std::map<std::string, clademap<double>>& branch_probabilities);
 
     virtual int reconstructed_size(const gene_family& family, const clade* clade) const = 0;
     virtual ~reconstruction()

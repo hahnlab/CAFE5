@@ -23,6 +23,6 @@ string newick_node(const clade *node, const cladevector& order, std::function<st
 
 double compute_viterbi_sum(const clade* c, const gene_family& family, const reconstruction* rec, int max_family_size, const matrix_cache& cache, const lambda* p_lambda);
 
-void print_branch_probabilities(std::ostream& ost, const cladevector& order, const vector<gene_family>& gene_families, const vector<clademap<double>>& branch_probabilities);
+void print_branch_probabilities(std::ostream& ost, const cladevector& order, const vector<gene_family>& gene_families, const std::map<std::string, clademap<double>>& branch_probabilities);
 
 #endif

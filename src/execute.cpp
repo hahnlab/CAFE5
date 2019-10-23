@@ -161,18 +161,19 @@ void estimator::execute(std::vector<model *>& models)
 
                 std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(filtered_families, &cache, data.p_prior.get()));
 
-                vector<clademap<double>> branch_probabilities(filtered_families.size());
+                map<string, clademap<double>> branch_probabilities;
 
-                transform(filtered_families.begin(), filtered_families.end(), branch_probabilities.begin(), [&](const gene_family* gf)
+                for (size_t i = 0; i<filtered_families.size(); ++i)
+                {
+                    if (pvalues[i] < _user_input.pvalue)
                     {
-                        clademap<double> results;
+                        auto& r = branch_probabilities[filtered_families[i]->id()];
                         data.p_tree->apply_reverse_level_order([&](const clade* c) {
-                            results[c] = compute_viterbi_sum(c, *gf, rec.get(), data.max_family_size, cache, p_model->get_lambda());
+                            r[c] = compute_viterbi_sum(c, *filtered_families[i], rec.get(), data.max_family_size, cache, p_model->get_lambda());
                             });
-
-                        return results;
-                    });
-                rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, data.gene_families, pvalues, branch_probabilities);
+                    }
+                }
+                rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, data.gene_families, pvalues, _user_input.pvalue, branch_probabilities);
             }
         }
         catch (const OptimizerInitializationFailure& e )

@@ -262,7 +262,7 @@ void reconstruction::print_family_clade_table(std::ostream& ost, const cladevect
     }
 }
 
-void print_branch_probabilities(std::ostream& ost, const cladevector& order, const vector<gene_family>& gene_families, const vector<clademap<double>>& branch_probabilities)
+void print_branch_probabilities(std::ostream& ost, const cladevector& order, const vector<gene_family>& gene_families, const std::map<std::string, clademap<double>>& branch_probabilities)
 {
     ost << "#FamilyID\t";
     for (auto& it : order) {
@@ -270,17 +270,21 @@ void print_branch_probabilities(std::ostream& ost, const cladevector& order, con
     }
     ost << endl;
 
-    for (size_t i = 0; i < gene_families.size(); ++i) {
-        ost << gene_families[i].id();
-        for (auto c : order)
+    for (auto& gf : gene_families) 
+    {
+        if (branch_probabilities.find(gf.id()) != branch_probabilities.end())
         {
-            ost << '\t';
-            if (branch_probabilities[i].at(c) < 0)
-                ost << "N/A";
-            else
-                ost << branch_probabilities[i].at(c);
+            ost << gf.id();
+            for (auto c : order)
+            {
+                ost << '\t';
+                if (branch_probabilities.at(gf.id()).at(c) < 0)
+                    ost << "N/A";
+                else
+                    ost << branch_probabilities.at(gf.id()).at(c);
+            }
+            ost << endl;
         }
-        ost << endl;
     }
 
 }
@@ -321,7 +325,7 @@ void reconstruction::print_node_counts(std::ostream& ost, const cladevector& ord
 }
 
 
-void reconstruction::write_results(std::string model_identifier, std::string output_prefix, const clade *p_tree, familyvector& families, std::vector<double>& pvalues, const std::vector<clademap<double>>& branch_probabilities)
+void reconstruction::write_results(std::string model_identifier, std::string output_prefix, const clade *p_tree, familyvector& families, std::vector<double>& pvalues, double test_pvalue, std::map<std::string, clademap<double>>& branch_probabilities)
 {
     cladevector order;
     p_tree->apply_reverse_level_order([&order](const clade* c) { order.push_back(c); });
@@ -336,7 +340,7 @@ void reconstruction::write_results(std::string model_identifier, std::string out
     print_node_change(change, order, families, p_tree);
 
     std::ofstream family_results(filename(model_identifier + "_family_results", output_prefix));
-    print_increases_decreases_by_family(family_results, order, families, pvalues, 0.05);
+    print_increases_decreases_by_family(family_results, order, families, pvalues, test_pvalue);
 
     std::ofstream clade_results(filename(model_identifier + "_clade_results", output_prefix));
     print_increases_decreases_by_clade(clade_results, order, families);
