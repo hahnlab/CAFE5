@@ -185,7 +185,7 @@ void reconstruction::print_node_change(std::ostream& ost, const cladevector& ord
 }
 
 
-void reconstruction::print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, familyvector& gene_families, const std::vector<double>& pvalues) {
+void reconstruction::print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, familyvector& gene_families, const std::vector<double>& pvalues, double test_pvalue) {
     if (gene_families.size() != pvalues.size())
     {
         throw std::runtime_error("No pvalues found for family");
@@ -213,7 +213,7 @@ void reconstruction::print_increases_decreases_by_family(std::ostream& ost, cons
 
     for (size_t i = 0; i < gene_families.size(); ++i) {
         ost << gene_families[i].id() << '\t' << pvalues[i] << '\t';
-        ost << (pvalues[i] < 0.05 ? 'y' : 'n');
+        ost << (pvalues[i] < test_pvalue ? 'y' : 'n');
         for (auto c : order)
             ost << '\t' << to_idc(get_difference_from_parent(&gene_families[i], c));
         ost << endl;
@@ -336,7 +336,7 @@ void reconstruction::write_results(std::string model_identifier, std::string out
     print_node_change(change, order, families, p_tree);
 
     std::ofstream family_results(filename(model_identifier + "_family_results", output_prefix));
-    print_increases_decreases_by_family(family_results, order, families, pvalues);
+    print_increases_decreases_by_family(family_results, order, families, pvalues, 0.05);
 
     std::ofstream clade_results(filename(model_identifier + "_clade_results", output_prefix));
     print_increases_decreases_by_clade(clade_results, order, families);

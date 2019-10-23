@@ -45,7 +45,7 @@ public:
 
     void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order, familyvector& gene_families);
 
-    void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, familyvector& gene_families, const std::vector<double>& pvalues);
+    void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, familyvector& gene_families, const std::vector<double>& pvalues, double test_pvalue);
         
     void print_family_clade_table(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree,
         std::function<string(int family_index, const clade* c)> get_family_clade_value);

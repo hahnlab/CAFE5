@@ -29,6 +29,7 @@ struct option longopts[] = {
   { "poisson", optional_argument, NULL, 'p' },
   { "simulate", optional_argument, NULL, 's' },
   { "chisquare_compare", required_argument, NULL, 'r' },
+  { "pvalue", required_argument, NULL, 'P' },
   { "log", optional_argument, NULL, 'g'},
   { "exclude", no_argument, NULL, 'x' },
   { "lambda_per_family", no_argument, NULL, 'b' },

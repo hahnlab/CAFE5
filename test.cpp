@@ -212,6 +212,22 @@ TEST(Options, simulate_short)
     CHECK_EQUAL(1000, actual.nsims);
 }
 
+TEST(Options, pvalue_long)
+{
+    initialize({ "cafexp", "--pvalue=0.01" });
+
+    auto actual = read_arguments(argc, values);
+    CHECK_EQUAL(0.01, actual.pvalue);
+}
+
+TEST(Options, pvalue_short)
+{
+    initialize({ "cafexp", "-P0.01" });
+
+    auto actual = read_arguments(argc, values);
+    CHECK_EQUAL(0.01, actual.pvalue);
+}
+
 TEST(Options, optimizer_long)
 {
     initialize({ "cafexp", "--optimizer_expansion=0.05", "--optimizer_reflection=3.2", "--optimizer_iterations=5" });
@@ -1762,6 +1778,23 @@ TEST(Inference, model_vitals)
     STRCMP_EQUAL("Model mockmodel Result: 0.01\nLambda:            0.05\n", ost.str().c_str());
 }
 
+TEST(Reconstruction, gene_family_reconstrctor__print_increases_decreases_by_family__adds_flag_for_significance)
+{
+    ostringstream insignificant;
+    base_model_reconstruction bmr;
+    bmr._reconstructions["myid"][p_tree->find_descendant("AB")] = 5;
+    gene_family gf;
+    gf.set_id("myid");
+    gf.set_species_size("A", 7);
+    order.clear();
+    bmr.print_increases_decreases_by_family(insignificant, order, { gf }, { 0.03 }, 0.01);
+    STRCMP_CONTAINS("myid\t0.03\tn", insignificant.str().c_str());
+
+    ostringstream significant;
+    bmr.print_increases_decreases_by_family(insignificant, order, { gf }, { 0.03 }, 0.05);
+    STRCMP_CONTAINS("myid\t0.03\ty", insignificant.str().c_str());
+}
+
 TEST(Reconstruction, base_model_print_increases_decreases_by_family)
 {
     unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
@@ -1772,7 +1805,7 @@ TEST(Reconstruction, base_model_print_increases_decreases_by_family)
         p_tree->find_descendant("AB") };
 
     base_model_reconstruction bmr;
-    bmr.print_increases_decreases_by_family(empty, order, {}, {});
+    bmr.print_increases_decreases_by_family(empty, order, {}, {}, 0.05);
     STRCMP_CONTAINS("No increases or decreases recorded", empty.str().c_str());
 
     bmr._reconstructions["myid"][p_tree->find_descendant("AB")] = 5;
@@ -1783,7 +1816,7 @@ TEST(Reconstruction, base_model_print_increases_decreases_by_family)
     gf.set_species_size("B", 2);
 
     ostringstream ost;
-    bmr.print_increases_decreases_by_family(ost, order, {gf}, {0.07});
+    bmr.print_increases_decreases_by_family(ost, order, {gf}, {0.07}, 0.05);
     STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA<0>\tB<1>\t<2>\t\n", ost.str().c_str());
     STRCMP_CONTAINS("myid\t0.07\tn\ti\td\tc\n", ost.str().c_str());
 }
@@ -1801,7 +1834,7 @@ TEST(Reconstruction, gamma_model_print_increases_decreases_by_family)
     vector<gamma_bundle *> bundles; //  ({ &bundle });
     vector<double> em;
     gamma_model_reconstruction gmr(em);
-    gmr.print_increases_decreases_by_family(empty, order, {}, {});
+    gmr.print_increases_decreases_by_family(empty, order, {}, {}, 0.05);
     STRCMP_CONTAINS("No increases or decreases recorded", empty.str().c_str());
 
     gmr._reconstructions["myid"].reconstruction[p_tree->find_descendant("AB")] = 5;
@@ -1812,7 +1845,7 @@ TEST(Reconstruction, gamma_model_print_increases_decreases_by_family)
     gf.set_species_size("B", 2);
 
     ostringstream ost;
-    gmr.print_increases_decreases_by_family(ost, order, { gf }, { 0.07 });
+    gmr.print_increases_decreases_by_family(ost, order, { gf }, { 0.07 }, 0.05);
     STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA<0>\tB<1>\t<2>", ost.str().c_str());
     STRCMP_CONTAINS("myid\t0.07\tn\ti\td\tc", ost.str().c_str());
 }

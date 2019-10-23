@@ -27,7 +27,7 @@ input_parameters read_arguments(int argc, char *const argv[])
     int args; // getopt_long returns int or char
     int prev_arg;
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:E:R:I:l:m:k:a:s::g::p::r:xb", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e:o:t:y:n:f:E:R:P:I:l:m:k:a:s::g::p::r:xb", longopts, NULL)) != -1) {
         // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && optarg && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -79,6 +79,9 @@ input_parameters read_arguments(int argc, char *const argv[])
             break;
         case 'E':
             my_input_parameters.optimizer_params.neldermead_expansion = atof(optarg);
+            break;
+        case 'P':
+            my_input_parameters.pvalue = atof(optarg);
             break;
         case 'R':
             my_input_parameters.optimizer_params.neldermead_reflection = atof(optarg);
