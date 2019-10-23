@@ -347,18 +347,15 @@ parameter.
 -   _model_\_family\_results.txt
 
     The file will be named Base\_family\_results.txt or
-    Gamma\_family\_results.txt, based on which model is in play. It
-    consists of a header line giving the name of each node in the tree,
-    followed by a line consisting of the family ID, an estimate of
-    whether the change is significant(’y’ or ’n’) followed by a series
-    of ’c’ (constant), ’i’ (increasing), or ’d’ (decreasing) showing
-    whether the node is larger, smaller, or consistent with its parent
-    node. The characters are separated by tabs.
+    Gamma\_family\_results.txt, based on which model is in play.
+	Contains tab-separated values showing the Family ID, the
+	calculated pvalue for the tree, and a flag showing if it
+	is significant based on the pvalue in use (Defaults to 0.05)
 
-        #FamilyID   pvalue  *   orang   gibbon  chimp   human     
-        0           0.436   n   d       d       c       c 
-        1           0.209   n   c       i       c       c
-        2           0.002   y   c       c       i       i
+		#FamilyID       pvalue  Significant at 0.05
+		0       0.948   n
+		1       0.999   n
+		2       0.007   y
 
     In the Gamma model, an additional set of probabilities are appended,
     representing the likelihood of the family belonging to each gamma

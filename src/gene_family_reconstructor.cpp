@@ -196,26 +196,11 @@ void reconstruction::print_increases_decreases_by_family(std::ostream& ost, cons
         return;
     }
 
-    ost << "#FamilyID\tpvalue\t*\t";
-    for (auto& it : order) {
-        ost << clade_index_or_name(it, order) << "\t";
-    }
-    ost << endl;
-
-    auto to_idc = [](int val) {
-        if (val < 0)
-            return 'd';
-        else if (val > 0)
-            return 'i';
-        else
-            return 'c';
-    };
+    ost << "#FamilyID\tpvalue\tSignificant at " << test_pvalue << "\n";
 
     for (size_t i = 0; i < gene_families.size(); ++i) {
         ost << gene_families[i].id() << '\t' << pvalues[i] << '\t';
         ost << (pvalues[i] < test_pvalue ? 'y' : 'n');
-        for (auto c : order)
-            ost << '\t' << to_idc(get_difference_from_parent(&gene_families[i], c));
         ost << endl;
     }
 }

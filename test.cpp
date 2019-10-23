@@ -1804,6 +1804,16 @@ TEST(Reconstruction, gene_family_reconstrctor__print_increases_decreases_by_fami
     STRCMP_CONTAINS("myid\t0.03\ty", insignificant.str().c_str());
 }
 
+TEST(Reconstruction, print_increases_decreases_by_family__prints_significance_level_in_header)
+{
+    ostringstream ost;
+    base_model_reconstruction bmr;
+    gene_family gf;
+
+    bmr.print_increases_decreases_by_family(ost, order, {gf}, {0.07}, 0.00001);
+    STRCMP_CONTAINS("#FamilyID\tpvalue\tSignificant at 1e-05\n", ost.str().c_str());
+}
+
 TEST(Reconstruction, base_model_print_increases_decreases_by_family)
 {
     unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
@@ -1826,8 +1836,8 @@ TEST(Reconstruction, base_model_print_increases_decreases_by_family)
 
     ostringstream ost;
     bmr.print_increases_decreases_by_family(ost, order, {gf}, {0.07}, 0.05);
-    STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA<0>\tB<1>\t<2>\t\n", ost.str().c_str());
-    STRCMP_CONTAINS("myid\t0.07\tn\ti\td\tc\n", ost.str().c_str());
+    STRCMP_CONTAINS("#FamilyID\tpvalue\tSignificant at 0.05\n", ost.str().c_str());
+    STRCMP_CONTAINS("myid\t0.07\tn\n", ost.str().c_str());
 }
 
 TEST(Reconstruction, gamma_model_print_increases_decreases_by_family)
@@ -1855,8 +1865,8 @@ TEST(Reconstruction, gamma_model_print_increases_decreases_by_family)
 
     ostringstream ost;
     gmr.print_increases_decreases_by_family(ost, order, { gf }, { 0.07 }, 0.05);
-    STRCMP_CONTAINS("#FamilyID\tpvalue\t*\tA<0>\tB<1>\t<2>", ost.str().c_str());
-    STRCMP_CONTAINS("myid\t0.07\tn\ti\td\tc", ost.str().c_str());
+    STRCMP_CONTAINS("#FamilyID\tpvalue\tSignificant at 0.05", ost.str().c_str());
+    STRCMP_CONTAINS("myid\t0.07\tn", ost.str().c_str());
 }
 
 TEST(Reconstruction, gamma_model_print_increases_decreases_by_clade)
