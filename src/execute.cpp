@@ -165,7 +165,12 @@ void estimator::execute(std::vector<model *>& models)
 
                 transform(filtered_families.begin(), filtered_families.end(), branch_probabilities.begin(), [&](const gene_family* gf)
                     {
-                        return compute_branch_level_probabilities(data.p_tree, *gf, rec.get(), p_model->get_lambda(), cache, data.max_family_size, data.max_root_family_size);
+                        clademap<double> results;
+                        data.p_tree->apply_reverse_level_order([&](const clade* c) {
+                            results[c] = compute_viterbi_sum(c, *gf, rec.get(), data.max_family_size, cache, p_model->get_lambda());
+                            });
+
+                        return results;
                     });
                 rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, data.gene_families, pvalues, branch_probabilities);
             }

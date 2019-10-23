@@ -375,7 +375,8 @@ parameter.
 -   _model_\_branch\_probabilities.txt
 
     A tab-separated list of the probabilities calculated for each clade
-	and family.
+	and family. Probabilities are displayed as "N/A" if the parent
+	and child have the same value.
 	
 -   _model_\_family\_likelihoods.txt
 

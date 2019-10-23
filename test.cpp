@@ -1004,9 +1004,11 @@ TEST(Reconstruction, print_branch_probabilities)
     vector<clademap<double>> probs(1);
     for (auto c : order)
         probs[0][c] = 0.05;
+    probs[0][p_tree->find_descendant("B")] = -1;
+
     print_branch_probabilities(ost, order, { fam }, probs);
     STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
-    STRCMP_CONTAINS("Family5\t0.05\t0.05\t0.05\t0.05\t0.05\t0.05\t0.05\n", ost.str().c_str());
+    STRCMP_CONTAINS("Family5\t0.05\tN/A\t0.05\t0.05\t0.05\t0.05\t0.05\n", ost.str().c_str());
 }
 
 TEST(Reconstruction, viterbi_sum_probabilities)
@@ -1014,12 +1016,19 @@ TEST(Reconstruction, viterbi_sum_probabilities)
     matrix_cache cache(25);
     cache.precalculate_matrices({ 0.05 }, { 1,3,7 });
     base_model_reconstruction rec;
-    for (auto c : order)
-        rec._reconstructions[fam.id()][c] = 6;
+    rec._reconstructions[fam.id()][p_tree->find_descendant("AB")] = 10;
     single_lambda lm(0.05);
-    clademap<double> results;
-    viterbi_sum_probabilities(p_tree->find_descendant("AB"), fam, &rec, 24, cache, &lm, results);
-    DOUBLES_EQUAL(0.9002482, results[p_tree->find_descendant("AB")], 0.000001);
+    DOUBLES_EQUAL(0.2182032, compute_viterbi_sum(p_tree->find_descendant("A"), fam, &rec, 24, cache, &lm), 0.000001);
+}
+
+TEST(Reconstruction, viterbi_sum_probabilities_returns_negative_one_if_equal_parent_and_child_sizes)
+{
+    matrix_cache cache(25);
+    cache.precalculate_matrices({ 0.05 }, { 1,3,7 });
+    base_model_reconstruction rec;
+    rec._reconstructions[fam.id()][p_tree->find_descendant("AB")] = 11;
+    single_lambda lm(0.05);
+    DOUBLES_EQUAL(-1, compute_viterbi_sum(p_tree->find_descendant("A"), fam, &rec, 24, cache, &lm), 0.000001);
 }
 
 TEST(Reconstruction, pvalues)

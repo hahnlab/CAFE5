@@ -273,7 +273,13 @@ void print_branch_probabilities(std::ostream& ost, const cladevector& order, con
     for (size_t i = 0; i < gene_families.size(); ++i) {
         ost << gene_families[i].id();
         for (auto c : order)
-            ost << '\t' << branch_probabilities[i].at(c);
+        {
+            ost << '\t';
+            if (branch_probabilities[i].at(c) < 0)
+                ost << "N/A";
+            else
+                ost << branch_probabilities[i].at(c);
+        }
         ost << endl;
     }
 
@@ -341,40 +347,38 @@ void reconstruction::write_results(std::string model_identifier, std::string out
     print_additional_data(order, families, output_prefix);
 }
 
-void viterbi_sum_probabilities(const clade* c, const gene_family& family, const reconstruction* rec, int max_family_size, const matrix_cache& cache, const lambda* p_lambda, clademap<double>& results)
+double compute_viterbi_sum(const clade* c, const gene_family& family, const reconstruction* rec, int max_family_size, const matrix_cache& cache, const lambda* p_lambda)
 {
     if (c->is_root())
     {
-        results[c] = 0;
-        return;
+        return 0;
     }
 
     const matrix* probs = cache.get_matrix(c->get_branch_length(), p_lambda->get_value_for_clade(c));
 
     int parent_size = rec->reconstructed_size(family, c->get_parent());
-    double calculated_probability = probs->get(parent_size, rec->reconstructed_size(family, c));
-    for (int m = 0; m < max_family_size; m++)
+    int child_size = rec->reconstructed_size(family, c);
+    if (parent_size == child_size)
     {
-        double probability_to_m = probs->get(parent_size, m);
-        if (probability_to_m == calculated_probability)
-        {
-            results[c] += probability_to_m / 2.0;
-        }
-        else if (probability_to_m < calculated_probability)
-        {
-            results[c] += probability_to_m;
-        }
+        /// don't print a probability if the parent and child sizes are the same
+        return -1;
     }
-}
-
-clademap<double> compute_branch_level_probabilities(const clade* p_tree, const gene_family& family, const reconstruction* rec, const lambda* p_lambda, const matrix_cache& cache, int max_family_size, int max_root_family_size)
-{
-    clademap<double> results;
-
-    auto sum_probabilities_func = [&](const clade* parent) {
-        viterbi_sum_probabilities(parent, family, rec, max_family_size, cache, p_lambda, results);
-    };
-    p_tree->apply_reverse_level_order(sum_probabilities_func);
-
-    return results;
+    else
+    {
+        double result = 0;
+        double calculated_probability = probs->get(parent_size, child_size);
+        for (int m = 0; m < max_family_size; m++)
+        {
+            double probability_to_m = probs->get(parent_size, m);
+            if (probability_to_m == calculated_probability)
+            {
+                result += probability_to_m / 2.0;
+            }
+            else if (probability_to_m < calculated_probability)
+            {
+                result += probability_to_m;
+            }
+        }
+        return result;
+    }
 }
