@@ -164,10 +164,10 @@ void reconstruct_gene_family(const lambda* lambda, const clade *p_tree,
 
 }
 
-string newick_node(const clade *node, const cladevector& order, std::function<std::string(const clade *c)> textwriter)
+string newick_node(const clade *node, const cladevector& order, bool significant, std::function<std::string(const clade *c)> textwriter)
 {
     ostringstream ost;
-    ost << clade_index_or_name(node, order) << "_" << textwriter(node);
+    ost << clade_index_or_name(node, order) << (significant ? "*" : "") << "_" << textwriter(node);
 
     if (!node->is_root())
         ost << ':' << node->get_branch_length();
@@ -274,22 +274,37 @@ void print_branch_probabilities(std::ostream& ost, const cladevector& order, con
 
 }
 
-void reconstruction::print_reconstructed_states(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree)
+void reconstruction::print_reconstructed_states(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree, double test_pvalue, std::map<std::string, clademap<double>>& branch_probabilities)
 {
     ost << "#nexus\nBEGIN TREES;\n";
     for (size_t i = 0; i < gene_families.size(); ++i)
     {
         auto& gene_family = gene_families[i];
+
         auto g = [i, gene_family, this](const clade* node) {
             return get_reconstructed_state(gene_family, node);
         };
 
-        auto f = [g, order, this](const clade* node) {
-            return newick_node(node, order, g);
-        };
+        function<string(const clade*)> text_func;
+        if (branch_probabilities.find(gene_family.id()) != branch_probabilities.end())
+        {
+            auto is_significant = [&branch_probabilities, test_pvalue, gene_family](const clade* node) {
+                return branch_probabilities.find(gene_family.id())->second.at(node) < test_pvalue;
+            };
+
+            text_func = [g, order, is_significant, this](const clade* node) {
+                return newick_node(node, order, is_significant(node), g);
+            };
+        }
+        else
+        {
+            text_func = [g, order, this](const clade* node) {
+                return newick_node(node, order, false, g);
+            };
+        }
 
         ost << "  TREE " << gene_family.id() << " = ";
-        p_tree->write_newick(ost, f);
+        p_tree->write_newick(ost, text_func);
 
         ost << ';' << endl;
     }
@@ -316,7 +331,7 @@ void reconstruction::write_results(std::string model_identifier, std::string out
     p_tree->apply_reverse_level_order([&order](const clade* c) { order.push_back(c); });
 
     std::ofstream ofst(filename(model_identifier + "_asr", output_prefix, "tre"));
-    print_reconstructed_states(ofst, order, families, p_tree);
+    print_reconstructed_states(ofst, order, families, p_tree, test_pvalue, branch_probabilities);
 
     std::ofstream counts(filename(model_identifier + "_count", output_prefix, "tab"));
     print_node_counts(counts, order, families, p_tree);

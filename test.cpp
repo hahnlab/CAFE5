@@ -848,6 +848,28 @@ TEST(Reconstruction, reconstruct_leaf_node)
   DOUBLES_EQUAL(0.193072, L[3], 0.0001);
 }
 
+TEST(Reconstruction, print_reconstructed_states__prints_star_for_significant_values)
+{
+    base_model_reconstruction bmr;
+    auto& values = bmr._reconstructions["Family5"];
+
+    values[p_tree.get()] = 7;
+    values[p_tree->find_descendant("AB")] = 8;
+    values[p_tree->find_descendant("CD")] = 6;
+
+    map<string, clademap<double>> branch_probs;
+    p_tree->apply_reverse_level_order([&branch_probs](const clade* c) {branch_probs["Family5"][c] = .5; });
+    branch_probs["Family5"][p_tree->find_descendant("AB")] = 0.02;
+
+    ostringstream sig;
+    bmr.print_reconstructed_states(sig, order, { fam }, p_tree.get(), 0.05, branch_probs);
+    STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>*_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", sig.str().c_str());
+
+    ostringstream insig;
+    bmr.print_reconstructed_states(insig, order, { fam }, p_tree.get(), 0.01, branch_probs);
+    STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", insig.str().c_str());
+}
+
 TEST(Reconstruction, gamma_model_reconstruction__print_reconstructed_states__prints_value_for_each_category_and_a_summation)
 {
     gamma_model_reconstruction gmr(vector<double>({ 1.0 }));
@@ -863,7 +885,8 @@ TEST(Reconstruction, gamma_model_reconstruction__print_reconstructed_states__pri
     rec.reconstruction[p_tree->find_descendant("CD")] = 6;
 
     ostringstream ost;
-    gmr.print_reconstructed_states(ost, order, { fam }, p_tree.get());
+    map<string, clademap<double>> branch_probs;
+    gmr.print_reconstructed_states(ost, order, { fam }, p_tree.get(), 0.05, branch_probs);
     STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", ost.str().c_str());
 }
 
@@ -892,8 +915,10 @@ TEST(Reconstruction, gamma_model_reconstruction__prints_lambda_multipiers)
     rec.reconstruction[p_tree->find_descendant("AB")] = 8;
     rec.reconstruction[p_tree->find_descendant("CD")] = 6;
 
+    map<string, clademap<double>> branch_probs;
+
     std::ostringstream ost;
-    gmr.print_reconstructed_states(ost, order, { fam }, p_tree.get());
+    gmr.print_reconstructed_states(ost, order, { fam }, p_tree.get(), 0.05, branch_probs);
 
     STRCMP_CONTAINS("BEGIN LAMBDA_MULTIPLIERS;", ost.str().c_str());
     STRCMP_CONTAINS("  0.13;", ost.str().c_str());
@@ -910,8 +935,11 @@ TEST(Reconstruction, base_model_reconstruction__print_reconstructed_states)
     values[p_tree->find_descendant("AB")] = 8;
     values[p_tree->find_descendant("CD")] = 6;
 
+    map<string, clademap<double>> branch_probs;
+
     ostringstream ost;
-    bmr.print_reconstructed_states(ost, order, { fam }, p_tree.get());
+
+    bmr.print_reconstructed_states(ost, order, { fam }, p_tree.get(), 0.05, branch_probs);
     STRCMP_CONTAINS("#nexus", ost.str().c_str());
     STRCMP_CONTAINS("BEGIN TREES;", ost.str().c_str());
     STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", ost.str().c_str());

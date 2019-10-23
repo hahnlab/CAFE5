@@ -41,7 +41,7 @@ public:
 
     void print_node_counts(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree);
 
-    void print_reconstructed_states(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree);
+    void print_reconstructed_states(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree, double test_pvalue, std::map<std::string, clademap<double>>& branch_probabilities);
 
     void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order, familyvector& gene_families);
 
