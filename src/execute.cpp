@@ -22,16 +22,16 @@ double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 
 void estimator::compute(std::vector<model *>& models, const input_parameters &my_input_parameters)
 {
-    std::ofstream results_file(filename("results", my_input_parameters.output_prefix));
-
-    std::ofstream likelihoods_file(filename("family_lks", my_input_parameters.output_prefix));
 
     std::vector<double> model_likelihoods(models.size());
     for (size_t i = 0; i < models.size(); ++i) {
         cout << endl << "Inferring processes for " << models[i]->name() << " model" << endl;
+
         double result = models[i]->infer_family_likelihoods(data.p_prior.get(), data.rootdist, models[i]->get_lambda());
+        std::ofstream results_file(filename(models[i]->name() + "_results", my_input_parameters.output_prefix));
         models[i]->write_vital_statistics(results_file, result);
 
+        std::ofstream likelihoods_file(filename(models[i]->name() + "_family_likelihoods", my_input_parameters.output_prefix));
         models[i]->write_family_likelihoods(likelihoods_file);
 
         model_likelihoods[i] = result;

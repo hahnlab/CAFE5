@@ -296,39 +296,33 @@ to non-informative parameter estimates, so we had to set them aside. We can now 
 with:
 
 ```
-load -i large_filtered_cafe_input.txt -t 4 -l reports/log_run2.txt
-tree ((((cat:68.710507,horse:68.710507):4.566782,cow:73.277289):20.722711,(((((chimp:4.444172,human:4.444172):6.682678,orang:11.126850):2.285855,gibbon:13.412706):7.211527,(macaque:4.567240,baboon:4.567240):16.056992):16.060702,marmoset:36.684935):57.315065):38.738021,(rat:36.302445,mouse:36.302445):96.435575)
-lambda -l 0.00265952 -t ((((1,1)1,1)1,(((((1,1)1,1)1,1)1,(1,1)1)1,1)1)1,(1,1)1)
-report reports/report_run2
+cafexp -i large_filtered_cafe_input.txt -t mammals_tree.txt -l 0.0024443005606287 -o large_results
 ```
 
-For the sake of completion, we provide you with a file (cafe_shell_scripts/cafetutorial_
-run2.sh) containing all these commands. However, running this analysis can take a
-long time – so we suggest you just have a quick look on the output that we provide
-(reports/report run2.cafe).
+Running this analysis can take a long time – so we suggest you download large_results.tar.gz
+from the tutorial archive and look at it.
 
 ### 3.1.3 Estimating multiple λ for different parts of the tree ###
 If you suspect different species or clades have different rates of gene family evolution, you
 can ask CAFE to estimate them. In this case, you must tell CAFE how many different
-λs there are, and which species or clades share these different λs. This can be done by
-entering the following commands on CAFE’s shell:
+λs there are, and which species or clades share these different λs. The lambdas and 
+their locations are specified in a tree file. For example, if you suspect chimps and humans
+evolve at a different rate, you might set up a tree that looks like this:
 
 ```
-# load -i filtered_cafe_input.txt -t 4 -l reports/log_run3.txt
-# tree ((((cat:68.710507,horse:68.710507):4.566782,cow:73.277289):20.722711,(((((chimp:4.444172,human:4.444172):6.682678,orang:11.126850):2.285855,gibbon:13.412706):7.211527,(macaque:4.567240,baboon:4.567240):16.056992):16.060702,marmoset:36.684935):57.315065):38.738021,(rat:36.302445,mouse:36.302445):96.435575)
-# lambda -s -t ((((3,3)3,3)3,(((((1,1)1,2)2,2)2,(2,2)2)2,3)3)3,(3,3)3)
-# report reports/report_run3
+((((cat:3,horse:3):3,cow:3):3,(((((chimp:1,human:1):1,orang:2):2,gibbon:2):2,(macaque:2,baboon:2):2):2,marmoset:3):3):3,(rat:3,mouse:3):3)
 ```
 
-or, alternatively, you can call CAFE with:
-
-` $ cafe cafe_shell_scripts/cafetutorial_run3.sh`
-
-The most important line here is the argument for the -t parameter, ‘((((3,3)3,3)3,
-(((((1,1)1,2)2,2)2,(2,2)2)2,3)3)3,(3,3)3)’. This tree structure specifies which
+This tree structure specifies which
 species are to share the same λ values. In our example, humans, chimpanzees and their
 immediate ancestor share λ1 ; then all the remaining primates (except for marmoset)
-share λ2 ; and finally marmoset and the other species share the λ3 value.
+share λ2 ; and finally marmoset and the other species share the λ3 value. The tree is in the 
+tutorial directory under the name separate_lambdas.txt. 
+
+```
+cafexp -i filtered_cafe_input.txt -t mammals_tree.txt -y separate_lambdas.txt
+```
+
 After CAFE finishes running, you should have obtained values somewhat similar to
 these: λ1 = 0.0182972, λ2 = 0.00634377 and λ3 = 0.00140705 (see reports/report_
 run3.cafe). This tells us that the lineage leading to (and including) humans and chimpanzees have higher gene family evolution rates, followed by the remaining primates
@@ -352,10 +346,6 @@ lambda -l 0.00265952
 genfamily tutorial_genfamily/rnd -t 100
 lhtest -d tutorial_genfamily -t ((((3,3)3,3)3,(((((1,1)1,2)2,2)2,(2,2)2)2,3)3)3,(3,3)3) -l 0.00265952 -o reports/lhtest_result.txt
 ```
-
-or running the shell script we provide:
-
-`$ cafe cafe_shell_scripts/cafetutorial_run4.sh`
 
 Here, the genfamily command simulates the datasets (in the example above, we are
 asking for 100 simulations with -t 100). It estimates λ from the observed data to
@@ -381,29 +371,6 @@ Note that the observed likelihood ratio (2 × (lnLglobal − lnLmulti )) would f
 far left tail of the null distribution, yielding a very small p-value, and meaning that the
 the probability of a multi-λ model fitting better than a global-λ model by chance is very
 small.
-
-## 3.3 Estimating separate birth (λ) and death (µ) parameters ##
-The assumption that λ = µ can be relaxed by asking CAFE to estimate them separately.
-Below you will find the commands to do this analysis assuming the whole tree shares
-the same λ and the same µ, but allowing these two parameters to be estimated (you
-can also define species and clades that should share the same λs and µs with the -t
-parameter):
-
-```
-load -i filtered_cafe_input.txt -t 4 -l reports/log_run5.txt
-tree ((((cat:68.710507,horse:68.710507):4.566782,cow:73.277289):20.722711,(((((chimp:4.444172,human:4.444172):6.682678,orang:11.126850):2.285855,gibbon:13.412706):7.211527,(macaque:4.567240,baboon:4.567240):16.056992):16.060702,marmoset:36.684935):57.315065):38.738021,(rat:36.302445,mouse:36.302445):96.435575)
-lambdamu -s -t ((((1,1)1,1)1,(((((1,1)1,1)1,1)1,(1,1)1)1,1)1)1,(1,1)1)
-report reports/report_run5
-```
-
-Or simply run CAFE on the shell script we provide with:
-
-`$ cafe cafe_shell_scripts/cafetutorial_run5.sh`
-
-Here, you will want to open file reports/log run5.txt (the .cafe file will have
-the same structure as when a single birth-death parameter was estimated), as it will
-give you the separate λ and µ values. In our run, we obtained λ = 0.00265363 and
-µ = 0.00266528.
 
 ## 3.4 Estimating an error model to account for genome assembly error ##
 Errors in the assembly of a genome (and its annotation) can cause the observed number of gene copies in gene families to deviate from the true ones, possibly leading to

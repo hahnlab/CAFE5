@@ -337,16 +337,13 @@ parameter.
     families, in the Nexus file format
     (https://en.wikipedia.org/wiki/Nexus\_file). A tree is provided for
     each family,with the expected family size set off with an underscore
-    from the node ID. In the case of a Gamma reconstruction, each
-    category will have its own expected family size, with the overall
-    family size at the end. For example, given three categories, an
-    internal node with the ID of 3 might look like 3\_12\_10\_11\_12.
-    The expected sizes for each of the three categories are 12, 10, and
-    11 respectively, with an overall weighted expectation of 12.
+    from the node ID. 
 
     In the case of the Gamma reconstruction, the Lambda multipliers for
-    each category are given their own section in this file.
+    each category are given their own section in this file. In this case,
+	ony the fastest families are printed.
 
+	
 -   _model_\_family\_results.txt
 
     The file will be named Base\_family\_results.txt or
@@ -380,7 +377,7 @@ parameter.
     A tab-separated list of the probabilities calculated for each clade
 	and family.
 	
--   _model_\_family\_lks.txt
+-   _model_\_family\_likelihoods.txt
 
     Using the Base model, a tab-separated file consisting of the header
     line “\#FamilyID Likelihood of Family”, and additional tab-separated
@@ -402,7 +399,7 @@ parameter.
     -   [Significant]{} The values for each family are listed on each
         tab-separated line.
 
--   results.txt
+-   _model_\_results.txt
 
     A file giving the name of the model that was selected (“Base” or
     “Gamma”), the final likelihood of that model, the final value of the
