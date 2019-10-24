@@ -198,7 +198,7 @@ void initialization_failure_advice(std::ostream& ost, const std::vector<gene_fam
     ost << "\nFamilies with largest size differentials:\n";
     for (auto& t : m)
         ost << t.first << ": " << t.second << "\n";
-    ost << "\nYou may want to try removing the top few families with the largest difference\nbetween the max and min counts and then re-run the analysis.\n";
+    ost << "\nYou may want to try removing the top few families with the largest difference\nbetween the max and min counts and then re-run the analysis.\n\n";
 }
 
 void chisquare_compare::execute(std::vector<model *>&)
