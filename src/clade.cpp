@@ -4,7 +4,6 @@
 
 #include "clade.h"
 #include "gene_family.h"
-#include "io.h"
 
 using namespace std;
 

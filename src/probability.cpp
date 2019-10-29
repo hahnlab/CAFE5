@@ -15,6 +15,7 @@
 #include "probability.h"
 #include "matrix_cache.h"
 #include "gene_family.h"
+#include "error_model.h"
 
 using namespace std;
 
@@ -355,7 +356,7 @@ size_t adjust_for_error_model(size_t c, const error_model *p_error_model)
     if (p_error_model == nullptr)
         return c;
 
-    if (c >= p_error_model->get_max_count())
+    if (c >= p_error_model->get_max_family_size())
     {
         throw runtime_error("Trying to simulate leaf family size that was not included in error model");
     }

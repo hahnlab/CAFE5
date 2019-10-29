@@ -8,6 +8,7 @@
 #include "base_model.h"
 #include "gamma_core.h"
 #include "gamma.h"
+#include "error_model.h"
 
 #define GAMMA_INITIAL_GUESS_EXPONENTIAL_DISTRIBUTION_LAMBDA 1.75
 

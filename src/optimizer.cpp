@@ -10,7 +10,6 @@
 #include <memory>
 
 #include "optimizer.h"
-#include "io.h"
 #include "optimizer_scorer.h"
 
 #define PHASED_OPTIMIZER_PHASE2_PRECISION 1e-6

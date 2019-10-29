@@ -81,7 +81,7 @@ double base_model::infer_family_likelihoods(root_equilibrium_distribution *prior
 #pragma omp parallel for
     for (size_t i = 0; i < _p_gene_families->size(); ++i) {
         if (references[i] == i)
-            partial_likelihoods[i] = inference_prune(_p_gene_families->at(i), calc, _p_lambda, _p_tree, 1.0, _max_root_family_size, _max_family_size);
+            partial_likelihoods[i] = inference_prune(_p_gene_families->at(i), calc, _p_lambda, _p_error_model, _p_tree, 1.0, _max_root_family_size, _max_family_size);
             // probabilities of various family sizes
     }
 
@@ -130,7 +130,7 @@ inference_optimizer_scorer *base_model::get_lambda_optimizer(user_data& data)
     auto lengths = _p_tree->get_branch_lengths();
     auto longest_branch = *max_element(lengths.begin(), lengths.end());
 
-    if (data.p_error_model)
+    if (_p_error_model && !data.p_error_model)
     {
         return new lambda_epsilon_optimizer(this, _p_error_model, data.p_prior.get(), data.rootdist, _p_lambda, longest_branch);
     }

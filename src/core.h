@@ -142,6 +142,7 @@ public:
     virtual std::string name() = 0;
     virtual void write_family_likelihoods(std::ostream& ost) = 0;
     virtual void write_vital_statistics(std::ostream& ost, double final_likelihood);
+    void write_error_model(std::ostream& ost);
 
     //! Based on the model parameters, attempts to reconstruct the most likely counts of each family at each node
     virtual reconstruction* reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
@@ -180,7 +181,7 @@ inline std::string filename(std::string base, std::string suffix)
     return filename(base, suffix, "txt");
 }
 
-std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, const lambda *_lambda, const clade *_p_tree, double _lambda_multiplier, int _max_root_family_size, int _max_family_size);
+std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, const lambda *_lambda, const error_model *p_error_model, const clade *_p_tree, double _lambda_multiplier, int _max_root_family_size, int _max_family_size);
 
 #endif /* CORE_H */
 

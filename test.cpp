@@ -23,6 +23,7 @@
 #include "src/simulator.h"
 #include "src/poisson.h"
 #include "src/optimizer.h"
+#include "src/error_model.h"
 
 #define CPPUTEST_MEM_LEAK_DETECTION_DISABLED
 
@@ -248,6 +249,24 @@ TEST(Options, optimizer_short)
     CHECK_EQUAL(5, actual.optimizer_params.neldermead_iterations);
 }
 
+TEST(Options, errormodel_accepts_argument)
+{
+    initialize({ "cafexp", "-eerror.txt" });
+
+    auto actual = read_arguments(argc, values);
+    CHECK(actual.use_error_model);
+    STRCMP_EQUAL("error.txt", actual.error_model_file_path.c_str());
+}
+
+TEST(Options, errormodel_accepts_no_argument)
+{
+    initialize({ "cafexp", "-e" });
+
+    auto actual = read_arguments(argc, values);
+    CHECK(actual.use_error_model);
+    CHECK(actual.error_model_file_path.empty());
+}
+
 TEST(Options, zero_root_familes)
 {
     input_parameters by_default;
@@ -391,6 +410,27 @@ TEST(Options, per_family_must_provide_tree)
     {
         STRCMP_EQUAL("No tree file provided", err.what());
     }
+}
+
+TEST(Options, cannot_estimate_error_and_gamma_together)
+{
+    input_parameters params;
+    params.n_gamma_cats = 3;
+    params.use_error_model = true;
+    params.error_model_file_path = "model.txt";
+    params.check_input();
+
+    try
+    {
+        params.error_model_file_path.clear();
+        params.check_input();
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("Estimating an error model with a gamma distribution is not supported at this time", err.what());
+    }
+
 }
 
 TEST(GeneFamilies, read_gene_families_reads_cafe_files)
@@ -637,7 +677,7 @@ TEST(Inference, base_optimizer_guesses_lambda_and_unique_epsilons)
 
     base_model model(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 10, 10, &err);
 
-    _user_data.p_error_model = &err;
+    _user_data.p_error_model = nullptr;
     _user_data.p_lambda = nullptr;
     unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(_user_data));
 
@@ -1261,6 +1301,40 @@ TEST(Inference, create_gamma_model_if__n_gamma_cats__provided)
         delete m;
 }
 
+TEST(Inference, build_models__uses_error_model_if_provided)
+{
+    input_parameters params;
+    params.use_error_model = true;
+    error_model em;
+    em.set_probabilities(0, { 0, 0.99, 0.01 });
+    user_data data;
+    data.p_error_model = &em;
+    data.max_family_size = 5;
+    single_lambda lambda(0.05);
+    data.p_lambda = &lambda;
+    auto model = build_models(params, data)[0];
+    std::ostringstream ost;
+    model->write_vital_statistics(ost, 0.07);
+    STRCMP_CONTAINS("Epsilon: 0.01\n", ost.str().c_str());
+    delete model;
+}
+
+TEST(Inference, build_models__creates_default_error_model_if_needed)
+{
+    input_parameters params;
+    params.use_error_model = true;
+    user_data data;
+    data.max_family_size = 5;
+    single_lambda lambda(0.05);
+    data.p_lambda = &lambda;
+    auto model = build_models(params, data)[0];
+    std::ostringstream ost;
+    model->write_vital_statistics(ost, 0.01);
+    STRCMP_CONTAINS("Epsilon: 0.05\n", ost.str().c_str());
+    delete model;
+}
+
+
 void build_matrix(matrix& m)
 {
     m.set(0, 0, 1);
@@ -1351,11 +1425,36 @@ TEST(Probability, error_model_get_epsilon_zero_zero_must_be_zero)
     }
 }
 
+TEST(Probability, error_model__set_probabilities__cannot_set_higher_values_without_setting_zero)
+{
+    error_model model;
+    try
+    {
+        model.set_probabilities(5, { 0.4, 0.3, 0.3 });
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("Cannot have a non-zero probability for family size 0 for negative deviation", err.what());
+    }
+    model.set_probabilities(0, { 0, 0.7, 0.3 });
+    model.set_probabilities(5, { 0.4, 0.3, 0.3 });
+    CHECK(model.get_probs(5) == vector<double>({0.4, 0.3, 0.3}));
+}
+
+TEST(Probability, error_model__set_probabilities__can_set_higher_values_if_valid_for_zero)
+{
+    error_model model;
+    model.set_probabilities(5, { 0, 0.7, 0.3 });
+    CHECK(model.get_probs(5) == vector<double>({ 0, 0.7, 0.3 }));
+}
+
 TEST(Probability, error_model_rows_must_add_to_one)
 {
     error_model model;
     try
     {
+        model.set_probabilities(0, { 0,1,0 });
         model.set_probabilities(1, { 0.3, 0.3, 0.3 });
         CHECK(false);
     }
@@ -1414,12 +1513,59 @@ TEST(Probability, read_error_model)
     DOUBLES_EQUAL(0.6, vec[1], 0.00001);
     DOUBLES_EQUAL(0.2, vec[2], 0.00001);
 
-
     vec = model.get_probs(4);
     LONGS_EQUAL(3, vec.size());
     DOUBLES_EQUAL(0.2, vec[0], 0.00001);
     DOUBLES_EQUAL(0.6, vec[1], 0.00001);
     DOUBLES_EQUAL(0.2, vec[2], 0.00001);
+
+    vec = model.get_probs(7);
+    LONGS_EQUAL(3, vec.size());
+    DOUBLES_EQUAL(0.2, vec[0], 0.00001);
+    DOUBLES_EQUAL(0.6, vec[1], 0.00001);
+    DOUBLES_EQUAL(0.2, vec[2], 0.00001);
+}
+
+
+TEST(Probability, write_error_model)
+{
+    error_model model;
+    model.set_probabilities(0, { .0, .7, .3 });
+    model.set_probabilities(1, { .2, .6, .2 });
+    model.set_probabilities(2, { .1, .8, .1 });
+    model.set_probabilities(3, { .2, .6, .2 });
+
+    ostringstream ost;
+    write_error_model_file(ost, model);
+
+    const char* expected = "maxcnt: 3\ncntdiff: -1 0 1\n"
+        "0 0 0.7 0.3\n"
+        "1 0.2 0.6 0.2\n"
+        "2 0.1 0.8 0.1\n"
+        "3 0.2 0.6 0.2\n";
+
+    STRCMP_EQUAL(expected, ost.str().c_str());
+}
+
+TEST(Probability, write_error_model_skips_unnecessary_lines)
+{
+    error_model model;
+    model.set_probabilities(0, { .0, .7, .3 });
+    model.set_probabilities(1, { .2, .6, .2 });
+    model.set_probabilities(10, { .1, .8, .1 });
+    model.set_probabilities(15, { .05, .9, .05 });
+    model.set_probabilities(18, { .05, .9, .05 });
+
+    ostringstream ost;
+    write_error_model_file(ost, model);
+
+    const char* expected = "maxcnt: 18\ncntdiff: -1 0 1\n"
+        "0 0 0.7 0.3\n"
+        "1 0.2 0.6 0.2\n"
+        "10 0.1 0.8 0.1\n"
+        "15 0.05 0.9 0.05\n";
+
+    STRCMP_EQUAL(expected, ost.str().c_str());
 }
 
 TEST(Probability, matrix_cache_warns_on_saturation)
@@ -1465,7 +1611,7 @@ TEST(Inference, prune)
     single_lambda lambda(0.03);
     matrix_cache cache(21);
     cache.precalculate_matrices({ 0.045 }, { 1.0,3.0,7.0 });
-    auto actual = inference_prune(fam, cache, &lambda, p_tree.get(), 1.5, 20, 20);
+    auto actual = inference_prune(fam, cache, &lambda, nullptr, p_tree.get(), 1.5, 20, 20);
 
     vector<double> log_expected{ -17.2771, -10.0323 , -5.0695 , -4.91426 , -5.86062 , -7.75163 , -10.7347 , -14.2334 , -18.0458 , 
         -22.073 , -26.2579 , -30.5639 , -34.9663 , -39.4472 , -43.9935 , -48.595 , -53.2439 , -57.9338 , -62.6597 , -67.4173 };
@@ -1573,6 +1719,7 @@ TEST(Inference, likelihood_computer_sets_leaf_nodes_from_error_model_if_provided
     cache.precalculate_matrices({ 0.045 }, { 1.0,3.0,7.0 });
 
     string input = "maxcnt: 20\ncntdiff: -1 0 1\n"
+        "0 0.0 0.8 0.2\n"
         "1 0.2 0.6 0.2\n"
         "20 0.2 0.6 0.2\n";
     istringstream ist(input);
@@ -2286,6 +2433,7 @@ TEST(Simulation, set_random_node_size_with_error_model)
     auto b = p_tree->find_descendant("B");
 
     error_model err;
+    err.set_probabilities(0, { 0, .95, 0.05 });
 
     t[p_tree.get()] = 5;
     err.set_probabilities(5, { .9, .05, 0.05 });

@@ -9,8 +9,8 @@
 #include <set>
 #include "io.h"
 #include "lambda.h"
+#include "clade.h"
 
-class clade;
 class matrix;
 class matrix_cache;
 

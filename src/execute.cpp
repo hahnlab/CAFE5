@@ -14,6 +14,7 @@
 #include "matrix_cache.h"
 #include "optimizer.h"
 #include "gene_family_reconstructor.h"
+#include "error_model.h"
 
 double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 24.01409824083091, -1.231739572450155, 1.208650973866179e-3,
@@ -33,6 +34,18 @@ void estimator::compute(std::vector<model *>& models, const input_parameters &my
 
         std::ofstream likelihoods_file(filename(models[i]->name() + "_family_likelihoods", my_input_parameters.output_prefix));
         models[i]->write_family_likelihoods(likelihoods_file);
+
+        ofstream errmodel(filename(models[i]->name() + "_error_model", _user_input.output_prefix));
+        if (data.p_error_model)
+        {
+            /// user specified an error model, write that out to the results directory
+            write_error_model_file(errmodel, *data.p_error_model);
+        }
+        else
+        {
+            /// user did not specify an error model, write out the estimated one or a default
+            models[i]->write_error_model(errmodel);
+        }
 
         model_likelihoods[i] = result;
     }
@@ -61,24 +74,9 @@ void estimator::estimate_missing_variables(std::vector<model *>& models, user_da
 
         optimizer opt(scorer.get());
 
-        if (data.p_error_model)
-        {
-            // try several different initialization points and optimize them
-            vector<optimizer::result> results;
-            for (double epsilon = 0.05; epsilon < .5; epsilon += .1)
-            {
-                data.p_error_model->update_single_epsilon(epsilon);
-                results.push_back(opt.optimize(_user_input.optimizer_params));
-            }
-            auto best = min_element(results.begin(), results.end(), compare_result);
-            scorer->finalize(&best->values[0]);
-            cout << "Final score: " << best->score << ", Lambda: " << best->values[0] << ", Epsilon: " << best->values[1] * 2 << endl;
-        }
-        else
-        {
-            auto result = opt.optimize(_user_input.optimizer_params);
-            scorer->finalize(&result.values[0]);
-        }
+        auto result = opt.optimize(_user_input.optimizer_params);
+        scorer->finalize(&result.values[0]);
+
 #ifndef SILENT
         p_model->get_monitor().summarize(cerr);
 #endif

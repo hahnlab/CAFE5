@@ -10,6 +10,7 @@
 #include "matrix_cache.h"
 #include "gamma_core.h"
 #include "base_model.h"
+#include "error_model.h"
 
 std::vector<model *> build_models(const input_parameters& user_input, user_data& user_data) {
 
@@ -33,7 +34,15 @@ std::vector<model *> build_models(const input_parameters& user_input, user_data&
     }
     else
     {
-        p_model = new base_model(user_data.p_lambda, user_data.p_tree, p_gene_families, user_data.max_family_size, user_data.max_root_family_size, user_data.p_error_model);
+        error_model* p_error_model = user_data.p_error_model;
+        if (user_input.use_error_model && !p_error_model)
+        {
+            p_error_model = new error_model();
+            p_error_model->set_probabilities(0, { 0, .95, 0.05 });
+            p_error_model->set_probabilities(user_data.max_family_size, { 0.05, .9, 0.05 });
+        }
+
+        p_model = new base_model(user_data.p_lambda, user_data.p_tree, p_gene_families, user_data.max_family_size, user_data.max_root_family_size, p_error_model);
     }
 
     return std::vector<model *>{p_model};
@@ -96,18 +105,29 @@ lambda* model::get_simulation_lambda()
     return _p_lambda->clone();
 }
 
+void model::write_error_model(std::ostream& ost)
+{
+    auto em = _p_error_model;
+    if (!em)
+    {
+        em = new error_model();
+        em->set_probabilities(_max_family_size, { 0, 1, 0 });
+    }
+    write_error_model_file(ost, *em);
+}
+
 //! Computes likelihoods for the given tree and a single family. Uses a lambda value based on the provided lambda
 /// and a given multiplier. Works by calling \ref compute_node_probability on all nodes of the tree
 /// using the species counts for the family. 
 /// \returns a vector of probabilities for gene counts at the root of the tree 
-std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, const lambda *p_lambda, const clade *p_tree, double lambda_multiplier, int max_root_family_size, int max_family_size)
+std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, const lambda *p_lambda, const error_model* p_error_model, const clade *p_tree, double lambda_multiplier, int max_root_family_size, int max_family_size)
 {
     unique_ptr<lambda> multiplier(p_lambda->multiply(lambda_multiplier));
     clademap<std::vector<double>> probabilities;
     auto init_func = [&](const clade* node) { probabilities[node].resize(node->is_root() ? max_root_family_size : max_family_size + 1); };
     p_tree->apply_reverse_level_order(init_func);
 
-    auto compute_func = [&](const clade *c) { compute_node_probability(c, gf, NULL, probabilities, max_root_family_size, max_family_size, multiplier.get(), calc); };
+    auto compute_func = [&](const clade *c) { compute_node_probability(c, gf, p_error_model, probabilities, max_root_family_size, max_family_size, multiplier.get(), calc); };
     p_tree->apply_reverse_level_order(compute_func);
 
     return probabilities.at(p_tree); // likelihood of the whole tree = multiplication of likelihood of all nodes

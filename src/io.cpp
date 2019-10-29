@@ -9,15 +9,18 @@
 #include <cassert>
 #include <cmath>
 #include <algorithm>
+#include <iomanip>
 
 #include "io.h"
 #include "gene_family.h"
+#include "error_model.h"
+#include "clade.h"
 
 using namespace std;
 
 struct option longopts[] = {
   { "infile", required_argument, NULL, 'i' },
-  { "error_model", required_argument, NULL, 'e' },
+  { "error_model", optional_argument, NULL, 'e' },
   { "output_prefix", required_argument, NULL, 'o'}, 
   { "tree", required_argument, NULL, 't' },
   { "fixed_lambda", required_argument, NULL, 'l' },
@@ -82,6 +85,10 @@ void input_parameters::check_input() {
             throw runtime_error("No tree file provided");
     }
 
+    if (n_gamma_cats > 1 && use_error_model && error_model_file_path.empty())
+    {
+        throw runtime_error("Estimating an error model with a gamma distribution is not supported at this time");
+    }
     //! Options -i and -f cannot be both specified. Either one or the other is used to specify the root eq freq distr'n.
     if (!input_file_path.empty() && !rootdist.empty()) {
         throw runtime_error("Options -i and -f are mutually exclusive.");
@@ -203,100 +210,6 @@ void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gen
 }
 /* END: Reading in gene family data */
 
-/* START: Reading in error model data */
-void error_model::set_max_cnt(int max_cnt) {
-    _max_cnt = max_cnt;
-}
-
-void error_model::set_deviations(std::vector<std::string> deviations) {
-    for (std::vector<std::string>::iterator it = deviations.begin(); it != deviations.end(); ++it) {
-        _deviations.push_back(std::stoi(*it));
-    }
-}
-
-inline bool is_nearly_equal(double x, double y)
-{
-    const double epsilon = 0.0000000000001;
-    return std::abs(x - y) <= epsilon * std::abs(x);
-}
-
-void error_model::set_probabilities(size_t fam_size, std::vector<double> probs_deviation) {
-    if (fam_size == 0 && !is_nearly_equal(probs_deviation[0], 0.0))
-    {
-        throw std::runtime_error("Cannot have a non-zero probability for family size 0 for negative deviation");
-    }
-
-    if (!is_nearly_equal(accumulate(probs_deviation.begin(), probs_deviation.end(), 0.0), 1.0))
-    {
-        throw std::runtime_error("Sum of probabilities must be equal to one");
-    }
-
-    if (_error_dists.empty())
-        _error_dists.push_back(vector<double>(probs_deviation.size()));
-
-    if (_error_dists.size() <= fam_size)
-    {
-        _error_dists.resize(fam_size + 1, _error_dists.back());
-    }
-    _error_dists[fam_size] = probs_deviation; // fam_size starts at 0 at tips, so fam_size = index of vector
-}
-
-std::vector<double> error_model::get_probs(int fam_size) const {
-    return _error_dists[fam_size];
-}
-
-std::vector<double> error_model::get_epsilons() const {
-    set<double> unique_values;
-    for (auto& vec : _error_dists)
-        unique_values.insert(vec.back());
-
-    vector<double> result(unique_values.size());
-    copy(unique_values.begin(), unique_values.end(), result.begin());
-    return result;
-}
-
-// simple case where we have a single epsilon value in the tree
-void error_model::update_single_epsilon(double new_epsilon)
-{
-    auto epsilons = get_epsilons();
-    assert(epsilons.size() == 1);
-    map<double, double> replacements;
-    replacements[epsilons[0]] = new_epsilon;
-    replace_epsilons(&replacements);
-}
-
-void error_model::replace_epsilons(std::map<double, double> *new_epsilons)
-{
-    vector<double> vec = _error_dists[0];
-    assert(vec.size() == 3);
-    for (auto kv : *new_epsilons)
-    {
-        if (is_nearly_equal(kv.first, vec.back()))
-        {
-            vec.back() = kv.second;
-            vec[1] = 1 - kv.second;
-            set_probabilities(0, vec);
-        }
-    }
-
-    for (size_t i = 1; i < _error_dists.size(); ++i)
-    {
-        vector<double> vec = _error_dists[i];
-        assert(vec.size() == 3);
-
-        for (auto kv : *new_epsilons)
-        {
-            if (is_nearly_equal(kv.first, vec.back()))
-            {
-                vec.back() = kv.second;
-                vec.front() = kv.second;
-                vec[1] = 1 - (kv.second * 2);
-                set_probabilities(i, vec);
-            }
-        }
-    }
-}
-
 double to_double(string s)
 {
     return std::stod(s);
@@ -318,7 +231,7 @@ void read_error_model_file(std::istream& error_model_file, error_model *p_error_
             tokens = tokenize_str(line, ':');
             tokens[1].erase(remove_if(tokens[1].begin(), tokens[1].end(), ::isspace), tokens[1].end()); // removing whitespace
             int max_cnt = std::stoi(tokens[1]);
-            p_error_model->set_max_cnt(max_cnt);
+            p_error_model->set_max_family_size(max_cnt);
         }
         
         // cntdiff line
@@ -353,6 +266,29 @@ void read_error_model_file(std::istream& error_model_file, error_model *p_error_
         // std::vector<std::string> tokens = tokenize_str(line, '\t'); 
 }
 /* END: Reading in error model data */
+
+void write_error_model_file(std::ostream& ost, error_model& errormodel)
+{
+    ost << "maxcnt: " << errormodel.get_max_family_size()-1 << "\n";
+    ost << "cntdiff:";
+    for (int j : errormodel._deviations) {
+        ost << " " << j;
+    }
+    ost << "\n";
+
+    ost << std::setprecision(2);
+    vector<double> last_probs;
+    for (size_t j = 0; j < errormodel.get_max_family_size(); j++) {
+        auto probs = errormodel.get_probs(j);
+        if (probs == last_probs) continue;
+        last_probs = probs;
+
+        ost << j;
+        for (auto p : probs)
+            ost << " " << p;
+        ost << endl;
+    }
+}
 
 //! Split string into vector of strings given delimiter
 std::vector<std::string> tokenize_str(std::string some_string, char some_delim) {

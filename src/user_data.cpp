@@ -7,6 +7,8 @@
 
 #include "io.h"
 #include "lambda.h"
+#include "clade.h"
+#include "error_model.h"
 
 using namespace std;
 

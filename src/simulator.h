@@ -2,6 +2,7 @@
 #define SIMULATOR_H
 
 #include "execute.h"
+#include "clade.h"
 
 class root_distribution;
 

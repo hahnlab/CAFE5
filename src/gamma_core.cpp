@@ -183,7 +183,7 @@ bool gamma_model::prune(const gene_family& family, root_equilibrium_distribution
 
     for (size_t k = 0; k < _gamma_cat_probs.size(); ++k)
     {
-        auto partial_likelihood = inference_prune(family, calc, p_lambda, _p_tree, _lambda_multipliers[k], _max_root_family_size, _max_family_size);
+        auto partial_likelihood = inference_prune(family, calc, p_lambda, _p_error_model, _p_tree, _lambda_multipliers[k], _max_root_family_size, _max_family_size);
         if (accumulate(partial_likelihood.begin(), partial_likelihood.end(), 0.0) == 0.0)
             return false;   // saturation
 
