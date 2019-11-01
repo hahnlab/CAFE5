@@ -1,0 +1,1 @@
+((((cat:3,horse:3):3,cow:3):3,(((((chimp:1,human:1):1,orang:2):2,gibbon:2):2,(macaque:2,baboon:2):2):2,marmoset:3):3):3,(rat:3,mouse:3):3)

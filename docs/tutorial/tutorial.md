@@ -327,6 +327,7 @@ these: λ1 = 0.0182972, λ2 = 0.00634377 and λ3 = 0.00140705 (see reports/repor
 run3.cafe). This tells us that the lineage leading to (and including) humans and chimpanzees have higher gene family evolution rates, followed by the remaining primates
 (except for marmosets), and then by the remaining species.
 
+### Simulation
 
 Here, the genfamily command simulates the datasets (in the example above, we are
 asking for 100 simulations with -t 100). It estimates λ from the observed data to
@@ -358,35 +359,36 @@ Errors in the assembly of a genome (and its annotation) can cause the observed n
 of gene copies in gene families to deviate from the true ones, possibly leading to
 a downstream overestimation of λ. In order to account for assembly errors, CAFE can 
 estimate the error distribution of a dataset without any external
-data, which can then be used in λ analyses.
+data, which can then be used in λ analyses. To estimate the error distribution,
+add the -e parameter:
 
 `$ cafexp -i filtered_cafe_input.txt -t mammals_tree.txt -e`
 
 In the results directory, you should find the file Base_error_model.txt. The file
-looks like this:
+looks something like this:
 
 maxcnt: 140
 cntdiff: -1 0 1
-0 0 0.95 0.047
-1 0.047 0.91 0.047
+0 0 0.953105 0.0468951
+1 0.0468951 0.90621 0.0468951
 
-This simply indicates that the error model has been calculated to be 0.047.
+This simply indicates that the error model has been calculated to be approximately 0.047.
+The value that CAFE calculated as epsilon is assumed to be equally likely to cause a 
+smaller or larger family size than observed.
+
 With this file in hand, you can now estimate λ values once again.
-Let us estimate three different λ values, now with an error model:
+Let us estimate three different λ values, now with an error model. Pass the new error
+model as a parameter to the -e parameter:
 
 `$ cp results/Base_error_model.txt error_model_047.txt`
 `$ cafexp -i filtered_cafe_input.txt -t mammals_tree.txt -y separate_lambdas.txt -eerror_model_047.txt`
 
 After CAFE finishes running, you can check the three λ estimates using the specified
-error model (reports/run7 report.cafe): 0.01162034494707, 0.00258542894348, and
-0.00106942303815. As you can see, the three values are lower than when no error model
+error model (results/Base_results.txt): 0.0096455011174017, 0.0023855337206497, and
+0.00066023323972255. As you can see, the three values are lower than when no error model
 was employed. This is accordance with the fact that error in genome assembly and gene
 annotation should artefactually inflate the rate of gene family evolution, and therefore
 controlling for it should lead to smaller estimates of λ. Nevertheless, the estimate of λ for
 human, chimpanzee, and their ancestor is still larger than the other two λs – and so the
 acceleration of gene family evolution in these species is still a result despite correction
 for error.
-
-19
-
-
