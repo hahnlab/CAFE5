@@ -2203,6 +2203,25 @@ TEST(Inference, poisson_scorer_optimizes_correct_value)
    // DOUBLES_EQUAL(0.5, result.values[0], 0.0001)
 }
 
+TEST(Inference, poisson_scorer__lnlPoisson)
+{
+    poisson_scorer scorer(_user_data.gene_families);
+    double lambda = 0.05;
+    DOUBLES_EQUAL(3.095732, scorer.lnLPoisson(&lambda), 0.0001)
+}
+
+TEST(Inference, poisson_scorer__lnlPoisson_skips_incalculable_family_sizes)
+{
+    _user_data.gene_families.resize(2);
+    _user_data.gene_families[1].set_id("TestFamily2");
+    _user_data.gene_families[1].set_species_size("A", 3);
+    _user_data.gene_families[1].set_species_size("B", 175);
+
+    poisson_scorer scorer(_user_data.gene_families);
+    double lambda = 0.05;
+    DOUBLES_EQUAL(9.830344, scorer.lnLPoisson(&lambda), 0.0001)
+}
+
 class mock_scorer : public optimizer_scorer
 {
     // Inherited via optimizer_scorer

@@ -272,7 +272,7 @@ have not undergone significant shifts in λ, but branch 8 (leading to humans) ha
 (not shown above, but see report run4.cafe).
 
 ### Summarizing the output ###
-If you open file results/summary run1 node.txt, you will see, for each branch,
+If you open file results/base_clade_results.txt, you will see, for each branch,
 how many families underwent expansions, contractions, and how many are rapidly evolving. In fact, we provide yet another script that allows you to plot these numbers on a
 phylogenetic tree. Just run the following command:
 
@@ -286,8 +286,7 @@ families corresponds to the most recent common ancestor of humans and chimpanzee
 The terminal branch with the most rapidly evolving gene families is the one leading to
 humans. Then if you wish to look at the number of gene families expanding or contracting (but not necessarily with statistical significance), replace ‘Rapid’ with ‘Expansions’
 or ‘Contractions’, and rename the output file names accordingly.
-Finally, you might also be interested in having a look at reports/summary_run1_
-fams.txt, which will show how many rapidly evolving families (and which families)
+Finally, you might also be interested in having a look at reports/summary_run1_fams.txt, which will show how many rapidly evolving families (and which families)
 were found for each species and internal branch.
 
 ### 3.1.2 Setting λ to a previously estimated value to deal with families with large numbers of gene copies ###
@@ -328,24 +327,6 @@ these: λ1 = 0.0182972, λ2 = 0.00634377 and λ3 = 0.00140705 (see reports/repor
 run3.cafe). This tells us that the lineage leading to (and including) humans and chimpanzees have higher gene family evolution rates, followed by the remaining primates
 (except for marmosets), and then by the remaining species.
 
-## 3.2 Comparing models with one vs multiple λ ##
-Which model best describes the data: the first one in which the whole tree shares the
-same global λ, or the second one, with three distinct λs?
-CAFE can compare a global-λ model and one with multiple-λs by performing a likelihood ratio test. In order to do this test, you must first have CAFE simulate many
-datasets with a global λ. For each of these simulations, one can then estimate the likelihoods of a global-λ and of a multi-λ models, and obtain their likelihood ratio (more
-precisely, twice the difference of their log-likelihoods, 2 × (lnLglobal − lnLmulti )). Finally,
-the likelihood ratios from all simulations will comprise a null distribution that can be
-used to compare the observed (real) likelihood ratio against. For example, if 100 simulations are performed, the p-value will be the number of simulated likelihood ratios that
-are lower than the observed one, divided by 100.
-One can do these steps by entering these commands in the CAFE shell:
-
-```
-load -i filtered_cafe_input.txt -t 4 -l reports/log_run4.txt
-tree ((((cat:68.710507,horse:68.710507):4.566782,cow:73.277289):20.722711,(((((chimp:4.444172,human:4.444172):6.682678,orang:11.126850):2.285855,gibbon:13.412706):7.211527,(macaque:4.567240,baboon:4.567240):16.056992):16.060702,marmos et:36.684935):57.315065):38.738021,(rat:36.302445,mouse:36.302445):96.435575)
-lambda -l 0.00265952
-genfamily tutorial_genfamily/rnd -t 100
-lhtest -d tutorial_genfamily -t ((((3,3)3,3)3,(((((1,1)1,2)2,2)2,(2,2)2)2,3)3)3,(3,3)3) -l 0.00265952 -o reports/lhtest_result.txt
-```
 
 Here, the genfamily command simulates the datasets (in the example above, we are
 asking for 100 simulations with -t 100). It estimates λ from the observed data to
@@ -373,99 +354,28 @@ the probability of a multi-λ model fitting better than a global-λ model by cha
 small.
 
 ## 3.4 Estimating an error model to account for genome assembly error ##
-Errors in the assembly of a genome (and its annotation) can cause the observed number of gene copies in gene families to deviate from the true ones, possibly leading to
-a downstream overestimation of λ. In order to account for assembly errors, the latest
-version of CAFE can estimate the error distribution of a dataset without any external
-data, which can then be used in λ analyses. We provide a Python script (caferror.py)
-that iteratively searches error distributions defined a priori, and returns the one that
-maximizes the probability of observing the data. In order to run it, enter the following
-command on your terminal:
+Errors in the assembly of a genome (and its annotation) can cause the observed number 
+of gene copies in gene families to deviate from the true ones, possibly leading to
+a downstream overestimation of λ. In order to account for assembly errors, CAFE can 
+estimate the error distribution of a dataset without any external
+data, which can then be used in λ analyses.
 
-`$ python caferror.py -i cafe_shell_scripts/cafetutorial_run6.sh -d reports/run6_caferror_files -v 0 -f 1`
+`$ cafexp -i filtered_cafe_input.txt -t mammals_tree.txt -e`
 
-caferror.py will estimate the error model always making the assumption that all
-branches in the tree share the same unique λ (see cafe_shell_scripts/cafetutorial_
-run6.sh; NOTE: this shell script must specify the full path to the cafe binary on its
-first line, regardless of whether you added this path to your $PATH shell variable). Then
-the estimated error model can be used on different CAFE analyses. In the case above,
-we are telling caferror.py to run CAFE one initial time without any error model (‘-f
-1’).
-Because caferror.py essentially runs CAFE several times, it can take a while to
-estimate the error model, and so we provide you with the output of the command above
-in the folder reports/run6_caferror_files. Inside the folder, the file caferror_
-default_output.txt will have the scores for the different error models searched; here,
-you want to observe the values in the second column (the lower, the better). Our file
+In the results directory, you should find the file Base_error_model.txt. The file
 looks like this:
 
-ErrorModel
-0.4
-0.4
-0.2
-0.1
-0.05
-0.125
-0.0875
-0.10625
-0.115625
-0.053125
-0.084375
-0.0921875
-0.10390625
-0.109765625
-0.1126953125
-0.0548828125
-0.0837890625
-0.0982421875
-0.10546875
-0.10908203125
-0.110888671875
-0.054541015625
-0.08271484375
+maxcnt: 140
+cntdiff: -1 0 1
+0 0 0.95 0.047
+1 0.047 0.91 0.047
 
-Score
-162576.628503
-166462.116642
-148487.316800
-145776.419850
-147792.113653
-145844.837758
-145960.422682
-145743.199198
-145758.495205
-147541.731451
-146033.486212
-145871.878264
-145751.384434
-145740.147917
-145745.745599
-147410.677977
-146048.477903
-145792.494210
-145745.371527
-145739.899086
-145741.431870
-147435.615313
-146077.074291
-
-The best error model in our example above is 0.10908203125, and its respective distribution can be found in file reports/run6_caferror_files/cafe_errormodel_0.
-10908203125.txt. With this file in hand, you can now estimate λ values once again.
+This simply indicates that the error model has been calculated to be 0.047.
+With this file in hand, you can now estimate λ values once again.
 Let us estimate three different λ values, now with an error model:
-# #! cafe
-# load -i f i l te r e d_ c a fe _ i n pu t . txt -t 4 -l reports / log_run7 . txt
-# tree (((( cat :68.710507 , horse :68.710507) :4.566782 , cow :73.277289)
-:20.722711 ,((((( chimp :4.444172 , human :4.444172) :6.682678 , orang
-:11.126850) :2.285855 , gibbon :13.412706) :7.211527 ,( macaque :4.567240 ,
-baboon :4.567240) :16.056992) :16.060702 , marmoset :36.684935)
-:57.315065) :38.738021 ,( rat :36.302445 , mouse :36.302445) :96.435575)
-# errormodel - model r u n 6_ c a fe r r or _ f il e s / cafe _erro rmodel _0 .10908203125.
-txt - all
-# lambda -s -t ((((3 ,3) 3 ,3) 3 ,(((((1 ,1) 1 ,2) 2 ,2) 2 ,(2 ,2) 2) 2 ,3) 3) 3 ,(3 ,3) 3)
-# report report_run7
 
-18
-
-or by simply running the shell script we provide:
-$ cafe ca fe_ sh el l_ sc ri pt s / c afetut orial _run7 . sh
+`$ cp results/Base_error_model.txt error_model_047.txt`
+`$ cafexp -i filtered_cafe_input.txt -t mammals_tree.txt -y separate_lambdas.txt -eerror_model_047.txt`
 
 After CAFE finishes running, you can check the three λ estimates using the specified
 error model (reports/run7 report.cafe): 0.01162034494707, 0.00258542894348, and

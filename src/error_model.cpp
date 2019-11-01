@@ -2,6 +2,7 @@
 #include <set>
 #include <cassert>
 #include <algorithm>
+#include <cmath>
 
 #include "error_model.h"
 
@@ -23,7 +24,7 @@ void error_model::set_deviations(std::vector<std::string> deviations) {
 
 inline bool is_nearly_equal(double x, double y)
 {
-    const double epsilon = 0.0000000000001;
+    const double epsilon = 0.01;
     return std::abs(x - y) <= epsilon * std::abs(x);
 }
 

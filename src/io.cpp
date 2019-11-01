@@ -276,7 +276,6 @@ void write_error_model_file(std::ostream& ost, error_model& errormodel)
     }
     ost << "\n";
 
-    ost << std::setprecision(2);
     vector<double> last_probs;
     for (size_t j = 0; j < errormodel.get_max_family_size(); j++) {
         auto probs = errormodel.get_probs(j);

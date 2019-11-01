@@ -319,6 +319,9 @@ Input files
     that size staying the same, and the probabilities of the size
     becoming larger. Two header lines must be included: the maximum
     family size to process, and the differential of the probabilities.
+	
+	If a value for a particular family size is not provided, the value
+	of the next smallest family size will be used.
 
         maxcnt:90
         cntdiff -1 0 1
@@ -342,7 +345,8 @@ parameter.
     families, in the Nexus file format
     (https://en.wikipedia.org/wiki/Nexus\_file). A tree is provided for
     each family,with the expected family size set off with an underscore
-    from the node ID. 
+    from the node ID. If the particular branch is calculated to be significant
+	based on the pvalue in use, a \* will be placed next to the node ID in the tree.
 
     In the case of the Gamma reconstruction, the Lambda multipliers for
     each category are given their own section in this file. In this case,
@@ -416,7 +420,12 @@ parameter.
 		
 -	[_model_.txt.count] - A tab-separated file listing, for each family 
         and clade, the reconstructed value in that clade.
-		
+
+-   _model_\_error_model.txt
+
+	If an error model was provided or estimated, a copy of the error model
+	is provided here.
+	
 -   simulation\_.txt
 
     In the case of simulation, a family file is
