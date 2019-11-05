@@ -263,7 +263,7 @@ void print_branch_probabilities(std::ostream& ost, const cladevector& order, con
             for (auto c : order)
             {
                 ost << '\t';
-                if (branch_probabilities.at(gf.id()).at(c) < 0)
+                if (c->is_root() || branch_probabilities.at(gf.id()).at(c) < 0)
                     ost << "N/A";
                 else
                     ost << branch_probabilities.at(gf.id()).at(c);
@@ -289,6 +289,9 @@ void reconstruction::print_reconstructed_states(std::ostream& ost, const cladeve
         if (branch_probabilities.find(gene_family.id()) != branch_probabilities.end())
         {
             auto is_significant = [&branch_probabilities, test_pvalue, gene_family](const clade* node) {
+                if (node->is_root())
+                    return false;
+
                 return branch_probabilities.find(gene_family.id())->second.at(node) < test_pvalue;
             };
 

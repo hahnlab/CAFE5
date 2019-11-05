@@ -75,7 +75,7 @@ public:
 
     virtual inference_optimizer_scorer *get_lambda_optimizer(user_data& data);
 
-    virtual std::string name() {
+    virtual std::string name() const {
         return "Gamma";
     }
 

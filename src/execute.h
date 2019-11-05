@@ -63,6 +63,8 @@ public:
 
     virtual void execute(std::vector<model *>& models);
 
+    void write_error_model_if_specified(const input_parameters& my_input_parameters, const model * p_model);
+
     void compute(std::vector<model *>& models, const input_parameters &my_input_parameters);
 
     void estimate_missing_variables(std::vector<model *>& models, user_data& data);

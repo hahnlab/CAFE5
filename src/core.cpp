@@ -105,7 +105,7 @@ lambda* model::get_simulation_lambda()
     return _p_lambda->clone();
 }
 
-void model::write_error_model(std::ostream& ost)
+void model::write_error_model(std::ostream& ost) const
 {
     auto em = _p_error_model;
     if (!em)

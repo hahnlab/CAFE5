@@ -21,6 +21,24 @@ double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 -5.395239384953e-6 };
 
 
+void estimator::write_error_model_if_specified(const input_parameters& my_input_parameters, const model * p_model)
+{
+    if (my_input_parameters.use_error_model)
+    {
+        ofstream errmodel(filename(p_model->name() + "_error_model", _user_input.output_prefix));
+        if (data.p_error_model)
+        {
+            /// user specified an error model, write that out to the results directory
+            write_error_model_file(errmodel, *data.p_error_model);
+        }
+        else
+        {
+            /// user did not specify an error model, write out the estimated one or a default
+            p_model->write_error_model(errmodel);
+        }
+    }
+}
+
 void estimator::compute(std::vector<model *>& models, const input_parameters &my_input_parameters)
 {
 
@@ -35,17 +53,7 @@ void estimator::compute(std::vector<model *>& models, const input_parameters &my
         std::ofstream likelihoods_file(filename(models[i]->name() + "_family_likelihoods", my_input_parameters.output_prefix));
         models[i]->write_family_likelihoods(likelihoods_file);
 
-        ofstream errmodel(filename(models[i]->name() + "_error_model", _user_input.output_prefix));
-        if (data.p_error_model)
-        {
-            /// user specified an error model, write that out to the results directory
-            write_error_model_file(errmodel, *data.p_error_model);
-        }
-        else
-        {
-            /// user did not specify an error model, write out the estimated one or a default
-            models[i]->write_error_model(errmodel);
-        }
+        write_error_model_if_specified(my_input_parameters, models[i]);
 
         model_likelihoods[i] = result;
     }

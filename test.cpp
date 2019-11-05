@@ -35,7 +35,7 @@ std::mt19937 randomizer_engine(10); // seeding random number engine
 
 class mock_model : public model {
     // Inherited via model
-    virtual std::string name() override
+    virtual std::string name() const override
     {
         return "mockmodel";
     }
@@ -900,6 +900,7 @@ TEST(Reconstruction, print_reconstructed_states__prints_star_for_significant_val
     map<string, clademap<double>> branch_probs;
     p_tree->apply_reverse_level_order([&branch_probs](const clade* c) {branch_probs["Family5"][c] = .5; });
     branch_probs["Family5"][p_tree->find_descendant("AB")] = 0.02;
+    branch_probs["Family5"][p_tree.get()] = 0.0000002;  /// root is never significant regardless of the value
 
     ostringstream sig;
     bmr.print_reconstructed_states(sig, order, { fam }, p_tree.get(), 0.05, branch_probs);
@@ -1093,7 +1094,7 @@ TEST(Reconstruction, clade_index_or_name__returns_node_name_plus_index_in_angle_
     STRCMP_EQUAL("A<1>", clade_index_or_name(a, { p_tree.get(), a }).c_str())
 }
 
-TEST(Reconstruction, print_branch_probabilities)
+TEST(Reconstruction, print_branch_probabilities__shows_NA_for_root_and_negatives)
 {
     std::ostringstream ost;
     map<string, clademap<double>> probs;
@@ -1103,7 +1104,7 @@ TEST(Reconstruction, print_branch_probabilities)
 
     print_branch_probabilities(ost, order, { fam }, probs);
     STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
-    STRCMP_CONTAINS("Family5\t0.05\tN/A\t0.05\t0.05\t0.05\t0.05\t0.05\n", ost.str().c_str());
+    STRCMP_CONTAINS("Family5\t0.05\tN/A\t0.05\t0.05\t0.05\t0.05\tN/A\n", ost.str().c_str());
 }
 
 TEST(Reconstruction, print_branch_probabilities__skips_families_without_reconstructions)

@@ -25,7 +25,7 @@ public:
 
     virtual double infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda);
 
-    virtual std::string name() {
+    virtual std::string name() const {
         return "Base";
     }
 

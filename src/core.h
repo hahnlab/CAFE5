@@ -139,10 +139,10 @@ public:
 
     virtual double infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) = 0;  // return vector of likelihoods
     
-    virtual std::string name() = 0;
+    virtual std::string name() const = 0;
     virtual void write_family_likelihoods(std::ostream& ost) = 0;
     virtual void write_vital_statistics(std::ostream& ost, double final_likelihood);
-    void write_error_model(std::ostream& ost);
+    void write_error_model(std::ostream& ost) const;
 
     //! Based on the model parameters, attempts to reconstruct the most likely counts of each family at each node
     virtual reconstruction* reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
