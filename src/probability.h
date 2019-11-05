@@ -43,7 +43,7 @@ size_t adjust_for_error_model(size_t c, const error_model *p_error_model);
 double pvalue(double v, const vector<double>& conddist);
 
 //! computes a pvalue for each family. Returns a vector of pvalues matching the list of families
-std::vector<double> compute_pvalues(const clade* p_tree, const std::vector<const gene_family*>& families, const lambda* p_lambda, const matrix_cache& cache, int number_of_simulations, int max_family_size, int max_root_family_size);
+std::vector<double> compute_pvalues(const clade* p_tree, const std::vector<gene_family>& families, const lambda* p_lambda, const matrix_cache& cache, int number_of_simulations, int max_family_size, int max_root_family_size);
 
 /// Run a computation on each node of the tree and calculate a pvalue based on the results
 /// compute_func puts its results into clade_storage

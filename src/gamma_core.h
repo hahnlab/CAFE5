@@ -82,7 +82,7 @@ public:
     virtual void write_family_likelihoods(std::ostream& ost);
     virtual void write_vital_statistics(std::ostream& ost, double final_likelihood);
 
-    virtual reconstruction* reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache *, root_equilibrium_distribution* p_prior);
+    virtual reconstruction* reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *, root_equilibrium_distribution* p_prior);
 
     std::size_t get_gamma_cat_probs_count() const {
         return _gamma_cat_probs.size();
@@ -105,8 +105,6 @@ public:
 
     bool prune(const gene_family& family, root_equilibrium_distribution *eq, matrix_cache& calc, const lambda *p_lambda,
         std::vector<double>& category_likelihoods);
-
-    virtual bool should_calculate_pvalue(const gene_family& gf) const override;
 };
 
 //! \ingroup gamma

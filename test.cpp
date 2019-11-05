@@ -42,7 +42,7 @@ class mock_model : public model {
     virtual void write_family_likelihoods(std::ostream& ost) override
     {
     }
-    virtual reconstruction* reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache* p_calc, root_equilibrium_distribution* p_prior) override
+    virtual reconstruction* reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache* p_calc, root_equilibrium_distribution* p_prior) override
     {
         return nullptr;
     }
@@ -795,7 +795,7 @@ TEST(Inference, base_model_reconstruction)
     uniform_distribution dist;
     dist.initialize(&rd);
 
-    std::unique_ptr<base_model_reconstruction> rec(dynamic_cast<base_model_reconstruction *>(model.reconstruct_ancestral_states({ &families[0] }, &calc, &dist)));
+    std::unique_ptr<base_model_reconstruction> rec(dynamic_cast<base_model_reconstruction *>(model.reconstruct_ancestral_states(families, &calc, &dist)));
 
     LONGS_EQUAL(1, rec->_reconstructions.size());
 
@@ -2173,12 +2173,10 @@ TEST(Inference, lambda_per_family)
 TEST(Inference, estimator_compute_pvalues)
 {
     input_parameters params;
-    vector<const gene_family*> filtered_families(_user_data.gene_families.size());
-    transform(_user_data.gene_families.begin(), _user_data.gene_families.end(), filtered_families.begin(), [](const gene_family& f) { return &f; });
     matrix_cache cache(max(_user_data.max_family_size, _user_data.max_root_family_size) + 1);
     cache.precalculate_matrices(get_lambda_values(_user_data.p_lambda), _user_data.p_tree->get_branch_lengths());
 
-    auto values = compute_pvalues(_user_data.p_tree, filtered_families, _user_data.p_lambda, cache, 3, _user_data.max_family_size, _user_data.max_root_family_size);
+    auto values = compute_pvalues(_user_data.p_tree, _user_data.gene_families, _user_data.p_lambda, cache, 3, _user_data.max_family_size, _user_data.max_root_family_size);
     LONGS_EQUAL(1, values.size());
     DOUBLES_EQUAL(0.666667, values[0], 0.00001);
 }

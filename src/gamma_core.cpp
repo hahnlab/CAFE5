@@ -333,7 +333,7 @@ clademap<double> get_weighted_averages(const std::vector<clademap<int>>& m, cons
     return result;
 }
 
-reconstruction* gamma_model::reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache *calc, root_equilibrium_distribution*prior)
+reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *calc, root_equilibrium_distribution*prior)
 {
     _monitor.Event_Reconstruction_Started("Gamma");
 
@@ -353,9 +353,9 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<const gen
     vector<gamma_model_reconstruction::gamma_reconstruction *> recs(families.size());
     for (size_t i = 0; i < families.size(); ++i)
     {
-        recs[i] = &result->_reconstructions[families[i]->id()];
-        result->_reconstructions[families[i]->id()]._category_likelihoods = _category_likelihoods[i];
-        result->_reconstructions[families[i]->id()].category_reconstruction.resize(_lambda_multipliers.size());
+        recs[i] = &result->_reconstructions[families[i].id()];
+        result->_reconstructions[families[i].id()]._category_likelihoods = _category_likelihoods[i];
+        result->_reconstructions[families[i].id()].category_reconstruction.resize(_lambda_multipliers.size());
     }
 
 
@@ -366,7 +366,7 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<const gen
 #pragma omp parallel for
         for (size_t i = 0; i < families.size(); ++i)
         {
-            reconstruct_gene_family(ml.get(), _p_tree, _max_family_size, _max_root_family_size, families[i], calc, prior, recs[i]->category_reconstruction[k]);
+            reconstruct_gene_family(ml.get(), _p_tree, _max_family_size, _max_root_family_size, &families[i], calc, prior, recs[i]->category_reconstruction[k]);
         }
     }
 
@@ -379,18 +379,6 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<const gen
     _monitor.Event_Reconstruction_Complete();
 
     return result;
-}
-
-bool gamma_model::should_calculate_pvalue(const gene_family& gf) const
-{
-    vector<const family_info_stash*> values;
-    for (auto& s : results) {
-        if (s.family_id == gf.id())
-            values.push_back(&s);
-    }
-    auto highest_likelihood = max_element(values.begin(), values.end(), [](const family_info_stash * a, const family_info_stash* b) { return a->category_likelihood < b->category_likelihood; });
-    auto fastest_rate = max_element(values.begin(), values.end(), [](const family_info_stash* a, const family_info_stash* b) { return a->lambda_multiplier < b->lambda_multiplier; });
-    return fastest_rate == highest_likelihood;
 }
 
 std::string gamma_model_reconstruction::get_reconstructed_state(const gene_family& gf, const clade* node)
@@ -417,24 +405,6 @@ void gamma_model_reconstruction::write_nexus_extensions(std::ostream& ost)
     }
     ost << "END;\n\n";
 }
-
-#if 0
-char gamma_model_reconstruction::get_increase_decrease(const gene_family* gf, const clade* c)
-{
-    clademap<int> size_deltas;
-    compute_increase_decrease(_reconstructions[gf->id()].reconstruction, size_deltas);
-
-    int val = 0;
-    if (!c->is_leaf() && !c->is_root())
-        val = size_deltas.at(c);
-    if (val < 0)
-        return 'd';
-    else if (val > 0)
-        return 'i';
-    else
-        return 'c';
-}
-#endif
 
 int gamma_model_reconstruction::get_difference_from_parent(const gene_family* gf, const clade* c)
 {

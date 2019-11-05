@@ -145,7 +145,7 @@ public:
     void write_error_model(std::ostream& ost);
 
     //! Based on the model parameters, attempts to reconstruct the most likely counts of each family at each node
-    virtual reconstruction* reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
+    virtual reconstruction* reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
 
     virtual inference_optimizer_scorer *get_lambda_optimizer(user_data& data) = 0;
 
@@ -156,11 +156,6 @@ public:
     virtual void perturb_lambda() {}
 
     const event_monitor& get_monitor() { return _monitor;  }
-
-    //! Returns true if the the model is interested in calculating pvalues for this family
-    //! Default is to calculate pvalues for all families
-    virtual bool should_calculate_pvalue(const gene_family& gf) const { return true; }
-
 };
 
 //! @brief Creates a list of families that are identical in all values

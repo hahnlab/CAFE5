@@ -142,7 +142,7 @@ inference_optimizer_scorer *base_model::get_lambda_optimizer(user_data& data)
 
 #define EPSILON_RANGES
 
-reconstruction* base_model::reconstruct_ancestral_states(const vector<const gene_family*>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior)
+reconstruction* base_model::reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior)
 {
     _monitor.Event_Reconstruction_Started("Base");
 
@@ -153,7 +153,7 @@ reconstruction* base_model::reconstruct_ancestral_states(const vector<const gene
     for (size_t i = 0; i< families.size(); ++i)
     {
         reconstruct_gene_family(_p_lambda, _p_tree, _max_family_size, _max_root_family_size,
-            families[i], p_calc, p_prior, result->_reconstructions[families[i]->id()]);
+            &families[i], p_calc, p_prior, result->_reconstructions[families[i].id()]);
     }
 
     _monitor.Event_Reconstruction_Complete();

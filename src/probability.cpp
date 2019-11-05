@@ -408,7 +408,7 @@ double compute_tree_pvalue(const clade* p_tree, function<void(const clade*)> com
 }
 
 //! Compute pvalues for each family based on the given lambda
-vector<double> compute_pvalues(const clade* p_tree, const std::vector<const gene_family*>& families, const lambda* p_lambda, const matrix_cache& cache, int number_of_simulations, int max_family_size, int max_root_family_size)
+vector<double> compute_pvalues(const clade* p_tree, const std::vector<gene_family>& families, const lambda* p_lambda, const matrix_cache& cache, int number_of_simulations, int max_family_size, int max_root_family_size)
 {
 #ifndef SILENT
     cout << "Computing pvalues..." << flush;
@@ -429,9 +429,9 @@ vector<double> compute_pvalues(const clade* p_tree, const std::vector<const gene
 	auto init_func = [&](const clade* node) { family_likelihoods[node].resize(node->is_root() ? mxr : mx + 1); };
 	p_tree->apply_reverse_level_order(init_func);
 
-	transform(families.begin(), families.end(), result.begin(), [&](const gene_family* gf)
+	transform(families.begin(), families.end(), result.begin(), [&](const gene_family& gf)
         {
-			auto compute_func = [&](const clade* c) { compute_node_probability(c, *gf, NULL, family_likelihoods, mxr, mx, p_lambda, cache); };
+			auto compute_func = [&](const clade* c) { compute_node_probability(c, gf, NULL, family_likelihoods, mxr, mx, p_lambda, cache); };
 
 			return compute_tree_pvalue(p_tree, compute_func, mxr, conditional_distribution, family_likelihoods);
         });

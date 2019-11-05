@@ -142,32 +142,25 @@ void estimator::execute(std::vector<model *>& models)
             matrix_cache cache(data.max_family_size + 1);
             for (model* p_model : models) {
 
-                vector<const gene_family*> filtered_families;
-                for (auto& gf : data.gene_families)
-                {
-                    if (p_model->should_calculate_pvalue(gf))
-                        filtered_families.push_back(&gf);
-                }
-
                 /// For Gamma models, we tried using the most rapidly changing lambda multiplier here, but that
                 /// caused issues in the pvalue calculation. It should be best to use the original lambda
                 /// instead
                 matrix_cache cache(max(data.max_family_size, data.max_root_family_size) + 1);
                 cache.precalculate_matrices(get_lambda_values(p_model->get_lambda()), data.p_tree->get_branch_lengths());
 
-                auto pvalues = compute_pvalues(data.p_tree, filtered_families, p_model->get_lambda(), cache, 1000, data.max_family_size, data.max_root_family_size);
+                auto pvalues = compute_pvalues(data.p_tree, data.gene_families, p_model->get_lambda(), cache, 1000, data.max_family_size, data.max_root_family_size);
 
-                std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(filtered_families, &cache, data.p_prior.get()));
+                std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(data.gene_families, &cache, data.p_prior.get()));
 
                 map<string, clademap<double>> branch_probabilities;
 
-                for (size_t i = 0; i<filtered_families.size(); ++i)
+                for (size_t i = 0; i<data.gene_families.size(); ++i)
                 {
                     if (pvalues[i] < _user_input.pvalue)
                     {
-                        auto& r = branch_probabilities[filtered_families[i]->id()];
+                        auto& r = branch_probabilities[data.gene_families[i].id()];
                         data.p_tree->apply_reverse_level_order([&](const clade* c) {
-                            r[c] = compute_viterbi_sum(c, *filtered_families[i], rec.get(), data.max_family_size, cache, p_model->get_lambda());
+                            r[c] = compute_viterbi_sum(c, data.gene_families[i], rec.get(), data.max_family_size, cache, p_model->get_lambda());
                             });
                     }
                 }
