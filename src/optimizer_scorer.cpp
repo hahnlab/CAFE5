@@ -35,11 +35,14 @@ double inference_optimizer_scorer::calculate_score(const double *values)
     return score;
 }
 
-
+//Inititial Guess multiplies the 1/longest branch by a random draw from a normal 
+//distribution centered such that it will start around a value for lambda of 0.002
 std::vector<double> lambda_optimizer::initial_guesses()
 {
+    double distmean = 0.002/(1.0 / _longest_branch);
     std::vector<double> result(_p_lambda->count());
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    //std::uniform_real_distribution<double> distribution(0.0, 1.0); Insert a prior distribution (above to start from a biologically realistic rate)
+    std::normal_distribution<double> distribution(distmean,0.2);
     for (auto& i : result)
     {
         i = 1.0 / _longest_branch * distribution(randomizer_engine);
@@ -107,7 +110,7 @@ gamma_optimizer::gamma_optimizer(gamma_model* p_model, root_equilibrium_distribu
 {
 
 }
-
+//Alpha is initiated by randomly drawing from an exponential distribution with a mean of 1.75
 std::vector<double> gamma_optimizer::initial_guesses()
 {
     std::exponential_distribution<double> distribution(GAMMA_INITIAL_GUESS_EXPONENTIAL_DISTRIBUTION_LAMBDA);
