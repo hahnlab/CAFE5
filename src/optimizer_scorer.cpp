@@ -45,7 +45,11 @@ std::vector<double> lambda_optimizer::initial_guesses()
     std::normal_distribution<double> distribution(distmean,0.2);
     for (auto& i : result)
     {
-        i = 1.0 / _longest_branch * distribution(randomizer_engine);
+    	i=1.0 / _longest_branch * distribution(randomizer_engine);
+    	while (i<0)
+    	{
+    		i=1.0 / _longest_branch * distribution(randomizer_engine);
+    	}
     }
     return result;
 }
@@ -110,10 +114,12 @@ gamma_optimizer::gamma_optimizer(gamma_model* p_model, root_equilibrium_distribu
 {
 
 }
-//Alpha is initiated by randomly drawing from an exponential distribution with a mean of 1.75
+//In the first line that is commented out, Alpha is initiated by randomly drawing from an exponential distribution with a mean of 1.75
+//It seems a gamma distribution with an alpha of 3 and a beta scaling factor of 0.3 works better. 
 std::vector<double> gamma_optimizer::initial_guesses()
 {
-    std::exponential_distribution<double> distribution(GAMMA_INITIAL_GUESS_EXPONENTIAL_DISTRIBUTION_LAMBDA);
+    //std::exponential_distribution<double> distribution(GAMMA_INITIAL_GUESS_EXPONENTIAL_DISTRIBUTION_LAMBDA);
+    std::gamma_distribution<double> distribution(3.0,0.3);
     return std::vector<double>({ distribution(randomizer_engine) });
 }
 
