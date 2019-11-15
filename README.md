@@ -193,7 +193,7 @@ HMG box	ORTHOMCL3	 50	 49	 48	 48	 46	  49	  48	 55	 52	51	47	55
 Dynamin	ORTHOMCL5	 43	 40	 43	 44	 31	  46	  33	 79	 70	43	49	50
 ......
 ......
-DnaJ	ORTHOMCL10016	 45	 46	 50	 46	 46 	  47	  46	48	49	45	44	48
+DnaJ	ORTHOMCL10016	 45	 46	 50	 46	 46 	  47	  46	 48	 49	45	44	48
 ``` 
 2) The other required input file should contain a binary, rooted, ultrametric, tree in Newick format.  Typically
 one obtains this tree using one of several molecular dating methods. If you are unsure if your tree is binary,
