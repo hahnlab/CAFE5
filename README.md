@@ -192,7 +192,7 @@ Example: mammal_gene_families.txt
 Desc	    Family ID	human	chimp	orang	baboon	gibbon	macaque	marmoset  rat	mouse  cat	horse	cow
 ATPase	    ORTHOMCL1	52	    55	    54	    57	    54	    56	    56	       53	52	    57	55	    54
 (null)	    ORTHOMCL2	76	    51	    41	    39	    45	    36	    37	       67	79	    37	41	    49
-AA ATPase	ORTHOMCL3	50	    49	    48	    48	    46	    49	    48	       55	52	    51	47	    55
+AA ATPase   ORTHOMCL3	50	    49	    48	    48	    46	    49	    48	       55	52	    51	47	    55
 (null)	    ORTHOMCL4	43	    43	    47	    53	    44	    47	    46	       59	58	    51	50	    55
 Dynamin	    ORTHOMCL5	43	    40	    43	    44	    31	    46	    33	       79	70	    43	49	    50
 ......
