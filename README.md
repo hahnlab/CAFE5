@@ -191,7 +191,7 @@ For a typical CAFE analysis, users are most interested in determining two things
 2) The branches of the tree on which these families are rapidly evolving
 
 This type of analysis requires a minimum of two input files:
-1) A tab-delimited family "counts" file that contains a column for a description of the gene family,
+1) The **count data file** is a tab-delimited family "counts" file that contains a column for a description of the gene family,
        the unique ID for each family, and a column for each taxon that has count data for each family.
        This file is acquired by first peforming a clustering analysis, often using software such as 
        OrthoMCL, SwiftOrtho, FastOrtho, OrthAgogue, or OrthoFinder and then parsing the output into a table
@@ -206,10 +206,11 @@ HMG box	ORTHOMCL3	 50	 49	 48	 48	 46	  49	  48	 55	 52	51	47	 55
 (null)	ORTHOMCL4	 43	 43	 47	 53	 44	  47	  46	 59	 58	51	50	 55
 Dynamin	ORTHOMCL5	 43	 40	 43	 44	 31	  46	  33	 79	 70	43	49	 50
 ......
-......
+....
+..
 DnaJ	ORTHOMCL10016	 45	 46	 50	 46	 46 	  47	  46	 48	 49	45	44	 48
 ``` 
-2) The other required input file should contain a binary, rooted, ultrametric, tree in Newick format.  Typically
+2) The **tree file** should contain a binary, rooted, ultrametric, tree in Newick format.  Typically
 one obtains this tree using one of several molecular dating methods. If you are unsure if your tree is binary,
 rooted, or ultrametric CAFE will report this when you try to use it for an analysis. Alternatively, you can use the R package,
 Ape with its included functions: is.ultrametric, is.rooted, and is.binary.  
