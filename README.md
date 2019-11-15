@@ -139,8 +139,7 @@ What CAFE5 does NOT do
 Installation
 ============
 
-Download
---------
+### Download
 
 The Github page for CAFE5 is https://github.com/hahnlab/CAFExp 
 
@@ -151,8 +150,8 @@ To copy the master directory as a .zip file:
     $ wget https://github.com/hahnlab/CAFExp/archive/master.zip
 
 
-Compile
--------
+### Compile
+
 
 Move into the CAFE5 folder, and type
 
@@ -188,9 +187,8 @@ Now run
 
 
 # Running CAFE5 
-----
 
-## Quick Start 
+### Quick Start 
 
 
 For a typical CAFE analysis, users are most interested in determining two things:
@@ -259,12 +257,10 @@ To run this analysis with both lambdas estimated:
 - **Always** perform multiple runs to ensure convergence, especially if multiple gamma rate categories or lambdas are used.
 - More gamma rate categories (-k) does not always mean a better fit to the data. While -k=2 nearly always fits the data better than -k=1, it may be the case that -k=5 has a _worse_ likelihood than -k=3, and convergences between runs is more difficult with more categories. Try several and see what works.
 - We recommend using the -o flag to assign a unique name to the output directory for each run so that results from previous runs are not overwritten.
-
 - For all but the simplest of data sets, searching for multiple lambdas with multiple rate categories will result in a failure of convergence to a single optimum between runs. 
 
----
 
-## Slow Start
+### Slow Start
 
 
 CAFE5 performs three different operations on either one or two
