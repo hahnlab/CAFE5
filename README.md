@@ -168,12 +168,12 @@ just copy the binary file to somewhere on your path, such as
 
 ### OSX users
 
- if you encounter an error during the build that looks like: 
+ If you encounter an error during the build that looks like: 
 <pre>
     src/matrix_cache.cpp:2:10: <b>fatal error:</b> 'omp.h' file not found
 </pre>
 
-You may need to install gcc. If you already have gcc installed you may have to find this file and soft link it to a directory that the compiler can find.  Try finding the missing file
+You may need to install gcc, find the omp.h file and add it to your path. If you already have gcc installed you may have to find this file and soft link it to a directory that the compiler can find.  Try finding the missing file by:
 
     $ find / -name omp.h
 
