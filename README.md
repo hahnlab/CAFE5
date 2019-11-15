@@ -264,7 +264,6 @@ To run this analysis with both lambdas estimated:
 
 ---
 
-
 ## Slow Start
 
 
