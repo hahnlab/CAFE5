@@ -72,7 +72,7 @@ The citation for CAFE v3.1 and v4.0 is:
 - Han, M. V., G. W. C. Thomas, J. Lugo-Martinez, and M. W. Hahn. 2013. Estimating Gene Gain and Loss Rates in the Presence of Error in Genome Assembly and Annotation Using CAFE 3. _Mol. Biol. Evol._ 30:1987–1997.
 
 ## New Functionality
-----
+
 -   Among Family Rate Variation (AFRV) using a discrete gamma model with 
     a jointly optimized alpha shape parameter.  The birth-death model estimates 
     the posterior probabilities of each gene family belonging to different 
@@ -91,8 +91,8 @@ The citation for CAFE v3.1 and v4.0 is:
 -   Outputs are now internally parsed by CAFE5 (no external
     dependencies or scripts necessary) into summary tables.
 
-What CAFE5 does
---------
+### What CAFE5 does
+
 
 CAFE5 implements a birth-death model for evolutionary inferences
 about gene family evolution. Its main task is the maximum-likelihood
@@ -116,8 +116,7 @@ parameter) for a given data set. Briefly, CAFE5 can:
     to incorrect gene family counts in input files. This is done with an
     error model.
 
-What CAFE5 does NOT do
------------
+### What CAFE5 does NOT do
 
 -   Estimate a phylogeny from gene families or gene sequence
     alignments. CAFE5 also does not convert a phylogeny with
