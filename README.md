@@ -187,9 +187,8 @@ Now run
  
 
 
-Running CAFE5 
-==================
-
+# Running CAFE5 
+----
 
 ## Quick Start 
 
