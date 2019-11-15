@@ -165,12 +165,34 @@ just copy the binary file to somewhere on your path, such as
 /usr/local/bin. Alternatively, add /path/to/CAFE5/bin/ to your
 \$PATH variable (in your .bashrc or .bash profile).
 
+
+### OSX users
+
+ if you encounter an error during the build that looks like: 
+<pre>
+    src/matrix_cache.cpp:2:10: <b>fatal error:</b> 'omp.h' file not found
+</pre>
+
+You may need to install gcc. If you already have gcc installed you may have to find this file and soft link it to a directory that the compiler can find.  Try finding the missing file
+
+    $ find / -name omp.h
+
+This found the omp.h file in the [Homebrew](https://brew.sh/) installation of gcc.  I can now soft link (or copy) it to a directory where it can be found.
+
+    ln -sv /usr/local/Cellar/gcc/7.3.0/lib/gcc/7/gcc/x86_64-apple-darwin17.3.0/7.3.0/include/omp.h   /usr/local/include/
+
+Now run 
+    
+    $ make
+ 
+
+
 Running CAFE5 
 ==================
 
 
-Quick Start 
------------
+## Quick Start 
+
 
 For a typical CAFE analysis, users are most interested in determining two things:
 1) Which gene families are rapidly evolving 
@@ -186,14 +208,14 @@ This type of analysis requires a minimum of two input files:
 Example: mammal_gene_families.txt
 ```
 Desc	Family ID	human	chimp	orang	baboon	gibbon	macaque	marmoset rat	mouse	cat	horse	cow
-ATPase	ORTHOMCL1	 52	 55	 54	 57	 54	  56	  56	 53	 52	57	55	54
-(null)	ORTHOMCL2	 76	 51	 41	 39	 45	  36	  37	 67	 79	37	41	49
-HMG box	ORTHOMCL3	 50	 49	 48	 48	 46	  49	  48	 55	 52	51	47	55
-(null)	ORTHOMCL4	 43	 43	 47	 53	 44	  47	  46	 59	 58	51	50	55
-Dynamin	ORTHOMCL5	 43	 40	 43	 44	 31	  46	  33	 79	 70	43	49	50
+ATPase	ORTHOMCL1	 52	 55	 54	 57	 54	  56	  56	 53	 52	57	55	 54
+(null)	ORTHOMCL2	 76	 51	 41	 39	 45	  36	  37	 67	 79	37	41	 49
+HMG box	ORTHOMCL3	 50	 49	 48	 48	 46	  49	  48	 55	 52	51	47	 55
+(null)	ORTHOMCL4	 43	 43	 47	 53	 44	  47	  46	 59	 58	51	50	 55
+Dynamin	ORTHOMCL5	 43	 40	 43	 44	 31	  46	  33	 79	 70	43	49	 50
 ......
 ......
-DnaJ	ORTHOMCL10016	 45	 46	 50	 46	 46 	  47	  46	 48	 49	45	44	48
+DnaJ	ORTHOMCL10016	 45	 46	 50	 46	 46 	  47	  46	 48	 49	45	44	 48
 ``` 
 2) The other required input file should contain a binary, rooted, ultrametric, tree in Newick format.  Typically
 one obtains this tree using one of several molecular dating methods. If you are unsure if your tree is binary,
@@ -245,8 +267,8 @@ To run this analysis with both lambdas estimated:
 
 
 
-Slow Start
------
+## Slow Start
+
 
 CAFE5 performs three different operations on either one or two
 models. The operations are
