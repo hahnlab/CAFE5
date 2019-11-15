@@ -26,7 +26,7 @@ input_parameters read_arguments(int argc, char *const argv[])
     int args; // getopt_long returns int or char
     int prev_arg;
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e::o:t:y:n:f:E:R:P:I:l:m:k:a:s::g::p::r:zb", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e::o:t:y:n:f:E:R:P:I:l:m:k:a:s::g:p::r:zb", longopts, NULL)) != -1) {
         // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && optarg && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -97,7 +97,7 @@ input_parameters read_arguments(int argc, char *const argv[])
             my_input_parameters.chisquare_compare = optarg;
             break;
         case 'g':
-            my_input_parameters.do_log = true;
+            my_input_parameters.do_log = optarg;
             break;
         case 'h':
             my_input_parameters.help = true;
@@ -146,7 +146,7 @@ action* get_executor(input_parameters& user_input, user_data& data)
 void show_help()
 {
     const char *text = ""
-        "Usage: cafexp [options]\n\n"
+        "\n\nUsage: cafexp [options]\n\n"
         "CAFE is a software that provides a statistical foundation for evolutionary inferences about changes in gene family size.\n "
         "The program employs a birth and death process to model gene gain and loss across a user-specified phylogenetic tree,\n "
         "thus accounting for the species phylogenetic history. The distribution of family sizes generated under this model can\n "
@@ -160,16 +160,16 @@ void show_help()
         "   --fixed_lambda, -l\t\tValue (between 0 and 1) for a single user provided lambda value, otherwise lambda is estimated.\n"
         "   --fixed_multiple_lambdas, -m\tMultiple lambda values, comma separated\n"
         "   --output_prefix, -o\t\tOutput directory - Name of directory automatically created for output\n"
-        "   --poisson, -p\t\tUse a Poisson distribution for the root frequency distribution. Without specifying this, a\n \t\t\t\t  normal distribution will be used. A value can be specified (-p10, or --poisson = 10),\n \t\t\t\t  otherwise the distribution will be estimated from the gene families.\n"
+        "   --poisson, -p\t\tUse a Poisson distribution for the root frequency distribution. Without specifying this, a\n \t\t\t\t  normal distribution will be used. A value can be specified -p10 (no space) or --poisson = 10,\n \t\t\t\t  otherwise the distribution will be estimated from the gene families.\n"
         "   --chisquare_compare, -r\tChi square compare\n"
-        "   --simulate, -s\t\tSimulate families. Optionally provide the number of simulations to generate (-s100, or --simulate = 100)\n"
+        "   --simulate, -s\t\tSimulate families. Optionally provide the number of simulations to generate (-s100 no space, or --simulate = 100)\n"
         "   --tree, -t\t\t\tTree file path - Required for estimation\n"
         "   --lambda_tree, -y\t\tLambda tree file path\n"
-        "   --zero_root, -z\t\t\tInclude gene families that don't exist at the root.\n"
+        "   --zero_root, -z\t\t\tInclude gene families that don't exist at the root, not recommended.\n"
         "   --Expansion, -E\t\tExpansion parameter for Nelder-Mead optimizer.\n"
         "   --Reflection, -R\t\tReflection parameter for Nelder-Mead optimizer.\n"
         "   --log, -g\t\t\tName of log file to output.\n"
-        "   --lambda_per_family, -b\tEstimate lambda by family (for testing purposes only).\n";
+        "   --lambda_per_family, -b\tEstimate lambda by family (for testing purposes only).\n\n\n";
 
         std::cout << text;
 }

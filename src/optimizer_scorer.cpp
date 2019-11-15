@@ -115,7 +115,7 @@ gamma_optimizer::gamma_optimizer(gamma_model* p_model, root_equilibrium_distribu
 
 }
 //In the first line that is commented out, Alpha is initiated by randomly drawing from an exponential distribution with a mean of 1.75
-//It seems a gamma distribution with an alpha of 4 and a beta scaling factor of 0.25 works better. It has a mean of 1 and 70% fall between .5 and 1.5
+//It seems a gamma distribution with an alpha of 4 and a beta scaling factor of 0.25 works better. It has a mean of 1 and 70% of the density is between .5 and 1.5
 std::vector<double> gamma_optimizer::initial_guesses()
 {
     //std::exponential_distribution<double> distribution(GAMMA_INITIAL_GUESS_EXPONENTIAL_DISTRIBUTION_LAMBDA);

@@ -655,7 +655,7 @@ TEST(Probability, get_random_probabilities)
     cache.precalculate_matrices(vector<double>{0.05}, set<double>{1});
     auto probs = get_random_probabilities(p_tree.get(), 10, 3, 12, 8, &lam, cache, NULL);
     LONGS_EQUAL(10, probs.size());
-    DOUBLES_EQUAL(0.00390567, probs[0], 0.0001);
+    DOUBLES_EQUAL(0.001905924, probs[0], 0.0001);
 }
 
 TEST(Inference, base_optimizer_guesses_lambda_only)
@@ -665,7 +665,7 @@ TEST(Inference, base_optimizer_guesses_lambda_only)
     unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(1, guesses.size());
-    DOUBLES_EQUAL(0.298761, guesses[0], 0.0001);
+    DOUBLES_EQUAL(0.2498383, guesses[0], 0.0001);
     delete model.get_lambda();
 }
 
@@ -685,7 +685,7 @@ TEST(Inference, base_optimizer_guesses_lambda_and_unique_epsilons)
     CHECK(dynamic_cast<lambda_epsilon_optimizer*>(opt.get()) != NULL);
     auto guesses = opt->initial_guesses();
     LONGS_EQUAL(3, guesses.size());
-    DOUBLES_EQUAL(0.2987612, guesses[0], 0.0001);
+    DOUBLES_EQUAL(0.2498383, guesses[0], 0.0001);
     DOUBLES_EQUAL(0.3, guesses[1], 0.0001);
     DOUBLES_EQUAL(0.4, guesses[2], 0.0001);
 
@@ -2168,7 +2168,7 @@ TEST(Inference, lambda_per_family)
     m.set_tree(ud.p_tree);
     ostringstream ost;
     v.estimate_lambda_per_family(&m, ost);
-    STRCMP_EQUAL("test\t0.042680165523241\n", ost.str().c_str());
+    STRCMP_EQUAL("test\t0.00053526736161992\n", ost.str().c_str());
 }
 
 TEST(Inference, estimator_compute_pvalues)
