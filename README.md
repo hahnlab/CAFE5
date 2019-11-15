@@ -24,13 +24,17 @@ available in prior releases.
 History
 -------
 
-The original development of the statistical framework and algorithms
-implemented in CAFE was done by Hahn, et al. and published in **
+The original development of the statistical framework and algorithms are 
+described by Hahn, _et al._ (2005) and later implemented in the software package
+CAFE by De Bie, _et al._ (2006).
 
-CAFE v3.0 was a major update to CAFE v2.1. Major updates in 3.0
-included: 1) the ability to correct for genome assembly and annotation
-error when analyzing gene family evolution using the errormodel command.
-2) The ability to estimate separate birth (λ) and death (μ)
+CAFE v2.0 (Hahn, Demuth, _et al._ 2007; Hahn, Han, _et al._ 2007) Included software 
+updates and functionality that allowed users to specify different λ values for different 
+branches on their input tree.  
+
+CAFE v3.0 (Han, _et al._ 2013) was a major update to CAFE 2.0, with added functionality 
+that included: 1) the ability to correct for genome assembly and annotation
+error.  2) The ability to estimate separate birth (λ) and death (μ)
 rates using the lambdamu command. 3) The ability to estimate error in an
 input data set with iterative use of the errormodel command using the
 accompanying python script caferror.py. This version also included the
@@ -40,16 +44,41 @@ simulations.
 CAFE v4.0 was primarily a maintenance update. At that time formal issue
 tracking and a user forum was introduced.
 
-The current version is CAFE v5.0. Another major update,CAFE5 showcases new functionalities while keeping or improving several of
-the features available in prior releases.
+CAFE v5.0. (Current Release) Another major update, CAFE5 showcases new 
+functionalities while keeping or improving several of the features available 
+in prior releases.
+
+How to Cite
+-----------
+___
+
+If you use CAFE5 in your work, please cite the application as
+
+> (xxx - a Zenodo DOI to be determined when released)
+
+Original development of the statistical framework and algorithms implemented in CAFE are 
+published in:
+
+- Hahn, M. W., T. De Bie, J. E. Stajich, C. Nguyen, and N. Cristianini. 2005. Estimating the tempo and mode of gene family evolution from comparative genomic data. _Genome Research_ 15:1153–1160.
+
+- De Bie, T., N. Cristianini, J. P. Demuth, and M. W. Hahn. 2006. CAFE: a computational tool for the study of gene family evolution. _Bioinformatics_ 22:1269–1271.
+
+The citation for CAFE v2.0 is:
+
+- Hahn, M. W., J. P. Demuth, and S.-G. Han. 2007. Accelerated rate of gene gain and loss in primates. _Genetics_ 177:1941–1949. Genetics.
+
+The citation for CAFE v3.1 and v4.0 is:
+
+- Han, M. V., G. W. C. Thomas, J. Lugo-Martinez, and M. W. Hahn. 2013. Estimating Gene Gain and Loss Rates in the Presence of Error in Genome Assembly and Annotation Using CAFE 3. _Mol. Biol. Evol._ 30:1987–1997.
 
 New Functionality
 -----------------
-
--   The birth-death model can now estimate the posterior probabilities
-    of each gene family belonging to different evolutionary rate
-    categories. The rates of each of the K categories are determined in
-    similar fashion to what is done in nucleotide sequence analyses:
+______
+-   Among Family Rate Variation (AFRV) using a discrete gamma model with 
+    a jointly optimized alpha shape parameter.  The birth-death model estimates 
+    the posterior probabilities of each gene family belonging to different 
+    evolutionary rate categories. The rates of each of the K categories are 
+    determined in similar fashion to what is done in nucleotide sequence analyses:
     through a discrete gamma distribution that has its alpha parameter
     estimated by maximum likelihood.
 
@@ -64,7 +93,8 @@ New Functionality
     dependencies or scripts necessary) into summary tables.
 
 What CAFE5 does
-===================
+--------
+______
 
 CAFE5 implements a birth-death model for evolutionary inferences
 about gene family evolution. Its main task is the maximum-likelihood
@@ -73,15 +103,15 @@ parameter) for a given data set. Briefly, CAFE5 can:
 
 -   Compare scenarios in which the whole phylogeny shares the same
     (global) lambda vs. scenarios in which different parts of the
-    phylogeny share different (local) lambdas;
+    phylogeny share different (local) lambdas.
 
 -   Classify specific gene families as "fastly evolving” in at least two
-    different ways (see documentation below);
+    different ways (see documentation below).
 
 -   Infer gene family counts at all internal nodes (ancestral
     populations) of the phylogeny provided as input. By comparing
     different nodes in the phylogeny, the user will be able to tell
-    along which branches gene families contracted or expanded;
+    along which branches gene families have contracted or expanded.
 
 -   Account for non-biological factors (e.g., genome sequencing and
     coverage differences, gene family clustering errors, etc.) leading
@@ -89,7 +119,7 @@ parameter) for a given data set. Briefly, CAFE5 can:
     error model.
 
 What CAFE5 does NOT do
-======================
+-----------
 
 -   Estimate a phylogeny from gene families or gene sequence
     alignments. CAFE5 also does not convert a phylogeny with
@@ -105,21 +135,6 @@ What CAFE5 does NOT do
 -   Predict gene family function or infer enrichment of functional
     classes.
 
-How to Cite
-===========
-
-If you use CAFE5 in your work, please cite the application as
-
-> (xxx - a Zenodo DOI to be determined when released)
-
-To cite the paper outlining the work underlying CAFE5 , please use:
-
-> (xxx: Fabio and Matt’s paper on the gamma categories)
-
-See the bibliography for citations to earlier works.
-
-Original development of the statistical framework and algorithms
-implemented in CAFE are published in:
 
 Installation
 ============
@@ -127,23 +142,115 @@ Installation
 Download
 --------
 
-Download the release from the release page
+The Github page for CAFE5 is https://github.com/hahnlab/CAFExp 
+
+Navigate to a directory that you typically keep source code in and do one of the following:
+
+To copy the master directory as a .zip file:
+
+    $ wget https://github.com/hahnlab/CAFExp/archive/master.zip
+
+To clone the master to your directory using git:
+
+    $ git clone https://github.com/hahnlab/CAFExp.git
+
 
 Compile
 -------
 
-Move to the CAFE folder, and type
+Move into the CAFE5 folder, and type
 
+    $ autoconf
     $ ./configure
     $ make
 
-The CAFE5 executable will be put inside the “release” folder. Then
+The CAFE5 executable will be put inside the “bin” folder. Then
 just copy the binary file to somewhere on your path, such as
-/usr/local/bin. Alternatively, add /path/to/CAFE5 /release/ to your
+/usr/local/bin. Alternatively, add /path/to/CAFE5/bin/ to your
 \$PATH variable (in your .bashrc or .bash profile).
 
 Running CAFE5 
 ==================
+
+
+Quick Start 
+-----------
+
+For a typical CAFE analysis, users are most interested in determining two things:
+1) Which gene families are rapidly evolving 
+2) The branches of the tree on which these families are rapidly evolving
+
+This type of analysis requires a minimum of two input files:
+1) A tab-delimited family "counts" file that contains a column for a description of the gene family,
+       the unique ID for each family, and a column for each taxon that has count data for each family.
+       This file is acquired by first peforming a clustering analysis, often using software such as 
+       OrthoMCL, SwiftOrtho, FastOrtho, OrthAgogue, or OrthoFinder and then parsing the output into a table
+       like the one below (Note: if a functional description is not desired, include this column anyway with a place holder as below (null)).
+
+Example: mammal_gene_families.txt
+```
+Desc	    Family ID	human	chimp	orang	baboon	gibbon	macaque	marmoset  rat	mouse  cat	horse	cow
+ATPase	    ORTHOMCL1	52	    55	    54	    57	    54	    56	    56	       53	52	    57	55	    54
+(null)	    ORTHOMCL2	76	    51	    41	    39	    45	    36	    37	       67	79	    37	41	    49
+AAA ATPase	ORTHOMCL3	50	    49	    48	    48	    46	    49	    48	       55	52	    51	47	    55
+(null)	    ORTHOMCL4	43	    43	    47	    53	    44	    47	    46	       59	58	    51	50	    55
+Dynamin	    ORTHOMCL5	43	    40	    43	    44	    31	    46	    33	       79	70	    43	49	    50
+......
+......
+DnaJ	ORTHOMCL10016	45	    46	    50	    46	    46	    47	    46	       48	49	    45	44	    48
+``` 
+2) The other required input file should contain a binary, rooted, ultrametric, tree in Newick format.  Typically
+one obtains this tree using one of several molecular dating methods. If you are unsure if your tree is binary,
+rooted, or ultrametric CAFE will report this when you try to use it for an analysis. Alternatively, you can use the R package,
+Ape with its included functions: is.ultrametric, is.rooted, and is.binary.  
+
+Example: mammals_tree.txt
+```
+((((cat:68.710507,horse:68.710507):4.566782,cow:73.277289):20.722711,(((((chimp:4.444172,human:4.444172):6.682678,orang:11.126850):2.285855,gibbon:13.412706):7.211527,(macaque:4.567240,baboon:4.567240):16.056992):16.060702,marmoset:36.684935):57.315065):38.738021,(rat:36.302445,mouse:36.302445):96.435575);
+```
+To get a list of commands just call CAFE with no arguments:
+
+    $ cafe
+
+To estimate lambda with no among family rate variation issue the command:
+
+    $ cafe -i mammal_gene_families.txt -t mammal_tree.txt
+
+To incorporate among family rate variation with both lambda and alpha estimated and three discrete gamma rate categories:
+
+    $ cafe -i mammal_gene_families.txt -t mammal_tree.txt -k 3
+
+
+To estimate separate lambda values for different lineages in the tree, first identify the branches to which each lambda will apply.
+This can be done by making a copy of your tree, and substituting the lambda identifier (1,2,3, etc.) for the branch length values.
+For example, to apply a different lambda to the branches leading to human, chimp, and their ancestor, modify the branches as below.
+
+Example chimphuman_separate_lambda.txt:
+<pre>
+((((cat:1,horse:1):1,cow:1):1,(((((<b>chimp:2,human:2):2</b>,orang:1):1,gibbon:1):1,(macaque:1,baboon:1):1):1,marmoset:1):1):1,(rat:1,mouse:1):1);
+</pre>
+For this tree, lambda #2 will be applied to branches leading to human, chimp, and their ancestor while lambda #1 will be applied to all other branches of the tree. 
+
+
+To run this analysis with both lambdas estimated:
+
+
+    $ cafe -i mammal_gene_families.txt -t mammal_tree.txt -y chimphuman_separate_lambda.txt 
+
+***Caveats***
+
+- **Always** perform multiple runs to ensure convergence, especially if multiple gamma rate categories or lambdas are used.
+- More gamma rate categories (-k) does not always mean a better fit to the data. While -k=2 nearly always fits the data better than -k=1, it may be the case that -k=5 has a _worse_ likelihood than -k=3, and convergences between runs is more difficult with more categories. Try several and see what works.
+- We recommend using the -o flag to assign a unique name to the output directory for each run so that results from previous runs are not overwritten.
+
+- For all but the simplest of data sets, searching for multiple lambdas with multiple rate categories will result in a failure of convergence to a single optimum between runs. 
+
+---
+
+
+
+Slow Start
+-----
 
 CAFE5 performs three different operations on either one or two
 models. The operations are
@@ -153,11 +260,6 @@ models. The operations are
     calculation to estimate the most likely rate of change across the
     entire tree.
 
--   Reconstruct - Attempts to rebuild a likely count of gene families at
-    each node in the tree. This can be done with an estimated or
-    specified lambda value. To specify a lambda value, pass either the
-    -l or -m parameters with the specified values.
-
 -   Simulate - Given specified values, generate an artificial list of
     gene families that matches the values. To generate a simulation,
     pass the --simulate or -s parameter. Either pass a count of families
@@ -166,7 +268,6 @@ models. The operations are
     match (see \[rootdist\] for the file format).
 
 The models are
-
 -   Base - Perform computations as if no gamma function is available
 
 -   Gamma - Perform computations as if each gene family can belong to a
@@ -247,16 +348,12 @@ Parameters
 -   **--lambda\_tree, -y**
 
     Lambda tree file path
-	
--   **--zero_root, -z
-
-	By default, families that do not exist at the root, according to their parsimony reconstruction, will be excluded from
-	the analysis. If this flag is set, these families will not be excluded from the analysis.
 
 Input files
 -----------
 
--   Tree files
+- 
+- Tree files
 
     A tree file is specified in Newick format.
 
@@ -319,9 +416,6 @@ Input files
     that size staying the same, and the probabilities of the size
     becoming larger. Two header lines must be included: the maximum
     family size to process, and the differential of the probabilities.
-	
-	If a value for a particular family size is not provided, the value
-	of the next smallest family size will be used.
 
         maxcnt:90
         cntdiff -1 0 1
@@ -345,8 +439,7 @@ parameter.
     families, in the Nexus file format
     (https://en.wikipedia.org/wiki/Nexus\_file). A tree is provided for
     each family,with the expected family size set off with an underscore
-    from the node ID. If the particular branch is calculated to be significant
-	based on the pvalue in use, a \* will be placed next to the node ID in the tree.
+    from the node ID. 
 
     In the case of the Gamma reconstruction, the Lambda multipliers for
     each category are given their own section in this file. In this case,
@@ -356,15 +449,18 @@ parameter.
 -   _model_\_family\_results.txt
 
     The file will be named Base\_family\_results.txt or
-    Gamma\_family\_results.txt, based on which model is in play.
-	Contains tab-separated values showing the Family ID, the
-	calculated pvalue for the tree, and a flag showing if it
-	is significant based on the pvalue in use (Defaults to 0.05)
+    Gamma\_family\_results.txt, based on which model is in play. It
+    consists of a header line giving the name of each node in the tree,
+    followed by a line consisting of the family ID, an estimate of
+    whether the change is significant(’y’ or ’n’) followed by a series
+    of ’c’ (constant), ’i’ (increasing), or ’d’ (decreasing) showing
+    whether the node is larger, smaller, or consistent with its parent
+    node. The characters are separated by tabs.
 
-		#FamilyID       pvalue  Significant at 0.05
-		0       0.948   n
-		1       0.999   n
-		2       0.007   y
+        #FamilyID   pvalue  *   orang   gibbon  chimp   human     
+        0           0.436   n   d       d       c       c 
+        1           0.209   n   c       i       c       c
+        2           0.002   y   c       c       i       i
 
     In the Gamma model, an additional set of probabilities are appended,
     representing the likelihood of the family belonging to each gamma
@@ -420,12 +516,7 @@ parameter.
 		
 -	[_model_.txt.count] - A tab-separated file listing, for each family 
         and clade, the reconstructed value in that clade.
-
--   _model_\_error_model.txt
-
-	If an error model was provided or estimated, a copy of the error model
-	is provided here.
-	
+		
 -   simulation\_.txt
 
     In the case of simulation, a family file is
@@ -515,7 +606,8 @@ gene family of size 1, and include the family in estimation of the birth
 and death rate. This difficulty does not affect analyses containing
 families that go extinct subsequent to the root node.
 
-If a change in gene family size is very large on a single branch, CAFE5 may fail to provide accurate λ estimation and/or die during
+If a change in gene family size is very large on a single branch, CAFE5 
+may fail to provide accurate λ estimation and/or die during
 computation. To see if this is a problem, look at the likelihood scores
 computed during the λ search (reported in the log file if the
 job finishes). If ALL scores are “-inf” then there is a problem with
@@ -590,7 +682,7 @@ How does the simulator choose what lambda to use?
 -------------------------------------------------
 
 Although the user specifies the lambda, in order to give more family
-variety a multiplier is selected every every 50 simulated families. So
+variety a multiplier is selected every 50 simulated families. So
 if 10,000 families are being simulated, 200 different lambdas will be
 used.
 
