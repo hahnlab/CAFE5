@@ -71,9 +71,8 @@ The citation for CAFE v3.1 and v4.0 is:
 
 - Han, M. V., G. W. C. Thomas, J. Lugo-Martinez, and M. W. Hahn. 2013. Estimating Gene Gain and Loss Rates in the Presence of Error in Genome Assembly and Annotation Using CAFE 3. _Mol. Biol. Evol._ 30:1987–1997.
 
-New Functionality
------------------
-______
+## New Functionality
+----
 -   Among Family Rate Variation (AFRV) using a discrete gamma model with 
     a jointly optimized alpha shape parameter.  The birth-death model estimates 
     the posterior probabilities of each gene family belonging to different 
@@ -94,7 +93,6 @@ ______
 
 What CAFE5 does
 --------
-______
 
 CAFE5 implements a birth-death model for evolutionary inferences
 about gene family evolution. Its main task is the maximum-likelihood
@@ -259,7 +257,7 @@ To run this analysis with both lambdas estimated:
 - We recommend using the -o flag to assign a unique name to the output directory for each run so that results from previous runs are not overwritten.
 - For all but the simplest of data sets, searching for multiple lambdas with multiple rate categories will result in a failure of convergence to a single optimum between runs. 
 
-
+----
 ### Slow Start
 
 
