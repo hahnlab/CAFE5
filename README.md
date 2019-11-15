@@ -48,9 +48,7 @@ CAFE v5.0. (Current Release) Another major update, CAFE5 showcases new
 functionalities while keeping or improving several of the features available 
 in prior releases.
 
-How to Cite
------------
-___
+## How to Cite
 
 If you use CAFE5 in your work, please cite the application as
 
