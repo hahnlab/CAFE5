@@ -71,18 +71,18 @@ public:
     //! Randomly select one of the multipliers to apply to the simulation
     virtual lambda* get_simulation_lambda() override;
 
-    double infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda);
+    double infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) override;
 
-    virtual inference_optimizer_scorer *get_lambda_optimizer(user_data& data);
+    virtual inference_optimizer_scorer *get_lambda_optimizer(user_data& data) override;
 
-    virtual std::string name() const {
+    virtual std::string name() const override {
         return "Gamma";
     }
 
-    virtual void write_family_likelihoods(std::ostream& ost);
-    virtual void write_vital_statistics(std::ostream& ost, double final_likelihood);
+    virtual void write_family_likelihoods(std::ostream& ost) override;
+    virtual void write_vital_statistics(std::ostream& ost, double final_likelihood) override;
 
-    virtual reconstruction* reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *, root_equilibrium_distribution* p_prior);
+    virtual reconstruction* reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *, root_equilibrium_distribution* p_prior) override;
 
     std::size_t get_gamma_cat_probs_count() const {
         return _gamma_cat_probs.size();
@@ -96,10 +96,10 @@ public:
         return _lambda_multipliers;
     }
 
-    void prepare_matrices_for_simulation(matrix_cache& cache);
+    void prepare_matrices_for_simulation(matrix_cache& cache) override;
 
     //! modify lambda multiplier slightly for a better simulation
-    void perturb_lambda();
+    void perturb_lambda() override;
 
     bool can_infer() const;
 

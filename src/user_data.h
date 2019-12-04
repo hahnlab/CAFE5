@@ -13,7 +13,7 @@ class root_equilibrium_distribution;
 class clade;
 class lambda;
 class error_model;
-class input_parameters;
+struct input_parameters;
 
 /// Class holding data defined by the user, or derived from data defined by the user
 class user_data {

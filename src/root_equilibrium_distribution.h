@@ -6,7 +6,7 @@
 #include "gene_family.h"
 
 class clade;
-class input_parameters;
+struct input_parameters;
 class root_distribution;
 
 class root_equilibrium_distribution
@@ -14,6 +14,7 @@ class root_equilibrium_distribution
 public:
     virtual float compute(size_t val) const = 0;
     virtual void initialize(const root_distribution* root_distribution) = 0;
+    virtual ~root_equilibrium_distribution() {}
 };
 
 class uniform_distribution : public root_equilibrium_distribution
@@ -22,11 +23,11 @@ class uniform_distribution : public root_equilibrium_distribution
     int _root_distribution_sum = 0;
 public:
     uniform_distribution();
-    ~uniform_distribution();
+    ~uniform_distribution() override;
 
-    virtual void initialize(const root_distribution* root_distribution);
+    virtual void initialize(const root_distribution* root_distribution) override;
 
-    virtual float compute(size_t val) const;   // creates uniform
+    virtual float compute(size_t val) const override;   // creates uniform
 };
 
 class poisson_distribution : public root_equilibrium_distribution
@@ -39,9 +40,9 @@ public:
     poisson_distribution(double poisson_lambda) : _poisson_lambda(poisson_lambda)
     {
     }
-    virtual void initialize(const root_distribution* root_distribution);
+    virtual void initialize(const root_distribution* root_distribution) override;
 
-    virtual float compute(size_t val) const
+    virtual float compute(size_t val) const override
     {
         if (val >= poisson.size())
             return 0;

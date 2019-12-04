@@ -367,7 +367,7 @@ class StandardNelderMead : public OptimizerStrategy
     bool explode = false;
 
 public:
-    void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial)
+    void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial) override
     {
         if (explode)
         {
@@ -422,7 +422,7 @@ class PerturbWhenClose : public OptimizerStrategy
 {
     bool explode = false;
 public:
-    void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial)
+    void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial) override
     {
         if (explode)
         {
@@ -459,14 +459,13 @@ public:
 
 class InitialVariants : public OptimizerStrategy
 {
-    bool explode = false;
     optimizer& _opt;
 public:
     InitialVariants(optimizer& opt) : _opt(opt)
     {
 
     }
-    void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial)
+    void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial) override
     {
         vector<optimizer::result> results(PHASED_OPTIMIZER_PHASE1_ATTEMPTS);
 
@@ -504,7 +503,7 @@ public:
 class RangeWidelyThenHomeIn : public OptimizerStrategy
 {
 public:
-    void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial)
+    void Run(FMinSearch *pfm, optimizer::result& r, std::vector<double>& initial) override
     {
         pfm->rho *= 1.5;				// reflection
         pfm->chi *= 25;				// expansion

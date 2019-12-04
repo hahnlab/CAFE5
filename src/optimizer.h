@@ -94,7 +94,6 @@ class OptimizerStrategy;
 class optimizer {
     FMinSearch* pfm;
     optimizer_scorer *_p_scorer;
-    mutable int phase = 1;
 public:
     optimizer(optimizer_scorer *scorer);
     ~optimizer();
@@ -119,7 +118,6 @@ public:
     result optimize(const optimizer_parameters& params);
 
     bool quiet = false;
-//    bool explode = false;
 
     //! Asks the scorer for initial values to try.
     //! Calculates the score for initial values to 
@@ -139,6 +137,8 @@ public:
     virtual void Run(FMinSearch* pfm, optimizer::result& r, std::vector<double>& initial) = 0;
 
     virtual std::string Description() const = 0;
+
+    virtual ~OptimizerStrategy() {}
 };
 
 class NelderMeadSimilarityCutoff : public OptimizerStrategy

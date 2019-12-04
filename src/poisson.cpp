@@ -61,7 +61,7 @@ double poisson_scorer::calculate_score(const double * values)
 double poisson_scorer::lnLPoisson(const double* plambda)
 {
     double lambda = plambda[0];
-    double score = accumulate(leaf_family_sizes.begin(), leaf_family_sizes.end(), 0.0, [this, lambda](double x, int sz) {
+    double score = accumulate(leaf_family_sizes.begin(), leaf_family_sizes.end(), 0.0, [lambda](double x, int sz) {
         double ll = poisspdf((double)sz, lambda);
         if (std::isnan(ll) || std::isinf(ll) || ll == 0) {
             return x;

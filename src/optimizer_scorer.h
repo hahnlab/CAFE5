@@ -70,9 +70,9 @@ public:
     {
     }
 
-    std::vector<double> initial_guesses();
+    std::vector<double> initial_guesses() override;
 
-    virtual void finalize(double *results);
+    virtual void finalize(double *results) override;
 
     virtual void prepare_calculation(const double *values) override;
     virtual void report_precalculation() override;
@@ -100,12 +100,12 @@ public:
     {
     }
 
-    std::vector<double> initial_guesses();
+    std::vector<double> initial_guesses() override;
 
     virtual void prepare_calculation(const double *values) override;
     virtual void report_precalculation() override;
 
-    virtual void finalize(double *results);
+    virtual void finalize(double *results) override;
 };
 
 class gamma_model;
@@ -136,14 +136,13 @@ class gamma_lambda_optimizer : public inference_optimizer_scorer
     virtual void report_precalculation() override;
     lambda_optimizer _lambda_optimizer;
     gamma_optimizer _gamma_optimizer;
-    double _longest_branch;
 public:
     gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution, const std::map<int, int>& root_distribution_map, double longest_branch);
 
-    std::vector<double> initial_guesses();
+    std::vector<double> initial_guesses() override;
 
     /// results consists of the desired number of lambdas and one alpha value
-    void finalize(double *results);
+    void finalize(double *results) override;
 };
 
 

@@ -281,7 +281,7 @@ void reconstruction::print_reconstructed_states(std::ostream& ost, const cladeve
     {
         auto& gene_family = gene_families[i];
 
-        auto g = [i, gene_family, this](const clade* node) {
+        auto g = [gene_family, this](const clade* node) {
             return get_reconstructed_state(gene_family, node);
         };
 
@@ -295,13 +295,13 @@ void reconstruction::print_reconstructed_states(std::ostream& ost, const cladeve
                 return branch_probabilities.find(gene_family.id())->second.at(node) < test_pvalue;
             };
 
-            text_func = [g, order, is_significant, this](const clade* node) {
+            text_func = [g, order, is_significant](const clade* node) {
                 return newick_node(node, order, is_significant(node), g);
             };
         }
         else
         {
-            text_func = [g, order, this](const clade* node) {
+            text_func = [g, order](const clade* node) {
                 return newick_node(node, order, false, g);
             };
         }

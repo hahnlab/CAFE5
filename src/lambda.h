@@ -40,25 +40,25 @@ private:
 public:
     single_lambda(double lam) : _lambda(lam) { } //!< Constructor 
     double get_single_lambda() const { return _lambda; }
-    virtual std::vector<double> calculate_child_factor(const matrix_cache& calc, const clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const; //!< Computes tr. prob. matrix, and multiplies by likelihood vector. Returns result (=factor).
+    virtual std::vector<double> calculate_child_factor(const matrix_cache& calc, const clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const override; //!< Computes tr. prob. matrix, and multiplies by likelihood vector. Returns result (=factor).
 
-	virtual lambda *multiply(double factor) const
+	virtual lambda *multiply(double factor) const override
 	{
 		return new single_lambda(_lambda * factor);
 	}
     virtual void update(const double* values) override { _lambda = *values; }
 
-    virtual int count() const {
+    virtual int count() const override {
         return 1;
     }
-    virtual std::string to_string() const;
-    virtual double get_value_for_clade(const clade *c) const {
+    virtual std::string to_string() const override;
+    virtual double get_value_for_clade(const clade *c) const override {
         return _lambda;
     }
-    virtual bool is_valid() {
+    virtual bool is_valid() override {
         return _lambda > 0;
     }
-    virtual lambda *clone() const {
+    virtual lambda *clone() const override {
         return new single_lambda(_lambda);
     }
 };
@@ -72,8 +72,8 @@ private:
 public:
     multiple_lambda(std::map<std::string, int> nodename_index_map, std::vector<double> lambda_vector) :
 		_node_name_to_lambda_index(nodename_index_map), _lambdas(lambda_vector) { } //!< Constructor
-    virtual std::vector<double> calculate_child_factor(const matrix_cache& calc, const clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const; //!< Computes tr. prob. matrix (uses right lambda for each branch) and multiplies by likelihood vector. Returns result (=factor).
-    virtual lambda *multiply(double factor) const
+    virtual std::vector<double> calculate_child_factor(const matrix_cache& calc, const clade *child, std::vector<double> probabilities, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const override; //!< Computes tr. prob. matrix (uses right lambda for each branch) and multiplies by likelihood vector. Returns result (=factor).
+    virtual lambda *multiply(double factor) const override
     {
         auto npi = _lambdas;
 
@@ -83,17 +83,17 @@ public:
         return new multiple_lambda(_node_name_to_lambda_index, npi);
     }
     virtual void update(const double* values) override;    
-    virtual int count() const {
+    virtual int count() const override {
         return _lambdas.size();
     }
-    virtual std::string to_string() const;
-    virtual double get_value_for_clade(const clade *c) const;
-    virtual bool is_valid();
+    virtual std::string to_string() const override;
+    virtual double get_value_for_clade(const clade *c) const override;
+    virtual bool is_valid() override;
 
     std::vector<double> get_lambdas() const {
         return _lambdas;
     }
-    virtual lambda *clone() const {
+    virtual lambda *clone() const override {
         return new multiple_lambda(_node_name_to_lambda_index, _lambdas);
     }
 
