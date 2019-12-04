@@ -8,7 +8,7 @@ CFLAGS = -std=c++11 -I. -O3 -include config.h @OPENMP_CXXFLAGS@
 LINKER = $(LD) -std=c++11 -O3 @OPENMP_CXXFLAGS@ -o
 LFLAGS = -I.
 
-AUX =   CHANGELOG.md configure INSTALL LICENSE Makefile.in README.md config.h.in
+AUX =   CHANGELOG.md configure INSTALL LICENSE Makefile.in README.md config.h.in docs/tutorial
 
 # directories
 SRCDIR = src
@@ -94,4 +94,4 @@ docs:
 .PHONY: dist
 dist: $(AUX)
 	mkdir -p distro
-	tar  --transform "s,^,CAFE/," -cf distro/CAFE5-5.0.0.tar.gz src test.cpp main.cpp $(AUX)
+	tar  --transform "s,^,CAFE/," --transform "s,docs/,,"  -czf distro/CAFE5-5.0.0.tar.gz src test.cpp main.cpp $(AUX)

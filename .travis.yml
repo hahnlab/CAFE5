@@ -13,6 +13,7 @@ script:
 - make
 - make docs
 - make test
+- make dist
 - test/runtests
 notifications:
   slack: iu-hpc-users:7OKYnBwu5Cuss5ja7GcwxsLQ
