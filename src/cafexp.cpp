@@ -26,7 +26,7 @@ input_parameters read_arguments(int argc, char *const argv[])
     int args; // getopt_long returns int or char
     int prev_arg;
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e::o:t:y:n:f:E:R:P:I:l:m:k:a:s::g:p::r:zb", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e::o:t:y:n:f:E:R:P:I:l:m:k:a:s::p::r:zb", longopts, NULL)) != -1) {
         // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && optarg && *optarg == '-') {
             cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -95,9 +95,6 @@ input_parameters read_arguments(int argc, char *const argv[])
             break;
         case 'r':
             my_input_parameters.chisquare_compare = optarg;
-            break;
-        case 'g':
-            my_input_parameters.do_log = optarg;
             break;
         case 'h':
             my_input_parameters.help = true;
@@ -168,7 +165,6 @@ void show_help()
         "   --zero_root, -z\t\t\tInclude gene families that don't exist at the root, not recommended.\n"
         "   --Expansion, -E\t\tExpansion parameter for Nelder-Mead optimizer.\n"
         "   --Reflection, -R\t\tReflection parameter for Nelder-Mead optimizer.\n"
-        "   --log, -g\t\t\tName of log file to output.\n"
         "   --lambda_per_family, -b\tEstimate lambda by family (for testing purposes only).\n\n\n";
 
         std::cout << text;
@@ -213,15 +209,6 @@ int cafexp(int argc, char *const argv[]) {
         {
             act->execute(models);
         }
-
-        /* -g */
-        if (user_input.do_log) {
-
-            string prob_matrix_suffix = "_tr_prob_matrices.txt";
-            string prob_matrix_file_name = user_input.output_prefix + prob_matrix_suffix;
-            std::ofstream ofst(user_input.output_prefix + prob_matrix_suffix);
-        }
-        /* END: Printing log file(s) */
 
         return 0;
     }
