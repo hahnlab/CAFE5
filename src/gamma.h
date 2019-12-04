@@ -7,8 +7,6 @@
 
 double point_chi2(double prob, double v);
 
-double ln_gamma(double alpha);
-
 double incomplete_gamma(double x, double alpha, double ln_gamma_alpha);
 
 double point_normal(double prob);

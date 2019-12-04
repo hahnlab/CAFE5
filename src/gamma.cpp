@@ -2,6 +2,8 @@
 #include <math.h>
 #include <iostream>
 #include <vector>
+#include <cmath>
+
 #include "gamma.h"
 
 ///
@@ -30,7 +32,7 @@ int discrete_gamma(double freqK[], double rK[],double alfa, double beta, int K, 
     }
    
     else {
-        lnga1 = ln_gamma(alfa+1);
+        lnga1 = lgamma(alfa+1);
         
         for (i = 0; i < K-1; i++)
             freqK[i] = point_gamma((i+1.0)/K, alfa, beta);
@@ -113,31 +115,6 @@ l50:
     return (gin);
 }
 
-//! Return ln(gamma(alpha)) for alpha > 0, accurate to 10 decimal places.
-/*!
-  Stirling's formula is used for the central polynomial part of the procedure.
-  Pike MC & Hill ID (1966) Algorithm 291: Logarithm of the gamma function.
-  Communications of the Association for Computing Machinery, 9:684
- */
- //! \ingroup gamma
-double ln_gamma(double alpha) {
-    double x = alpha, f = 0, z;
-
-    if (x<7) {
-        f=1;  z=x-1;
-    
-        while (++z<7) f *= z;
-        x = z;
-        f =- log(f);
-    }
-   
-    z = 1/(x*x);
-   
-    return  f + (x-0.5)*log(x) - x + .918938533204673 + 
-            (((-.000595238095238*z+.000793650793651)*z-.002777777777778)*z +
-            .083333333333333)/x;
-}
-
 //! Return z so that Prob{x<z}=prob, where x is Chi2 distributed with df=v. Return -1 if in error.
 /*
   0.000002<prob<0.999998
@@ -155,7 +132,7 @@ double point_chi2(double prob, double v) {
 
     if (p < .000002 || p > .999998 || v <= 0) return (-1); // error
 
-    g = ln_gamma(v/2);
+    g = lgamma(v/2);
     xx = v/2;
     c = xx - 1;
     if (v >= -1.24*log(p)) goto l1;
