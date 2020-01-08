@@ -140,9 +140,15 @@ The Github page for CAFE5 is https://github.com/hahnlab/CAFExp
 
 Navigate to a directory that you typically keep source code in and do one of the following:
 
-To copy the master directory as a .zip file:
+Download the latest release from the CAFE release directory https://github.com/hahnlab/CAFExp/releases
 
-    $ wget https://github.com/hahnlab/CAFExp/archive/master.zip
+If you wish to get the latest version from source, you can run
+
+$ git clone https://github.com/hahnlab/CAFExp.git
+
+Please note that the released versions contain tested and approved code, while the
+latest source code may contain experimental and untested features. _It is highly
+recommended to use a released version instead._
 
 
 ### Compile
@@ -150,9 +156,12 @@ To copy the master directory as a .zip file:
 
 Move into the CAFE5 folder, and type
 
-    $ autoconf
     $ ./configure
     $ make
+
+If you have downloaded the source code, you will need to run the
+_autoconf_ command to create the configure file provided in the
+released versions.
 
 The CAFE5 executable will be put inside the “bin” folder. Then
 just copy the binary file to somewhere on your path, such as
@@ -221,15 +230,15 @@ Example: mammals_tree.txt
 ```
 To get a list of commands just call CAFE with no arguments:
 
-    $ cafe
+    $ cafexp
 
 To estimate lambda with no among family rate variation issue the command:
 
-    $ cafe -i mammal_gene_families.txt -t mammal_tree.txt
+    $ cafexp -i mammal_gene_families.txt -t mammal_tree.txt
 
 To incorporate among family rate variation with both lambda and alpha estimated and three discrete gamma rate categories:
 
-    $ cafe -i mammal_gene_families.txt -t mammal_tree.txt -k 3
+    $ cafexp -i mammal_gene_families.txt -t mammal_tree.txt -k 3
 
 
 To estimate separate lambda values for different lineages in the tree, first identify the branches to which each lambda will apply.
@@ -246,7 +255,7 @@ For this tree, lambda #2 will be applied to branches leading to human, chimp, an
 To run this analysis with both lambdas estimated:
 
 
-    $ cafe -i mammal_gene_families.txt -t mammal_tree.txt -y chimphuman_separate_lambda.txt 
+    $ cafexp -i mammal_gene_families.txt -t mammal_tree.txt -y chimphuman_separate_lambda.txt 
 
 ***Caveats***
 
@@ -254,6 +263,14 @@ To run this analysis with both lambdas estimated:
 - More gamma rate categories (-k) does not always mean a better fit to the data. While -k=2 nearly always fits the data better than -k=1, it may be the case that -k=5 has a _worse_ likelihood than -k=3, and convergences between runs is more difficult with more categories. Try several and see what works.
 - We recommend using the -o flag to assign a unique name to the output directory for each run so that results from previous runs are not overwritten.
 - For all but the simplest of data sets, searching for multiple lambdas with multiple rate categories will result in a failure of convergence to a single optimum between runs. 
+
+### Tutorial
+
+A tutorial is provided in the _tutorial_ directory. It provides 
+instructions on how to generate a reasonable gene family groups
+in the correct format, dated ultrametric trees, and basic CAFE
+analyses. The tutorial contains tutorial.md and some helper
+scripts.
 
 ----
 ### Slow Start
