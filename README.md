@@ -17,7 +17,7 @@ This repository contains code for _CAFE 5_, an updated version of the CAFE code 
 CAFE 5 showcases new functionalities while keeping or improving several of the features 
 available in prior releases.
 
-[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
 [![Build Status](https://travis-ci.org/hahnlab/CAFExp.svg?branch=master)](https://travis-ci.org/hahnlab/CAFExp)
 
