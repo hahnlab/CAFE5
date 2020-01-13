@@ -160,19 +160,18 @@ void estimator::execute(std::vector<model *>& models)
 
                 std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(data.gene_families, &cache, data.p_prior.get()));
 
-                map<string, clademap<double>> branch_probabilities;
+                branch_probabilities probs;
 
                 for (size_t i = 0; i<data.gene_families.size(); ++i)
                 {
                     if (pvalues[i] < _user_input.pvalue)
                     {
-                        auto& r = branch_probabilities[data.gene_families[i].id()];
                         data.p_tree->apply_reverse_level_order([&](const clade* c) {
-                            r[c] = compute_viterbi_sum(c, data.gene_families[i], rec.get(), data.max_family_size, cache, p_model->get_lambda());
+                            probs.set(data.gene_families[i], c, compute_viterbi_sum(c, data.gene_families[i], rec.get(), data.max_family_size, cache, p_model->get_lambda()));
                             });
                     }
                 }
-                rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, data.gene_families, pvalues, _user_input.pvalue, branch_probabilities);
+                rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, data.gene_families, pvalues, _user_input.pvalue, probs);
             }
         }
         catch (const OptimizerInitializationFailure& e )

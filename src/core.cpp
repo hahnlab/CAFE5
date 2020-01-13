@@ -183,3 +183,15 @@ void event_monitor::summarize(std::ostream& ost) const
     }
 }
 
+bool branch_probabilities::contains(const gene_family& fam) const { 
+    return _probabilities.find(fam.id()) != _probabilities.end(); 
+}
+
+branch_probabilities::branch_probability branch_probabilities::at(const gene_family& fam, const clade* c) const {
+    return _probabilities.at(fam.id()).at(c);
+}
+
+void branch_probabilities::set(const gene_family& fam, const clade* c, branch_probability p)
+{
+    _probabilities[fam.id()][c] = p;
+}

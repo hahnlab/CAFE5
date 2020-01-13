@@ -890,17 +890,19 @@ TEST(Reconstruction, reconstruct_leaf_node)
 
 TEST(Reconstruction, print_reconstructed_states__prints_star_for_significant_values)
 {
+    gene_family gf;
+    gf.set_id("Family5");
     base_model_reconstruction bmr;
-    auto& values = bmr._reconstructions["Family5"];
+    auto& values = bmr._reconstructions[gf.id()];
 
     values[p_tree.get()] = 7;
     values[p_tree->find_descendant("AB")] = 8;
     values[p_tree->find_descendant("CD")] = 6;
 
-    map<string, clademap<double>> branch_probs;
-    p_tree->apply_reverse_level_order([&branch_probs](const clade* c) {branch_probs["Family5"][c] = .5; });
-    branch_probs["Family5"][p_tree->find_descendant("AB")] = 0.02;
-    branch_probs["Family5"][p_tree.get()] = 0.0000002;  /// root is never significant regardless of the value
+    branch_probabilities branch_probs;
+    p_tree->apply_reverse_level_order([&branch_probs, &gf](const clade* c) {branch_probs.set(gf, c, branch_probabilities::branch_probability(.5)); });
+    branch_probs.set(gf, p_tree->find_descendant("AB"), 0.02);
+    branch_probs.set(gf, p_tree.get(), branch_probabilities::invalid());  /// root is never significant regardless of the value
 
     ostringstream sig;
     bmr.print_reconstructed_states(sig, order, { fam }, p_tree.get(), 0.05, branch_probs);
@@ -926,7 +928,7 @@ TEST(Reconstruction, gamma_model_reconstruction__print_reconstructed_states__pri
     rec.reconstruction[p_tree->find_descendant("CD")] = 6;
 
     ostringstream ost;
-    map<string, clademap<double>> branch_probs;
+    branch_probabilities branch_probs;
     gmr.print_reconstructed_states(ost, order, { fam }, p_tree.get(), 0.05, branch_probs);
     STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", ost.str().c_str());
 }
@@ -956,7 +958,7 @@ TEST(Reconstruction, gamma_model_reconstruction__prints_lambda_multipiers)
     rec.reconstruction[p_tree->find_descendant("AB")] = 8;
     rec.reconstruction[p_tree->find_descendant("CD")] = 6;
 
-    map<string, clademap<double>> branch_probs;
+    branch_probabilities branch_probs;
 
     std::ostringstream ost;
     gmr.print_reconstructed_states(ost, order, { fam }, p_tree.get(), 0.05, branch_probs);
@@ -976,7 +978,7 @@ TEST(Reconstruction, base_model_reconstruction__print_reconstructed_states)
     values[p_tree->find_descendant("AB")] = 8;
     values[p_tree->find_descendant("CD")] = 6;
 
-    map<string, clademap<double>> branch_probs;
+    branch_probabilities branch_probs;
 
     ostringstream ost;
 
@@ -1094,13 +1096,16 @@ TEST(Reconstruction, clade_index_or_name__returns_node_name_plus_index_in_angle_
     STRCMP_EQUAL("A<1>", clade_index_or_name(a, { p_tree.get(), a }).c_str())
 }
 
-TEST(Reconstruction, print_branch_probabilities__shows_NA_for_root_and_negatives)
+TEST(Reconstruction, print_branch_probabilities__shows_NA_for_invalids)
 {
+    gene_family gf;
+    gf.set_id("Family5");
     std::ostringstream ost;
-    map<string, clademap<double>> probs;
+    branch_probabilities probs;
     for (auto c : order)
-        probs["Family5"][c] = 0.05;
-    probs["Family5"][p_tree->find_descendant("B")] = -1;
+        probs.set(gf, c, 0.05);
+    probs.set(gf, p_tree->find_descendant("B"), branch_probabilities::invalid());
+    probs.set(gf, p_tree.get(), branch_probabilities::invalid());
 
     print_branch_probabilities(ost, order, { fam }, probs);
     STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
@@ -1110,7 +1115,7 @@ TEST(Reconstruction, print_branch_probabilities__shows_NA_for_root_and_negatives
 TEST(Reconstruction, print_branch_probabilities__skips_families_without_reconstructions)
 {
     std::ostringstream ost;
-    map<string, clademap<double>> probs;
+    branch_probabilities probs;
 
     print_branch_probabilities(ost, order, { fam }, probs);
     CHECK(ost.str().find("Family5") == string::npos);
@@ -1123,17 +1128,27 @@ TEST(Reconstruction, viterbi_sum_probabilities)
     base_model_reconstruction rec;
     rec._reconstructions[fam.id()][p_tree->find_descendant("AB")] = 10;
     single_lambda lm(0.05);
-    DOUBLES_EQUAL(0.2182032, compute_viterbi_sum(p_tree->find_descendant("A"), fam, &rec, 24, cache, &lm), 0.000001);
+    DOUBLES_EQUAL(0.2182032, compute_viterbi_sum(p_tree->find_descendant("A"), fam, &rec, 24, cache, &lm)._value, 0.000001);
 }
 
-TEST(Reconstruction, viterbi_sum_probabilities_returns_negative_one_if_equal_parent_and_child_sizes)
+TEST(Reconstruction, viterbi_sum_probabilities_returns_invalid_if_equal_parent_and_child_sizes)
 {
     matrix_cache cache(25);
     cache.precalculate_matrices({ 0.05 }, { 1,3,7 });
     base_model_reconstruction rec;
     rec._reconstructions[fam.id()][p_tree->find_descendant("AB")] = 11;
     single_lambda lm(0.05);
-    DOUBLES_EQUAL(-1, compute_viterbi_sum(p_tree->find_descendant("A"), fam, &rec, 24, cache, &lm), 0.000001);
+    CHECK_FALSE(compute_viterbi_sum(p_tree->find_descendant("A"), fam, &rec, 24, cache, &lm)._is_valid);
+}
+
+TEST(Reconstruction, viterbi_sum_probabilities_returns_invalid_if_root)
+{
+    matrix_cache cache(25);
+    cache.precalculate_matrices({ 0.05 }, { 1,3,7 });
+    base_model_reconstruction rec;
+    rec._reconstructions[fam.id()][p_tree.get()] = 11;
+    single_lambda lm(0.05);
+    CHECK_FALSE(compute_viterbi_sum(p_tree.get(), fam, &rec, 24, cache, &lm)._is_valid);
 }
 
 TEST(Reconstruction, pvalues)

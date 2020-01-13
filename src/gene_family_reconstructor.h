@@ -19,10 +19,8 @@ void reconstruct_gene_family(const lambda* lambda, const clade *p_tree,
     matrix_cache *p_calc,
     root_equilibrium_distribution* p_prior, clademap<int>& reconstructed_states);
 
-string newick_node(const clade *node, const cladevector& order, std::function<std::string(const clade *c)> textwriter);
+branch_probabilities::branch_probability compute_viterbi_sum(const clade* c, const gene_family& family, const reconstruction* rec, int max_family_size, const matrix_cache& cache, const lambda* p_lambda);
 
-double compute_viterbi_sum(const clade* c, const gene_family& family, const reconstruction* rec, int max_family_size, const matrix_cache& cache, const lambda* p_lambda);
-
-void print_branch_probabilities(std::ostream& ost, const cladevector& order, const vector<gene_family>& gene_families, const std::map<std::string, clademap<double>>& branch_probabilities);
+void print_branch_probabilities(std::ostream& ost, const cladevector& order, const vector<gene_family>& gene_families, const branch_probabilities& branch_probabilities);
 
 #endif

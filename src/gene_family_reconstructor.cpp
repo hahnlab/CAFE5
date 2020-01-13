@@ -247,7 +247,7 @@ void reconstruction::print_family_clade_table(std::ostream& ost, const cladevect
     }
 }
 
-void print_branch_probabilities(std::ostream& ost, const cladevector& order, const vector<gene_family>& gene_families, const std::map<std::string, clademap<double>>& branch_probabilities)
+void print_branch_probabilities(std::ostream& ost, const cladevector& order, const vector<gene_family>& gene_families, const branch_probabilities& branch_probabilities)
 {
     ost << "#FamilyID\t";
     for (auto& it : order) {
@@ -257,16 +257,16 @@ void print_branch_probabilities(std::ostream& ost, const cladevector& order, con
 
     for (auto& gf : gene_families) 
     {
-        if (branch_probabilities.find(gf.id()) != branch_probabilities.end())
+        if (branch_probabilities.contains(gf))
         {
             ost << gf.id();
             for (auto c : order)
             {
                 ost << '\t';
-                if (c->is_root() || branch_probabilities.at(gf.id()).at(c) < 0)
-                    ost << "N/A";
+                if (branch_probabilities.at(gf, c)._is_valid)
+                    ost << branch_probabilities.at(gf, c)._value;
                 else
-                    ost << branch_probabilities.at(gf.id()).at(c);
+                    ost << "N/A";
             }
             ost << endl;
         }
@@ -274,7 +274,7 @@ void print_branch_probabilities(std::ostream& ost, const cladevector& order, con
 
 }
 
-void reconstruction::print_reconstructed_states(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree, double test_pvalue, std::map<std::string, clademap<double>>& branch_probabilities)
+void reconstruction::print_reconstructed_states(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree, double test_pvalue, const branch_probabilities& branch_probabilities)
 {
     ost << "#nexus\nBEGIN TREES;\n";
     for (size_t i = 0; i < gene_families.size(); ++i)
@@ -286,13 +286,11 @@ void reconstruction::print_reconstructed_states(std::ostream& ost, const cladeve
         };
 
         function<string(const clade*)> text_func;
-        if (branch_probabilities.find(gene_family.id()) != branch_probabilities.end())
+        if (branch_probabilities.contains(gene_family))
         {
             auto is_significant = [&branch_probabilities, test_pvalue, gene_family](const clade* node) {
-                if (node->is_root())
-                    return false;
-
-                return branch_probabilities.find(gene_family.id())->second.at(node) < test_pvalue;
+                const auto& p = branch_probabilities.at(gene_family, node);
+                return p._is_valid ? p._value < test_pvalue : false;
             };
 
             text_func = [g, order, is_significant](const clade* node) {
@@ -328,7 +326,13 @@ void reconstruction::print_node_counts(std::ostream& ost, const cladevector& ord
 }
 
 
-void reconstruction::write_results(std::string model_identifier, std::string output_prefix, const clade *p_tree, familyvector& families, std::vector<double>& pvalues, double test_pvalue, std::map<std::string, clademap<double>>& branch_probabilities)
+void reconstruction::write_results(std::string model_identifier, 
+    std::string output_prefix, 
+    const clade *p_tree, 
+    familyvector& families, 
+    std::vector<double>& pvalues, 
+    double test_pvalue, 
+    const branch_probabilities& branch_probabilities)
 {
     cladevector order;
     p_tree->apply_reverse_level_order([&order](const clade* c) { order.push_back(c); });
@@ -354,11 +358,16 @@ void reconstruction::write_results(std::string model_identifier, std::string out
     print_additional_data(order, families, output_prefix);
 }
 
-double compute_viterbi_sum(const clade* c, const gene_family& family, const reconstruction* rec, int max_family_size, const matrix_cache& cache, const lambda* p_lambda)
+branch_probabilities::branch_probability compute_viterbi_sum(const clade* c, 
+    const gene_family& family, 
+    const reconstruction* rec, 
+    int max_family_size, 
+    const matrix_cache& cache, 
+    const lambda* p_lambda)
 {
     if (c->is_root())
     {
-        return 0;
+        return branch_probabilities::invalid();
     }
 
     const matrix* probs = cache.get_matrix(c->get_branch_length(), p_lambda->get_value_for_clade(c));
@@ -367,8 +376,8 @@ double compute_viterbi_sum(const clade* c, const gene_family& family, const reco
     int child_size = rec->reconstructed_size(family, c);
     if (parent_size == child_size)
     {
-        /// don't print a probability if the parent and child sizes are the same
-        return -1;
+        /// don't return a probability if the parent and child sizes are the same
+        return branch_probabilities::invalid();
     }
     else
     {
@@ -386,6 +395,6 @@ double compute_viterbi_sum(const clade* c, const gene_family& family, const reco
                 result += probability_to_m;
             }
         }
-        return result;
+        return branch_probabilities::branch_probability(result);
     }
 }

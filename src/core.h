@@ -31,6 +31,37 @@ struct family_info_stash {
 
 std::ostream& operator<<(std::ostream& ost, const family_info_stash& r);
 
+class branch_probabilities {
+public:
+    struct branch_probability {
+        bool _is_valid;
+        double _value;
+
+        branch_probability(double value) : _is_valid(true), _value(value)
+        {
+            if (value < 0 || value > 1)
+                throw std::runtime_error("Not a valid probability");
+        }
+        branch_probability() : _is_valid(false), _value(0.0)
+        {
+
+        }
+    };
+
+
+    bool contains(const gene_family& fam) const;
+    branch_probability at(const gene_family& fam, const clade* c) const;
+    void set(const gene_family& fam, const clade* c, branch_probability p);
+
+    static branch_probability invalid() { return branch_probability(); }
+
+private:
+    std::map<std::string, clademap<branch_probability>> _probabilities;
+};
+
+//using probabilitymap = std::map<std::string, clademap<branch_probability>>;
+
+
 //! The result of a model reconstruction. Should be able to (a) print reconstructed states with all available information;
 /// (b) print increases and decreases by family; and (c) print increases and decreases by clade.
 class reconstruction {
@@ -41,7 +72,7 @@ public:
 
     void print_node_counts(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree);
 
-    void print_reconstructed_states(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree, double test_pvalue, std::map<std::string, clademap<double>>& branch_probabilities);
+    void print_reconstructed_states(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree, double test_pvalue, const branch_probabilities& branch_probabilities);
 
     void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order, familyvector& gene_families);
 
@@ -50,7 +81,7 @@ public:
     void print_family_clade_table(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree,
         std::function<string(int family_index, const clade* c)> get_family_clade_value);
 
-    void write_results(std::string model_identifier, std::string output_prefix, const clade* p_tree, familyvector& families, std::vector<double>& pvalues, double test_pvalue, std::map<std::string, clademap<double>>& branch_probabilities);
+    void write_results(std::string model_identifier, std::string output_prefix, const clade* p_tree, familyvector& families, std::vector<double>& pvalues, double test_pvalue, const branch_probabilities& branch_probabilities);
 
     virtual int reconstructed_size(const gene_family& family, const clade* clade) const = 0;
     virtual ~reconstruction()
