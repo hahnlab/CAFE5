@@ -150,7 +150,7 @@ void show_help()
         "provide a basis for assessing the significance of the observed family size differences among taxa.\n\n"
         "Options:\n"
         "   --fixed_alpha, -a\t\tAlpha value of the discrete gamma distribution to use in category calculations. If not\n \t\t\t\t  specified, the alpha parameter will be estimated by maximum likelihood.\n"
-        "   --error_model, -e\t\tError model file path\n"
+        "   --error_model, -e\t\tRun with no file name to estimate the global error model file. This file can be provided\n \t\t\t\t in subsequent runs by providing the path to the Error model file with no spaces (e.g. "-eBase_error_model.txt")\n"
         "   --rootdist, -f\t\tRoot distribution file path\n"
         "   --infile, -i\t\t\tCharacter or gene family file path\n"
         "   --n_gamma_cats, -k\t\tNumber of gamma rate categories to use. If specified, the Gamma model will be used to run\n \t\t\t\t  calculations, otherwise the Base model will be used.\n"
