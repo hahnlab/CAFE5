@@ -56,6 +56,7 @@ class mock_model : public model {
         result->quiet = true;
         return result;
     }
+    bool _invalid_likelihood = false;
 public:
     mock_model() : model(NULL, NULL, NULL, 0, 0, NULL)
     {
@@ -69,7 +70,7 @@ public:
     {
         _p_tree = tree;
     }
-
+    void set_invalid_likelihood() { _invalid_likelihood = true;  }
     // Inherited via model
     virtual void prepare_matrices_for_simulation(matrix_cache& cache) override
     {
@@ -79,7 +80,7 @@ public:
     // Inherited via model
     virtual double infer_family_likelihoods(root_equilibrium_distribution* prior, const std::map<int, int>& root_distribution_map, const lambda* p_lambda) override
     {
-        return 0.0;
+        return _invalid_likelihood ? nan("") : 0.0;
     }
 };
 
@@ -2205,6 +2206,16 @@ TEST(Inference, gamma_lambda_optimizer)
     gamma_lambda_optimizer optimizer(_user_data.p_lambda, &m, &frq, std::map<int, int>(), 7);
     vector<double> values{ 0.01, 0.25 };
     DOUBLES_EQUAL(6.4168, optimizer.calculate_score(&values[0]), 0.0001);
+}
+
+TEST(Inference, inference_optimizer_scorer__calculate_score__translates_nan_to_inf)
+{
+    single_lambda lam(0.05);
+    mock_model m;
+    m.set_invalid_likelihood();
+    double val;
+    lambda_optimizer opt(&lam, &m, NULL, 0, std::map<int, int>());
+    CHECK(std::isinf(opt.calculate_score(&val)));
 }
 
 TEST(Inference, poisson_scorer_optimizes_correct_value)

@@ -27,10 +27,7 @@ double inference_optimizer_scorer::calculate_score(const double *values)
 
     double score = _p_model->infer_family_likelihoods(_p_distribution, _rootdist_map, _p_lambda);
 
-    if (!quiet)
-    {
-        std::cout << "Score (-lnL): " << setw(15) << setprecision(14) << score << std::endl;
-    }
+    if (std::isnan(score)) score = -log(0);
 
     return score;
 }

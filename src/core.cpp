@@ -4,6 +4,7 @@
 #include <fstream>
 #include <assert.h>
 #include <numeric>
+#include <iomanip>
 
 #include "core.h"
 #include "user_data.h"
@@ -155,7 +156,7 @@ void event_monitor::Event_Reconstruction_Complete()
 void event_monitor::Event_InferenceAttempt_Complete(double final_likelihood)
 {
 #ifndef SILENT
-    std::cout << "-lnL: " << final_likelihood << std::endl;
+    std::cout << "Score (-lnL): " << std::setw(15) << std::setprecision(14) << final_likelihood << std::endl;
 #endif
 }
 
