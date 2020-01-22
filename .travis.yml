@@ -5,7 +5,7 @@ compiler:
 - gcc
 # - clang  # Don't compile in clang until openmp errors can be resolved
 before_install:
-- sudo apt-get install cpputest doxygen graphviz latexmk pandoc texlive-latex-extra texlive-fonts-recommended
+- sudo apt-get install cpputest doxygen graphviz latexmk pandoc texlive-latex-extra texlive-fonts-recommended tar
 script:
 - cd $TRAVIS_BUILD_DIR
 - autoconf
@@ -13,6 +13,7 @@ script:
 - make
 - make docs
 - make test
+- tar --version
 - make dist
 - test/runtests
 notifications:
