@@ -94,4 +94,4 @@ docs:
 .PHONY: dist
 dist: $(AUX)
 	mkdir -p distro
-	tar  --transform "s,^,CAFE/," --transform "s,docs/,,"  -czf --owner=0 --group=0 distro/CAFE5-5.0.0.tar.gz src test.cpp main.cpp $(AUX)
+	tar  --transform "s,^,CAFE/," --transform "s,docs/,," --owner=0 --group=0 -czf distro/CAFE5-5.0.0.tar.gz src test.cpp main.cpp $(AUX)
