@@ -95,10 +95,19 @@ void model::initialize_lambda(clade *p_lambda_tree)
 
 void model::write_vital_statistics(std::ostream& ost, double final_likelihood)
 {
-    ost << "Model " << name() << " Result: " << final_likelihood << endl;
+    ost << "Model " << name() << " Final Likelihood (-lnL): " << final_likelihood << endl;
     ost << "Lambda: " << *get_lambda() << endl;
     if (_p_error_model)
         ost << "Epsilon: " << _p_error_model->get_epsilons()[0] << endl;
+
+    auto lengths = _p_tree->get_branch_lengths();
+    auto longest_branch = *max_element(lengths.begin(), lengths.end());
+    auto max_lambda = 1 / longest_branch;
+
+    ost << "Maximum possible lambda for this topology: " << max_lambda << endl;
+
+    get_monitor().summarize(ost);
+
 }
 
 lambda* model::get_simulation_lambda()

@@ -1326,6 +1326,7 @@ TEST(Inference, build_models__uses_error_model_if_provided)
     em.set_probabilities(0, { 0, 0.99, 0.01 });
     user_data data;
     data.p_error_model = &em;
+    data.p_tree = new clade("A", 5);
     data.max_family_size = 5;
     single_lambda lambda(0.05);
     data.p_lambda = &lambda;
@@ -1341,6 +1342,7 @@ TEST(Inference, build_models__creates_default_error_model_if_needed)
     input_parameters params;
     params.use_error_model = true;
     user_data data;
+    data.p_tree = new clade("A", 5);
     data.max_family_size = 5;
     single_lambda lambda(0.05);
     data.p_lambda = &lambda;
@@ -1983,11 +1985,15 @@ TEST(Simulation, create_trial)
 TEST(Inference, model_vitals)
 {
     mock_model model;
+    model.set_tree(new clade("A", 5));
     single_lambda lambda(0.05);
     model.set_lambda(&lambda);
     std::ostringstream ost;
     model.write_vital_statistics(ost, 0.01);
-    STRCMP_EQUAL("Model mockmodel Result: 0.01\nLambda:            0.05\n", ost.str().c_str());
+    STRCMP_CONTAINS("Model mockmodel Final Likelihood (-lnL): 0.01", ost.str().c_str());
+    STRCMP_CONTAINS("Lambda:            0.05", ost.str().c_str());
+    STRCMP_CONTAINS("Maximum possible lambda for this topology: 0.2", ost.str().c_str());
+    STRCMP_CONTAINS("No attempts made", ost.str().c_str());
 }
 
 TEST(Reconstruction, gene_family_reconstrctor__print_increases_decreases_by_family__adds_flag_for_significance)
