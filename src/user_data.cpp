@@ -20,12 +20,18 @@ using namespace std;
 /// @param[out] max_root_family_size Equal to 5/4 the size of the largest family size given in the file (with a minimum of 30)
 void user_data::read_gene_family_data(const input_parameters &my_input_parameters, int &max_family_size, int &max_root_family_size, clade *p_tree, std::vector<gene_family> *p_gene_families) {
 
-    ifstream input_file(my_input_parameters.input_file_path);
-    if (!input_file.is_open())
-        throw std::runtime_error("Failed to open " + my_input_parameters.input_file_path + ". Exiting...");
+    try
+    {
+        ifstream input_file(my_input_parameters.input_file_path);
+        if (!input_file.is_open())
+            throw std::runtime_error("Failed to open");
 
-    read_gene_families(input_file, p_tree, p_gene_families); // in io.cpp/io.h
-
+        read_gene_families(input_file, p_tree, *p_gene_families); // in io.cpp/io.h
+    }
+    catch (runtime_error& err)
+    {
+        throw std::runtime_error(my_input_parameters.input_file_path + ": " + err.what() + ". Exiting...");
+    }
                                                              // Iterating over gene families to get max gene family size
     for (std::vector<gene_family>::iterator it = p_gene_families->begin(); it != p_gene_families->end(); ++it) {
         int this_family_max_size = it->get_max_size();

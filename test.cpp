@@ -439,7 +439,7 @@ TEST(GeneFamilies, read_gene_families_reads_cafe_files)
     std::string str = "Desc\tFamily ID\tA\tB\tC\tD\n\t (null)1\t5\t10\t2\t6\n\t (null)2\t5\t10\t2\t6\n\t (null)3\t5\t10\t2\t6\n\t (null)4\t5\t10\t2\t6";
     std::istringstream ist(str);
     std::vector<gene_family> families;
-    read_gene_families(ist, NULL, &families);
+    read_gene_families(ist, NULL, families);
     LONGS_EQUAL(5, families.at(0).get_species_size("A"));
     LONGS_EQUAL(10, families.at(0).get_species_size("B"));
     LONGS_EQUAL(2, families.at(0).get_species_size("C"));
@@ -454,12 +454,31 @@ TEST(GeneFamilies, read_gene_families_reads_simulation_files)
     clade *p_tree = parse_newick("((A:1,B:1):1,(C:1,D:1):1);");
 
     std::vector<gene_family> families;
-    read_gene_families(ist, p_tree, &families);
+    read_gene_families(ist, p_tree, families);
     LONGS_EQUAL(35, families.at(0).get_species_size("A"));
     LONGS_EQUAL(36, families.at(0).get_species_size("B"));
     LONGS_EQUAL(36, families.at(0).get_species_size("C"));
     LONGS_EQUAL(34, families.at(0).get_species_size("D"));
     delete p_tree;
+}
+
+TEST(GeneFamilies, read_gene_families_throws_if_no_families_found)
+{
+    std::string empty;
+    std::istringstream ist(empty);
+
+    unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
+    std::vector<gene_family> families;
+    try
+    {
+        read_gene_families(ist, p_tree.get(), families);
+        CHECK(false);
+    }
+    catch (runtime_error& err)
+    {
+        STRCMP_EQUAL("No families found", err.what());
+    }
+
 }
 
 TEST(GeneFamilies, model_set_families)
@@ -546,7 +565,7 @@ TEST(Inference, gamma_adjust_family_gamma_membership)
     std::string str = "Desc\tFamily ID\tA\tB\tC\tD\n\t (null)1\t5\t10\t2\t6\n\t (null)2\t5\t10\t2\t6\n\t (null)3\t5\t10\t2\t6\n\t (null)4\t5\t10\t2\t6";
     std::istringstream ist(str);
     std::vector<gene_family> families;
-    read_gene_families(ist, NULL, &families);
+    read_gene_families(ist, NULL, families);
 
     gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL);
 }
@@ -1612,7 +1631,7 @@ TEST(Inference, build_reference_list)
         "\t (null)4\t5\t7\n";
     std::istringstream ist(str);
     std::vector<gene_family> families;
-    read_gene_families(ist, NULL, &families);
+    read_gene_families(ist, NULL, families);
     auto actual = build_reference_list(families);
     vector<int> expected({ 0, 1, 0, 1 });
     LONGS_EQUAL(expected.size(), actual.size());
@@ -1816,7 +1835,7 @@ TEST(Clade, exists_at_root_returns_false_if_not_all_children_exist)
  "(null)\t2\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t1\t1\n");
 
     vector<gene_family> families;
-    read_gene_families(ist, p_tree.get(), &families);
+    read_gene_families(ist, p_tree.get(), families);
     CHECK_FALSE(families[0].exists_at_root(p_tree.get()));
     CHECK_FALSE(families[1].exists_at_root(p_tree.get()));
 }

@@ -129,7 +129,7 @@ clade* read_tree(string tree_file_path, bool lambda_tree) {
 /*!
   This function is called by execute::read_gene_family_data, which is itself called by CAFExp's main function when "--infile"/"-i" is specified  
 */
-void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gene_family> *p_gene_families) {
+void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gene_family> &gene_families) {
     map<int, std::string> sp_col_map; // For dealing with CAFE input format, {col_idx: sp_name} 
     map<int, string> leaf_indices; // For dealing with CAFExp input format, {idx: sp_name}, idx goes from 0 to number of species
     std::string line;
@@ -204,9 +204,12 @@ void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gen
                 }
             }
             
-            p_gene_families->push_back(genfam);
+            gene_families.push_back(genfam);
         }
     }
+
+    if (gene_families.empty())
+        throw std::runtime_error("No families found");
 }
 /* END: Reading in gene family data */
 
