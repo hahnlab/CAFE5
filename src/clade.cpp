@@ -367,18 +367,26 @@ clade* parse_newick(std::string newick_string, bool parse_to_lambdas) {
 		}
 	}
 
-	// since user is not required to set a lambda index for the root, go ahead and assign it to the first lambda
-	// so the rest of the code doesn't get confused
+    std::function<void(const clade*)> validator;
 	if (p_root_clade->is_lambda_clade)
 	{
-		if (p_root_clade->get_lambda_index() == 0)
+        // since user is not required to set a lambda index for the root, go ahead and assign it to the first lambda
+        // so the rest of the code doesn't get confused
+        if (p_root_clade->get_lambda_index() == 0)
 			p_root_clade->_lambda_index = 1;
 
-		auto validator = [](const clade* c) {
+		validator = [](const clade* c) {
 			if (c->_lambda_index < 1)
 				throw std::runtime_error("Invalid lambda index set for " + c->get_taxon_name());
 		};
-		p_root_clade->apply_reverse_level_order(validator);
 	}
-	return p_root_clade;
+    else
+    {
+        validator = [](const clade* c) {
+            if (!c->is_root() && c->get_branch_length() <= 0)
+                throw std::runtime_error("Invalid branch length set for " + c->get_taxon_name());
+        };
+    }
+    p_root_clade->apply_reverse_level_order(validator);
+    return p_root_clade;
 }

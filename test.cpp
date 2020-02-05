@@ -1854,6 +1854,28 @@ TEST(Clade, parse_newick_throws_exception_for_invalid_lambdas_in_tree)
 	}
 }
 
+TEST(Clade, parse_newick_throws_exception_for_invalid_branch_length_in_tree)
+{
+    try
+    {
+        parse_newick("(A:1,B:0):2", false);
+        CHECK(false);
+    }
+    catch (std::runtime_error& r)
+    {
+        STRCMP_EQUAL("Invalid branch length set for B", r.what());
+    }
+    try
+    {
+        parse_newick("(A:-1,B:2)", false);
+        CHECK(false);
+    }
+    catch (std::runtime_error& r)
+    {
+        STRCMP_EQUAL("Invalid branch length set for A", r.what());
+    }
+}
+
 TEST(Inference, multiple_lambda_returns_correct_values)
 {
     ostringstream ost;
