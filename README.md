@@ -52,7 +52,7 @@ in prior releases.
 
 If you use CAFE5 in your work, please cite the application as
 
-> (xxx - a Zenodo DOI to be determined when released)
+> 10.5281/zenodo.3625141
 
 Original development of the statistical framework and algorithms implemented in CAFE are 
 published in:

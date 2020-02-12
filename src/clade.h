@@ -43,10 +43,12 @@ public:
     //! constructor giving taxon name and branch length
     clade(std::string taxon_name, double length) : _taxon_name(taxon_name), _branch_length(length), _lambda_index(0), is_lambda_clade(false) {}
 
+    clade(const clade& c, clade *parent = nullptr, std::function<double(const clade& c)> branchlength_setter = nullptr);
+
     ~clade(); // destructor
 
     //! return the parent clade, NULL if there is none
-    clade *get_parent() const;
+    const clade *get_parent() const;
 
     //! Add the descendant clade. Used when constructing a tree
     void add_descendant(clade *p_descendant);

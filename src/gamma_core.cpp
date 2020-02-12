@@ -282,7 +282,7 @@ double gamma_model::infer_family_likelihoods(root_equilibrium_distribution *prio
     return final_likelihood;
 }
 
-inference_optimizer_scorer *gamma_model::get_lambda_optimizer(user_data& data)
+inference_optimizer_scorer *gamma_model::get_lambda_optimizer(const user_data& data)
 {
     bool estimate_lambda = data.p_lambda == NULL;
     bool estimate_alpha = _alpha <= 0.0;

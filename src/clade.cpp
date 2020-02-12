@@ -7,6 +7,19 @@
 
 using namespace std;
 
+clade::clade(const clade& c, clade* parent, std::function<double(const clade& c)> branchlength_setter) {
+    _p_parent = parent;
+    _taxon_name = c._taxon_name;
+    if (branchlength_setter)
+        _branch_length = branchlength_setter(c);
+    else
+        _branch_length = c._branch_length;
+    _lambda_index = c._lambda_index;
+    is_lambda_clade = c.is_lambda_clade;
+    _descendants.resize(c._descendants.size());
+    transform(c._descendants.begin(), c._descendants.end(), _descendants.begin(), [&](const clade* c) { return new clade(*c, this, branchlength_setter);});
+}
+
 /* Recursive destructor */
 clade::~clade() {
 
@@ -15,7 +28,7 @@ clade::~clade() {
   }
 }
 
-clade *clade::get_parent() const {
+const clade *clade::get_parent() const {
 
   return _p_parent; // memory address
 }
@@ -298,7 +311,7 @@ clade* parse_newick(std::string newick_string, bool parse_to_lambdas) {
 			// cout << "Found (: " << regex_it->str() << endl;
 
 			p_current_clade = new_clade(p_current_clade); // move down the tree (towards the present)
-			p_current_clade->get_parent()->add_descendant(p_current_clade); // can't forget to add the now current clade to its parent's descendants vector
+			p_current_clade->_p_parent->add_descendant(p_current_clade); // can't forget to add the now current clade to its parent's descendants vector
 			lp_count++;
 		}
 
@@ -311,12 +324,12 @@ clade* parse_newick(std::string newick_string, bool parse_to_lambdas) {
 				cout << "Found root!" << endl;
 				p_root_clade = new_clade(NULL);
 				p_current_clade->_p_parent = p_root_clade; // note that get_parent() cannot be used here because get_parent() copies the pointer and it would be the copy that would be assigned p_root_clade... and then the copy would just be thrown away
-				p_current_clade->get_parent()->add_descendant(p_current_clade);
+				p_current_clade->_p_parent->add_descendant(p_current_clade);
 			}
 
 			/* Start new clade at same level as the current clade */
-			p_current_clade = new_clade(p_current_clade->get_parent()); // move to the side of the tree
-			p_current_clade->get_parent()->add_descendant(p_current_clade); // adding current clade as descendant of its parent
+			p_current_clade = new_clade(p_current_clade->_p_parent); // move to the side of the tree
+			p_current_clade->_p_parent->add_descendant(p_current_clade); // adding current clade as descendant of its parent
 		}
 
 		/* Finished current clade */
@@ -324,7 +337,7 @@ clade* parse_newick(std::string newick_string, bool parse_to_lambdas) {
 			/* checking ')' regex */
 			// cout << "Found ): " << regex_it->str() << endl;
 
-			p_current_clade = p_current_clade->get_parent(); // move up the tree (into the past)
+			p_current_clade = p_current_clade->_p_parent; // move up the tree (into the past)
 			rp_count++;
 		}
 
@@ -359,7 +372,7 @@ clade* parse_newick(std::string newick_string, bool parse_to_lambdas) {
 			// cout << "Found species name: " << regex_it->str() << endl;
 
 			p_current_clade->_taxon_name = regex_it->str();
-			clade* p_parent = p_current_clade->get_parent();
+			clade* p_parent = p_current_clade->_p_parent;
 			/* If this species has a parent, we need to update the parent's name */
 			if (p_parent != NULL) {
 				p_parent->_name_interior_clade(); // update parent's name, _name_interior_clade() is a void method

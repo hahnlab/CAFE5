@@ -4,6 +4,7 @@
 #include <cmath>
 #include <algorithm>
 #include <sstream>
+#include <iostream>
 
 #include "io.h"
 #include "lambda.h"
@@ -32,7 +33,8 @@ void user_data::read_gene_family_data(const input_parameters &my_input_parameter
     {
         throw std::runtime_error(my_input_parameters.input_file_path + ": " + err.what() + ". Exiting...");
     }
-                                                             // Iterating over gene families to get max gene family size
+    
+    // Iterating over gene families to get max gene family size
     for (std::vector<gene_family>::iterator it = p_gene_families->begin(); it != p_gene_families->end(); ++it) {
         int this_family_max_size = it->get_max_size();
 

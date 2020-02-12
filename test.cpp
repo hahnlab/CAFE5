@@ -24,6 +24,7 @@
 #include "src/poisson.h"
 #include "src/optimizer.h"
 #include "src/error_model.h"
+#include "src/likelihood_ratio.h"
 
 #define CPPUTEST_MEM_LEAK_DETECTION_DISABLED
 
@@ -46,7 +47,7 @@ class mock_model : public model {
     {
         return nullptr;
     }
-    virtual inference_optimizer_scorer* get_lambda_optimizer(user_data& data) override
+    virtual inference_optimizer_scorer* get_lambda_optimizer(const user_data& data) override
     {
         auto lengths = _p_tree->get_branch_lengths();
         auto longest_branch = *max_element(lengths.begin(), lengths.end());
@@ -1895,6 +1896,22 @@ TEST(Clade, parse_newick_throws_exception_for_invalid_branch_length_in_tree)
     }
 }
 
+TEST(Clade, copy_constructor)
+{
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
+    unique_ptr<clade> copy(new clade(*p_tree.get()));
+    LONGS_EQUAL(1, copy->find_descendant("A")->get_branch_length());
+    LONGS_EQUAL(7, copy->find_descendant("AB")->get_branch_length());
+}
+
+TEST(Clade, copy_constructor_modifying_branch)
+{
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
+    unique_ptr<clade> copy(new clade(*p_tree.get(), nullptr, [](const clade& c) { return c.get_branch_length() * 2; }));
+    LONGS_EQUAL(2, copy->find_descendant("A")->get_branch_length());
+    LONGS_EQUAL(14, copy->find_descendant("AB")->get_branch_length());
+}
+
 TEST(Inference, multiple_lambda_returns_correct_values)
 {
     ostringstream ost;
@@ -1907,31 +1924,6 @@ TEST(Inference, multiple_lambda_returns_correct_values)
     DOUBLES_EQUAL(.017, ml.get_value_for_clade(p_tree->find_descendant("A")), 0.0001);
     DOUBLES_EQUAL(.011, ml.get_value_for_clade(p_tree->find_descendant("B")), 0.0001);
 }
-
-class mock_optimizer : public inference_optimizer_scorer
-{
-    double _initial;
-    // Inherited via optimizer
-    virtual std::vector<double> initial_guesses() override
-    {
-        return std::vector<double>{_initial};
-    }
-    virtual void prepare_calculation(const double * values) override
-    {
-    }
-    virtual void report_precalculation() override
-    {
-    }
-
-public:
-    mock_optimizer(double initial) : 
-        inference_optimizer_scorer(NULL, NULL, NULL, std::map<int, int>()),
-        _initial(initial)
-    {
-
-    }
-
-};
 
 TEST(Simulation, select_root_size_returns_less_than_100_without_rootdist)
 {
@@ -2981,6 +2973,56 @@ TEST(Optimizer, NelderMeadSimilarityCutoff__threshold__returns_true_if_attempt_v
     fm.candidates[0]->score = 100.0001;
     CHECK_TRUE(strat.threshold_achieved_checking_similarity(&fm));
 }
+
+TEST_GROUP(LikelihoodRatioTest)
+{
+};
+
+TEST(LikelihoodRatioTest, update_branchlength)
+{
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
+
+    unique_ptr<clade> actual(LikelihoodRatioTest::update_branchlength(p_tree.get(), .5, 3));
+
+    DOUBLES_EQUAL(15.5, actual->find_descendant("AB")->get_branch_length(), 0.001)
+    DOUBLES_EQUAL(3.5, actual->find_descendant("A")->get_branch_length(), 0.001)
+    DOUBLES_EQUAL(7.5, actual->find_descendant("B")->get_branch_length(), 0.001)
+}
+
+TEST(LikelihoodRatioTest, get_likelihood_for_diff_lambdas)
+{
+    mock_scorer s;
+    optimizer opt(&s);
+    gene_family gf;
+    gf.set_species_size("A", 5);
+    gf.set_species_size("B", 9);
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
+    std::vector<lambda*> cache(100);
+    DOUBLES_EQUAL(0.0, LikelihoodRatioTest::get_likelihood_for_diff_lambdas(gf, p_tree.get(), 0, 0, cache, &opt, 12, 12), 0.0001);
+}
+
+TEST(LikelihoodRatioTest, compute_for_diff_lambdas)
+{
+    single_lambda lam(0.05);
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
+    user_data data;
+    data.p_lambda = &lam;
+    data.p_tree = p_tree.get();
+    data.gene_families.resize(1);
+    data.gene_families[0].set_species_size("A", 5);
+    data.gene_families[0].set_species_size("B", 9);
+    data.max_root_family_size = 12;
+    data.max_family_size = 12;
+    vector<int> lambda_index(data.gene_families.size(), -1);
+    vector<double> pvalues(data.gene_families.size());
+    vector<lambda*> lambdas(100);
+    mock_scorer scorer;
+    optimizer opt(&scorer);
+    LikelihoodRatioTest::compute_for_diff_lambdas_i(data, lambda_index, pvalues, lambdas, &opt);
+    LONGS_EQUAL(0, lambda_index[0]);
+    CHECK(isinf(pvalues[0]));
+}
+
 
 void init_lgamma_cache();
 

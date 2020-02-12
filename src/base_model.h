@@ -31,7 +31,7 @@ public:
 
     virtual void write_family_likelihoods(std::ostream& ost);
 
-    virtual inference_optimizer_scorer *get_lambda_optimizer(user_data& data);
+    virtual inference_optimizer_scorer *get_lambda_optimizer(const user_data& data);
 
     virtual reconstruction* reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
 

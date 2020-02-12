@@ -178,7 +178,7 @@ public:
     //! Based on the model parameters, attempts to reconstruct the most likely counts of each family at each node
     virtual reconstruction* reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
 
-    virtual inference_optimizer_scorer *get_lambda_optimizer(user_data& data) = 0;
+    virtual inference_optimizer_scorer *get_lambda_optimizer(const user_data& data) = 0;
 
     std::size_t get_gene_family_count() const;
 

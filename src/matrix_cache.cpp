@@ -179,3 +179,13 @@ void matrix_cache::warn_on_saturation(std::ostream& ost)
     }
 }
 
+std::ostream& operator<<(std::ostream& ost, matrix_cache& c)
+{
+    ost << c.get_cache_size() << " matrices. Keys: ";
+    for (auto& kv : c._matrix_cache)
+    {
+        ost << "(" << kv.first.branch_length() << "," << kv.first.lambda() << "),";
+    }
+    return ost;
+}
+

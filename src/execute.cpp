@@ -15,6 +15,7 @@
 #include "optimizer.h"
 #include "gene_family_reconstructor.h"
 #include "error_model.h"
+#include "likelihood_ratio.h"
 
 double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 24.01409824083091, -1.231739572450155, 1.208650973866179e-3,
@@ -177,6 +178,10 @@ void estimator::execute(std::vector<model *>& models)
                             });
                     }
                 }
+
+#ifdef RUN_LHRTEST
+                LikelihoodRatioTest::lhr_for_diff_lambdas(data, p_model);
+#endif
                 rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, data.gene_families, pvalues, _user_input.pvalue, probs);
             }
         }
