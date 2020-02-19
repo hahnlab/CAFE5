@@ -7,6 +7,13 @@
 #include "core.h"
 #include "matrix_cache.h"
 
+simulator::simulator(user_data& d, const input_parameters& ui) : action(d, ui)
+{
+#ifdef SILENT
+    quiet = true;
+#endif
+}
+
 void simulator::execute(std::vector<model *>& models)
 {
     simulate(models, _user_input);
@@ -73,9 +80,8 @@ void simulator::simulate_processes(model *p_model, std::vector<clademap<int> *>&
         max_size = 2 * rd.max();
     }
 
-#ifndef SILENT
-    cout << "Simulating " << results.size() << " families for model " << p_model->name() << endl;
-#endif
+    if (!quiet)
+        cout << "Simulating " << results.size() << " families for model " << p_model->name() << endl;
 
     for (size_t i = 0; i < results.size(); i+= LAMBDA_PERTURBATION_STEP_SIZE)
     {
@@ -85,9 +91,8 @@ void simulator::simulate_processes(model *p_model, std::vector<clademap<int> *>&
         matrix_cache cache(max_size);
         p_model->prepare_matrices_for_simulation(cache);
 
-#ifndef SILENT
-        cache.warn_on_saturation(cerr);
-#endif
+        if (!quiet)
+            cache.warn_on_saturation(cerr);
 
         int n = 0;
 
@@ -123,12 +128,14 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
 
         string truth_fname = filename("simulation_truth", dir);
         std::ofstream ofst(truth_fname);
-        cout << "Writing to " << truth_fname << endl;
+        if (!quiet)
+            cout << "Writing to " << truth_fname << endl;
         print_simulations(ofst, true, results);
 
         string fname = filename("simulation", my_input_parameters.output_prefix);
         std::ofstream ofst2(fname);
-        cout << "Writing to " << fname << endl;
+        if (!quiet)
+            cout << "Writing to " << fname << endl;
         print_simulations(ofst2, false, results);
     }
 }

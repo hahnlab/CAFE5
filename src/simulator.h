@@ -13,10 +13,8 @@ class simulator : public action
 {
     void simulate(std::vector<model *>& models, const input_parameters &my_input_parameters);
 public:
-    simulator(user_data& d, const input_parameters& ui) : action(d, ui)
-    {
+    simulator(user_data& d, const input_parameters& ui);
 
-    }
     clademap<int>* create_trial(const lambda *p_lambda, const root_distribution& rd, int family_number, const matrix_cache& cache);
 
     virtual void execute(std::vector<model *>& models);

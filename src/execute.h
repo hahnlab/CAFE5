@@ -36,6 +36,8 @@ public:
 
     }
     virtual ~action() {}
+
+    bool quiet = false;
 };
 
 class chisquare_compare : public action
