@@ -4,8 +4,6 @@
 #include <algorithm>
 #include <iterator>
 
-#include <sys/stat.h>
-
 #include "execute.h"
 #include "core.h"
 #include "user_data.h"
@@ -16,6 +14,7 @@
 #include "gene_family_reconstructor.h"
 #include "error_model.h"
 #include "likelihood_ratio.h"
+#include "io.h"
 
 double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 24.01409824083091, -1.231739572450155, 1.208650973866179e-3,
@@ -134,11 +133,7 @@ void estimator::execute(std::vector<model *>& models)
 {
     string dir = _user_input.output_prefix;
     if (dir.empty()) dir = "results";
-    if (mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
-    {
-        if (errno != EEXIST)
-            throw std::runtime_error("Failed to create directory");
-    }
+    create_directory(dir);
     
     if (_user_input.lambda_per_family)
     {

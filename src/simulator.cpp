@@ -111,13 +111,17 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
     std::vector<const clade *> order;
     data.p_tree->apply_reverse_level_order([&order](const clade* c) { order.push_back(c); });
 
+    string dir = my_input_parameters.output_prefix;
+    if (dir.empty()) dir = "results";
+    create_directory(dir);
+
     for (auto p_model : models) {
 
         std::vector<clademap<int> *> results;
 
         simulate_processes(p_model, results);
 
-        string truth_fname = filename("simulation_truth", my_input_parameters.output_prefix);
+        string truth_fname = filename("simulation_truth", dir);
         std::ofstream ofst(truth_fname);
         cout << "Writing to " << truth_fname << endl;
         print_simulations(ofst, true, results);

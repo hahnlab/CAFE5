@@ -49,4 +49,6 @@ public:
 
 std::vector<std::string> tokenize_str(std::string some_string, char some_delim);
 
+void create_directory(std::string& dir);
+
 #endif

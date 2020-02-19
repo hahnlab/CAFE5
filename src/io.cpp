@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <iomanip>
 
+#include <sys/stat.h>
+
 #include "io.h"
 #include "gene_family.h"
 #include "error_model.h"
@@ -305,3 +307,14 @@ std::vector<std::string> tokenize_str(std::string some_string, char some_delim) 
 	return tokens;
 }
 
+/// OS-specific. If mkdir succeeds it returns 0. If it returns -1
+/// check to see if it failed because the directory already exists.
+/// If it failed for some other reason, throw an exception.
+void create_directory(std::string& dir)
+{
+    if (mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
+    {
+        if (errno != EEXIST)
+            throw std::runtime_error("Failed to create directory");
+    }
+}
