@@ -28,7 +28,7 @@ std::vector<model *> build_models(const input_parameters& user_input, user_data&
         auto gmodel = new gamma_model(user_data.p_lambda, user_data.p_tree, &user_data.gene_families, user_data.max_family_size, user_data.max_root_family_size,
             user_input.n_gamma_cats, user_input.fixed_alpha, user_data.p_error_model);
 #ifndef SILENT
-        if (user_input.fixed_alpha >= 0)
+        if (user_input.fixed_alpha >= 0 && !user_input.is_simulating)
             gmodel->write_probabilities(cout);
 #endif
         p_model = gmodel;

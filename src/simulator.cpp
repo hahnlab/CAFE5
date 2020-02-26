@@ -81,15 +81,14 @@ void simulator::simulate_processes(model *p_model, std::vector<clademap<int> *>&
     }
 
     if (!quiet)
-        cout << "Simulating " << results.size() << " families for model " << p_model->name() << endl;
+        cout << endl << "Simulating " << results.size() << " families for model " << p_model->name() << endl << endl;
 
     for (size_t i = 0; i < results.size(); i+= LAMBDA_PERTURBATION_STEP_SIZE)
     {
-        p_model->perturb_lambda();
         unique_ptr<lambda> sim_lambda(p_model->get_simulation_lambda());
-
+        
         matrix_cache cache(max_size);
-        p_model->prepare_matrices_for_simulation(cache);
+        cache.precalculate_matrices(get_lambda_values(sim_lambda.get()), this->data.p_tree->get_branch_lengths());
 
         if (!quiet)
             cache.warn_on_saturation(cerr);
@@ -103,12 +102,13 @@ void simulator::simulate_processes(model *p_model, std::vector<clademap<int> *>&
     }
 }
 
+extern void write_average_multiplier(std::ostream& ost);
 
 /// Simulate
 /// \callgraph
 void simulator::simulate(std::vector<model *>& models, const input_parameters &my_input_parameters)
 {
-    cout << "Simulating with " << models.size() << " model(s)" << endl;
+    cout << endl << "Simulating with " << models.size() << " model(s)" << endl; 
 
 	if (data.p_tree == nullptr)
 		throw std::runtime_error("No tree specified for simulations");
@@ -126,17 +126,23 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
 
         simulate_processes(p_model, results);
 
-        string truth_fname = filename("simulation_truth", dir);
-        std::ofstream ofst(truth_fname);
-        if (!quiet)
-            cout << "Writing to " << truth_fname << endl;
-        print_simulations(ofst, true, results);
-
         string fname = filename("simulation", my_input_parameters.output_prefix);
         std::ofstream ofst2(fname);
-        if (!quiet)
-            cout << "Writing to " << fname << endl;
         print_simulations(ofst2, false, results);
+        if (!quiet)
+            cout << "Simulated values written to " << fname << endl;
+
+        string truth_fname = filename("simulation_truth", dir);
+        std::ofstream ofst(truth_fname);
+        print_simulations(ofst, true, results);
+        if (!quiet)
+            cout << "Simulated values (including internal nodes) written to " << truth_fname << endl;
+
+        if (my_input_parameters.fixed_lambda > 0)
+        {
+            write_average_multiplier(cout);
+        }
+
     }
 }
 
