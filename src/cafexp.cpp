@@ -192,9 +192,9 @@ int cafexp(int argc, char *const argv[]) {
                 return !fam.exists_at_root(data.p_tree);
             });
 
-            cout << "\nFiltering the number of families from: " << data.gene_families.size();
+            cout << "\nFiltering families not present at the root from: " << data.gene_families.size();
             data.gene_families.erase(rem, data.gene_families.end());
-            cout << " ==> " << data.gene_families.size() << endl;
+            cout << " to ==> " << data.gene_families.size() << endl;
 
         }
 
