@@ -1,0 +1,91 @@
+CFLAGS = -std=c++17 -I. -O3 -include config.h -fopenmp
+LINKER = CC -std=c++17 -O3 -fopenmp -o
+LFLAGS = -I.
+
+AUX =   CHANGELOG.md configure INSTALL LICENSE Makefile.in README.md config.h.in docs/tutorial
+
+# directories
+SRCDIR = src
+OBJDIR = gcc_obj
+BINDIR = gcc
+
+# our program
+TARGET = cafexp
+
+# Default build
+all: prep release
+
+release: $(BINDIR)/$(TARGET)
+
+
+SOURCES := $(wildcard $(SRCDIR)/*.cpp)
+OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+rm = rm -f
+
+$(BINDIR)/$(TARGET): $(OBJECTS) $(OBJDIR)/main.o
+	$(LINKER) $@ $(LFLAGS) $(OBJECTS) $(OBJDIR)/main.o -lm  
+
+$(OBJECTS): $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+	$(CC) $(CFLAGS) -include config.h $(INCLUDES) -c $< -o $@
+
+$(OBJDIR)/main.o: main.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJDIR)/test.o: test.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+
+.PHONY: clean
+clean:
+	$(rm) $(OBJECTS) $(OBJDIR)/main.o
+
+.PHONY: remove
+remove: clean
+	@$(rm) $(BINDIR)/$(TARGET)
+
+#
+# Debug build settings
+#
+DBGDIR = debug
+DBG_OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(DBGDIR)/%.o)
+DBG_CFLAGS = -std=c++11 -Wall -Werror -fopenmp -g -I. -include config.h $(INCLUDES) -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
+DBG_LINKER = $(LD) -std=c++11 -fopenmp -o
+
+$(DBG_OBJECTS): $(DBGDIR)/%.o: $(SRCDIR)/%.cpp
+	$(CC) $(DBG_CFLAGS) -c $< -o $@
+
+$(DBGDIR)/main.o: main.cpp
+	$(CC) $(DBG_CFLAGS) -c $< -o $@
+
+$(DBGDIR)/$(TARGET): $(DBG_OBJECTS) $(DBGDIR)/main.o
+	$(DBG_LINKER) $@ $(LFLAGS) $(DBG_OBJECTS) $(DBGDIR)/main.o -lm 
+
+.PHONY: debug
+debug: $(DBGDIR)/$(TARGET)
+
+TESTDIR = test
+TEST_TARGET = runtests
+TEST_OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(TESTDIR)/%.o)
+$(TEST_OBJECTS): $(TESTDIR)/%.o: $(SRCDIR)/%.cpp
+	$(CC) $(DBG_CFLAGS)  $(INCLUDES) -DSILENT -c $< -o $@
+
+$(TESTDIR)/test.o: test.cpp
+	$(CC) $(DBG_CFLAGS) -c $< -o $@
+
+TESTLIBS=-lCppUTest -lCppUTestExt
+$(TESTDIR)/$(TEST_TARGET): $(TEST_OBJECTS) $(TESTDIR)/test.o
+	$(LINKER) $@ $(LFLAGS) $(TEST_OBJECTS) $(TESTDIR)/test.o -lm  $(TESTLIBS)
+
+.PHONY: test
+test: $(TESTDIR)/$(TEST_TARGET)
+
+prep:
+	@mkdir -p $(OBJDIR) $(BINDIR) $(TESTDIR)
+
+.PHONY: docs
+docs:
+	$(MAKE) -C docs
+
+.PHONY: dist
+dist: $(AUX)
+	mkdir -p distro
+	tar  --transform "s,^,CAFE/," --transform "s,docs/,,"  -czf distro/CAFE5-5.0.0.tar.gz src test.cpp main.cpp $(AUX)

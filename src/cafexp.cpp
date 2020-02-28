@@ -14,7 +14,20 @@
 
 #include "easylogging++.h"
 
+#ifdef _CRAYC
+#pragma message("This are a Cray")
+#endif
 
+#if defined __INTEL_COMPILER
+#define COMPILER "Intel"
+#define COMPILER_VERSION __INTEL_COMPILER
+#elif defined _CRAYC
+#define COMPILER "Cray"
+#define COMPILER_VERSION _RELEASE
+#elif defined __GNUC__
+#define COMPILER "GCC"
+#define COMPILER_VERSION __GNUC__
+#endif
 
 using namespace std;
 
@@ -185,6 +198,7 @@ void show_help()
 int cafexp(int argc, char *const argv[]) {
     init_lgamma_cache();
 
+    cout << "CAFE version " << PACKAGE_VERSION << " compiled with " << COMPILER << " " << COMPILER_VERSION << endl;
     try {
         input_parameters user_input = read_arguments(argc, argv);
 
