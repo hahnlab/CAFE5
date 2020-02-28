@@ -2,6 +2,9 @@
 *.o
 *.ko
 *.obj
+cray/
+gcc/
+intel/
 
 # Executable
 bin/
