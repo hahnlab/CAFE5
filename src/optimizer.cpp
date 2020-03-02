@@ -11,6 +11,10 @@
 
 #include "easylogging++.h"
 
+#ifdef _CRAYC
+#include "../config.h"
+#endif
+
 #include "optimizer.h"
 #include "optimizer_scorer.h"
 

@@ -1,3 +1,7 @@
+#ifdef _CRAYC
+#include "../config.h"
+#endif
+
 #include <map>
 #include <random>
 #include <algorithm>
@@ -14,10 +18,6 @@
 
 #include "easylogging++.h"
 
-#ifdef _CRAYC
-#pragma message("This are a Cray")
-#endif
-
 #if defined __INTEL_COMPILER
 #define COMPILER "Intel"
 #define COMPILER_VERSION __INTEL_COMPILER
@@ -30,6 +30,8 @@
 #endif
 
 using namespace std;
+
+looptimer par_timer;
 
 input_parameters read_arguments(int argc, char *const argv[])
 {
@@ -236,6 +238,8 @@ int cafexp(int argc, char *const argv[]) {
         {
             act->execute(models);
         }
+
+        par_timer.write(cout);
 
         return 0;
     }

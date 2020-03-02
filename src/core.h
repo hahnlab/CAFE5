@@ -1,6 +1,8 @@
 #ifndef CORE_H
 #define CORE_H
 
+#include "config.h"
+
 #include <set>
 
 #include "easylogging++.h"
@@ -200,6 +202,34 @@ inline std::string filename(std::string base, std::string suffix)
 }
 
 std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, const lambda *_lambda, const error_model *p_error_model, const clade *_p_tree, double _lambda_multiplier, int _max_root_family_size, int _max_family_size);
+
+class looptimer {
+    using tp = chrono::system_clock::time_point;
+    using ms = std::chrono::milliseconds;
+    std::map<string, tp> current_timers;
+    std::vector<std::pair<string, ms>> all_timers;
+public:
+    void start(std::string section)
+    {
+        current_timers[section] = std::chrono::high_resolution_clock::now();
+    }
+    void stop(std::string section)
+    {
+        auto t2 = std::chrono::high_resolution_clock::now();
+        auto tm = std::chrono::duration_cast<ms>(t2 - current_timers[section]).count();
+        current_timers.erase(current_timers.find(section));
+        all_timers.push_back(std::pair<string, ms>(section, tm));
+    }
+    void write(std::ostream& ost)
+    {
+        for (auto n : all_timers)
+        {
+            ost << n.first << ": " << n.second.count() << endl;
+        }
+    }
+};
+
+extern looptimer par_timer;
 
 #endif /* CORE_H */
 
