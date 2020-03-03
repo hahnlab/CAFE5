@@ -19,8 +19,14 @@
 #if defined __INTEL_COMPILER
 #define COMPILER "Intel"
 #define COMPILER_VERSION __INTEL_COMPILER
+#elif defined __PGI
+#define COMPILER "PGI"
+#define COMPILER_VERSION __PGIC__
+#elif defined __llvm__
+#define COMPILER "Cray LLVM"
+#define COMPILER_VERSION "9.0.0"
 #elif defined _CRAYC
-#define COMPILER "Cray"
+#define COMPILER "Cray Classic"
 #define COMPILER_VERSION _RELEASE
 #elif defined __GNUC__
 #define COMPILER "GCC"

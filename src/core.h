@@ -4,6 +4,7 @@
 #include "config.h"
 
 #include <set>
+#include <chrono>
 
 #include "clade.h"
 #include "probability.h"
@@ -193,7 +194,7 @@ public:
     void stop(std::string section)
     {
         auto t2 = std::chrono::high_resolution_clock::now();
-        auto tm = std::chrono::duration_cast<ms>(t2 - current_timers[section]).count();
+        auto tm = std::chrono::duration_cast<ms>(t2 - current_timers[section]);
         current_timers.erase(current_timers.find(section));
         all_timers.push_back(std::pair<string, ms>(section, tm));
     }

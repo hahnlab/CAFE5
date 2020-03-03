@@ -16,3 +16,14 @@ module swap PrgEnv-gnu PrgEnv-cray
 make -f Makefile.cray clean
 make -f Makefile.cray
 
+echo "Building for Cray Classic"
+module swap cce/9.0.2-classic
+make -f Makefile.cray_classic clean
+make -f Makefile.cray_classic
+
+echo "Building for PGI"
+# might require setting the PGI_LOCALRC here
+module swap PrgEnv-cray PrgEnv-pgi
+make -f Makefile.pgi clean
+make -f Makefile.pgi
+
