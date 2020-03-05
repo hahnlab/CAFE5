@@ -4,7 +4,7 @@ CXX=/N/soft/cle6/pgi/19.9/linux86-64-llvm/19.9/bin/pgc++
 LD=/N/soft/cle6/pgi/19.9/linux86-64-llvm/19.9/bin/pgc++
 
 
-CFLAGS = -std=c++17 -I. -O3 -include config.h -mp
+CFLAGS = -std=c++17 -I. -O3 -include config.h -mp -lblas
 LINKER = $(LD) -std=c++17 -O3 -mp -o
 LFLAGS = -I.
 

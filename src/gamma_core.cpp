@@ -233,6 +233,7 @@ double gamma_model::infer_family_likelihoods(root_equilibrium_distribution *prio
 
     vector<vector<family_info_stash>> pruning_results(_p_gene_families->size());
 
+     par_timer.start("inference prune (Gamma)");
 #pragma omp parallel for
     for (size_t i = 0; i < _p_gene_families->size(); i++) {
         auto& cat_likelihoods = _category_likelihoods[i];
@@ -258,6 +259,8 @@ double gamma_model::infer_family_likelihoods(root_equilibrium_distribution *prio
             failure[i] = true;
         }
     }
+
+    par_timer.stop("inference prune (Gamma)");
 
     if (find(failure.begin(), failure.end(), true) != failure.end())
     {
@@ -363,11 +366,13 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_fami
     {
         unique_ptr<lambda> ml(_p_lambda->multiply(_lambda_multipliers[k]));
 
+         par_timer.start("Reconstruct Gene Family (Gamma)");
 #pragma omp parallel for
         for (size_t i = 0; i < families.size(); ++i)
         {
             reconstruct_gene_family(ml.get(), _p_tree, _max_family_size, _max_root_family_size, &families[i], calc, prior, recs[i]->category_reconstruction[k]);
         }
+        par_timer.stop("Reconstruct Gene Family (Gamma)");
     }
 
     for (auto reconstruction : recs)

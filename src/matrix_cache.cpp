@@ -6,9 +6,14 @@
 
 #include "matrix_cache.h"
 #include "probability.h"
+#include "core.h"
 
 #ifdef HAVE_BLAS
+#if defined __INTEL_COMPILER
 #include "mkl.h"
+#else
+#include <cblas.h>
+#endif
 #endif
 
 bool matrix::is_zero() const
@@ -138,8 +143,7 @@ void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, con
 	size_t i = 0;
 	size_t num_keys = keys.size();
 
-    auto t1 = std::chrono::high_resolution_clock::now();
-
+        par_timer.start("Precalculate Matrices");
 #pragma omp parallel for private(s) collapse(2)
 	for (i = 0; i < num_keys; ++i)
 	{
@@ -161,9 +165,7 @@ void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, con
 			}
 		}
 	}
-
-    auto t2 = std::chrono::high_resolution_clock::now();
-    std::cout << "matrix precalcuation time (ms):" << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << endl;
+        par_timer.stop("Precalculate Matrices");
 
     // copy matrices to our internal map
     for (size_t i = 0; i < keys.size(); ++i)
