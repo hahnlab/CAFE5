@@ -87,7 +87,7 @@ void write_average_multiplier(std::ostream& ost)
 
 lambda* gamma_model::get_simulation_lambda()
 {
-    gamma_distribution<double> dist(_alpha, _alpha);
+    gamma_distribution<double> dist(_alpha, 1/_alpha);
 
     double multiplier = dist(randomizer_engine);
     multipliers.push_back(multiplier);
