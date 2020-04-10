@@ -85,10 +85,12 @@ void simulator::simulate_processes(model *p_model, std::vector<clademap<int> *>&
 
     for (size_t i = 0; i < results.size(); i+= LAMBDA_PERTURBATION_STEP_SIZE)
     {
+        p_model->perturb_lambda();
         unique_ptr<lambda> sim_lambda(p_model->get_simulation_lambda());
         
         matrix_cache cache(max_size);
-        cache.precalculate_matrices(get_lambda_values(sim_lambda.get()), this->data.p_tree->get_branch_lengths());
+        //cache.precalculate_matrices(get_lambda_values(sim_lambda.get()), this->data.p_tree->get_branch_lengths());
+        p_model->prepare_matrices_for_simulation(cache);
 
         if (!quiet)
             cache.warn_on_saturation(cerr);

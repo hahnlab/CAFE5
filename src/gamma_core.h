@@ -98,6 +98,9 @@ public:
 
     void prepare_matrices_for_simulation(matrix_cache& cache) override;
 
+    //! modify lambda multiplier slightly for a better simulation 
+    void perturb_lambda() override;
+
     bool can_infer() const;
 
     bool prune(const gene_family& family, root_equilibrium_distribution *eq, matrix_cache& calc, const lambda *p_lambda,

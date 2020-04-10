@@ -1989,7 +1989,7 @@ TEST(Simulation, gamma_model_get_simulation_lambda_selects_random_multiplier_bas
     single_lambda lam(0.05);
     gamma_model m(&lam, NULL, NULL, 0, 5, 3, 0.7, NULL);
     unique_ptr<single_lambda> new_lam(dynamic_cast<single_lambda *>(m.get_simulation_lambda()));
-    DOUBLES_EQUAL(0.0718081, new_lam->get_single_lambda(), 0.0000001);
+    DOUBLES_EQUAL(0.03518597, new_lam->get_single_lambda(), 0.0000001);
 }
 
 TEST(Simulation, create_trial)
@@ -2650,6 +2650,31 @@ TEST(Simulation, root_distribution_pare)
     }
 
 }
+
+TEST(Simulation, gamma_model_perturb_lambda_with_clusters)
+{
+    gamma_model model(NULL, NULL, NULL, 0, 5, 3, 0.7, NULL);
+    model.perturb_lambda();
+    auto multipliers = model.get_lambda_multipliers();
+    LONGS_EQUAL(3, multipliers.size());
+    DOUBLES_EQUAL(0.1136284, multipliers[0], 0.00001);
+    DOUBLES_EQUAL(0.8763229, multipliers[1], 0.00001);
+    DOUBLES_EQUAL(2.151219, multipliers[2], 0.00001);
+}
+
+TEST(Simulation, gamma_model_perturb_lambda_without_clusters)
+{
+    gamma_model model(NULL, NULL, NULL, 0, 5, 1, 5, NULL);
+    model.perturb_lambda();
+    auto multipliers = model.get_lambda_multipliers();
+    LONGS_EQUAL(1, multipliers.size());
+    DOUBLES_EQUAL(0.911359, multipliers[0], 0.00001);
+}
+
+
+
+
+
 
 TEST(Optimizer, fminsearch_sort_sorts_scores_and_moves_values)
 {

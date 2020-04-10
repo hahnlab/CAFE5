@@ -87,7 +87,7 @@ void write_average_multiplier(std::ostream& ost)
 
 lambda* gamma_model::get_simulation_lambda()
 {
-    gamma_distribution<double> dist(_alpha, 1/_alpha);
+    gamma_distribution<double> dist(_alpha, _alpha);
 
     double multiplier = dist(randomizer_engine);
     multipliers.push_back(multiplier);
@@ -120,6 +120,58 @@ void gamma_model::prepare_matrices_for_simulation(matrix_cache& cache)
     cache.precalculate_matrices(multipliers, _p_tree->get_branch_lengths());
 }
 
+void gamma_model::perturb_lambda()
+{
+    if (_gamma_cat_probs.size() == 1)
+    {
+        // no user cluster value was specified. Select a multiplier at random from the gamma distribution with the given alpha 
+        gamma_distribution<double> dist(_alpha, 1 / _alpha);
+        _lambda_multipliers[0] = dist(randomizer_engine);
+        _gamma_cat_probs[0] = 1;
+    }
+    else
+    {
+        // select multipliers based on the clusters, modifying the actual lambda selected 
+        // by a normal distribution based around the multipliers selected from the gamma 
+        // distribution with the given alpha 
+
+        // first, reset the multipliers back to their initial values based on the alpha 
+        get_gamma(_gamma_cat_probs, _lambda_multipliers, _alpha);
+        auto new_multipliers = _lambda_multipliers;
+
+        const double stddev_base = 5.0;
+        for (size_t i = 0; i < _lambda_multipliers.size(); ++i)
+        {
+            double stddev;
+            if (i == 0)
+            {
+                stddev = _lambda_multipliers[0] / stddev_base;
+            }
+            else if (i == _lambda_multipliers.size() - 1)
+            {
+                stddev = (_lambda_multipliers[i] - _lambda_multipliers[i - 1]) / stddev_base;
+            }
+            else
+            {
+                stddev = (_lambda_multipliers[i + 1] - _lambda_multipliers[i - 1]) / (stddev_base*2);
+            }
+
+            normal_distribution<double> dist(_lambda_multipliers[i], stddev);
+            new_multipliers[i] = dist(randomizer_engine);
+            for (int i = 0; i < 10 && new_multipliers[i] <= 0; ++i)
+            {
+                new_multipliers[i] = dist(randomizer_engine);
+            }
+        }
+
+        _lambda_multipliers.swap(new_multipliers);
+    }
+
+#ifndef SILENT 
+    write_probabilities(cout);
+#endif 
+}
+
 bool gamma_model::can_infer() const
 {
     if (!_p_lambda->is_valid())
@@ -132,10 +184,9 @@ bool gamma_model::can_infer() const
 
     auto lengths = _p_tree->get_branch_lengths();
     auto longest_branch = *max_element(lengths.begin(), lengths.end());
-    double largest_multiplier = *max_element(_lambda_multipliers.begin(), _lambda_multipliers.end());
     double largest_lambda = *max_element(v.begin(), v.end());
 
-    if (matrix_cache::is_saturated(longest_branch, largest_multiplier*largest_lambda))
+    if (matrix_cache::is_saturated(longest_branch, largest_lambda))
         return false;
 
     return true;
