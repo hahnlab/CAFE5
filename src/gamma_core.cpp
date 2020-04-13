@@ -87,11 +87,8 @@ void write_average_multiplier(std::ostream& ost)
 
 lambda* gamma_model::get_simulation_lambda()
 {
-    gamma_distribution<double> dist(_alpha, _alpha);
-
-    double multiplier = dist(randomizer_engine);
-    multipliers.push_back(multiplier);
-    return _p_lambda->multiply(multiplier);
+    discrete_distribution<int> dist(_gamma_cat_probs.begin(), _gamma_cat_probs.end());
+    return _p_lambda->multiply(_lambda_multipliers[dist(randomizer_engine)]);
 }
 
 std::vector<double> gamma_model::get_posterior_probabilities(std::vector<double> cat_likelihoods)

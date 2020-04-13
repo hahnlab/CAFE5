@@ -1989,7 +1989,7 @@ TEST(Simulation, gamma_model_get_simulation_lambda_selects_random_multiplier_bas
     single_lambda lam(0.05);
     gamma_model m(&lam, NULL, NULL, 0, 5, 3, 0.7, NULL);
     unique_ptr<single_lambda> new_lam(dynamic_cast<single_lambda *>(m.get_simulation_lambda()));
-    DOUBLES_EQUAL(0.03518597, new_lam->get_single_lambda(), 0.0000001);
+    DOUBLES_EQUAL(0.00574028, new_lam->get_single_lambda(), 0.0000001);
 }
 
 TEST(Simulation, create_trial)
