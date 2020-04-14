@@ -96,3 +96,13 @@ int gene_family::species_size_differential() const
     return max_species_size - min_species_size;
 }
 
+void gene_family::init_from_clademap(const clademap<int>& values)
+{
+    for (auto& it : values) {
+        if (it.first->is_leaf())
+        {
+            set_species_size(it.first->get_taxon_name(), it.second);
+        }
+    }
+
+}

@@ -5,7 +5,7 @@
 #include <map>
 #include <vector>
 
-class clade;
+#include "clade.h"
 
 struct ci_less
 {
@@ -42,6 +42,8 @@ public:
     void set_species_size(std::string species, int gene_count) {
         _species_size_map[species] = gene_count;
     }
+
+    void init_from_clademap(const clademap<int>& values);
 
     std::vector<std::string> get_species() const;
 

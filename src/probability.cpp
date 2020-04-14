@@ -282,16 +282,10 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
         // generate a tree with root_family_size at the root
         clademap<int> sizes;
         sizes[p_tree] = root_family_size;
-        auto fn = [&](const clade* c) { set_weighted_random_family_size(c, &sizes, p_lambda, p_error_model, max_family_size, cache);};
-        p_tree->apply_prefix_order(fn);
-
-        // create the family by setting the species size from the leaf values
-        for (auto& it : sizes) {
-            if (it.first->is_leaf())
-            {
-                families[i].set_species_size(it.first->get_taxon_name(), it.second);
-            }
-        }
+        p_tree->apply_prefix_order([&](const clade* c) { 
+            set_weighted_random_family_size(c, &sizes, p_lambda, p_error_model, max_family_size, cache); 
+        });
+        families[i].init_from_clademap(sizes);
     }
 
     // initialize the probability vectors in the pruners

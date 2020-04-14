@@ -29,6 +29,13 @@ int select_root_size(const user_data& data, const root_distribution& rd, int fam
     }
 }
 
+bool verify_trial(const clade *p_tree, const clademap<int>& values)
+{
+    gene_family gf;
+    gf.init_from_clademap(values);
+    return gf.exists_at_root(p_tree);
+}
+
 clademap<int>* simulator::create_trial(const lambda *p_lambda, const root_distribution& rd, int family_number, const matrix_cache& cache) {
 
     if (data.p_tree == NULL)
@@ -45,15 +52,15 @@ clademap<int>* simulator::create_trial(const lambda *p_lambda, const root_distri
         max_family_size_sim = 2 * rd.max();
     }
 
-    (*result)[data.p_tree] = select_root_size(data, rd, family_number);
-
-
-    auto fn = [&](const clade *c)
+    do
     {
-        set_weighted_random_family_size(c, result, p_lambda, data.p_error_model, max_family_size_sim, cache);
-    };
+        (*result)[data.p_tree] = select_root_size(data, rd, family_number);
 
-    data.p_tree->apply_prefix_order(fn);
+        data.p_tree->apply_prefix_order([&](const clade* c)
+            {
+                set_weighted_random_family_size(c, result, p_lambda, data.p_error_model, max_family_size_sim, cache);
+            });
+    } while (!verify_trial(data.p_tree, *result));
 
     return result;
 }

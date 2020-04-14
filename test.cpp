@@ -447,6 +447,19 @@ TEST(GeneFamilies, read_gene_families_reads_cafe_files)
     LONGS_EQUAL(6, families.at(0).get_species_size("D"));
 }
 
+TEST(GeneFamilies, init_from_clademap)
+{
+    clade* p_tree = parse_newick("((A:1,B:1):1,(C:1,D:1):1);");
+    clademap<int> values;
+    values[p_tree->find_descendant("A")] = 3;
+    values[p_tree->find_descendant("B")] = 5;
+    values[p_tree->find_descendant("C")] = 7;
+    values[p_tree->find_descendant("D")] = 11;
+    gene_family gf;
+    gf.init_from_clademap(values);
+    LONGS_EQUAL(3, gf.get_species_size("A"));
+}
+
 TEST(GeneFamilies, read_gene_families_reads_simulation_files)
 {
     std::string str = "#A\n#B\n#AB\n#CD\n#C\n#ABCD\n#D\n35\t36\t35\t35\t36\t34\t34\t1\n98\t96\t97\t98\t98\t98\t98\t1\n";
