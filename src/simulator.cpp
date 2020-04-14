@@ -29,13 +29,6 @@ int select_root_size(const user_data& data, const root_distribution& rd, int fam
     }
 }
 
-bool verify_trial(const clade *p_tree, const clademap<int>& values)
-{
-    gene_family gf;
-    gf.init_from_clademap(values);
-    return gf.exists_at_root(p_tree);
-}
-
 clademap<int>* simulator::create_trial(const lambda *p_lambda, const root_distribution& rd, int family_number, const matrix_cache& cache) {
 
     if (data.p_tree == NULL)
@@ -52,7 +45,8 @@ clademap<int>* simulator::create_trial(const lambda *p_lambda, const root_distri
         max_family_size_sim = 2 * rd.max();
     }
 
-    do
+    int i = 0;
+    for (i = 0; i<50; ++i)
     {
         (*result)[data.p_tree] = select_root_size(data, rd, family_number);
 
@@ -60,7 +54,16 @@ clademap<int>* simulator::create_trial(const lambda *p_lambda, const root_distri
             {
                 set_weighted_random_family_size(c, result, p_lambda, data.p_error_model, max_family_size_sim, cache);
             });
-    } while (!verify_trial(data.p_tree, *result));
+
+        gene_family gf;
+        gf.init_from_clademap(*result);
+        if (gf.exists_at_root(data.p_tree))
+            break;
+    }
+    if (i >= 50)
+    {
+        cerr << "Failed to create a family that would exist at the root\n";
+    }
 
     return result;
 }
