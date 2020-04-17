@@ -162,6 +162,6 @@ public:
     }
 };
 
-#define OPTIMIZER_SIMILARITY_CUTOFF_SIZE    12
+#define OPTIMIZER_SIMILARITY_CUTOFF_SIZE    15
 
 #endif
