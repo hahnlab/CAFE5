@@ -198,7 +198,7 @@ int cafexp(int argc, char *const argv[]) {
 
         }
 
-        data.p_prior.reset(root_eq_dist_factory(user_input, &data.gene_families));
+        data.p_prior.reset(root_eq_dist_factory(user_input, &data.gene_families, data.rootdist, data.max_root_family_size));
 
         // When computing or simulating, only base or gamma model is used. When estimating, base and gamma model are used (to do: compare base and gamma w/ LRT)
         // Build model takes care of -f

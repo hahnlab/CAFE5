@@ -1,11 +1,15 @@
 #include <numeric>
 #include <algorithm>
 #include <fstream>
+#include <random>
 
 #include "simulator.h"
 #include "user_data.h"
 #include "core.h"
 #include "matrix_cache.h"
+#include "root_equilibrium_distribution.h"
+
+extern std::mt19937 randomizer_engine; // seeding random number engine
 
 simulator::simulator(user_data& d, const input_parameters& ui) : action(d, ui)
 {
@@ -19,40 +23,21 @@ void simulator::execute(std::vector<model *>& models)
     simulate(models, _user_input);
 }
 
-int select_root_size(const user_data& data, const root_distribution& rd, int family_number)
-{
-    if (data.rootdist.empty()) {
-        return rd.select_randomly(); // getting a random root size from the provided (core's) root distribution
-    }
-    else {
-        return rd.at(family_number);
-    }
-}
-
-clademap<int>* simulator::create_trial(const lambda *p_lambda, const root_distribution& rd, int family_number, const matrix_cache& cache) {
+clademap<int>* simulator::create_trial(const lambda *p_lambda, int family_number, const matrix_cache& cache) {
 
     if (data.p_tree == NULL)
         throw runtime_error("No tree specified for simulation");
 
-    int max_family_size_sim;
-
     auto *result = new clademap<int>();
-
-    if (data.rootdist.empty()) {
-        max_family_size_sim = 100;
-    }
-    else {
-        max_family_size_sim = 2 * rd.max();
-    }
 
     int i = 0;
     for (i = 0; i<50; ++i)
     {
-        (*result)[data.p_tree] = select_root_size(data, rd, family_number);
+        (*result)[data.p_tree] = data.p_prior->select_root_size(family_number);
 
         data.p_tree->apply_prefix_order([&](const clade* c)
             {
-                set_weighted_random_family_size(c, result, p_lambda, data.p_error_model, max_family_size_sim, cache);
+                set_weighted_random_family_size(c, result, p_lambda, data.p_error_model, data.max_family_size, cache);
             });
 
         gene_family gf;
@@ -68,26 +53,16 @@ clademap<int>* simulator::create_trial(const lambda *p_lambda, const root_distri
     return result;
 }
 
-
 void simulator::simulate_processes(model *p_model, std::vector<clademap<int> *>& results) {
 
-    root_distribution rd;
-    int max_size;
-    if (data.rootdist.empty())
+    if (_user_input.nsims > 0)
     {
         results.resize(_user_input.nsims);
-        max_size = 100;
-        rd.vectorize_increasing(max_size);
     }
     else
     {
-        rd.vectorize(data.rootdist);
-        if (_user_input.nsims > 0)
-        {
-            rd.pare(_user_input.nsims);
-        }
-        results.resize(rd.size());
-        max_size = 2 * rd.max();
+        results.resize(accumulate(data.rootdist.begin(), data.rootdist.end(), 0,
+            [](int acc, std::pair<int, int> p) { return (acc + p.second); }));
     }
 
     if (!quiet)
@@ -98,7 +73,7 @@ void simulator::simulate_processes(model *p_model, std::vector<clademap<int> *>&
         p_model->perturb_lambda();
         unique_ptr<lambda> sim_lambda(p_model->get_simulation_lambda());
         
-        matrix_cache cache(max_size);
+        matrix_cache cache(data.max_root_family_size+1);
         //cache.precalculate_matrices(get_lambda_values(sim_lambda.get()), this->data.p_tree->get_branch_lengths());
         p_model->prepare_matrices_for_simulation(cache);
 
@@ -108,8 +83,8 @@ void simulator::simulate_processes(model *p_model, std::vector<clademap<int> *>&
         int n = 0;
 
         auto end_it = i + LAMBDA_PERTURBATION_STEP_SIZE > results.size() ? results.end() : results.begin() + i + LAMBDA_PERTURBATION_STEP_SIZE;
-        generate(results.begin()+i, end_it, [this, &sim_lambda, i, &rd, &cache, &n]() mutable {
-            return create_trial(sim_lambda.get(), rd, i+n++, cache);
+        generate(results.begin()+i, end_it, [this, &sim_lambda, i, &cache, &n]() mutable {
+            return create_trial(sim_lambda.get(), i+n++, cache);
         });
     }
 }

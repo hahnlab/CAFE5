@@ -23,7 +23,7 @@ public:
     base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
         int max_family_size, int max_root_family_size, error_model *p_error_model);
 
-    virtual double infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda);
+    virtual double infer_family_likelihoods(root_equilibrium_distribution *prior, const lambda *p_lambda) override;
 
     virtual std::string name() const {
         return "Base";

@@ -2,6 +2,7 @@
 #define root_equilibrium_distribution_h
 
 #include <vector>
+#include <map>
 
 #include "gene_family.h"
 
@@ -13,21 +14,38 @@ class root_equilibrium_distribution
 {
 public:
     virtual float compute(size_t val) const = 0;
-    virtual void initialize(const root_distribution* root_distribution) = 0;
     virtual ~root_equilibrium_distribution() {}
+
+    virtual int select_root_size(int family_number) const = 0;
 };
 
 class uniform_distribution : public root_equilibrium_distribution
 {
-    root_distribution *_p_root_distribution; // in case the user wants to use a specific root size distribution for all simulations
-    int _root_distribution_sum = 0;
+    int _max_root_family_size = 0;
 public:
-    uniform_distribution();
-    ~uniform_distribution() override;
+    uniform_distribution(int max_root_family_size) : _max_root_family_size(max_root_family_size)
+    {
+    }
 
-    virtual void initialize(const root_distribution* root_distribution) override;
+    virtual float compute(size_t val) const override
+    {
+        return 1.0 / _max_root_family_size;
+    }
+
+    int select_root_size(int family_number) const override;
+};
+
+class specified_distribution : public root_equilibrium_distribution
+{
+    std::vector<int> _vectorized_distribution; 
+public:
+    specified_distribution(const std::map<int, int>& root_distribution);
 
     virtual float compute(size_t val) const override;   // creates uniform
+
+    int select_root_size(int family_number) const override;
+
+    void resize(size_t new_size);
 };
 
 class poisson_distribution : public root_equilibrium_distribution
@@ -35,12 +53,9 @@ class poisson_distribution : public root_equilibrium_distribution
     std::vector<double> poisson;
     double _poisson_lambda;
 public:
-    poisson_distribution(std::vector<gene_family> *p_gene_families);
+    poisson_distribution(std::vector<gene_family> *p_gene_families, int num_values);
 
-    poisson_distribution(double poisson_lambda) : _poisson_lambda(poisson_lambda)
-    {
-    }
-    virtual void initialize(const root_distribution* root_distribution) override;
+    poisson_distribution(double poisson_lambda, int num_values);
 
     virtual float compute(size_t val) const override
     {
@@ -50,7 +65,8 @@ public:
         return poisson[val];
     }
 
+    int select_root_size(int family_number) const override;
 };
 
-root_equilibrium_distribution* root_eq_dist_factory(const input_parameters& my_input_parameters, std::vector<gene_family> *p_gene_families);
+root_equilibrium_distribution* root_eq_dist_factory(const input_parameters& my_input_parameters, std::vector<gene_family> *p_gene_families, const std::map<int, int>& root_distribution, int max_root_family_size);
 #endif

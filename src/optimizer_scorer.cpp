@@ -9,6 +9,7 @@
 #include "gamma_core.h"
 #include "gamma.h"
 #include "error_model.h"
+#include "root_equilibrium_distribution.h"
 
 #define GAMMA_INITIAL_GUESS_EXPONENTIAL_DISTRIBUTION_LAMBDA 1.75
 
@@ -25,7 +26,7 @@ double inference_optimizer_scorer::calculate_score(const double *values)
         report_precalculation();
     }
 
-    double score = _p_model->infer_family_likelihoods(_p_distribution, _rootdist_map, _p_lambda);
+    double score = _p_model->infer_family_likelihoods(_p_distribution, _p_lambda);
 
     if (std::isnan(score)) score = -log(0);
 
@@ -105,8 +106,8 @@ void lambda_epsilon_optimizer::finalize(double *results)
     _p_error_model->update_single_epsilon(results[_p_lambda->count()]);
 }
 
-gamma_optimizer::gamma_optimizer(gamma_model* p_model, root_equilibrium_distribution* prior, const std::map<int, int>& root_distribution_map) :
-    inference_optimizer_scorer(p_model->get_lambda(), p_model, prior, root_distribution_map),
+gamma_optimizer::gamma_optimizer(gamma_model* p_model, root_equilibrium_distribution* prior) :
+    inference_optimizer_scorer(p_model->get_lambda(), p_model, prior),
     _p_gamma_model(p_model)
 {
 
@@ -141,10 +142,10 @@ double gamma_optimizer::get_alpha() const
     return _p_gamma_model->get_alpha();
 }
 
-gamma_lambda_optimizer::gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution, const std::map<int, int>& root_distribution_map, double longest_branch) :
-    inference_optimizer_scorer(p_lambda, p_model, p_distribution, root_distribution_map),
-    _lambda_optimizer(p_lambda, p_model, p_distribution, longest_branch, root_distribution_map),
-    _gamma_optimizer(p_model, p_distribution, root_distribution_map)
+gamma_lambda_optimizer::gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution, double longest_branch) :
+    inference_optimizer_scorer(p_lambda, p_model, p_distribution),
+    _lambda_optimizer(p_lambda, p_model, p_distribution, longest_branch),
+    _gamma_optimizer(p_model, p_distribution)
 {
 }
 

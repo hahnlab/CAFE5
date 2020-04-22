@@ -5,7 +5,6 @@
 
 #include "clade.h"
 #include "probability.h"
-#include "root_distribution.h"
 
 class simulation_data;
 class inference_process;
@@ -168,7 +167,7 @@ public:
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache) = 0;
 
-    virtual double infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) = 0;  // return vector of likelihoods
+    virtual double infer_family_likelihoods(root_equilibrium_distribution *prior, const lambda *p_lambda) = 0;  // return vector of likelihoods
     
     virtual std::string name() const = 0;
     virtual void write_family_likelihoods(std::ostream& ost) = 0;

@@ -12,7 +12,6 @@
 #include "user_data.h"
 #include "root_equilibrium_distribution.h"
 #include "optimizer_scorer.h"
-#include "root_distribution.h"
 #include "simulator.h"
 
 extern mt19937 randomizer_engine;
@@ -50,7 +49,7 @@ vector<size_t> build_reference_list(const vector<gene_family>& families)
     return reff;
 }
 
-double base_model::infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) {
+double base_model::infer_family_likelihoods(root_equilibrium_distribution *prior, const lambda *p_lambda) {
     _monitor.Event_InferenceAttempt_Started();
 
     if (!_p_lambda->is_valid())
@@ -58,18 +57,6 @@ double base_model::infer_family_likelihoods(root_equilibrium_distribution *prior
         _monitor.Event_InferenceAttempt_InvalidValues();
         return -log(0);
     }
-
-    root_distribution rd;
-    if (root_distribution_map.size() > 0)
-    {
-        rd.vectorize(root_distribution_map);
-    }
-    else
-    {
-        rd.vectorize_uniform(_max_root_family_size);
-    }
-//    initialize_rootdist_if_necessary();
-    prior->initialize(&rd);
 
     results.resize(_p_gene_families->size());
     std::vector<double> all_families_likelihood(_p_gene_families->size());
@@ -136,7 +123,7 @@ inference_optimizer_scorer *base_model::get_lambda_optimizer(const user_data& da
     }
     else
     {
-        return new lambda_optimizer(_p_lambda, this, data.p_prior.get(), longest_branch, data.rootdist);
+        return new lambda_optimizer(_p_lambda, this, data.p_prior.get(), longest_branch);
     }
 }
 

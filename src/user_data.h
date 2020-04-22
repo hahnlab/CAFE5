@@ -18,8 +18,8 @@ struct input_parameters;
 /// Class holding data defined by the user, or derived from data defined by the user
 class user_data {
 public:
-    int max_family_size = -1; //!<  The maximum family size for which probabilities will be calculated
-    int max_root_family_size = -1; //!<  The maximum family size for which probabilities will be calculated at the root of the tree
+    int max_family_size = 120; //!<  The maximum family size for which probabilities will be calculated
+    int max_root_family_size = 125; //!<  The maximum family size for which probabilities will be calculated at the root of the tree
 
     clade *p_tree = NULL; // instead of new clade(), o.w. mem leak
     lambda *p_lambda = NULL;

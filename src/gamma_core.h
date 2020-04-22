@@ -71,7 +71,7 @@ public:
     //! Randomly select one of the multipliers to apply to the simulation
     virtual lambda* get_simulation_lambda() override;
 
-    double infer_family_likelihoods(root_equilibrium_distribution *prior, const std::map<int, int>& root_distribution_map, const lambda *p_lambda) override;
+    double infer_family_likelihoods(root_equilibrium_distribution *prior, const lambda *p_lambda) override;
 
     virtual inference_optimizer_scorer *get_lambda_optimizer(const user_data& data) override;
 
