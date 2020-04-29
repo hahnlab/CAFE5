@@ -13,7 +13,9 @@ class root_distribution;
 class root_equilibrium_distribution
 {
 public:
-    virtual float compute(size_t val) const = 0;
+    /// Returns a value corresponding to a likelihood for the nth family 
+    /// Note that this does NOT correspond to the likelihood of a family being of this size
+    virtual float compute(size_t family_number) const = 0;
     virtual ~root_equilibrium_distribution() {}
 
     virtual int select_root_size(int family_number) const = 0;

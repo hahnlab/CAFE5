@@ -1986,7 +1986,8 @@ TEST(Simulation, print_process_prints_in_order)
     t[p_tree->find_descendant("A")] = 2;
     t[p_tree->find_descendant("AB")] = 6;
 
-    vector<clademap<int>*> my_trials({ &t });
+    vector<simulated_family> my_trials(1);
+    my_trials[0].values = t;
 
     user_data data;
     data.p_tree = p_tree.get();
@@ -1995,7 +1996,7 @@ TEST(Simulation, print_process_prints_in_order)
     sim.print_simulations(ost, true, my_trials);
 
     STRCMP_CONTAINS("DESC\tFID\tB\tA\t2", ost.str().c_str());
-    STRCMP_CONTAINS("NULL\tsimfam0\t4\t2\t6", ost.str().c_str());
+    STRCMP_CONTAINS("L0.0414305\tsimfam0\t4\t2\t6", ost.str().c_str());
 
 }
 
@@ -2009,7 +2010,8 @@ TEST(Simulation, print_process_can_print_without_internal_nodes)
     t[p_tree->find_descendant("A")] = 2;
     t[p_tree->find_descendant("AB")] = 6;
 
-    vector<clademap<int>*> my_trials({ &t });
+    vector<simulated_family> my_trials(1);
+    my_trials[0].values = t;
 
     user_data data;
     data.p_tree = p_tree.get();
@@ -2017,7 +2019,7 @@ TEST(Simulation, print_process_can_print_without_internal_nodes)
     simulator sim(data, params);
     sim.print_simulations(ost, false, my_trials);
     STRCMP_CONTAINS("DESC\tFID\tB\tA\n", ost.str().c_str());
-    STRCMP_CONTAINS("NULL\tsimfam0\t4\t2\n", ost.str().c_str());
+    STRCMP_CONTAINS("L0.0414305\tsimfam0\t4\t2\n", ost.str().c_str());
 
 }
 
@@ -2049,11 +2051,11 @@ TEST(Simulation, create_trial)
     matrix_cache cache(100);
     cache.precalculate_matrices(get_lambda_values(&lam), { 1,3,7 });
 
-    unique_ptr<clademap<int>> actual(sim.create_trial(&lam, 2, cache));
+    simulated_family actual = sim.create_trial(&lam, 2, cache);
 
-    LONGS_EQUAL(5, actual->at(p_tree.get()));
-    LONGS_EQUAL(4, actual->at(p_tree->find_descendant("A")));
-    LONGS_EQUAL(4, actual->at(p_tree->find_descendant("B")));
+    LONGS_EQUAL(5, actual.values.at(p_tree.get()));
+    LONGS_EQUAL(4, actual.values.at(p_tree->find_descendant("A")));
+    LONGS_EQUAL(4, actual.values.at(p_tree->find_descendant("B")));
 }
 
 TEST(Inference, model_vitals)
@@ -2643,11 +2645,9 @@ TEST(Simulation, simulate_processes)
     input_parameters ip;
     ip.nsims = 100;
     simulator sim(ud, ip);
-    vector<clademap<int>*> results;
+    vector<simulated_family> results(1);
     sim.simulate_processes(&m, results);
     LONGS_EQUAL(100, results.size());
-
-    for (auto r : results) delete r;
 }
 
 TEST(Simulation, simulate_processes_uses_rootdist_if_available)
@@ -2669,13 +2669,12 @@ TEST(Simulation, simulate_processes_uses_rootdist_if_available)
     input_parameters ip;
     ip.nsims = 100;
     simulator sim(ud, ip);
-    vector<clademap<int>*> results;
+    vector<simulated_family> results;
     sim.simulate_processes(&m, results);
     LONGS_EQUAL(100, results.size());
 
-    LONGS_EQUAL(5, results[0]->at(p_tree.get()));
-    LONGS_EQUAL(10, results[75]->at(p_tree.get()));
-    for (auto r : results) delete r;
+    LONGS_EQUAL(5, results[0].values.at(p_tree.get()));
+    LONGS_EQUAL(10, results[75].values.at(p_tree.get()));
 }
 
 TEST(Simulation, gamma_model_perturb_lambda_with_clusters)
@@ -2698,9 +2697,48 @@ TEST(Simulation, gamma_model_perturb_lambda_without_clusters)
     DOUBLES_EQUAL(0.911359, multipliers[0], 0.00001);
 }
 
+TEST(Simulation, root_eq_dist_factory__creates__uniform_distribution)
+{
+    input_parameters params;
+    map<int, int> rootdist;
+    root_equilibrium_distribution* dist = root_eq_dist_factory(params, nullptr, rootdist, 10);
+    CHECK(dynamic_cast<uniform_distribution*>(dist) != NULL);
+    DOUBLES_EQUAL(.125, dist->compute(1), 0.00001);
+}
+
+TEST(Simulation, root_eq_dist_factory__creates__poisson_distribution_if_given)
+{
+    input_parameters params;
+    params.use_uniform_eq_freq = false;
+    params.poisson_lambda = 0.75;
+    map<int, int> rootdist;
+    root_equilibrium_distribution* dist = root_eq_dist_factory(params, nullptr, rootdist, 10);
+    CHECK(dynamic_cast<::poisson_distribution*>(dist) != NULL);
+    DOUBLES_EQUAL(0.3542749, dist->compute(1), 0.00001);
+    DOUBLES_EQUAL(0, dist->compute(9), 0.00001);
+}
+
+TEST(Simulation, root_eq_dist_factory__creates__specifed_distribution_if_given)
+{
+    input_parameters params;
+    map<int, int> rootdist;
+    rootdist[3] = 5;
+    root_equilibrium_distribution* dist = root_eq_dist_factory(params, nullptr, rootdist, 10);
+    CHECK(dynamic_cast<specified_distribution*>(dist) != NULL);
+    DOUBLES_EQUAL(0.2, dist->compute(1), 0.00001);
+}
 
 
-
+TEST(Simulation, root_eq_dist_factory__creates__specifed_distribution_if_given_distribution_and_poisson)
+{
+    input_parameters params;
+    map<int, int> rootdist;
+    rootdist[3] = 5;
+    params.use_uniform_eq_freq = false;
+    params.poisson_lambda = 0.75;
+    root_equilibrium_distribution* dist = root_eq_dist_factory(params, nullptr, rootdist, 10);
+    CHECK(dynamic_cast<specified_distribution*>(dist) != NULL);
+}
 
 
 TEST(Optimizer, fminsearch_sort_sorts_scores_and_moves_values)

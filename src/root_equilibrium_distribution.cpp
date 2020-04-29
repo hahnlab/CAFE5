@@ -102,33 +102,43 @@ int ::poisson_distribution::select_root_size(int family_number) const
     return 0;
 }
 
+/// Root distributions are affected by three parameters: -p, -i, -f
+/// If a rootdist file is specified (-f), those values will be used for the root distribution and the other flags
+/// are ignored. Otherwise, if a poisson distribution is specified (-p) with a value, the root
+/// distribution will be based on that poisson distribution. If no poisson value
+/// is specified, a family file must be given (-i) and those families will be used to calculate a
+/// poisson distribution. If a Poisson distribution is used, values above a max family size
+/// will be considered to be 0. The max family size defaults to 100, but is calculated from
+/// family file if one is given.
 root_equilibrium_distribution* root_eq_dist_factory(const input_parameters& params, std::vector<gene_family> *p_gene_families, const std::map<int, int>& root_distribution, int max_root_family_size)
 {
-    root_equilibrium_distribution *p_prior = NULL;
-    if (params.use_uniform_eq_freq)
+    root_equilibrium_distribution* p_prior = NULL;
+
+    if (!root_distribution.empty())
     {
-        if (root_distribution.empty())
-            p_prior = new uniform_distribution(max_root_family_size * 0.8);
-        else
-        {
-            auto t = new specified_distribution(root_distribution);
-            if (params.nsims > 0)
-                t->resize(params.nsims);
-            p_prior = t;
-        }
+        auto t = new specified_distribution(root_distribution);
+        if (params.nsims > 0)
+            t->resize(params.nsims);
+        p_prior = t;
     }
     else
     {
         int num_values = max_root_family_size * 0.8;
-        if (!root_distribution.empty())
-            num_values = accumulate(root_distribution.begin(), root_distribution.end(), 0,
-                [](int acc, std::pair<int, int> p) { return (acc + p.second); });
 
-        double pl = params.poisson_lambda;
-        if (pl > 0)
-            p_prior = new ::poisson_distribution(pl, num_values);
+        if (params.use_uniform_eq_freq)
+        {
+            p_prior = new uniform_distribution(num_values);
+        }
         else
-            p_prior = new ::poisson_distribution(p_gene_families, num_values);
+        {
+            double pl = params.poisson_lambda;
+            if (pl > 0)
+                p_prior = new ::poisson_distribution(pl, num_values);
+            else
+                p_prior = new ::poisson_distribution(p_gene_families, num_values);
+
+        }
+
     }
 
     return p_prior;

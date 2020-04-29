@@ -23,25 +23,26 @@ void simulator::execute(std::vector<model *>& models)
     simulate(models, _user_input);
 }
 
-clademap<int>* simulator::create_trial(const lambda *p_lambda, int family_number, const matrix_cache& cache) {
+simulated_family simulator::create_trial(const lambda *p_lambda, int family_number, const matrix_cache& cache) {
 
     if (data.p_tree == NULL)
         throw runtime_error("No tree specified for simulation");
 
-    auto *result = new clademap<int>();
+    simulated_family result;
+    result.lambda = get_lambda_values(p_lambda)[0];
 
     int i = 0;
     for (i = 0; i<50; ++i)
     {
-        (*result)[data.p_tree] = data.p_prior->select_root_size(family_number);
+        result.values[data.p_tree] = data.p_prior->select_root_size(family_number);
 
         data.p_tree->apply_prefix_order([&](const clade* c)
             {
-                set_weighted_random_family_size(c, result, p_lambda, data.p_error_model, data.max_family_size, cache);
+                set_weighted_random_family_size(c, &result.values, p_lambda, data.p_error_model, data.max_family_size, cache);
             });
 
         gene_family gf;
-        gf.init_from_clademap(*result);
+        gf.init_from_clademap(result.values);
         if (gf.exists_at_root(data.p_tree))
             break;
     }
@@ -53,7 +54,7 @@ clademap<int>* simulator::create_trial(const lambda *p_lambda, int family_number
     return result;
 }
 
-void simulator::simulate_processes(model *p_model, std::vector<clademap<int> *>& results) {
+void simulator::simulate_processes(model *p_model, std::vector<simulated_family>& results) {
 
     if (_user_input.nsims > 0)
     {
@@ -109,7 +110,7 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
 
     for (auto p_model : models) {
 
-        std::vector<clademap<int> *> results;
+        std::vector<simulated_family> results;
 
         simulate_processes(p_model, results);
 
@@ -134,7 +135,7 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
 }
 
 
-void simulator::print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<clademap<int> *>& results) {
+void simulator::print_simulations(std::ostream& ost, bool include_internal_nodes, const std::vector<simulated_family>& results) {
 
     std::vector<const clade *> order;
     auto fn = [&order](const clade *c) { order.push_back(c); };
@@ -157,15 +158,15 @@ void simulator::print_simulations(std::ostream& ost, bool include_internal_nodes
     ost << endl;
 
     for (size_t j = 0; j < results.size(); ++j) {
-        auto& fam = *results[j];
+        auto& fam = results[j];
         // Printing gene counts
-        ost << "NULL\tsimfam" << j;
+        ost << "L" << fam.lambda << "\tsimfam" << j;
         for (size_t i = 0; i < order.size(); ++i)
         {
             if (order[i]->is_leaf() || include_internal_nodes)
             {
                 ost << '\t';
-                ost << fam[order[i]];
+                ost << fam.values.at(order[i]);
             }
         }
         ost << endl;
