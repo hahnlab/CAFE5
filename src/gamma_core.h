@@ -71,7 +71,7 @@ public:
     //! Randomly select one of the multipliers to apply to the simulation
     virtual lambda* get_simulation_lambda() override;
 
-    double infer_family_likelihoods(root_equilibrium_distribution *prior, const lambda *p_lambda) override;
+    double infer_family_likelihoods(const root_equilibrium_distribution& prior, const lambda *p_lambda) override;
 
     virtual inference_optimizer_scorer *get_lambda_optimizer(const user_data& data) override;
 
@@ -103,7 +103,7 @@ public:
 
     bool can_infer() const;
 
-    bool prune(const gene_family& family, root_equilibrium_distribution *eq, matrix_cache& calc, const lambda *p_lambda,
+    bool prune(const gene_family& family, const root_equilibrium_distribution& eq, matrix_cache& calc, const lambda *p_lambda,
         std::vector<double>& category_likelihoods);
 };
 

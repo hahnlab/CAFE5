@@ -11,14 +11,7 @@
 
 extern std::mt19937 randomizer_engine; // seeding random number engine
 
-int uniform_distribution::select_root_size(int family_number) const
-{
-    // return a random root size
-    std::uniform_int_distribution<> dis(0, _max_root_family_size+1);
-    return dis(randomizer_engine); 
-}
-
-specified_distribution::specified_distribution(const map<int, int>& root_distribution)
+root_equilibrium_distribution::root_equilibrium_distribution(const map<int, int>& root_distribution)
 {
     if (root_distribution.empty())
         throw std::runtime_error("No root distribution specified");
@@ -30,15 +23,56 @@ specified_distribution::specified_distribution(const map<int, int>& root_distrib
     }
 }
 
-float specified_distribution::compute(size_t val) const
+root_equilibrium_distribution::root_equilibrium_distribution(size_t max_size)
+{
+    _vectorized_distribution.resize(max_size);
+    iota(_vectorized_distribution.begin(), _vectorized_distribution.end(), 1);
+}
+
+root_equilibrium_distribution::root_equilibrium_distribution(double poisson_lambda, int num_values)
+{
+    auto poisson = get_prior_rfsize_poisson_lambda(0, num_values, poisson_lambda);
+    int n = poisson.size();
+    for (size_t i = 0; i < poisson.size() - 1; ++i)
+    {
+        for (size_t j = 0; j < poisson[i] * n; ++j)
+            _vectorized_distribution.push_back(i + 1);
+    }
+
+}
+
+root_equilibrium_distribution::root_equilibrium_distribution(std::vector<gene_family> *p_gene_families, int num_values)
+{
+    poisson_scorer scorer(*p_gene_families);
+    optimizer opt(&scorer);
+    optimizer_parameters params;
+    auto result = opt.optimize(params);
+
+    cout << "\nEmpirical Prior Estimation Result : (" << result.num_iterations << " iterations)" << endl;
+    cout << "Poisson lambda: " << result.values[0] << " &  Score: " << result.score << endl;
+
+    double poisson_lambda = result.values[0];
+
+    auto poisson = get_prior_rfsize_poisson_lambda(0, num_values, poisson_lambda);
+    int n = poisson.size();
+    for (size_t i = 0; i < poisson.size() - 1; ++i)
+    {
+        for (size_t j = 0; j < poisson[0] * n; ++j)
+            _vectorized_distribution.push_back(i + 1);
+    }
+
+}
+
+float root_equilibrium_distribution::compute(size_t val) const
 {
     if (val >= _vectorized_distribution.size())
         return 0;
 
-    return float(_vectorized_distribution.at(val)) / float(std::accumulate(_vectorized_distribution.begin(), _vectorized_distribution.end(), 0));
+    size_t c = count(_vectorized_distribution.begin(), _vectorized_distribution.end(), val);
+    return float(c) / float(_vectorized_distribution.size());
 }
 
-int specified_distribution::select_root_size(int family_number) const
+int root_equilibrium_distribution::select_root_size(int family_number) const
 {
     if ((size_t)family_number >= _vectorized_distribution.size())
         return 0;
@@ -46,7 +80,7 @@ int specified_distribution::select_root_size(int family_number) const
     return _vectorized_distribution[family_number];
 }
 
-void specified_distribution::resize(size_t new_size)
+void root_equilibrium_distribution::resize(size_t new_size)
 {
     auto& v = _vectorized_distribution;
     if (new_size < v.size())
@@ -67,41 +101,6 @@ void specified_distribution::resize(size_t new_size)
 }
 
 
-::poisson_distribution::poisson_distribution(double poisson_lambda, int num_values) : _poisson_lambda(poisson_lambda)
-{
-    poisson = get_prior_rfsize_poisson_lambda(0, num_values, _poisson_lambda);
-}
-
-::poisson_distribution::poisson_distribution(std::vector<gene_family> *p_gene_families, int num_values)
-{
-    poisson_scorer scorer(*p_gene_families);
-    optimizer opt(&scorer);
-    optimizer_parameters params;
-    auto result = opt.optimize(params);
-
-    cout << "\nEmpirical Prior Estimation Result : (" << result.num_iterations << " iterations)" << endl;
-    cout << "Poisson lambda: " << result.values[0] << " &  Score: " << result.score << endl;
-
-    _poisson_lambda = result.values[0];
-
-    poisson = get_prior_rfsize_poisson_lambda(0, num_values, _poisson_lambda);
-}
-
-int ::poisson_distribution::select_root_size(int family_number) const
-{
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-    double my_random = distribution(randomizer_engine);
-    double x = poisson[0];
-    for (size_t i = 0; i < poisson.size()-1; ++i)
-    {
-        if (my_random < x)
-            return i + 1;
-        x += poisson[i + 1];
-    }
-
-    return 0;
-}
-
 /// Root distributions are affected by three parameters: -p, -i, -f
 /// If a rootdist file is specified (-f), those values will be used for the root distribution and the other flags
 /// are ignored. Otherwise, if a poisson distribution is specified (-p) with a value, the root
@@ -110,36 +109,33 @@ int ::poisson_distribution::select_root_size(int family_number) const
 /// poisson distribution. If a Poisson distribution is used, values above a max family size
 /// will be considered to be 0. The max family size defaults to 100, but is calculated from
 /// family file if one is given.
-root_equilibrium_distribution* root_eq_dist_factory(const input_parameters& params, std::vector<gene_family> *p_gene_families, const std::map<int, int>& root_distribution, int max_root_family_size)
+root_equilibrium_distribution create_root_distribution(const input_parameters& params, std::vector<gene_family> *p_gene_families, const std::map<int, int>& root_distribution, int max_root_family_size)
 {
-    root_equilibrium_distribution* p_prior = NULL;
+    root_equilibrium_distribution result(1);
 
     if (!root_distribution.empty())
     {
-        auto t = new specified_distribution(root_distribution);
+        result = root_equilibrium_distribution(root_distribution);
         if (params.nsims > 0)
-            t->resize(params.nsims);
-        p_prior = t;
+            result.resize(params.nsims);
     }
     else
     {
-        int num_values = max_root_family_size * 0.8;
-
         if (params.use_uniform_eq_freq)
         {
-            p_prior = new uniform_distribution(num_values);
+            result = root_equilibrium_distribution(max_root_family_size);
         }
         else
         {
             double pl = params.poisson_lambda;
             if (pl > 0)
-                p_prior = new ::poisson_distribution(pl, num_values);
+                result = root_equilibrium_distribution(pl, max_root_family_size);
             else
-                p_prior = new ::poisson_distribution(p_gene_families, num_values);
+                result = root_equilibrium_distribution(p_gene_families, max_root_family_size);
 
         }
 
     }
 
-    return p_prior;
+    return result;
 }

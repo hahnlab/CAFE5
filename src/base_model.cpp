@@ -49,7 +49,7 @@ vector<size_t> build_reference_list(const vector<gene_family>& families)
     return reff;
 }
 
-double base_model::infer_family_likelihoods(root_equilibrium_distribution *prior, const lambda *p_lambda) {
+double base_model::infer_family_likelihoods(const root_equilibrium_distribution &prior, const lambda *p_lambda) {
     _monitor.Event_InferenceAttempt_Started();
 
     if (!_p_lambda->is_valid())
@@ -80,7 +80,7 @@ double base_model::infer_family_likelihoods(root_equilibrium_distribution *prior
         std::vector<double> full(partial_likelihood.size());
 
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
-            double eq_freq = prior->compute(j);
+            double eq_freq = prior.compute(j);
 
             full[j] = std::log(partial_likelihood[j]) + std::log(eq_freq);
         }
@@ -119,11 +119,11 @@ inference_optimizer_scorer *base_model::get_lambda_optimizer(const user_data& da
 
     if (_p_error_model && !data.p_error_model)
     {
-        return new lambda_epsilon_optimizer(this, _p_error_model, data.p_prior.get(), data.rootdist, _p_lambda, longest_branch);
+        return new lambda_epsilon_optimizer(this, _p_error_model, &data.prior, data.rootdist, _p_lambda, longest_branch);
     }
     else
     {
-        return new lambda_optimizer(_p_lambda, this, data.p_prior.get(), longest_branch);
+        return new lambda_optimizer(_p_lambda, this, &data.prior, longest_branch);
     }
 }
 

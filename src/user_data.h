@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "gene_family.h"
+#include "root_equilibrium_distribution.h"
 
 class root_equilibrium_distribution;
 class clade;
@@ -18,6 +19,10 @@ struct input_parameters;
 /// Class holding data defined by the user, or derived from data defined by the user
 class user_data {
 public:
+    user_data() : prior(100)
+    {
+
+    }
     int max_family_size = 120; //!<  The maximum family size for which probabilities will be calculated
     int max_root_family_size = 125; //!<  The maximum family size for which probabilities will be calculated at the root of the tree
 
@@ -25,7 +30,8 @@ public:
     lambda *p_lambda = NULL;
     clade *p_lambda_tree = NULL;
     error_model *p_error_model = NULL;
-    std::unique_ptr<root_equilibrium_distribution> p_prior;
+    root_equilibrium_distribution prior;
+
     std::vector<gene_family> gene_families;
     std::map<int, int> rootdist;
 

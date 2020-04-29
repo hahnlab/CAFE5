@@ -32,10 +32,10 @@ protected:
 
     lambda *_p_lambda;
     model *_p_model;
-    root_equilibrium_distribution *_p_distribution;
+    const root_equilibrium_distribution *_p_distribution;
 
 public:
-    inference_optimizer_scorer(lambda *p_lambda, model* p_model, root_equilibrium_distribution *p_distribution) :
+    inference_optimizer_scorer(lambda *p_lambda, model* p_model, const root_equilibrium_distribution *p_distribution) :
         _p_lambda(p_lambda),
         _p_model(p_model),
         _p_distribution(p_distribution),
@@ -62,7 +62,7 @@ class lambda_optimizer : public inference_optimizer_scorer
     double _longest_branch;
 
 public:
-    lambda_optimizer(lambda *p_lambda, model* p_model, root_equilibrium_distribution *p_distribution, double longest_branch) :
+    lambda_optimizer(lambda *p_lambda, model* p_model, const root_equilibrium_distribution *p_distribution, double longest_branch) :
         inference_optimizer_scorer(p_lambda, p_model, p_distribution),
         _longest_branch(longest_branch)
     {
@@ -88,7 +88,7 @@ public:
     lambda_epsilon_optimizer(
         model* p_model,
         error_model *p_error_model,
-        root_equilibrium_distribution* p_distribution,
+        const root_equilibrium_distribution* p_distribution,
         const std::map<int, int>& root_distribution_map,
         lambda *p_lambda,
         double longest_branch) :
@@ -120,7 +120,7 @@ public:
     // Inherited via optimizer_scorer
     virtual std::vector<double> initial_guesses() override;
     virtual void finalize(double * result) override;
-    gamma_optimizer(gamma_model* p_model, root_equilibrium_distribution* prior);
+    gamma_optimizer(gamma_model* p_model, const root_equilibrium_distribution* prior);
 
     double get_alpha() const;
 };
@@ -135,7 +135,7 @@ class gamma_lambda_optimizer : public inference_optimizer_scorer
     lambda_optimizer _lambda_optimizer;
     gamma_optimizer _gamma_optimizer;
 public:
-    gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p_model, root_equilibrium_distribution *p_distribution, double longest_branch);
+    gamma_lambda_optimizer(lambda *p_lambda, gamma_model * p_model, const root_equilibrium_distribution *p_distribution, double longest_branch);
 
     std::vector<double> initial_guesses() override;
 

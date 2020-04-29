@@ -188,7 +188,7 @@ bool gamma_model::can_infer() const
     return true;
 }
 
-bool gamma_model::prune(const gene_family& family, root_equilibrium_distribution *eq, matrix_cache& calc, const lambda *p_lambda,
+bool gamma_model::prune(const gene_family& family, const root_equilibrium_distribution& prior, matrix_cache& calc, const lambda *p_lambda,
     std::vector<double>& category_likelihoods) 
 {
     category_likelihoods.clear();
@@ -201,7 +201,7 @@ bool gamma_model::prune(const gene_family& family, root_equilibrium_distribution
 
         std::vector<double> full(partial_likelihood.size());
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
-            double eq_freq = eq->compute(j);
+            double eq_freq = prior.compute(j);
             full[j] = partial_likelihood[j] * eq_freq;
         }
 
@@ -213,7 +213,7 @@ bool gamma_model::prune(const gene_family& family, root_equilibrium_distribution
 }
 
 //! Infer bundle
-double gamma_model::infer_family_likelihoods(root_equilibrium_distribution *prior, const lambda *p_lambda) {
+double gamma_model::infer_family_likelihoods(const root_equilibrium_distribution& prior, const lambda *p_lambda) {
 
     _monitor.Event_InferenceAttempt_Started();
 
@@ -295,7 +295,7 @@ inference_optimizer_scorer *gamma_model::get_lambda_optimizer(const user_data& d
         auto longest_branch = *max_element(lengths.begin(), lengths.end());
 
         initialize_lambda(data.p_lambda_tree);
-        return new gamma_lambda_optimizer(_p_lambda, this, data.p_prior.get(), longest_branch);
+        return new gamma_lambda_optimizer(_p_lambda, this, &data.prior, longest_branch);
     }
     else if (estimate_lambda && !estimate_alpha)
     {
@@ -303,12 +303,12 @@ inference_optimizer_scorer *gamma_model::get_lambda_optimizer(const user_data& d
         auto longest_branch = *max_element(lengths.begin(), lengths.end());
 
         initialize_lambda(data.p_lambda_tree);
-        return new lambda_optimizer(_p_lambda, this, data.p_prior.get(), longest_branch);
+        return new lambda_optimizer(_p_lambda, this, &data.prior, longest_branch);
     }
     else if (!estimate_lambda && estimate_alpha)
     {
         _p_lambda = data.p_lambda->clone();
-        return new gamma_optimizer(this, data.p_prior.get());
+        return new gamma_optimizer(this, &data.prior);
     }
     else
     {

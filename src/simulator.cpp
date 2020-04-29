@@ -34,7 +34,7 @@ simulated_family simulator::create_trial(const lambda *p_lambda, int family_numb
     int i = 0;
     for (i = 0; i<50; ++i)
     {
-        result.values[data.p_tree] = data.p_prior->select_root_size(family_number);
+        result.values[data.p_tree] = data.prior.select_root_size(family_number);
 
         data.p_tree->apply_prefix_order([&](const clade* c)
             {

@@ -52,7 +52,7 @@ class mock_model : public model {
         auto longest_branch = *max_element(lengths.begin(), lengths.end());
 
         initialize_lambda(data.p_lambda_tree);
-        auto result = new lambda_optimizer(_p_lambda, this, data.p_prior.get(), longest_branch);
+        auto result = new lambda_optimizer(_p_lambda, this, &data.prior, longest_branch);
         result->quiet = true;
         return result;
     }
@@ -78,7 +78,7 @@ public:
     }
 
     // Inherited via model
-    virtual double infer_family_likelihoods(root_equilibrium_distribution* prior, const lambda* p_lambda) override
+    virtual double infer_family_likelihoods(const root_equilibrium_distribution& prior, const lambda* p_lambda) override
     {
         return _invalid_likelihood ? nan("") : 0.0;
     }
@@ -550,31 +550,27 @@ TEST(Inference, infer_processes)
 
     single_lambda lambda(0.01);
 
-    _user_data.max_root_family_size = 30;
-    _user_data.p_prior.reset(new uniform_distribution(_user_data.max_root_family_size));
-
     base_model core(&lambda, _user_data.p_tree, &families, 56, _user_data.max_root_family_size, NULL);
 
-    double multi = core.infer_family_likelihoods(_user_data.p_prior.get(), &lambda);
+    double multi = core.infer_family_likelihoods(_user_data.prior, &lambda);
 
-    DOUBLES_EQUAL(41.7504, multi, 0.001);
+    DOUBLES_EQUAL(46.56632, multi, 0.001);
 }
 
-TEST(Inference, uniform_distribution__with_no_rootdist_is_uniform)
+TEST(Inference, root_equilibrium_distribution__with_no_rootdist_is_uniform)
 {
-    uniform_distribution ef(10);
+    root_equilibrium_distribution ef(10);
     DOUBLES_EQUAL(.1, ef.compute(5), 0.0001);
 }
 
-TEST(Inference, uniform_distribution__with_rootdist_uses_rootdist)
+TEST(Inference, root_equilibrium_distribution__with_rootdist_uses_rootdist)
 {
     _user_data.rootdist[1] = 3;
     _user_data.rootdist[2] = 5;
 
-    specified_distribution ef(_user_data.rootdist);
+    root_equilibrium_distribution ef(_user_data.rootdist);
 
-    /// Waiting on a scientist to verify this calculation as it does not seem correct
-    DOUBLES_EQUAL(0.1538462, ef.compute(5), 0.0001);
+    DOUBLES_EQUAL(0.375, ef.compute(1), 0.0001);
 }
 
 TEST(Inference, gamma_set_alpha)
@@ -597,10 +593,8 @@ TEST(Inference, gamma_model_infers_processes_without_crashing)
 {
     gamma_model core(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 148, 122, 1, 0, NULL);
 
-    uniform_distribution frq(10);
-
     // TODO: make this return a non-infinite value and add a check for it
-    core.infer_family_likelihoods(&frq, _user_data.p_lambda);
+    core.infer_family_likelihoods(_user_data.prior, _user_data.p_lambda);
     
 }
 
@@ -702,7 +696,6 @@ TEST(Probability, get_random_probabilities)
 TEST(Inference, base_optimizer_guesses_lambda_only)
 {
     _user_data.p_lambda = NULL;
-    _user_data.p_prior.reset(new uniform_distribution(10));
 
     base_model model(_user_data.p_lambda, _user_data.p_tree, NULL, 0, 5, NULL);
 
@@ -723,7 +716,6 @@ TEST(Inference, base_optimizer_guesses_lambda_and_unique_epsilons)
 
     _user_data.p_error_model = nullptr;
     _user_data.p_lambda = nullptr;
-    _user_data.p_prior.reset(new uniform_distribution(10));
 
     unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(_user_data));
 
@@ -745,8 +737,6 @@ TEST(Inference, gamma_model_creates__gamma_lambda_optimizer_if_nothing_provided)
 
     gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, -1, NULL);
     user_data data;
-    data.p_prior.reset(new uniform_distribution(10));
-
 
     unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
     CHECK(opt);
@@ -762,7 +752,6 @@ TEST(Inference, gamma_model__creates__lambda_optimizer__if_alpha_provided)
     gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, 0.25, NULL);
 
     user_data data;
-    data.p_prior.reset(new uniform_distribution(10));
 
     unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
 
@@ -778,7 +767,6 @@ TEST(Inference, gamma_model__creates__gamma_optimizer__if_lambda_provided)
     gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, -1, NULL);
 
     user_data data;
-    data.p_prior.reset(new uniform_distribution(10));
 
     single_lambda sl(0.05);
     data.p_lambda = &sl;
@@ -798,7 +786,6 @@ TEST(Inference, gamma_model_creates_nothing_if_lambda_and_alpha_provided)
     gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, .25, NULL);
 
     user_data data;
-    data.p_prior.reset(new uniform_distribution(10));
     
     single_lambda sl(0.05);
     data.p_lambda = &sl;
@@ -843,7 +830,7 @@ TEST(Inference, base_model_reconstruction)
 
     matrix_cache calc(6);
     calc.precalculate_matrices(get_lambda_values(&sl), set<double>({ 1 }));
-    uniform_distribution dist(_user_data.max_root_family_size);
+    root_equilibrium_distribution dist(_user_data.max_root_family_size);
 
     std::unique_ptr<base_model_reconstruction> rec(dynamic_cast<base_model_reconstruction *>(model.reconstruct_ancestral_states(families, &calc, &dist)));
 
@@ -1082,7 +1069,7 @@ TEST(Reconstruction, reconstruct_gene_family)
     for (size_t i = 0; i < v.size(); ++i)
         ud.rootdist[i] = v[i];
     ud.max_root_family_size = 8;
-    specified_distribution dist(ud.rootdist);
+    root_equilibrium_distribution dist(ud.rootdist);
 
     clademap<int> result;
     reconstruct_gene_family(&lambda, p_tree.get(), 10, ud.max_root_family_size, &fam, &cache, &dist, result);
@@ -1266,18 +1253,18 @@ TEST(Inference, gamma_model_prune)
     _user_data.rootdist[3] = 2;
     _user_data.rootdist[4] = 2;
     _user_data.rootdist[5] = 1;
-    specified_distribution dist(_user_data.rootdist);
+    root_equilibrium_distribution dist(_user_data.rootdist);
     matrix_cache cache(11);
     cache.precalculate_matrices({ 0.0005, 0.0025 }, set<double>{1, 3, 7});
 
     gamma_model model(&lambda, p_tree.get(), &families, 10, 8, { 0.01, 0.05 }, { 0.1, 0.5 }, NULL);
 
     vector<double> cat_likelihoods;
-    CHECK(model.prune(families[0], &dist, cache, &lambda, cat_likelihoods));
+    CHECK(model.prune(families[0], dist, cache, &lambda, cat_likelihoods));
 
     LONGS_EQUAL(2, cat_likelihoods.size());
-    DOUBLES_EQUAL(-24.06598, log(cat_likelihoods[0]), 0.0001);
-    DOUBLES_EQUAL(-17.70171, log(cat_likelihoods[1]), 0.0001);
+    DOUBLES_EQUAL(-23.04433, log(cat_likelihoods[0]), 0.0001);
+    DOUBLES_EQUAL(-16.68005, log(cat_likelihoods[1]), 0.0001);
 }
 
 TEST(Inference, gamma_model_prune_returns_false_if_saturated)
@@ -1288,14 +1275,13 @@ TEST(Inference, gamma_model_prune_returns_false_if_saturated)
     unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
     single_lambda lambda(0.9);
 
-    uniform_distribution dist(_user_data.max_root_family_size);
     matrix_cache cache(11);
     cache.precalculate_matrices({ 0.09, 0.45 }, set<double>{1, 3, 7});
     vector<double> cat_likelihoods;
 
     gamma_model model(&lambda, p_tree.get(), &families, 10, 8, { 1.0,1.0 }, { 0.1, 0.5 }, NULL);
 
-    CHECK(!model.prune(families[0], &dist, cache, &lambda, cat_likelihoods));
+    CHECK(!model.prune(families[0], _user_data.prior, cache, &lambda, cat_likelihoods));
 }
 
 TEST(Inference, matrix_cache_key_handles_floating_point_imprecision)
@@ -1955,14 +1941,15 @@ TEST(Inference, multiple_lambda_returns_correct_values)
     DOUBLES_EQUAL(.011, ml.get_value_for_clade(p_tree->find_descendant("B")), 0.0001);
 }
 
-TEST(Simulation, uniform_distribution__select_root_size__returns_random_selection)
+TEST(Simulation, uniform_distribution__select_root_size__returns_sequential_values)
 {
-    uniform_distribution ud(20);
-    LONGS_EQUAL(16, ud.select_root_size(0));
-    LONGS_EQUAL(6, ud.select_root_size(0));
-    LONGS_EQUAL(0, ud.select_root_size(0));
-    LONGS_EQUAL(10, ud.select_root_size(0));
-    LONGS_EQUAL(13, ud.select_root_size(0));
+    root_equilibrium_distribution ud(20);
+    LONGS_EQUAL(1, ud.select_root_size(0));
+    LONGS_EQUAL(2, ud.select_root_size(1));
+    LONGS_EQUAL(3, ud.select_root_size(2));
+    LONGS_EQUAL(4, ud.select_root_size(3));
+    LONGS_EQUAL(5, ud.select_root_size(4));
+    LONGS_EQUAL(0, ud.select_root_size(20));
 }
 
 TEST(Simulation, specified_distribution__select_root_size__returns_exact_selection)
@@ -1971,7 +1958,7 @@ TEST(Simulation, specified_distribution__select_root_size__returns_exact_selecti
     for (int i = 0; i<20; ++i)
         data.rootdist[i] = 1;
 
-    specified_distribution sd(data.rootdist);
+    root_equilibrium_distribution sd(data.rootdist);
     for (size_t i = 0; i<20; ++i)
         LONGS_EQUAL(i, sd.select_root_size(i));
 }
@@ -2044,7 +2031,7 @@ TEST(Simulation, create_trial)
     data.max_family_size = 10;
     data.max_root_family_size = 10;
 
-    data.p_prior.reset(new specified_distribution(data.rootdist));
+    data.prior = root_equilibrium_distribution(data.rootdist);
     input_parameters params;
     simulator sim(data, params);
 
@@ -2250,7 +2237,7 @@ TEST(Inference, lambda_per_family)
     ud.max_root_family_size = 10;
     ud.max_family_size = 10;
     ud.gene_families.resize(1);
-    ud.p_prior.reset(new uniform_distribution(ud.max_root_family_size));
+    ud.prior = root_equilibrium_distribution(ud.max_root_family_size);
 
     gene_family& family = ud.gene_families[0];
     family.set_id("test");
@@ -2284,10 +2271,10 @@ TEST(Inference, estimator_compute_pvalues)
 TEST(Inference, gamma_lambda_optimizer)
 {
     _user_data.max_root_family_size = 10;
-    _user_data.p_prior.reset(new uniform_distribution(_user_data.max_root_family_size));
+    _user_data.prior = root_equilibrium_distribution(_user_data.max_root_family_size);
 
     gamma_model m(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 10, _user_data.max_root_family_size, 4, 0.25, NULL);
-    gamma_lambda_optimizer optimizer(_user_data.p_lambda, &m, _user_data.p_prior.get(), 7);
+    gamma_lambda_optimizer optimizer(_user_data.p_lambda, &m, &_user_data.prior, 7);
     vector<double> values{ 0.01, 0.25 };
     DOUBLES_EQUAL(6.4168, optimizer.calculate_score(&values[0]), 0.0001);
 }
@@ -2378,22 +2365,23 @@ TEST(Inference, optimizer_disallows_bad_initializations)
 
 TEST(Inference, poisson_distribution__compute)
 {
-    ::poisson_distribution pd(0.75, 9);
+    root_equilibrium_distribution pd(0.75, 100);
 
-    DOUBLES_EQUAL(0.3542, pd.compute(1), 0.0001);
-    DOUBLES_EQUAL(0.0332, pd.compute(3), 0.0001);
-    DOUBLES_EQUAL(0.0009, pd.compute(5), 0.0001);
+    DOUBLES_EQUAL(0.2436548, pd.compute(1), 0.0001);
+    DOUBLES_EQUAL(0.071, pd.compute(3), 0.0001);
+    DOUBLES_EQUAL(0.005, pd.compute(5), 0.0001);
     DOUBLES_EQUAL(0.0, pd.compute(100), 0.0001);
 }
 
 TEST(Inference, poisson_distribution__select_root_size)
 {
-    ::poisson_distribution pd(0.75, 9);
+    root_equilibrium_distribution pd(0.75, 9);
 
     LONGS_EQUAL(1, pd.select_root_size(1));
-    LONGS_EQUAL(2, pd.select_root_size(3));
-    LONGS_EQUAL(1, pd.select_root_size(5));
-    LONGS_EQUAL(3, pd.select_root_size(100));
+    LONGS_EQUAL(1, pd.select_root_size(3));
+    LONGS_EQUAL(2, pd.select_root_size(5));
+    LONGS_EQUAL(2, pd.select_root_size(7));
+    LONGS_EQUAL(0, pd.select_root_size(100));
 }
 
 TEST(Inference, optimizer_result_stream)
@@ -2589,7 +2577,7 @@ TEST(Simulation, specified_distribution__with_rootdist_creates_matching_vector)
     m[2] = 3;
     m[4] = 1;
     m[8] = 1;
-    specified_distribution rd(m);
+    root_equilibrium_distribution rd(m);
     LONGS_EQUAL(rd.select_root_size(0), 2);
     LONGS_EQUAL(rd.select_root_size(1), 2);
     LONGS_EQUAL(rd.select_root_size(2), 2);
@@ -2604,7 +2592,7 @@ TEST(Simulation, specified_distribution__pare)
     m[2] = 5;
     m[4] = 3;
     m[8] = 3;
-    specified_distribution rd(m);
+    root_equilibrium_distribution rd(m);
     rd.resize(5);
     LONGS_EQUAL(rd.select_root_size(0), 2);
     LONGS_EQUAL(rd.select_root_size(1), 2);
@@ -2620,7 +2608,7 @@ TEST(Simulation, specified_distribution__expand)
     m[2] = 5;
     m[4] = 3;
     m[8] = 3;
-    specified_distribution rd(m);
+    root_equilibrium_distribution rd(m);
     rd.resize(15);
     LONGS_EQUAL(rd.select_root_size(14), 8);
     LONGS_EQUAL(rd.select_root_size(15), 0);
@@ -2638,7 +2626,7 @@ TEST(Simulation, simulate_processes)
     user_data ud;
     ud.p_tree = p_tree.get();
     ud.p_lambda = &lam;
-    ud.p_prior.reset(new uniform_distribution(100));
+    ud.prior = root_equilibrium_distribution(100);
     ud.max_family_size = 101;
     ud.max_root_family_size = 101;
 
@@ -2665,7 +2653,7 @@ TEST(Simulation, simulate_processes_uses_rootdist_if_available)
     ud.rootdist[10] = 50;
     ud.max_family_size = 60;
     ud.max_root_family_size = 60;
-    ud.p_prior.reset(new specified_distribution(ud.rootdist));
+    ud.prior = root_equilibrium_distribution(ud.rootdist);
     input_parameters ip;
     ip.nsims = 100;
     simulator sim(ud, ip);
@@ -2697,47 +2685,59 @@ TEST(Simulation, gamma_model_perturb_lambda_without_clusters)
     DOUBLES_EQUAL(0.911359, multipliers[0], 0.00001);
 }
 
-TEST(Simulation, root_eq_dist_factory__creates__uniform_distribution)
+TEST(Simulation, create_root_distribution__creates__uniform_distribution)
 {
     input_parameters params;
     map<int, int> rootdist;
-    root_equilibrium_distribution* dist = root_eq_dist_factory(params, nullptr, rootdist, 10);
-    CHECK(dynamic_cast<uniform_distribution*>(dist) != NULL);
-    DOUBLES_EQUAL(.125, dist->compute(1), 0.00001);
+    auto dist = create_root_distribution(params, nullptr, rootdist, 10);
+    DOUBLES_EQUAL(.1, dist.compute(1), 0.00001);
+    DOUBLES_EQUAL(.1, dist.compute(9), 0.00001);
+    DOUBLES_EQUAL(0, dist.compute(10), 0.00001);
 }
 
-TEST(Simulation, root_eq_dist_factory__creates__poisson_distribution_if_given)
+TEST(Simulation, create_root_distribution__creates__poisson_distribution_if_given)
 {
     input_parameters params;
     params.use_uniform_eq_freq = false;
     params.poisson_lambda = 0.75;
     map<int, int> rootdist;
-    root_equilibrium_distribution* dist = root_eq_dist_factory(params, nullptr, rootdist, 10);
-    CHECK(dynamic_cast<::poisson_distribution*>(dist) != NULL);
-    DOUBLES_EQUAL(0.3542749, dist->compute(1), 0.00001);
-    DOUBLES_EQUAL(0, dist->compute(9), 0.00001);
+    auto dist = create_root_distribution(params, nullptr, rootdist, 100);
+    DOUBLES_EQUAL(0.2436548, dist.compute(1), 0.00001);
+    DOUBLES_EQUAL(0, dist.compute(101), 0.00001);
 }
 
-TEST(Simulation, root_eq_dist_factory__creates__specifed_distribution_if_given)
+TEST(Simulation, create_root_distribution__creates__specifed_distribution_if_given)
 {
     input_parameters params;
     map<int, int> rootdist;
+    rootdist[2] = 11;
     rootdist[3] = 5;
-    root_equilibrium_distribution* dist = root_eq_dist_factory(params, nullptr, rootdist, 10);
-    CHECK(dynamic_cast<specified_distribution*>(dist) != NULL);
-    DOUBLES_EQUAL(0.2, dist->compute(1), 0.00001);
+    rootdist[4] = 7;
+    rootdist[6] = 2;
+    auto dist = create_root_distribution(params, nullptr, rootdist, 10);
+    DOUBLES_EQUAL(0.44, dist.compute(2), 0.00001);
+    DOUBLES_EQUAL(0.2, dist.compute(3), 0.00001);
+    DOUBLES_EQUAL(0.28, dist.compute(4), 0.00001);
+    DOUBLES_EQUAL(0, dist.compute(5), 0.00001);
+    DOUBLES_EQUAL(0.08, dist.compute(6), 0.00001);
 }
 
 
 TEST(Simulation, root_eq_dist_factory__creates__specifed_distribution_if_given_distribution_and_poisson)
 {
     input_parameters params;
-    map<int, int> rootdist;
-    rootdist[3] = 5;
     params.use_uniform_eq_freq = false;
     params.poisson_lambda = 0.75;
-    root_equilibrium_distribution* dist = root_eq_dist_factory(params, nullptr, rootdist, 10);
-    CHECK(dynamic_cast<specified_distribution*>(dist) != NULL);
+    auto dist = create_root_distribution(params, nullptr, map<int, int>(), 10);
+    LONGS_EQUAL(1, dist.select_root_size(0));
+    LONGS_EQUAL(1, dist.select_root_size(1));
+    LONGS_EQUAL(1, dist.select_root_size(2));
+    LONGS_EQUAL(1, dist.select_root_size(3));
+    LONGS_EQUAL(1, dist.select_root_size(4));
+    LONGS_EQUAL(2, dist.select_root_size(5));
+    LONGS_EQUAL(2, dist.select_root_size(6));
+    LONGS_EQUAL(2, dist.select_root_size(7));
+    LONGS_EQUAL(2, dist.select_root_size(8));
 }
 
 

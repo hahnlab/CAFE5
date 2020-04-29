@@ -167,7 +167,7 @@ public:
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache) = 0;
 
-    virtual double infer_family_likelihoods(root_equilibrium_distribution *prior, const lambda *p_lambda) = 0;  // return vector of likelihoods
+    virtual double infer_family_likelihoods(const root_equilibrium_distribution& prior, const lambda *p_lambda) = 0;  // return vector of likelihoods
     
     virtual std::string name() const = 0;
     virtual void write_family_likelihoods(std::ostream& ost) = 0;

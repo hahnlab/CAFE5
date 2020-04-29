@@ -12,63 +12,42 @@ class root_distribution;
 
 class root_equilibrium_distribution
 {
+    std::vector<int> _vectorized_distribution;
 public:
-    /// Returns a value corresponding to a likelihood for the nth family 
-    /// Note that this does NOT correspond to the likelihood of a family being of this size
-    virtual float compute(size_t family_number) const = 0;
-    virtual ~root_equilibrium_distribution() {}
+    /// Create a distribution matching that in the map
+    root_equilibrium_distribution(const std::map<int, int>& root_distribution);
 
-    virtual int select_root_size(int family_number) const = 0;
-};
+    /// Create a uniform distribution up to the given size
+    root_equilibrium_distribution(size_t max_size);
 
-class uniform_distribution : public root_equilibrium_distribution
-{
-    int _max_root_family_size = 0;
-public:
-    uniform_distribution(int max_root_family_size) : _max_root_family_size(max_root_family_size)
+    /// Create a Poisson distribution with the given lambda
+    root_equilibrium_distribution(double poisson_lambda, int max_size);
+
+    /// Estimate a Poisson distribution from the given families
+    root_equilibrium_distribution(std::vector<gene_family>* p_gene_families, int num_values);
+
+    /// Move constructor
+    root_equilibrium_distribution(root_equilibrium_distribution&& other)
     {
+        *this = std::move(other);
     }
 
-    virtual float compute(size_t val) const override
+    /// return the prior probability of root size being n based on the given root distribution
+    float compute(size_t n) const;
+
+    int select_root_size(int family_number) const;
+
+    // this is the move assignment operator
+    root_equilibrium_distribution& operator=(root_equilibrium_distribution&& other)
     {
-        return 1.0 / _max_root_family_size;
+        _vectorized_distribution = std::move(other._vectorized_distribution);
+        return *this;
     }
-
-    int select_root_size(int family_number) const override;
-};
-
-class specified_distribution : public root_equilibrium_distribution
-{
-    std::vector<int> _vectorized_distribution; 
-public:
-    specified_distribution(const std::map<int, int>& root_distribution);
-
-    virtual float compute(size_t val) const override;   // creates uniform
-
-    int select_root_size(int family_number) const override;
 
     void resize(size_t new_size);
+
 };
 
-class poisson_distribution : public root_equilibrium_distribution
-{
-    std::vector<double> poisson;
-    double _poisson_lambda;
-public:
-    poisson_distribution(std::vector<gene_family> *p_gene_families, int num_values);
+root_equilibrium_distribution create_root_distribution(const input_parameters& my_input_parameters, std::vector<gene_family> *p_gene_families, const std::map<int, int>& root_distribution, int max_root_family_size);
 
-    poisson_distribution(double poisson_lambda, int num_values);
-
-    virtual float compute(size_t val) const override
-    {
-        if (val >= poisson.size())
-            return 0;
-
-        return poisson[val];
-    }
-
-    int select_root_size(int family_number) const override;
-};
-
-root_equilibrium_distribution* root_eq_dist_factory(const input_parameters& my_input_parameters, std::vector<gene_family> *p_gene_families, const std::map<int, int>& root_distribution, int max_root_family_size);
 #endif

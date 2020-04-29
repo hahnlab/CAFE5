@@ -46,7 +46,7 @@ void estimator::compute(std::vector<model *>& models, const input_parameters &my
     for (size_t i = 0; i < models.size(); ++i) {
         cout << endl << "Inferring processes for " << models[i]->name() << " model" << endl;
 
-        double result = models[i]->infer_family_likelihoods(data.p_prior.get(), models[i]->get_lambda());
+        double result = models[i]->infer_family_likelihoods(data.prior, models[i]->get_lambda());
         std::ofstream results_file(filename(models[i]->name() + "_results", my_input_parameters.output_prefix));
         models[i]->write_vital_statistics(results_file, result);
 
@@ -160,7 +160,7 @@ void estimator::execute(std::vector<model *>& models)
 
                 auto pvalues = compute_pvalues(data.p_tree, data.gene_families, p_model->get_lambda(), cache, 1000, data.max_family_size, data.max_root_family_size);
 
-                std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(data.gene_families, &cache, data.p_prior.get()));
+                std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(data.gene_families, &cache, &data.prior));
 
                 branch_probabilities probs;
 

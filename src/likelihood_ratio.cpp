@@ -101,7 +101,7 @@ namespace LikelihoodRatioTest
         auto lengths = data.p_tree->get_branch_lengths();
         auto longest_branch = *max_element(lengths.begin(), lengths.end());
 
-        auto scorer = new lambda_optimizer(data.p_lambda, p_model, data.p_prior.get(), longest_branch);
+        auto scorer = new lambda_optimizer(data.p_lambda, p_model, &data.prior, longest_branch);
 
         optimizer opt(scorer);
         opt.quiet = true;
