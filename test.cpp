@@ -2723,7 +2723,7 @@ TEST(Simulation, create_root_distribution__creates__specifed_distribution_if_giv
 }
 
 
-TEST(Simulation, root_eq_dist_factory__creates__specifed_distribution_if_given_distribution_and_poisson)
+TEST(Simulation, create_root_distribution__creates__specifed_distribution_if_given_distribution_and_poisson)
 {
     input_parameters params;
     params.use_uniform_eq_freq = false;
@@ -2740,6 +2740,14 @@ TEST(Simulation, root_eq_dist_factory__creates__specifed_distribution_if_given_d
     LONGS_EQUAL(2, dist.select_root_size(8));
 }
 
+TEST(Simulation, create_root_distribution__resizes_distribution_if_nsims_specified)
+{
+    input_parameters params;
+    params.nsims = 10;
+    auto dist = create_root_distribution(params, nullptr, map<int, int>(), 100);
+    LONGS_EQUAL(86, dist.select_root_size(9));
+    LONGS_EQUAL(0, dist.select_root_size(10));
+}
 
 TEST(Optimizer, fminsearch_sort_sorts_scores_and_moves_values)
 {

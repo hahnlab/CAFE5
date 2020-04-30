@@ -116,8 +116,6 @@ root_equilibrium_distribution create_root_distribution(const input_parameters& p
     if (!root_distribution.empty())
     {
         result = root_equilibrium_distribution(root_distribution);
-        if (params.nsims > 0)
-            result.resize(params.nsims);
     }
     else
     {
@@ -136,6 +134,9 @@ root_equilibrium_distribution create_root_distribution(const input_parameters& p
         }
 
     }
+
+    if (params.nsims > 0)
+        result.resize(params.nsims);
 
     return result;
 }
