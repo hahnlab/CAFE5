@@ -3,7 +3,6 @@
 #include <random>
 #include <algorithm>
 
-#include "easylogging++.h"
 
 #include "root_equilibrium_distribution.h"
 #include "poisson.h"
@@ -49,8 +48,8 @@ root_equilibrium_distribution::root_equilibrium_distribution(std::vector<gene_fa
     optimizer_parameters params;
     auto result = opt.optimize(params);
 
-    LOG(INFO) << "Empirical Prior Estimation Result : (" << result.num_iterations << " iterations)";
-    LOG(INFO) << "Poisson lambda: " << result.values[0] << " &  Score: " << result.score;
+    cout << "\nEmpirical Prior Estimation Result : (" << result.num_iterations << " iterations)" << endl;
+    cout << "Poisson lambda: " << result.values[0] << " &  Score: " << result.score << endl;
 
     double poisson_lambda = result.values[0];
 

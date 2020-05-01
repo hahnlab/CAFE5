@@ -9,8 +9,6 @@
 #include <chrono>
 #include <memory>
 
-#include "easylogging++.h"
-
 #include "optimizer.h"
 #include "optimizer_scorer.h"
 
@@ -437,7 +435,7 @@ public:
 
         fminsearch_min(pfm, &initial[0]);
 
-        LOG(INFO) << "*****Threshold achieved, move to Phase 2*****";
+        cout << "\n*****Threshold achieved, move to Phase 2*****\n\n";
         int phase1_iters = pfm->iters;
         pfm->rho *= 1.3;				// reflection
         pfm->chi *= 15;				// expansion
@@ -482,6 +480,7 @@ public:
             r.score = phase1_result->score;
             r.values = phase1_result->values;
             r.num_iterations = pfm->iters;
+            //        cout << "Threshold achieved, move to Phase 2";
 
         }
 
@@ -515,7 +514,7 @@ public:
 
         fminsearch_min(pfm, &initial[0]);
 
-        LOG(INFO) << "*****Threshold achieved, move to Phase 2*****";
+        cout << "\n*****Threshold achieved, move to Phase 2*****\n\n";
 
         pfm->rho /= 1.5;				// reflection
         pfm->chi /= 25;				// expansion
@@ -543,11 +542,8 @@ optimizer::result optimizer::optimize(const optimizer_parameters& params)
 
     if (!quiet)
     {
-        LOG(INFO) << "Optimizer strategy: " << strat->Description();
-        LOG(INFO) << "Iterations: " << params.neldermead_iterations;
-        LOG(INFO) << "Expansion: " << params.neldermead_expansion;
-        LOG(INFO) << "Reflection: " << params.neldermead_reflection;
-        LOG(INFO) << "Starting Search for Initial Parameter Values";
+        cout << "\nOptimizer strategy: " << strat->Description() << "\n" << endl;
+        cout << "Iterations: " << params.neldermead_iterations << "\nExpansion: " << params.neldermead_expansion << "\nReflection: " << params.neldermead_reflection <<"\n\nStarting Search for Initial Parameter Values\n"<< endl;
     }
 
     using clock = std::chrono::system_clock;
@@ -563,7 +559,7 @@ optimizer::result optimizer::optimize(const optimizer_parameters& params)
 
     if (!quiet)
     {
-        LOG(INFO) << r;
+        cout << r;
     }
     return r;
 }

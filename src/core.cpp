@@ -6,8 +6,6 @@
 #include <numeric>
 #include <iomanip>
 
-#include "easylogging++.h"
-
 #include "core.h"
 #include "user_data.h"
 #include "matrix_cache.h"
@@ -85,7 +83,7 @@ void model::initialize_lambda(clade *p_lambda_tree)
         p_lambda_tree->apply_prefix_order(fn);
         auto node_name_to_lambda_index = p_lambda_tree->get_lambda_index_map();
         p_lambda = new multiple_lambda(node_name_to_lambda_index, std::vector<double>(unique_lambdas.size()));
-        LOG(INFO) << "Searching for " << unique_lambdas.size() << " lambdas" << endl;
+        cout << "Searching for " << unique_lambdas.size() << " lambdas" << endl;
     }
     else
     {
@@ -152,17 +150,23 @@ void event_monitor::Event_InferenceAttempt_Started()
 
 void event_monitor::Event_Reconstruction_Started(std::string model)
 {
-    LOG(INFO) << "Starting reconstruction processes for " << model << " model";
+#ifndef SILENT
+    cout << "Starting reconstruction processes for " << model << " model" << endl;
+#endif
 }
 
 void event_monitor::Event_Reconstruction_Complete()
 {
-    LOG(INFO) << "Done!\n" ;
+#ifndef SILENT
+    cout << "Done!\n" << endl;
+#endif
 }
 
 void event_monitor::Event_InferenceAttempt_Complete(double final_likelihood)
 {
-    LOG(INFO) << "Score (-lnL): " << std::setw(15) << std::setprecision(14) << final_likelihood ;
+#ifndef SILENT
+    std::cout << "Score (-lnL): " << std::setw(15) << std::setprecision(14) << final_likelihood << std::endl;
+#endif
 }
 
 void event_monitor::summarize(std::ostream& ost) const

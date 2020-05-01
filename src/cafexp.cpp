@@ -12,10 +12,6 @@
 #include "root_equilibrium_distribution.h"
 #include "core.h"
 
-#include "easylogging++.h"
-
-INITIALIZE_EASYLOGGINGPP
-
 using namespace std;
 
 input_parameters read_arguments(int argc, char *const argv[])
@@ -30,10 +26,10 @@ input_parameters read_arguments(int argc, char *const argv[])
     int args; // getopt_long returns int or char
     int prev_arg;
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e::o:t:y:n:f:E:R:L:P:I:l:m:k:a:s::p::r:zb", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e::o:t:y:n:f:E:R:P:I:l:m:k:a:s::p::r:zb", longopts, NULL)) != -1) {
         // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && optarg && *optarg == '-') {
-            LOG(ERROR) << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
+            cout << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
             exit(EXIT_FAILURE);
             // args = ':';
             // --optind;
@@ -93,9 +89,6 @@ input_parameters read_arguments(int argc, char *const argv[])
             break;
         case 'I':
             my_input_parameters.optimizer_params.neldermead_iterations = atoi(optarg);
-            break;
-        case 'L':
-            my_input_parameters.log_config_file = optarg;
             break;
         case 'f':
             my_input_parameters.rootdist = optarg;
@@ -182,11 +175,6 @@ void show_help()
 int cafexp(int argc, char *const argv[]) {
     init_lgamma_cache();
 
-    el::Configurations defaultConf;
-    defaultConf.setToDefault();
-    defaultConf.set(el::Level::Global, el::ConfigurationType::Format, "%msg");
-    el::Loggers::reconfigureLogger("default", defaultConf);
-
     try {
         input_parameters user_input = read_arguments(argc, argv);
 
@@ -204,9 +192,9 @@ int cafexp(int argc, char *const argv[]) {
                 return !fam.exists_at_root(data.p_tree);
             });
 
-            int fmsize = data.gene_families.size();
+            cout << "\nFiltering families not present at the root from: " << data.gene_families.size();
             data.gene_families.erase(rem, data.gene_families.end());
-            LOG(INFO) << "Filtering families not present at the root from: " << fmsize << " to " << data.gene_families.size();
+            cout << " to ==> " << data.gene_families.size() << endl;
 
         }
 
@@ -225,7 +213,7 @@ int cafexp(int argc, char *const argv[]) {
         return 0;
     }
     catch (runtime_error& err) {
-        LOG(ERROR) << err.what() << endl;
+        cout << err.what() << endl;
         return EXIT_FAILURE;
     }
 } // end main

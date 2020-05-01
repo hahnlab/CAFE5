@@ -6,8 +6,6 @@
 #include <sstream>
 #include <iostream>
 
-#include "easylogging++.h"
-
 #include "io.h"
 #include "lambda.h"
 #include "clade.h"
@@ -119,11 +117,6 @@ void user_data::read_rootdist(string rootdist_file_path) {
 
 void user_data::read_datafiles(const input_parameters& my_input_parameters)
 {
-    if (!my_input_parameters.log_config_file.empty())
-    {
-        el::Configurations conf(my_input_parameters.log_config_file.c_str());
-        el::Loggers::reconfigureAllLoggers(conf);
-    }
     /* -t */
     if (!my_input_parameters.tree_file_path.empty()) {
         p_tree = read_input_tree(my_input_parameters); // populates p_tree (pointer to phylogenetic tree)

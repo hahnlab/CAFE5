@@ -28,7 +28,6 @@ public:
     std::string fixed_multiple_lambdas;
     std::string chisquare_compare;
     std::string rootdist;
-    std::string log_config_file;
     double fixed_lambda = 0.0;
     double fixed_alpha = -1.0;
     double poisson_lambda = 0.0;
