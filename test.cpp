@@ -1983,7 +1983,7 @@ TEST(Simulation, print_process_prints_in_order)
     sim.print_simulations(ost, true, my_trials);
 
     STRCMP_CONTAINS("DESC\tFID\tB\tA\t2", ost.str().c_str());
-    STRCMP_CONTAINS("L0.0414305\tsimfam0\t4\t2\t6", ost.str().c_str());
+    STRCMP_CONTAINS("L0\tsimfam0\t4\t2\t6", ost.str().c_str());
 
 }
 
@@ -2006,7 +2006,7 @@ TEST(Simulation, print_process_can_print_without_internal_nodes)
     simulator sim(data, params);
     sim.print_simulations(ost, false, my_trials);
     STRCMP_CONTAINS("DESC\tFID\tB\tA\n", ost.str().c_str());
-    STRCMP_CONTAINS("L0.0414305\tsimfam0\t4\t2\n", ost.str().c_str());
+    STRCMP_CONTAINS("L0\tsimfam0\t4\t2\n", ost.str().c_str());
 
 }
 

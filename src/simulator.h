@@ -11,7 +11,7 @@ struct simulated_family
     clademap<int> values;
     double lambda;
 
-    simulated_family()
+    simulated_family() : lambda(0)
     {
 
     }
