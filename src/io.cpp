@@ -38,6 +38,7 @@ struct option longopts[] = {
   { "log", optional_argument, NULL, 'g'},
   { "zero_root", no_argument, NULL, 'z' },
   { "lambda_per_family", no_argument, NULL, 'b' },
+  { "log_config", required_argument, NULL, 'L' },
   { "optimizer_expansion", optional_argument, NULL, 'E' },
   { "optimizer_reflection", optional_argument, NULL, 'R' },
   { "optimizer_iterations", optional_argument, NULL, 'I' },

@@ -3,6 +3,8 @@
 #include <fstream>
 #include <random>
 
+#include "easylogging++.h"
+
 #include "simulator.h"
 #include "user_data.h"
 #include "core.h"
@@ -66,8 +68,7 @@ void simulator::simulate_processes(model *p_model, std::vector<simulated_family>
             [](int acc, std::pair<int, int> p) { return (acc + p.second); }));
     }
 
-    if (!quiet)
-        cout << endl << "Simulating " << results.size() << " families for model " << p_model->name() << endl << endl;
+    LOG(INFO) << endl << "Simulating " << results.size() << " families for model " << p_model->name() << endl << endl;
 
     for (size_t i = 0; i < results.size(); i+= LAMBDA_PERTURBATION_STEP_SIZE)
     {
@@ -96,7 +97,7 @@ extern void write_average_multiplier(std::ostream& ost);
 /// \callgraph
 void simulator::simulate(std::vector<model *>& models, const input_parameters &my_input_parameters)
 {
-    cout << endl << "Simulating with " << models.size() << " model(s)" << endl; 
+    LOG(INFO) << "Simulating with " << models.size() << " model(s)";
 
 	if (data.p_tree == nullptr)
 		throw std::runtime_error("No tree specified for simulations");
@@ -117,14 +118,12 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
         string fname = filename("simulation", my_input_parameters.output_prefix);
         std::ofstream ofst2(fname);
         print_simulations(ofst2, false, results);
-        if (!quiet)
-            cout << "Simulated values written to " << fname << endl;
+        LOG(INFO) << "Simulated values written to " << fname << endl;
 
         string truth_fname = filename("simulation_truth", dir);
         std::ofstream ofst(truth_fname);
         print_simulations(ofst, true, results);
-        if (!quiet)
-            cout << "Simulated values (including internal nodes) written to " << truth_fname << endl;
+        LOG(INFO) << "Simulated values (including internal nodes) written to " << truth_fname << endl;
 
         if (my_input_parameters.fixed_lambda > 0)
         {
@@ -143,7 +142,7 @@ void simulator::print_simulations(std::ostream& ost, bool include_internal_nodes
 
     if (results.empty())
     {
-        cerr << "No simulations created" << endl;
+        LOG(ERROR) << "No simulations created" << endl;
         return;
     }
     ost << "DESC\tFID";

@@ -7,6 +7,8 @@
 #include <cmath>
 #include <memory>
 
+#include "easylogging++.h"
+
 #ifdef HAVE_VECTOR_EXP
 #include "mkl.h"
 #endif
@@ -404,9 +406,8 @@ double compute_tree_pvalue(const clade* p_tree, function<void(const clade*)> com
 //! Compute pvalues for each family based on the given lambda
 vector<double> compute_pvalues(const clade* p_tree, const std::vector<gene_family>& families, const lambda* p_lambda, const matrix_cache& cache, int number_of_simulations, int max_family_size, int max_root_family_size)
 {
-#ifndef SILENT
-    cout << "Computing pvalues..." << flush;
-#endif
+    LOG(INFO) << "Computing pvalues...";
+
     const int mx = max_family_size;
     const int mxr = max_root_family_size;
 
@@ -431,9 +432,8 @@ vector<double> compute_pvalues(const clade* p_tree, const std::vector<gene_famil
         });
 
 
-#ifndef SILENT
-    cout << "done!\n";
-#endif
+    LOG(INFO) << "done!\n";
+
     return result;
 }
 

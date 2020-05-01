@@ -758,4 +758,5 @@ ideas. Thanks to:
 
 -	Dan Vanderpool
 
+CAFE uses the EasyLogging logging framework. https://github.com/amrayn/easyloggingpp
 

@@ -8,6 +8,8 @@
 
 #include <string.h>
 
+#include "src/easylogging++.h"
+
 #include "src/io.h"
 #include "src/core.h"
 #include "src/gamma_core.h"
@@ -3108,5 +3110,11 @@ int main(int ac, char** av)
 {
     MemoryLeakWarningPlugin::turnOffNewDeleteOverloads();
     init_lgamma_cache();
+
+    el::Configurations defaultConf;
+    defaultConf.setToDefault();
+    defaultConf.set(el::Level::Global, el::ConfigurationType::Enabled, "false");
+    el::Loggers::reconfigureLogger("default", defaultConf);
+
     return CommandLineTestRunner::RunAllTests(ac, av);
 }
