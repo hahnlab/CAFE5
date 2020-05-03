@@ -2745,7 +2745,13 @@ TEST(Simulation, create_root_distribution__resizes_distribution_if_nsims_specifi
     input_parameters params;
     params.nsims = 10;
     auto dist = create_root_distribution(params, nullptr, map<int, int>(), 100);
+    /// GCC's implementation of shuffle changed so the numbers that are
+    /// returned are in a slightly different order, even with the same seed
+#if __GNUC__ >= 7
     LONGS_EQUAL(86, dist.select_root_size(9));
+#else
+LONGS_EQUAL(81, dist.select_root_size(9));
+#endif
     LONGS_EQUAL(0, dist.select_root_size(10));
 }
 
