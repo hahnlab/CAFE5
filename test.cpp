@@ -3119,10 +3119,10 @@ int main(int ac, char** av)
     MemoryLeakWarningPlugin::turnOffNewDeleteOverloads();
     init_lgamma_cache();
 
-   //el::Configurations defaultConf;
-    //defaultConf.setToDefault();
-    //defaultConf.set(el::Level::Global, el::ConfigurationType::Enabled, "false");
-    //el::Loggers::reconfigureLogger("default", defaultConf);
+    el::Configurations defaultConf;
+    defaultConf.setToDefault();
+    defaultConf.set(el::Level::Global, el::ConfigurationType::Enabled, "false");
+    el::Loggers::reconfigureLogger("default", defaultConf);
 
     return CommandLineTestRunner::RunAllTests(ac, av);
 }
