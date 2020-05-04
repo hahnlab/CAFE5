@@ -656,6 +656,30 @@ than models with fewer parameters, which may not be true if [CAFE5
 multiple runs, then one should reduce the number of parameters estimated
 and try again.
 
+Logging
+-------
+More verbose logging can be provided with an EasyLogging log config file.
+The file may look like this:
+
+	* GLOBAL:
+	   FORMAT               =  "%datetime %msg"
+	   FILENAME             =  "cafe.log"
+	   ENABLED              =  true
+	   TO_FILE              =  true
+	   TO_STANDARD_OUTPUT   =  true
+	   SUBSECOND_PRECISION  =  6
+	   PERFORMANCE_TRACKING =  true
+	   MAX_LOG_FILE_SIZE    =  2097152 ## 2MB - Comment starts with two hashes (##)
+	   LOG_FLUSH_THRESHOLD  =  100 ## Flush after every 100 logs
+	* DEBUG:
+	   FORMAT               = "%datetime{%d/%M} %func %msg"
+
+For more information, see https://github.com/amrayn/easyloggingpp#using-configuration-file
+
+Pass the config file to CAFE with the --log_config flag. For example,
+
+    cafexp -t examples/mammals_tree.txt -i filtered_cafe_input.txt --log_config log.config	   
+
 Technical
 =========
 
