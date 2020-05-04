@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <regex>
 
+#include "easylogging++.h"
+
 #include "clade.h"
 #include "gene_family.h"
 
@@ -113,7 +115,7 @@ double clade::find_branch_length(string some_taxon_name) {
   auto clade = find_descendant(some_taxon_name);
   if (clade == NULL || clade->is_root()) { return 0; } // guarding against root query
 
-  cout << "Found matching clade" << endl;
+  LOG(INFO) << "Found matching clade";
   return clade->_branch_length;
 }
 
@@ -148,7 +150,7 @@ bool clade::is_root() const {
    p_tree->apply_reverse_level_order(print_name)   
 */
 void print_clade_name(clade *clade) {
-  cout << clade->get_taxon_name() << " (length of subtending branch: " << clade->get_branch_length() << ")" << endl;
+  LOG(INFO) << clade->get_taxon_name() << " (length of subtending branch: " << clade->get_branch_length() << ")" << endl;
 }
 
 std::map<std::string, int> clade::get_lambda_index_map()

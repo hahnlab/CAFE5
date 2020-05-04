@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <iterator>
 
+#include "easylogging++.h"
+
 #include "execute.h"
 #include "core.h"
 #include "user_data.h"
@@ -44,7 +46,7 @@ void estimator::compute(std::vector<model *>& models, const input_parameters &my
 {
     std::vector<double> model_likelihoods(models.size());
     for (size_t i = 0; i < models.size(); ++i) {
-        cout << endl << "Inferring processes for " << models[i]->name() << " model" << endl;
+        LOG(INFO) << "Inferring processes for " << models[i]->name() << " model";
 
         double result = models[i]->infer_family_likelihoods(data.prior, models[i]->get_lambda());
         std::ofstream results_file(filename(models[i]->name() + "_results", my_input_parameters.output_prefix));
@@ -62,11 +64,11 @@ void estimator::compute(std::vector<model *>& models, const input_parameters &my
     auto longest_branch = *max_element(lengths.begin(), lengths.end());
     auto max_lambda = 1 / longest_branch;
 
-    cout << "Maximum possible lambda for this topology: " << max_lambda << endl;
+    LOG(INFO) << "Maximum possible lambda for this topology: " << max_lambda;
 
     if (model_likelihoods.size() == 2)
     {
-        cout << "PValue = " << (1.0 - chi2cdf(2 * (model_likelihoods[1] - model_likelihoods[0]), 1.0));
+        LOG(INFO) << "PValue = " << (1.0 - chi2cdf(2 * (model_likelihoods[1] - model_likelihoods[0]), 1.0));
     }
 }
 
@@ -108,7 +110,7 @@ void estimator::estimate_lambda_per_family(model *p_model, ostream& ost)
         [this, p_model](gene_family& fam)
     {
 #ifndef SILENT
-        cout << "Estimating for " << fam.id() << endl;
+            LOG(INFO) << "Estimating for " << fam.id() << endl;
 #endif
         vector<gene_family> v({ fam });
         vector<model *> models{ p_model };
@@ -216,6 +218,6 @@ void chisquare_compare::execute(std::vector<model *>&)
     );
 
     double degrees_of_freedom = chis[2];
-    cout << "PValue = " << 1.0 - chi2cdf(2 * (chis[1] - chis[0]), degrees_of_freedom) << std::endl;
+    LOG(INFO) << "PValue = " << 1.0 - chi2cdf(2 * (chis[1] - chis[0]), degrees_of_freedom);
 }
 

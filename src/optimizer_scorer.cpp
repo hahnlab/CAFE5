@@ -2,6 +2,8 @@
 #include <iostream>
 #include <random>
 
+#include "easylogging++.h"
+
 #include "optimizer_scorer.h"
 #include "clade.h"
 #include "lambda.h"
@@ -59,7 +61,7 @@ void lambda_optimizer::prepare_calculation(const double *values)
 
 void lambda_optimizer::report_precalculation()
 {
-    std::cout << "Lambda: " << *_p_lambda << std::endl;
+    LOG(INFO) << "Lambda: " << *_p_lambda;
 }
 
 void lambda_optimizer::finalize(double *results)
@@ -97,7 +99,7 @@ void lambda_epsilon_optimizer::prepare_calculation(const double *values)
 
 void lambda_epsilon_optimizer::report_precalculation()
 {
-    std::cout << "Calculating probability: epsilon=" << _p_error_model->get_epsilons().back()*2.0 << ", " << "lambda=" << *_p_lambda << std::endl;
+    LOG(INFO) << "Calculating probability: epsilon=" << _p_error_model->get_epsilons().back()*2.0 << ", " << "lambda=" << *_p_lambda;
 }
 
 void lambda_epsilon_optimizer::finalize(double *results)
@@ -129,7 +131,7 @@ void gamma_optimizer::prepare_calculation(const double * values)
 
 void gamma_optimizer::report_precalculation()
 {
-    std::cout << "Attempting alpha: " << _p_gamma_model->get_alpha() << std::endl;
+    LOG(INFO) << "Attempting alpha: " << _p_gamma_model->get_alpha();
 }
 
 void gamma_optimizer::finalize(double * result)
@@ -168,7 +170,7 @@ void gamma_lambda_optimizer::prepare_calculation(const double *values)
 
 void gamma_lambda_optimizer::report_precalculation()
 {
-    cout << "Attempting lambda: " << *_p_lambda << ", alpha: " << _gamma_optimizer.get_alpha() << std::endl;
+    LOG(INFO) << "Attempting lambda: " << *_p_lambda << ", alpha: " << _gamma_optimizer.get_alpha();
 }
 
 /// results consists of the desired number of lambdas and one alpha value
