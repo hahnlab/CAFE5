@@ -77,9 +77,8 @@ $(TEST_OBJECTS): $(TESTDIR)/%.o: $(SRCDIR)/%.cpp
 $(TESTDIR)/test.o: test.cpp
 	$(CC) $(DBG_CFLAGS) -c $< -o $@
 
-TESTLIBS=-lCppUTest -lCppUTestExt
 $(TESTDIR)/$(TEST_TARGET): $(TEST_OBJECTS) $(TESTDIR)/test.o
-	$(LINKER) $@ $(LFLAGS) $(TEST_OBJECTS) $(TESTDIR)/test.o @LIBS@ $(TESTLIBS)
+	$(LINKER) $@ $(LFLAGS) $(TEST_OBJECTS) $(TESTDIR)/test.o @LIBS@
 
 .PHONY: test
 test: $(TESTDIR)/$(TEST_TARGET)
