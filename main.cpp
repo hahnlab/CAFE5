@@ -1,4 +1,7 @@
 #include <random>
+#include "src/easylogging++.h"
+
+INITIALIZE_EASYLOGGINGPP
 
 std::random_device rd;
 std::mt19937 randomizer_engine(rd()); // seeding random number engine

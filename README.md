@@ -758,4 +758,6 @@ ideas. Thanks to:
 
 -	Dan Vanderpool
 
+CAFE uses the EasyLogging logging framework. https://github.com/amrayn/easyloggingpp
+CAFE uses the DocTest testing framework. https://github.com/onqtam/doctest
 
