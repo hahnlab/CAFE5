@@ -8,9 +8,14 @@
 
 #include <string.h>
 
+#define ELPP_NO_CHECK_MACROS
 #include "src/easylogging++.h"
 
 INITIALIZE_EASYLOGGINGPP
+
+#define DOCTEST_CONFIG_IMPLEMENT
+#define DOCTEST_CONFIG_IMPLEMENT
+#include "src/doctest.h"
 
 #include "src/io.h"
 #include "src/core.h"
@@ -28,12 +33,6 @@ INITIALIZE_EASYLOGGINGPP
 #include "src/optimizer.h"
 #include "src/error_model.h"
 #include "src/likelihood_ratio.h"
-
-#define CPPUTEST_MEM_LEAK_DETECTION_DISABLED
-
-// these need to be at the end to stop weird STL errors
-#include "CppUTest/TestHarness.h"
-#include "CppUTest/CommandLineTestRunner.h"
 
 std::mt19937 randomizer_engine(10); // seeding random number engine
 
@@ -88,17 +87,13 @@ public:
     }
 };
 
-
-TEST_GROUP(GeneFamilies)
+class Inference
 {
-};
-
-TEST_GROUP(Inference)
-{
+public:
     user_data _user_data;
-    single_lambda *_p_lambda;
+    single_lambda* _p_lambda;
 
-    void setup()
+    Inference()
     {
         _p_lambda = new single_lambda(0.05);
         _user_data.p_tree = parse_newick("(A:1,B:1);");
@@ -113,12 +108,19 @@ TEST_GROUP(Inference)
         randomizer_engine.seed(10);
     }
 
-    void teardown()
+    ~Inference()
     {
         delete _user_data.p_tree;
         delete _p_lambda;
     }
 };
+
+#if 0
+
+TEST_GROUP(GeneFamilies)
+{
+};
+
 
 TEST_GROUP(Simulation)
 {
@@ -175,208 +177,186 @@ TEST_GROUP(Options)
         }
     }
 };
-
+#endif
 input_parameters read_arguments(int argc, char *const argv[]);
 
-TEST(Options, input_short)
+struct option_test
 {
-    initialize({ "cafexp", "-ifile" });
+    char* values[100];
+    size_t argc;
 
-    auto actual = read_arguments(argc, values);
-    STRCMP_EQUAL("file", actual.input_file_path.c_str());
+    option_test(vector<string> arguments)
+    {
+        optind = 0;
+        argc = arguments.size();
+        for (size_t i = 0; i < arguments.size(); ++i)
+        {
+            values[i] = strdup(arguments[i].c_str());
+        }
+    }
+
+    ~option_test()
+    {
+        for (size_t i = 0; i < argc; ++i)
+        {
+            free(values[i]);
+        }
+    }
+};
+
+#define STRCMP_EQUAL(x, y) CHECK(strcmp(x,y) == 0)
+#define STRCMP_CONTAINS(x, y) CHECK(strstr(y,x) != nullptr)
+
+#if 1
+TEST_CASE("read_arguments translates short values ") {
+    option_test c({ "cafexp", "-ifile" });
+
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK(actual.input_file_path.compare("file") == 0);
 }
 
-TEST(Options, input_long)
-{
-    initialize({ "cafexp", "--infile", "file" });
+TEST_CASE("read_arguments translates long values ") {
+    option_test c({ "cafexp", "--infile", "file" });
 
-    auto actual = read_arguments(argc, values);
-    STRCMP_EQUAL("file", actual.input_file_path.c_str());
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK(actual.input_file_path.compare("file") == 0);
+}
+TEST_CASE("Options, input_short_space_separated")
+{
+    option_test c({ "cafexp", "-i", "file" });
+
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK(actual.input_file_path.compare("file") == 0);
+}
+TEST_CASE("Options, simulate_long")
+{
+    option_test c({ "cafexp", "--simulate=1000", "-l", "0.05" });
+
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK_EQ(1000, actual.nsims);
 }
 
-TEST(Options, input_short_space_separated)
+TEST_CASE("Options, simulate_short")
 {
-    initialize({ "cafexp", "-i", "file" });
+    option_test c({ "cafexp", "-s1000", "-l", "0.05" });
 
-    auto actual = read_arguments(argc, values);
-    STRCMP_EQUAL("file", actual.input_file_path.c_str());
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK_EQ(1000, actual.nsims);
 }
 
-TEST(Options, simulate_long)
+TEST_CASE("Options, pvalue_long")
 {
-    initialize({ "cafexp", "--simulate=1000", "-l", "0.05" });
+    option_test c({ "cafexp", "--pvalue=0.01" });
 
-    auto actual = read_arguments(argc, values);
-    CHECK_EQUAL(1000, actual.nsims);
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK_EQ(0.01, actual.pvalue);
 }
 
-TEST(Options, simulate_short)
+TEST_CASE("Options, pvalue_short")
 {
-    initialize({ "cafexp", "-s1000", "-l", "0.05"});
+    option_test c({ "cafexp", "-P0.01" });
 
-    auto actual = read_arguments(argc, values);
-    CHECK_EQUAL(1000, actual.nsims);
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK_EQ(0.01, actual.pvalue);
 }
 
-TEST(Options, pvalue_long)
+TEST_CASE("Options, optimizer_long")
 {
-    initialize({ "cafexp", "--pvalue=0.01" });
+    option_test c({ "cafexp", "--optimizer_expansion=0.05", "--optimizer_reflection=3.2", "--optimizer_iterations=5" });
 
-    auto actual = read_arguments(argc, values);
-    CHECK_EQUAL(0.01, actual.pvalue);
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK_EQ(0.05, actual.optimizer_params.neldermead_expansion);
+    CHECK_EQ(3.2, actual.optimizer_params.neldermead_reflection);
+    CHECK_EQ(5, actual.optimizer_params.neldermead_iterations);
 }
 
-TEST(Options, pvalue_short)
+TEST_CASE("Options, optimizer_short")
 {
-    initialize({ "cafexp", "-P0.01" });
+    option_test c({ "cafexp", "-E", "0.05", "-R", "3.2", "-I", "5" });
 
-    auto actual = read_arguments(argc, values);
-    CHECK_EQUAL(0.01, actual.pvalue);
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK_EQ(0.05, actual.optimizer_params.neldermead_expansion);
+    CHECK_EQ(3.2, actual.optimizer_params.neldermead_reflection);
+    CHECK_EQ(5, actual.optimizer_params.neldermead_iterations);
 }
 
-TEST(Options, optimizer_long)
+TEST_CASE("Options, errormodel_accepts_argument")
 {
-    initialize({ "cafexp", "--optimizer_expansion=0.05", "--optimizer_reflection=3.2", "--optimizer_iterations=5" });
+    option_test c({ "cafexp", "-eerror.txt" });
 
-    auto actual = read_arguments(argc, values);
-    CHECK_EQUAL(0.05, actual.optimizer_params.neldermead_expansion);
-    CHECK_EQUAL(3.2, actual.optimizer_params.neldermead_reflection);
-    CHECK_EQUAL(5, actual.optimizer_params.neldermead_iterations);
-}
-
-TEST(Options, optimizer_short)
-{
-    initialize({ "cafexp", "-E", "0.05", "-R", "3.2", "-I", "5" });
-
-    auto actual = read_arguments(argc, values);
-    CHECK_EQUAL(0.05, actual.optimizer_params.neldermead_expansion);
-    CHECK_EQUAL(3.2, actual.optimizer_params.neldermead_reflection);
-    CHECK_EQUAL(5, actual.optimizer_params.neldermead_iterations);
-}
-
-TEST(Options, errormodel_accepts_argument)
-{
-    initialize({ "cafexp", "-eerror.txt" });
-
-    auto actual = read_arguments(argc, values);
+    auto actual = read_arguments(c.argc, c.values);
     CHECK(actual.use_error_model);
     STRCMP_EQUAL("error.txt", actual.error_model_file_path.c_str());
 }
 
-TEST(Options, errormodel_accepts_no_argument)
+TEST_CASE("Options, errormodel_accepts_no_argument")
 {
-    initialize({ "cafexp", "-e" });
+    option_test c({ "cafexp", "-e" });
 
-    auto actual = read_arguments(argc, values);
+    auto actual = read_arguments(c.argc, c.values);
     CHECK(actual.use_error_model);
     CHECK(actual.error_model_file_path.empty());
 }
 
-TEST(Options, zero_root_familes)
+TEST_CASE("Options, zero_root_familes")
 {
     input_parameters by_default;
     CHECK(by_default.exclude_zero_root_families);
 
-    initialize({ "cafexp", "-z" });
+    option_test c({ "cafexp", "-z" });
 
-    auto actual = read_arguments(argc, values);
+    auto actual = read_arguments(c.argc, c.values);
     CHECK_FALSE(actual.exclude_zero_root_families);
 }
 
-TEST(Options, cannot_have_space_before_optional_parameter)
+TEST_CASE("Options: cannot_have_space_before_optional_parameter")
 {
-    try
-    {
-        initialize({ "cafexp", "-s", "1000" });
+    option_test c({ "cafexp", "-s", "1000" });
 
-        auto actual = read_arguments(argc, values);
-        CHECK(false);
-    }
-    catch (runtime_error& err)
-    {
-        STRCMP_EQUAL("Unrecognized parameter: '1000'", err.what());
-    }
+    CHECK_THROWS_WITH(read_arguments(c.argc, c.values), "Unrecognized parameter: '1000'");
 }
 
-TEST(Options, must_specify_lambda_and_input_file_for_estimator)
+TEST_CASE("Options: must_specify_lambda_and_input_file_for_estimator")
 {
-    try
-    {
-        input_parameters params;
-        params.fixed_lambda = 0.05;
-        params.check_input();
-        CHECK(false);
-    }
-    catch (runtime_error& err)
-    {
-        STRCMP_EQUAL("Options -l and -i must both be provided an argument.", err.what());
-    }
+    input_parameters params;
+    params.fixed_lambda = 0.05;
+    CHECK_THROWS_WITH(params.check_input(), "Options -l and -i must both be provided an argument.");
 }
 
-TEST(Options, must_specify_lambda_for_simulation)
+TEST_CASE("Options: must_specify_lambda_for_simulation")
 {
-    try
-    {
-        input_parameters params;
-        params.is_simulating = true;
-        params.check_input();
-        CHECK(false);
-    }
-    catch (runtime_error& err)
-    {
-        STRCMP_EQUAL("Cannot simulate without initial lambda values", err.what());
-    }
+    input_parameters params;
+    params.is_simulating = true;
+    CHECK_THROWS_WITH(params.check_input(), "Cannot simulate without initial lambda values");
 }
 
-TEST(Options, must_specify_alpha_for_gamma_simulation)
+TEST_CASE("Options: must_specify_alpha_for_gamma_simulation")
 {
-    try
-    {
-        input_parameters params;
-        params.is_simulating = true;
-        params.fixed_lambda = 0.05;
-        params.n_gamma_cats = 3;
-        params.check_input();
-        CHECK(false);
-    }
-    catch (runtime_error& err)
-    {
-        STRCMP_EQUAL("Cannot simulate gamma clusters without an alpha value", err.what());
-    }
+    input_parameters params;
+    params.is_simulating = true;
+    params.fixed_lambda = 0.05;
+    params.n_gamma_cats = 3;
+    CHECK_THROWS_WITH(params.check_input(), "Cannot simulate gamma clusters without an alpha value");
 }
 
-TEST(Options, must_specify_alpha_and_k_for_gamma_inference)
+TEST_CASE("Options: must_specify_alpha_and_k_for_gamma_inference")
 {
-    try
-    {
-        input_parameters params;
-        params.fixed_alpha = 0.7;
-        params.check_input();
-        CHECK(false);
-    }
-    catch (runtime_error& err)
-    {
-        STRCMP_EQUAL("Alpha specified with 1 gamma category.", err.what());
-    }
+    input_parameters params;
+    params.fixed_alpha = 0.7;
+    CHECK_THROWS_WITH(params.check_input(), "Alpha specified with 1 gamma category.");
 }
 
-TEST(Options, can_specify_alpha_without_k_for_gamma_simulation)
+TEST_CASE("Options: can_specify_alpha_without_k_for_gamma_simulation")
 {
-    try
-    {
-        input_parameters params;
-        params.fixed_alpha = 0.7;
-        params.fixed_lambda = 0.01;
-        params.is_simulating = true;
-        params.check_input();
-    }
-    catch (runtime_error& err)
-    {
-        FAIL("Exception thrown checking input")
-    }
+    input_parameters params;
+    params.fixed_alpha = 0.7;
+    params.fixed_lambda = 0.01;
+    params.is_simulating = true;
+    params.check_input();
+    CHECK(true);
 }
 
-TEST(Options, check_input_does_not_throw_when_simulating_with_multiple_lambdas)
+TEST_CASE("Options: check_input_does_not_throw_when_simulating_with_multiple_lambdas")
 {
     input_parameters params;
     params.is_simulating = true;
@@ -386,71 +366,48 @@ TEST(Options, check_input_does_not_throw_when_simulating_with_multiple_lambdas)
     CHECK(true);
 }
 
-TEST(Options, per_family_must_provide_families)
+TEST_CASE("Options: per_family_must_provide_families")
 {
-    try
-    {
-        input_parameters params;
-        params.lambda_per_family = true;
-        params.check_input();
-        CHECK(false);
-    }
-    catch (runtime_error& err)
-    {
-        STRCMP_EQUAL("No family file provided", err.what());
-    }
+    input_parameters params;
+    params.lambda_per_family = true;
+    CHECK_THROWS_WITH_AS(params.check_input(), "No family file provided", runtime_error);
 }
 
-TEST(Options, per_family_must_provide_tree)
+TEST_CASE("Options: per_family_must_provide_tree")
 {
-    try
-    {
-        input_parameters params;
-        params.lambda_per_family = true;
-        params.input_file_path = "/tmp/test";
-        params.check_input();
-        CHECK(false);
-    }
-    catch (runtime_error& err)
-    {
-        STRCMP_EQUAL("No tree file provided", err.what());
-    }
+    input_parameters params;
+    params.lambda_per_family = true;
+    params.input_file_path = "/tmp/test";
+    CHECK_THROWS_WITH_AS(params.check_input(), "No tree file provided", runtime_error);
 }
 
-TEST(Options, cannot_estimate_error_and_gamma_together)
+TEST_CASE("Options: cannot_estimate_error_and_gamma_together")
 {
     input_parameters params;
     params.n_gamma_cats = 3;
     params.use_error_model = true;
     params.error_model_file_path = "model.txt";
     params.check_input();
+    CHECK(true);
 
-    try
-    {
-        params.error_model_file_path.clear();
-        params.check_input();
-        CHECK(false);
-    }
-    catch (runtime_error& err)
-    {
-        STRCMP_EQUAL("Estimating an error model with a gamma distribution is not supported at this time", err.what());
-    }
+    params.error_model_file_path.clear();
+    CHECK_THROWS_WITH_AS(params.check_input(), "Estimating an error model with a gamma distribution is not supported at this time", runtime_error);
 
 }
 
-TEST(GeneFamilies, read_gene_families_reads_cafe_files)
+TEST_CASE("GeneFamilies: read_gene_families_reads_cafe_files")
 {
     std::string str = "Desc\tFamily ID\tA\tB\tC\tD\n\t (null)1\t5\t10\t2\t6\n\t (null)2\t5\t10\t2\t6\n\t (null)3\t5\t10\t2\t6\n\t (null)4\t5\t10\t2\t6";
     std::istringstream ist(str);
     std::vector<gene_family> families;
     read_gene_families(ist, NULL, families);
-    LONGS_EQUAL(5, families.at(0).get_species_size("A"));
-    LONGS_EQUAL(10, families.at(0).get_species_size("B"));
-    LONGS_EQUAL(2, families.at(0).get_species_size("C"));
-    LONGS_EQUAL(6, families.at(0).get_species_size("D"));
+    CHECK_EQ(5, families.at(0).get_species_size("A"));
+    CHECK_EQ(10, families.at(0).get_species_size("B"));
+    CHECK_EQ(2, families.at(0).get_species_size("C"));
+    CHECK_EQ(6, families.at(0).get_species_size("D"));
 }
 
-TEST(GeneFamilies, init_from_clademap)
+TEST_CASE("GeneFamilies: init_from_clademap")
 {
     clade* p_tree = parse_newick("((A:1,B:1):1,(C:1,D:1):1);");
     clademap<int> values;
@@ -460,79 +417,70 @@ TEST(GeneFamilies, init_from_clademap)
     values[p_tree->find_descendant("D")] = 11;
     gene_family gf;
     gf.init_from_clademap(values);
-    LONGS_EQUAL(3, gf.get_species_size("A"));
+    CHECK_EQ(3, gf.get_species_size("A"));
 }
 
-TEST(GeneFamilies, read_gene_families_reads_simulation_files)
+TEST_CASE("GeneFamilies: read_gene_families_reads_simulation_files")
 {
     std::string str = "#A\n#B\n#AB\n#CD\n#C\n#ABCD\n#D\n35\t36\t35\t35\t36\t34\t34\t1\n98\t96\t97\t98\t98\t98\t98\t1\n";
     std::istringstream ist(str);
 
-    clade *p_tree = parse_newick("((A:1,B:1):1,(C:1,D:1):1);");
+    clade* p_tree = parse_newick("((A:1,B:1):1,(C:1,D:1):1);");
 
     std::vector<gene_family> families;
     read_gene_families(ist, p_tree, families);
-    LONGS_EQUAL(35, families.at(0).get_species_size("A"));
-    LONGS_EQUAL(36, families.at(0).get_species_size("B"));
-    LONGS_EQUAL(36, families.at(0).get_species_size("C"));
-    LONGS_EQUAL(34, families.at(0).get_species_size("D"));
+    CHECK_EQ(35, families.at(0).get_species_size("A"));
+    CHECK_EQ(36, families.at(0).get_species_size("B"));
+    CHECK_EQ(36, families.at(0).get_species_size("C"));
+    CHECK_EQ(34, families.at(0).get_species_size("D"));
     delete p_tree;
 }
 
-TEST(GeneFamilies, read_gene_families_throws_if_no_families_found)
+TEST_CASE("GeneFamilies: read_gene_families_throws_if_no_families_found")
 {
     std::string empty;
     std::istringstream ist(empty);
 
     unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
     std::vector<gene_family> families;
-    try
-    {
-        read_gene_families(ist, p_tree.get(), families);
-        CHECK(false);
-    }
-    catch (runtime_error& err)
-    {
-        STRCMP_EQUAL("No families found", err.what());
-    }
-
+    CHECK_THROWS_WITH_AS(read_gene_families(ist, p_tree.get(), families), "No families found", runtime_error);
 }
 
-TEST(GeneFamilies, model_set_families)
+TEST_CASE("GeneFamilies: model_set_families")
 {
     mock_model m;
 
     vector<gene_family> fams;
     m.set_families(&fams);
-    LONGS_EQUAL(0, m.get_gene_family_count());
+    CHECK_EQ(0, m.get_gene_family_count());
 
     fams.resize(5);
-    LONGS_EQUAL(5, m.get_gene_family_count());
+    CHECK_EQ(5, m.get_gene_family_count());
 }
 
-TEST(GeneFamilies, species_size_is_case_insensitive)
+TEST_CASE("GeneFamilies: species_size_is_case_insensitive")
 {
     gene_family gf;
     gf.set_species_size("Human", 5);
-    LONGS_EQUAL(5, gf.get_species_size("human"));
-    LONGS_EQUAL(5, gf.get_species_size("HUMAN"));
-    LONGS_EQUAL(5, gf.get_species_size("hUmAn"));
+    CHECK_EQ(5, gf.get_species_size("human"));
+    CHECK_EQ(5, gf.get_species_size("HUMAN"));
+    CHECK_EQ(5, gf.get_species_size("hUmAn"));
 }
 
-TEST(GeneFamilies, species_size_differential)
+TEST_CASE("GeneFamilies: species_size_differential")
 {
     gene_family gf;
     gf.set_species_size("Cat", 5);
     gf.set_species_size("Horse", 3);
     gf.set_species_size("Cow", 1);
 
-    LONGS_EQUAL(4, gf.species_size_differential());
+    CHECK_EQ(4, gf.species_size_differential());
 
     gf.set_species_size("Chicken", 12);
-    LONGS_EQUAL(11, gf.species_size_differential());
+    CHECK_EQ(11, gf.species_size_differential());
 }
 
-TEST(Inference, infer_processes)
+TEST_CASE_FIXTURE(Inference, "infer_processes")
 {
     vector<gene_family> families;
     gene_family fam;
@@ -558,32 +506,33 @@ TEST(Inference, infer_processes)
 
     double multi = core.infer_family_likelihoods(_user_data.prior, &lambda);
 
-    DOUBLES_EQUAL(46.56632, multi, 0.001);
+    CHECK_EQ(doctest::Approx(46.56632), multi);
 }
 
-TEST(Inference, root_equilibrium_distribution__with_no_rootdist_is_uniform)
+TEST_CASE("Inference: root_equilibrium_distribution__with_no_rootdist_is_uniform")
 {
     root_equilibrium_distribution ef(10);
-    DOUBLES_EQUAL(.1, ef.compute(5), 0.0001);
+    CHECK_EQ(doctest::Approx(.1), ef.compute(5));
 }
 
-TEST(Inference, root_equilibrium_distribution__with_rootdist_uses_rootdist)
+TEST_CASE_FIXTURE(Inference, "root_equilibrium_distribution__with_rootdist_uses_rootdist")
 {
     _user_data.rootdist[1] = 3;
     _user_data.rootdist[2] = 5;
 
     root_equilibrium_distribution ef(_user_data.rootdist);
 
-    DOUBLES_EQUAL(0.375, ef.compute(1), 0.0001);
+    CHECK_EQ(0.375, ef.compute(1));
 }
 
-TEST(Inference, gamma_set_alpha)
+TEST_CASE("Inference: gamma_set_alpha")
 {
     gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL);
     model.set_alpha(0.5);
+    CHECK(true);
 }
 
-TEST(Inference, gamma_adjust_family_gamma_membership)
+TEST_CASE( "Inference: gamma_adjust_family_gamma_membership")
 {
     std::string str = "Desc\tFamily ID\tA\tB\tC\tD\n\t (null)1\t5\t10\t2\t6\n\t (null)2\t5\t10\t2\t6\n\t (null)3\t5\t10\t2\t6\n\t (null)4\t5\t10\t2\t6";
     std::istringstream ist(str);
@@ -591,18 +540,20 @@ TEST(Inference, gamma_adjust_family_gamma_membership)
     read_gene_families(ist, NULL, families);
 
     gamma_model model(NULL, NULL, NULL, 0, 5, 0, 0, NULL);
+    CHECK(true);
 }
 
-TEST(Inference, gamma_model_infers_processes_without_crashing)
+TEST_CASE_FIXTURE(Inference, "gamma_model_infers_processes_without_crashing")
 {
     gamma_model core(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 148, 122, 1, 0, NULL);
 
     // TODO: make this return a non-infinite value and add a check for it
     core.infer_family_likelihoods(_user_data.prior, _user_data.p_lambda);
-    
+    CHECK(true);
+
 }
 
-TEST(Inference, stash_stream)
+TEST_CASE("Inference: stash_stream")
 {
     family_info_stash stash;
     stash.family_id = "F01";
@@ -616,19 +567,34 @@ TEST(Inference, stash_stream)
 
 }
 
-TEST(Probability, probability_of_some_values)
+TEST_CASE("Probability: probability_of_some_values")
 {
     matrix_cache calc(0);
     double lambda = 0.05;
     double branch_length = 5;
-    DOUBLES_EQUAL(0.0152237, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 5, 9), 0.00001);
+    CHECK_EQ(doctest::Approx(0.0152237).scale(10000), calc.get_from_parent_fam_size_to_c(lambda, branch_length, 5, 9));
 
-    DOUBLES_EQUAL(0.17573, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 9), 0.00001);
+    CHECK_EQ(doctest::Approx(0.17573).scale(10000), calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 9));
 
-    DOUBLES_EQUAL(0.182728, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 10), 0.00001);
+    CHECK_EQ(doctest::Approx(0.182728).scale(10000), calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 10));
 
     branch_length = 1;
-    DOUBLES_EQUAL(0.465565, calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 10), 0.00001);
+    CHECK_EQ(doctest::Approx(0.465565).scale(10000), calc.get_from_parent_fam_size_to_c(lambda, branch_length, 10, 10));
+}
+
+TEST_CASE("Probability:matrices_take_fractional_branch_lengths_into_account")
+{
+    matrix_cache calc(141);
+    single_lambda lambda(0.006335);
+    std::set<double> branch_lengths{ 68, 68.7105 };
+    calc.precalculate_matrices(get_lambda_values(&lambda), branch_lengths);
+    CHECK_EQ(doctest::Approx(0.194661).epsilon(0.0001), calc.get_matrix(68.7105, 0.006335)->get(5, 5)); // a value 
+    CHECK_EQ(doctest::Approx(0.195791).epsilon(0.0001), calc.get_matrix(68, 0.006335)->get(5, 5));
+}
+
+TEST_CASE("Probability: the_probability_of_going_from_parent_fam_size_to_c")
+{
+    CHECK_EQ(doctest::Approx(0.194661).epsilon(.00001), the_probability_of_going_from_parent_fam_size_to_c(.006335, 68.7105, 5, 5));
 }
 
 bool operator==(const matrix& m1, const matrix& m2)
@@ -639,29 +605,15 @@ bool operator==(const matrix& m1, const matrix& m2)
     for (int i = 0; i < m1.size(); ++i)
     {
         for (int j = 0; j < m1.size(); ++j)
-            if (abs(m1.get(i,j) - m2.get(i,j)) > 0.00001)
+            if (abs(m1.get(i, j) - m2.get(i, j)) > 0.00001)
                 return false;
     }
 
     return true;
 }
 
-TEST(Probability, matrices_take_fractional_branch_lengths_into_account)
-{
-    matrix_cache calc(141);
-    single_lambda lambda(0.006335);
-    std::set<double> branch_lengths{ 68, 68.7105 };
-    calc.precalculate_matrices(get_lambda_values(&lambda), branch_lengths);
-    DOUBLES_EQUAL(0.194661, calc.get_matrix(68.7105, 0.006335)->get(5,5), 0.00001); // a value 
-    DOUBLES_EQUAL(0.195791, calc.get_matrix(68, 0.006335)->get(5, 5), 0.00001);
-}
 
-TEST(Probability, the_probability_of_going_from_parent_fam_size_to_c)
-{
-    DOUBLES_EQUAL(0.194661, the_probability_of_going_from_parent_fam_size_to_c(.006335, 68.7105, 5, 5), 0.00001);
-}
-
-TEST(Probability, probability_of_matrix)
+TEST_CASE("Probability: probability_of_matrix")
 {
     matrix_cache calc(5);
     single_lambda lambda(0.05);
@@ -685,7 +637,7 @@ TEST(Probability, probability_of_matrix)
     CHECK(*actual == expected);
 }
 
-TEST(Probability, get_random_probabilities)
+TEST_CASE("Probability: get_random_probabilities")
 {
     unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
 
@@ -693,11 +645,11 @@ TEST(Probability, get_random_probabilities)
     matrix_cache cache(15);
     cache.precalculate_matrices(vector<double>{0.05}, set<double>{1});
     auto probs = get_random_probabilities(p_tree.get(), 10, 3, 12, 8, &lam, cache, NULL);
-    LONGS_EQUAL(10, probs.size());
-    DOUBLES_EQUAL(0.001905924, probs[0], 0.0001);
+    CHECK_EQ(10, probs.size());
+    CHECK_EQ(doctest::Approx(0.001905924).scale(10000), probs[0]);
 }
 
-TEST(Inference, base_optimizer_guesses_lambda_only)
+TEST_CASE_FIXTURE(Inference, "base_optimizer_guesses_lambda_only")
 {
     _user_data.p_lambda = NULL;
 
@@ -705,12 +657,12 @@ TEST(Inference, base_optimizer_guesses_lambda_only)
 
     unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(_user_data));
     auto guesses = opt->initial_guesses();
-    LONGS_EQUAL(1, guesses.size());
-    DOUBLES_EQUAL(0.2498383, guesses[0], 0.0001);
+    CHECK_EQ(1, guesses.size());
+    CHECK_EQ(doctest::Approx(0.2498383).epsilon(0.00001), guesses[0]);
     delete model.get_lambda();
 }
 
-TEST(Inference, base_optimizer_guesses_lambda_and_unique_epsilons)
+TEST_CASE_FIXTURE(Inference, "base_optimizer_guesses_lambda_and_unique_epsilons")
 {
     error_model err;
     err.set_probabilities(0, { .0, .7, .3 });
@@ -724,18 +676,18 @@ TEST(Inference, base_optimizer_guesses_lambda_and_unique_epsilons)
     unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(_user_data));
 
     CHECK(opt);
-    CHECK(dynamic_cast<lambda_epsilon_optimizer*>(opt.get()) != NULL);
+    CHECK(dynamic_cast<lambda_epsilon_optimizer*>(opt.get()) != nullptr);
     auto guesses = opt->initial_guesses();
-    LONGS_EQUAL(3, guesses.size());
-    DOUBLES_EQUAL(0.2498383, guesses[0], 0.0001);
-    DOUBLES_EQUAL(0.3, guesses[1], 0.0001);
-    DOUBLES_EQUAL(0.4, guesses[2], 0.0001);
+    CHECK_EQ(3, guesses.size());
+    CHECK_EQ(doctest::Approx(0.2498383).epsilon(0.00001), guesses[0]);
+    CHECK_EQ(0.3, guesses[1]);
+    CHECK_EQ(0.4, guesses[2]);
 
     delete model.get_lambda();
 }
 
 
-TEST(Inference, gamma_model_creates__gamma_lambda_optimizer_if_nothing_provided)
+TEST_CASE_FIXTURE(Inference, "gamma_model_creates__gamma_lambda_optimizer_if_nothing_provided")
 {
     unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
 
@@ -744,12 +696,12 @@ TEST(Inference, gamma_model_creates__gamma_lambda_optimizer_if_nothing_provided)
 
     unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
     CHECK(opt);
-    CHECK(dynamic_cast<gamma_lambda_optimizer *>(opt.get()));
+    CHECK(dynamic_cast<gamma_lambda_optimizer*>(opt.get()));
 
     delete model.get_lambda();
 }
 
-TEST(Inference, gamma_model__creates__lambda_optimizer__if_alpha_provided)
+TEST_CASE("Inference: gamma_model__creates__lambda_optimizer__if_alpha_provided")
 {
     unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
 
@@ -760,11 +712,11 @@ TEST(Inference, gamma_model__creates__lambda_optimizer__if_alpha_provided)
     unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
 
     CHECK(opt);
-    CHECK(dynamic_cast<lambda_optimizer *>(opt.get()));
-   delete model.get_lambda();
+    CHECK(dynamic_cast<lambda_optimizer*>(opt.get()));
+    delete model.get_lambda();
 }
 
-TEST(Inference, gamma_model__creates__gamma_optimizer__if_lambda_provided)
+TEST_CASE("Inference: gamma_model__creates__gamma_optimizer__if_lambda_provided")
 {
     unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
 
@@ -778,50 +730,51 @@ TEST(Inference, gamma_model__creates__gamma_optimizer__if_lambda_provided)
     unique_ptr<inference_optimizer_scorer> opt(model.get_lambda_optimizer(data));
 
     CHECK(opt);
-    CHECK(dynamic_cast<gamma_optimizer *>(opt.get()));
+    CHECK(dynamic_cast<gamma_optimizer*>(opt.get()));
 
     delete model.get_lambda();
 }
 
-TEST(Inference, gamma_model_creates_nothing_if_lambda_and_alpha_provided)
+TEST_CASE("Inference: gamma_model_creates_nothing_if_lambda_and_alpha_provided")
 {
     unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
 
     gamma_model model(NULL, p_tree.get(), NULL, 0, 5, 4, .25, NULL);
 
     user_data data;
-    
+
     single_lambda sl(0.05);
     data.p_lambda = &sl;
 
     CHECK(model.get_lambda_optimizer(data) == nullptr);
 }
 
-TEST(Inference, gamma_lambda_optimizer__provides_two_guesses)
+TEST_CASE("Inference: gamma_lambda_optimizer__provides_two_guesses")
 {
     single_lambda sl(0.05);
     gamma_model model(NULL, NULL, NULL, 0, 5, 4, .25, NULL);
     gamma_lambda_optimizer glo(&sl, &model, NULL, 5);
     auto guesses = glo.initial_guesses();
-    LONGS_EQUAL(2, guesses.size());
+    CHECK_EQ(2, guesses.size());
 
     double lambda = guesses[0];
-    CHECK(lambda > 0 && lambda < 1);
+    CHECK_GT(lambda, 0);
+    CHECK_LT(lambda, 1);
 
     double alpha = guesses[1];
-    CHECK(alpha > 0 && alpha < 10);
+    CHECK_GT(alpha, 0);
+    CHECK_LT(alpha, 10);
 }
 
-TEST(Inference, gamma_optimizer__creates_single_initial_guess)
+TEST_CASE("Inference: gamma_optimizer__creates_single_initial_guess")
 {
     gamma_model m(NULL, NULL, NULL, 0, 0, 0, 0, NULL);
     gamma_optimizer optimizer(&m, NULL);
     auto initial = optimizer.initial_guesses();
-    LONGS_EQUAL(1, initial.size());
+    CHECK_EQ(1, initial.size());
 }
 
-
-TEST(Inference, base_model_reconstruction)
+TEST_CASE_FIXTURE(Inference, "base_model_reconstruction")
 {
     unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1"));
     single_lambda sl(0.05);
@@ -836,13 +789,13 @@ TEST(Inference, base_model_reconstruction)
     calc.precalculate_matrices(get_lambda_values(&sl), set<double>({ 1 }));
     root_equilibrium_distribution dist(_user_data.max_root_family_size);
 
-    std::unique_ptr<base_model_reconstruction> rec(dynamic_cast<base_model_reconstruction *>(model.reconstruct_ancestral_states(families, &calc, &dist)));
+    std::unique_ptr<base_model_reconstruction> rec(dynamic_cast<base_model_reconstruction*>(model.reconstruct_ancestral_states(families, &calc, &dist)));
 
-    LONGS_EQUAL(1, rec->_reconstructions.size());
+    CHECK_EQ(1, rec->_reconstructions.size());
 
 }
 
-TEST(Inference, branch_length_finder)
+TEST_CASE("Inference: branch_length_finder")
 {
     unique_ptr<clade> p_tree(parse_newick("((A:1,B:3):7,(C:11,D:17):23);"));
     auto actual = p_tree->get_branch_lengths();
@@ -850,7 +803,7 @@ TEST(Inference, branch_length_finder)
     CHECK(actual == expected);
 }
 
-TEST(Inference, increase_decrease)
+TEST_CASE("Inference: increase_decrease")
 {
     base_model_reconstruction bmr;
     gene_family gf;
@@ -868,27 +821,28 @@ TEST(Inference, increase_decrease)
     bmr._reconstructions["myid"][ab] = 3;
     bmr._reconstructions["myid"][abcd] = 3;
 
-    LONGS_EQUAL(1, bmr.get_difference_from_parent(&gf, a));
-    LONGS_EQUAL(-1, bmr.get_difference_from_parent(&gf, b));
-    LONGS_EQUAL(0, bmr.get_difference_from_parent(&gf, ab));
+    CHECK_EQ(1, bmr.get_difference_from_parent(&gf, a));
+    CHECK_EQ(-1, bmr.get_difference_from_parent(&gf, b));
+    CHECK_EQ(0, bmr.get_difference_from_parent(&gf, ab));
 }
 
-TEST(Inference, precalculate_matrices_calculates_all_lambdas_all_branchlengths)
+TEST_CASE( "Inference: precalculate_matrices_calculates_all_lambdas_all_branchlengths")
 {
     matrix_cache calc(5);
     std::map<std::string, int> m;
     multiple_lambda lambda(m, vector<double>({ .1, .2, .3, .4 }));
     calc.precalculate_matrices(get_lambda_values(&lambda), set<double>({ 1,2,3 }));
-    LONGS_EQUAL(12, calc.get_cache_size());
+    CHECK_EQ(12, calc.get_cache_size());
 }
 
-TEST_GROUP(Reconstruction)
+class Reconstruction
 {
+public:
     gene_family fam;
     unique_ptr<clade> p_tree;
     cladevector order;
 
-    void setup()
+    Reconstruction()
     {
         p_tree.reset(parse_newick("((A:1,B:3):7,(C:11,D:17):23);"));
 
@@ -900,36 +854,36 @@ TEST_GROUP(Reconstruction)
 
         vector<string> nodes{ "A", "B", "C", "D", "AB", "CD", "ABCD" };
         order.resize(nodes.size());
-        const clade *t = p_tree.get();
+        const clade* t = p_tree.get();
         transform(nodes.begin(), nodes.end(), order.begin(), [t](string s) { return t->find_descendant(s); });
 
     }
 };
 
-TEST(Reconstruction, reconstruct_leaf_node)
+TEST_CASE_FIXTURE(Reconstruction, "reconstruct_leaf_node")
 {
-  single_lambda lambda(0.1);
-  fam.set_species_size("Mouse", 3);
+    single_lambda lambda(0.1);
+    fam.set_species_size("Mouse", 3);
 
-  clade leaf("Mouse", 7);
+    clade leaf("Mouse", 7);
 
-  matrix_cache calc(8);
-  calc.precalculate_matrices({ .1 }, set<double>({ 7 }));
-  clademap<std::vector<int>> all_node_Cs;
-  clademap<std::vector<double>> all_node_Ls;
-  reconstruct_leaf_node(&leaf, &lambda, all_node_Cs, all_node_Ls, 7, &fam, &calc);
+    matrix_cache calc(8);
+    calc.precalculate_matrices({ .1 }, set<double>({ 7 }));
+    clademap<std::vector<int>> all_node_Cs;
+    clademap<std::vector<double>> all_node_Ls;
+    reconstruct_leaf_node(&leaf, &lambda, all_node_Cs, all_node_Ls, 7, &fam, &calc);
 
-  // L holds the probability of the leaf moving from size 3 to size n
-  auto L = all_node_Ls[&leaf];
+    // L holds the probability of the leaf moving from size 3 to size n
+    auto L = all_node_Ls[&leaf];
 
-  LONGS_EQUAL(8, L.size());
-  DOUBLES_EQUAL(0.0, L[0], 0.0001);
-  DOUBLES_EQUAL(0.0586679, L[1], 0.0001);
-  DOUBLES_EQUAL(0.146916, L[2], 0.0001);
-  DOUBLES_EQUAL(0.193072, L[3], 0.0001);
+    CHECK_EQ(8, L.size());
+    CHECK_EQ(0.0, L[0]);
+    CHECK_EQ(doctest::Approx(0.0586679), L[1]);
+    CHECK_EQ(doctest::Approx(0.146916), L[2]);
+    CHECK_EQ(doctest::Approx(0.193072), L[3]);
 }
 
-TEST(Reconstruction, print_reconstructed_states__prints_star_for_significant_values)
+TEST_CASE_FIXTURE(Reconstruction, "print_reconstructed_states__prints_star_for_significant_values")
 {
     gene_family gf;
     gf.set_id("Family5");
@@ -954,7 +908,7 @@ TEST(Reconstruction, print_reconstructed_states__prints_star_for_significant_val
     STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", insig.str().c_str());
 }
 
-TEST(Reconstruction, gamma_model_reconstruction__print_reconstructed_states__prints_value_for_each_category_and_a_summation)
+TEST_CASE_FIXTURE(Reconstruction, "gamma_model_reconstruction__print_reconstructed_states__prints_value_for_each_category_and_a_summation")
 {
     gamma_model_reconstruction gmr(vector<double>({ 1.0 }));
 
@@ -974,7 +928,7 @@ TEST(Reconstruction, gamma_model_reconstruction__print_reconstructed_states__pri
     STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", ost.str().c_str());
 }
 
-TEST(Reconstruction, gamma_model_reconstruction__print_additional_data__prints_likelihoods)
+TEST_CASE_FIXTURE(Reconstruction, "gamma_model_reconstruction__print_additional_data__prints_likelihoods")
 {
     gamma_model_reconstruction gmr(vector<double>({ 0.3, 0.9, 1.4, 2.0 }));
     gmr._reconstructions["Family5"]._category_likelihoods = { 0.01, 0.03, 0.09, 0.07 };
@@ -984,7 +938,7 @@ TEST(Reconstruction, gamma_model_reconstruction__print_additional_data__prints_l
     STRCMP_CONTAINS("Family5\t0.01\t0.03\0.09\t0.07", ost.str().c_str());
 }
 
-TEST(Reconstruction, gamma_model_reconstruction__prints_lambda_multipiers)
+TEST_CASE_FIXTURE(Reconstruction, "gamma_model_reconstruction__prints_lambda_multipiers")
 {
     vector<double> multipliers{ 0.13, 1.4 };
     gamma_model_reconstruction gmr(multipliers);
@@ -1010,7 +964,7 @@ TEST(Reconstruction, gamma_model_reconstruction__prints_lambda_multipiers)
     STRCMP_CONTAINS("END;", ost.str().c_str());
 }
 
-TEST(Reconstruction, base_model_reconstruction__print_reconstructed_states)
+TEST_CASE_FIXTURE(Reconstruction, "base_model_reconstruction__print_reconstructed_states")
 {
     base_model_reconstruction bmr;
     auto& values = bmr._reconstructions["Family5"];
@@ -1030,7 +984,7 @@ TEST(Reconstruction, base_model_reconstruction__print_reconstructed_states)
     STRCMP_CONTAINS("END;", ost.str().c_str());
 }
 
-TEST(Reconstruction, reconstruction_process_internal_node)
+TEST_CASE_FIXTURE(Reconstruction, "reconstruction_process_internal_node")
 {
     single_lambda s_lambda(0.1);
     fam.set_species_size("A", 3);
@@ -1050,14 +1004,14 @@ TEST(Reconstruction, reconstruction_process_internal_node)
     auto L = all_node_Ls[internal_node];
 
     // L holds the probability of the node moving from size 3 to size n
-    LONGS_EQUAL(25, L.size());
-    DOUBLES_EQUAL(0.0, L[0], 0.0001);
-    DOUBLES_EQUAL(0.00101688, L[1], 0.0001);
-    DOUBLES_EQUAL(0.00254648, L[2], 0.0001);
-    DOUBLES_EQUAL(0.0033465, L[3], 0.0001);
+    CHECK_EQ(25, L.size());
+    CHECK_EQ(0.0, L[0]);
+    CHECK_EQ(doctest::Approx(0.00101688), L[1]);
+    CHECK_EQ(doctest::Approx(0.00254648), L[2]);
+    CHECK_EQ(doctest::Approx(0.0033465), L[3]);
 }
 
-TEST(Reconstruction, reconstruct_gene_family)
+TEST_CASE_FIXTURE(Reconstruction, "reconstruct_gene_family")
 {
     gene_family fam;
     fam.set_species_size("A", 3);
@@ -1078,10 +1032,10 @@ TEST(Reconstruction, reconstruct_gene_family)
     clademap<int> result;
     reconstruct_gene_family(&lambda, p_tree.get(), 10, ud.max_root_family_size, &fam, &cache, &dist, result);
     auto AB = p_tree->find_descendant("AB");
-    LONGS_EQUAL(4, result[AB]);
+    CHECK_EQ(4, result[AB]);
 }
 
-TEST(Reconstruction, get_weighted_averages)
+TEST_CASE_FIXTURE(Reconstruction, "get_weighted_averages")
 {
     clade c1;
     clade c2;
@@ -1095,33 +1049,33 @@ TEST(Reconstruction, get_weighted_averages)
     rc2[&c2] = 8;
 
     auto avg = get_weighted_averages({ rc1, rc2 }, { .25, .75 });
-    DOUBLES_EQUAL(17.5, avg[&c1], 0.01);
-    DOUBLES_EQUAL(6.5, avg[&c2], 0.01);
+    CHECK_EQ(17.5, avg[&c1]);
+    CHECK_EQ(6.5, avg[&c2]);
 }
 
-TEST(Reconstruction, print_node_counts)
+TEST_CASE_FIXTURE(Reconstruction, "print_node_counts")
 {
     gamma_model_reconstruction gmr({ .5 });
     ostringstream ost;
 
     auto initializer = [&gmr](const clade* c) { gmr._reconstructions["Family5"].reconstruction[c] = 5;  };
     p_tree->apply_prefix_order(initializer);
-    
+
     gmr.print_node_counts(ost, order, { fam }, p_tree.get());
     STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
     STRCMP_CONTAINS("Family5\t11\t2\t5\t6\t5\t5\t5", ost.str().c_str());
 }
 
-TEST(Reconstruction, print_node_change)
+TEST_CASE_FIXTURE(Reconstruction, "print_node_change")
 {
     gamma_model_reconstruction gmr({ .5 });
     ostringstream ost;
 
     std::normal_distribution<float> dist(0, 10);
     clademap<int> size_deltas;
-    p_tree->apply_prefix_order([&gmr, &dist](const clade* c) { 
+    p_tree->apply_prefix_order([&gmr, &dist](const clade* c) {
         if (!c->is_leaf())
-            gmr._reconstructions["Family5"].reconstruction[c] = dist(randomizer_engine);  
+            gmr._reconstructions["Family5"].reconstruction[c] = dist(randomizer_engine);
         });
 
     gmr.print_node_change(ost, order, { fam }, p_tree.get());
@@ -1129,18 +1083,18 @@ TEST(Reconstruction, print_node_change)
     STRCMP_CONTAINS("Family5\t+0\t-8\t+5\t+6\t+17\t+7\t+0", ost.str().c_str());
 }
 
-TEST(Reconstruction, clade_index_or_name__returns_node_index_in_angle_brackets_for_non_leaf)
+TEST_CASE_FIXTURE(Reconstruction, "clade_index_or_name__returns_node_index_in_angle_brackets_for_non_leaf")
 {
-    STRCMP_EQUAL("<0>", clade_index_or_name(p_tree.get(), { p_tree.get() }).c_str())
-}
-    
-TEST(Reconstruction, clade_index_or_name__returns_node_name_plus_index_in_angle_brackets_for_leaf)
-{
-    auto a = p_tree->find_descendant("A");
-    STRCMP_EQUAL("A<1>", clade_index_or_name(a, { p_tree.get(), a }).c_str())
+    STRCMP_EQUAL("<0>", clade_index_or_name(p_tree.get(), { p_tree.get() }).c_str());
 }
 
-TEST(Reconstruction, print_branch_probabilities__shows_NA_for_invalids)
+TEST_CASE_FIXTURE(Reconstruction, "clade_index_or_name__returns_node_name_plus_index_in_angle_brackets_for_leaf")
+{
+    auto a = p_tree->find_descendant("A");
+    STRCMP_EQUAL("A<1>", clade_index_or_name(a, { p_tree.get(), a }).c_str());
+}
+
+TEST_CASE_FIXTURE(Reconstruction, "print_branch_probabilities__shows_NA_for_invalids")
 {
     gene_family gf;
     gf.set_id("Family5");
@@ -1156,7 +1110,7 @@ TEST(Reconstruction, print_branch_probabilities__shows_NA_for_invalids)
     STRCMP_CONTAINS("Family5\t0.05\tN/A\t0.05\t0.05\t0.05\t0.05\tN/A\n", ost.str().c_str());
 }
 
-TEST(Reconstruction, print_branch_probabilities__skips_families_without_reconstructions)
+TEST_CASE_FIXTURE(Reconstruction, "print_branch_probabilities__skips_families_without_reconstructions")
 {
     std::ostringstream ost;
     branch_probabilities probs;
@@ -1165,17 +1119,17 @@ TEST(Reconstruction, print_branch_probabilities__skips_families_without_reconstr
     CHECK(ost.str().find("Family5") == string::npos);
 }
 
-TEST(Reconstruction, viterbi_sum_probabilities)
+TEST_CASE_FIXTURE(Reconstruction, "viterbi_sum_probabilities")
 {
     matrix_cache cache(25);
     cache.precalculate_matrices({ 0.05 }, { 1,3,7 });
     base_model_reconstruction rec;
     rec._reconstructions[fam.id()][p_tree->find_descendant("AB")] = 10;
     single_lambda lm(0.05);
-    DOUBLES_EQUAL(0.2182032, compute_viterbi_sum(p_tree->find_descendant("A"), fam, &rec, 24, cache, &lm)._value, 0.000001);
+    CHECK_EQ(doctest::Approx(0.2182032), compute_viterbi_sum(p_tree->find_descendant("A"), fam, &rec, 24, cache, &lm)._value);
 }
 
-TEST(Reconstruction, viterbi_sum_probabilities_returns_invalid_if_equal_parent_and_child_sizes)
+TEST_CASE_FIXTURE(Reconstruction, "viterbi_sum_probabilities_returns_invalid_if_equal_parent_and_child_sizes")
 {
     matrix_cache cache(25);
     cache.precalculate_matrices({ 0.05 }, { 1,3,7 });
@@ -1185,7 +1139,7 @@ TEST(Reconstruction, viterbi_sum_probabilities_returns_invalid_if_equal_parent_a
     CHECK_FALSE(compute_viterbi_sum(p_tree->find_descendant("A"), fam, &rec, 24, cache, &lm)._is_valid);
 }
 
-TEST(Reconstruction, viterbi_sum_probabilities_returns_invalid_if_root)
+TEST_CASE_FIXTURE(Reconstruction, "viterbi_sum_probabilities_returns_invalid_if_root")
 {
     matrix_cache cache(25);
     cache.precalculate_matrices({ 0.05 }, { 1,3,7 });
@@ -1195,56 +1149,55 @@ TEST(Reconstruction, viterbi_sum_probabilities_returns_invalid_if_root)
     CHECK_FALSE(compute_viterbi_sum(p_tree.get(), fam, &rec, 24, cache, &lm)._is_valid);
 }
 
-TEST(Reconstruction, pvalues)
+TEST_CASE_FIXTURE(Reconstruction, "pvalues")
 {
-	vector<double> cd(10);
-	double n = 0;
-	std::generate(cd.begin(), cd.end(), [&n]() mutable { return n += 0.01; });
-	DOUBLES_EQUAL(0.5, pvalue(0.05, cd), 0.001);
-	DOUBLES_EQUAL(0.0, pvalue(0.0001, cd), 0.001);
-	DOUBLES_EQUAL(0.9, pvalue(0.099, cd), 0.001);
+    vector<double> cd(10);
+    double n = 0;
+    std::generate(cd.begin(), cd.end(), [&n]() mutable { return n += 0.01; });
+    CHECK_EQ(0.5, pvalue(0.05, cd));
+    CHECK_EQ(0.0, pvalue(0.0001, cd));
+    CHECK_EQ(0.9, pvalue(0.099, cd));
 }
 
-TEST(Reconstruction, tree_pvalues)
+TEST_CASE_FIXTURE(Reconstruction, "tree_pvalues")
 {
-	vector<vector<double>> cd(10);
-	for (auto& d : cd)
-	{
-		d.resize(10);
-		double n = 0;
-		std::generate(d.begin(), d.end(), [&n]() mutable { return n += 0.01; });
-	}
-	clademap<vector<double>> results;
-	results[p_tree.get()] = { 0, 0, 0 };
-	auto fn = [this, &results](const clade* c) 
-	{ 
-		if (c == p_tree.get())
-			results[c][1] = 0.05;
-	};
-	DOUBLES_EQUAL(0.5, compute_tree_pvalue(p_tree.get(), fn, 10, cd, results), 0.001);
+    vector<vector<double>> cd(10);
+    for (auto& d : cd)
+    {
+        d.resize(10);
+        double n = 0;
+        std::generate(d.begin(), d.end(), [&n]() mutable { return n += 0.01; });
+    }
+    clademap<vector<double>> results;
+    results[p_tree.get()] = { 0, 0, 0 };
+    auto fn = [this, &results](const clade* c)
+    {
+        if (c == p_tree.get())
+            results[c][1] = 0.05;
+    };
+    CHECK_EQ(0.5, compute_tree_pvalue(p_tree.get(), fn, 10, cd, results));
 }
 
-
-TEST(Reconstruction, tree_pvalues_clears_results_before_using)
+TEST_CASE_FIXTURE(Reconstruction, "tree_pvalues_clears_results_before_using")
 {
-	vector<vector<double>> cd(10);
-	for (auto& d : cd)
-	{
-		d.resize(10);
-	}
-	clademap<vector<double>> results;
-	results[p_tree.get()] = { 1, 1, 1 };
-	auto fn = [this, &results](const clade* c)
-	{
-		if (c == p_tree.get())
-			results[c][1] = 0.05;
-	};
-	compute_tree_pvalue(p_tree.get(), fn, 10, cd, results);
+    vector<vector<double>> cd(10);
+    for (auto& d : cd)
+    {
+        d.resize(10);
+    }
+    clademap<vector<double>> results;
+    results[p_tree.get()] = { 1, 1, 1 };
+    auto fn = [this, &results](const clade* c)
+    {
+        if (c == p_tree.get())
+            results[c][1] = 0.05;
+    };
+    compute_tree_pvalue(p_tree.get(), fn, 10, cd, results);
 
-	CHECK(vector<double>({0, 0.05, 0}) == results[p_tree.get()]);
+    CHECK(vector<double>({ 0, 0.05, 0 }) == results[p_tree.get()]);
 }
 
-TEST(Inference, gamma_model_prune)
+TEST_CASE_FIXTURE(Inference, "gamma_model_prune")
 {
     vector<gene_family> families(1);
     families[0].set_species_size("A", 3);
@@ -1266,12 +1219,12 @@ TEST(Inference, gamma_model_prune)
     vector<double> cat_likelihoods;
     CHECK(model.prune(families[0], dist, cache, &lambda, cat_likelihoods));
 
-    LONGS_EQUAL(2, cat_likelihoods.size());
-    DOUBLES_EQUAL(-23.04433, log(cat_likelihoods[0]), 0.0001);
-    DOUBLES_EQUAL(-16.68005, log(cat_likelihoods[1]), 0.0001);
+    CHECK_EQ(2, cat_likelihoods.size());
+    CHECK_EQ(doctest::Approx(-23.04433), log(cat_likelihoods[0]));
+    CHECK_EQ(doctest::Approx(-16.68005), log(cat_likelihoods[1]));
 }
 
-TEST(Inference, gamma_model_prune_returns_false_if_saturated)
+TEST_CASE_FIXTURE(Inference, "gamma_model_prune_returns_false_if_saturated")
 {
     vector<gene_family> families(1);
     families[0].set_species_size("A", 3);
@@ -1287,6 +1240,13 @@ TEST(Inference, gamma_model_prune_returns_false_if_saturated)
 
     CHECK(!model.prune(families[0], _user_data.prior, cache, &lambda, cat_likelihoods));
 }
+
+#else
+
+
+
+
+
 
 TEST(Inference, matrix_cache_key_handles_floating_point_imprecision)
 {
@@ -3110,13 +3070,13 @@ TEST(LikelihoodRatioTest, compute_for_diff_lambdas)
     LONGS_EQUAL(0, lambda_index[0]);
     CHECK(isinf(pvalues[0]));
 }
-
+#endif
 
 void init_lgamma_cache();
 
-int main(int ac, char** av)
+#if 1
+int main(int argc, char** argv)
 {
-    MemoryLeakWarningPlugin::turnOffNewDeleteOverloads();
     init_lgamma_cache();
 
     el::Configurations defaultConf;
@@ -3124,5 +3084,15 @@ int main(int ac, char** av)
     defaultConf.set(el::Level::Global, el::ConfigurationType::Enabled, "false");
     el::Loggers::reconfigureLogger("default", defaultConf);
 
-    return CommandLineTestRunner::RunAllTests(ac, av);
+    doctest::Context context;
+    context.applyCommandLine(argc, argv);
+
+    int res = context.run(); // run
+
+    if (context.shouldExit()) // important - query flags (and --exit) rely on the user doing this
+        return res;          // propagate the result of the tests
+
+    return res;
+    //return CommandLineTestRunner::RunAllTests(ac, av);
 }
+#endif
