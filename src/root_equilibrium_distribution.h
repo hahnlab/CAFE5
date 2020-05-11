@@ -13,6 +13,9 @@ class root_distribution;
 class root_equilibrium_distribution
 {
     std::vector<int> _vectorized_distribution;
+    std::vector<double> _frequency_percentage;
+
+    void build_percentages();
 public:
     /// Create a distribution matching that in the map
     root_equilibrium_distribution(const std::map<int, int>& root_distribution);
@@ -41,6 +44,7 @@ public:
     root_equilibrium_distribution& operator=(root_equilibrium_distribution&& other)
     {
         _vectorized_distribution = std::move(other._vectorized_distribution);
+        _frequency_percentage = std::move(other._frequency_percentage);
         return *this;
     }
 

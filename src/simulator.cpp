@@ -50,7 +50,7 @@ simulated_family simulator::create_trial(const lambda *p_lambda, int family_numb
     }
     if (i >= 50)
     {
-        cerr << "Failed to create a family that would exist at the root\n";
+        LOG(WARNING) << "Failed to create a family that would exist at the root\n";
     }
 
     return result;
@@ -68,7 +68,7 @@ void simulator::simulate_processes(model *p_model, std::vector<simulated_family>
             [](int acc, std::pair<int, int> p) { return (acc + p.second); }));
     }
 
-    LOG(INFO) << endl << "Simulating " << results.size() << " families for model " << p_model->name() << endl << endl;
+    LOG(INFO) << "Simulating " << results.size() << " families for model " << p_model->name();
 
     for (size_t i = 0; i < results.size(); i+= LAMBDA_PERTURBATION_STEP_SIZE)
     {

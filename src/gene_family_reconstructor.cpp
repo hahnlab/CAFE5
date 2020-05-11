@@ -69,7 +69,7 @@ void reconstruct_root_node(const clade * c, clademap<std::vector<int>>& all_node
     
     if (*max_element(L.begin(), L.end()) == 0.0)
     {
-        cerr << "WARNING: failed to calculate L value at root" << endl;
+        LOG(WARNING) << "Failed to calculate L value at root" << endl;
     }
 }
 

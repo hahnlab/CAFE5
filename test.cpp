@@ -2529,14 +2529,14 @@ TEST_CASE("Simulation, gamma_model_perturb_lambda_without_clusters")
     CHECK_EQ(doctest::Approx(0.911359), multipliers[0]);
 }
 
-TEST_CASE("Simulation, create_root_distribution__creates__uniform_distribution")
+TEST_CASE("create_root_distribution__creates__uniform_distribution")
 {
     input_parameters params;
     map<int, int> rootdist;
     auto dist = create_root_distribution(params, nullptr, rootdist, 10);
     CHECK_EQ(doctest::Approx(.1), dist.compute(1));
     CHECK_EQ(doctest::Approx(.1), dist.compute(9));
-    CHECK_EQ(0, dist.compute(10));
+    CHECK_EQ(0, dist.compute(11));
 }
 
 TEST_CASE("Simulation, create_root_distribution__creates__poisson_distribution_if_given")

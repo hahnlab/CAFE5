@@ -22,12 +22,16 @@ root_equilibrium_distribution::root_equilibrium_distribution(const map<int, int>
             _vectorized_distribution.push_back(it->first);
         }
     }
+
+    build_percentages();
+
 }
 
 root_equilibrium_distribution::root_equilibrium_distribution(size_t max_size)
 {
     _vectorized_distribution.resize(max_size);
     iota(_vectorized_distribution.begin(), _vectorized_distribution.end(), 1);
+    build_percentages();
 }
 
 root_equilibrium_distribution::root_equilibrium_distribution(double poisson_lambda, int num_values)
@@ -39,6 +43,7 @@ root_equilibrium_distribution::root_equilibrium_distribution(double poisson_lamb
         for (size_t j = 0; j < poisson[i] * n; ++j)
             _vectorized_distribution.push_back(i + 1);
     }
+    build_percentages();
 
 }
 
@@ -61,16 +66,27 @@ root_equilibrium_distribution::root_equilibrium_distribution(std::vector<gene_fa
         for (size_t j = 0; j < poisson[0] * n; ++j)
             _vectorized_distribution.push_back(i + 1);
     }
+    build_percentages();
 
+}
+
+void root_equilibrium_distribution::build_percentages()
+{
+    auto max = (size_t)*max_element(_vectorized_distribution.begin(), _vectorized_distribution.end()) + 1;
+    _frequency_percentage.resize(max);
+    for (size_t i = 0; i < max; ++i)
+    {
+        size_t c = count(_vectorized_distribution.begin(), _vectorized_distribution.end(), i);
+        _frequency_percentage[i] = float(c) / float(_vectorized_distribution.size());
+    }
 }
 
 float root_equilibrium_distribution::compute(size_t val) const
 {
-    if (val >= _vectorized_distribution.size())
+    if (val >= _frequency_percentage.size())
         return 0;
 
-    size_t c = count(_vectorized_distribution.begin(), _vectorized_distribution.end(), val);
-    return float(c) / float(_vectorized_distribution.size());
+    return _frequency_percentage[val];
 }
 
 int root_equilibrium_distribution::select_root_size(int family_number) const

@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <fstream>
 
+#include "easylogging++.h"
+
 #include "gamma_core.h"
 #include "gamma.h"
 #include "root_equilibrium_distribution.h"
@@ -124,6 +126,7 @@ void gamma_model::perturb_lambda()
         gamma_distribution<double> dist(_alpha, 1 / _alpha);
         _lambda_multipliers[0] = dist(randomizer_engine);
         _gamma_cat_probs[0] = 1;
+        LOG(INFO) << "Lambda multiplier is " << _lambda_multipliers[0];
     }
     else
     {
@@ -161,11 +164,12 @@ void gamma_model::perturb_lambda()
         }
 
         _lambda_multipliers.swap(new_multipliers);
+
+        LOG(INFO) << "Gamma cat probs are: " << comma_separated(_gamma_cat_probs) << endl;
+        LOG(INFO) << "Lambda multipliers are: " << comma_separated(_lambda_multipliers) << endl;
     }
 
-#ifndef SILENT 
-    write_probabilities(cout);
-#endif 
+
 }
 
 bool gamma_model::can_infer() const
