@@ -40,6 +40,7 @@ public:
     bool exclude_zero_root_families = true;
     bool lambda_per_family = false;
     bool use_error_model = false;
+    int verbose_logging_level = 0;
 
     optimizer_parameters optimizer_params;
     bool help = false;

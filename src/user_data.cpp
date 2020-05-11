@@ -124,6 +124,10 @@ void user_data::read_datafiles(const input_parameters& my_input_parameters)
         el::Configurations conf(my_input_parameters.log_config_file.c_str());
         el::Loggers::reconfigureAllLoggers(conf);
     }
+    if (my_input_parameters.verbose_logging_level > 0 )
+    {
+        el::Loggers::setVerboseLevel(my_input_parameters.verbose_logging_level);
+    }
     /* -t */
     if (!my_input_parameters.tree_file_path.empty()) {
         p_tree = read_input_tree(my_input_parameters); // populates p_tree (pointer to phylogenetic tree)

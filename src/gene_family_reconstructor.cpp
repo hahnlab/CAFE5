@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <fstream>
 
+#include "easylogging++.h"
+
 #include "gene_family_reconstructor.h"
 #include "lambda.h"
 #include "matrix_cache.h"
@@ -394,6 +396,14 @@ branch_probabilities::branch_probability compute_viterbi_sum(const clade* c,
             {
                 result += probability_to_m;
             }
+        }
+        if (result < 0.05)
+        {
+            VLOG(1) << family.id() << ":" << c->get_taxon_name() << " probability " << result << " calculated for parent: " << parent_size << ", child: " << child_size;
+        }
+        else
+        {
+            VLOG(2) << family.id() << ":" << c->get_taxon_name() << " probability " << result << " calculated for parent: " << parent_size << ", child: " << child_size;
         }
         return branch_probabilities::branch_probability(result);
     }

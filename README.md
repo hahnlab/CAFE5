@@ -481,10 +481,10 @@ parameter.
     whether the node is larger, smaller, or consistent with its parent
     node. The characters are separated by tabs.
 
-        #FamilyID   pvalue  *   orang   gibbon  chimp   human     
-        0           0.436   n   d       d       c       c 
-        1           0.209   n   c       i       c       c
-        2           0.002   y   c       c       i       i
+        #FamilyID   pvalue  Significant at 0.05
+        0           0.436   n
+        1           0.209   n
+        2           0.002   y
 
     In the Gamma model, an additional set of probabilities are appended,
     representing the likelihood of the family belonging to each gamma
@@ -783,5 +783,6 @@ ideas. Thanks to:
 -	Dan Vanderpool
 
 CAFE uses the EasyLogging logging framework. https://github.com/amrayn/easyloggingpp
+
 CAFE uses the DocTest testing framework. https://github.com/onqtam/doctest
 

@@ -30,7 +30,7 @@ input_parameters read_arguments(int argc, char *const argv[])
     int args; // getopt_long returns int or char
     int prev_arg;
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "i:e::o:t:y:n:f:E:R:L:P:I:l:m:k:a:s::p::r:zb", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "v:i:e::o:t:y:n:f:E:R:L:P:I:l:m:k:a:s::p::r:zb", longopts, NULL)) != -1) {
         // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && optarg && *optarg == '-') {
             LOG(ERROR) << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -109,6 +109,9 @@ input_parameters read_arguments(int argc, char *const argv[])
         case 'z':
             my_input_parameters.exclude_zero_root_families = false;
             break;
+        case 'v':
+            my_input_parameters.verbose_logging_level = atoi(optarg);
+            break;
         case ':':   // missing argument
             fprintf(stderr, "%s: option `-%c' requires an argument",
                 argv[0], optopt);
@@ -182,11 +185,6 @@ void show_help()
 int cafexp(int argc, char *const argv[]) {
     init_lgamma_cache();
 
-    el::Configurations defaultConf;
-    defaultConf.setToDefault();
-    defaultConf.set(el::Level::Global, el::ConfigurationType::Format, "%msg");
-    el::Loggers::reconfigureLogger("default", defaultConf);
-
     try {
         input_parameters user_input = read_arguments(argc, argv);
 
@@ -197,6 +195,9 @@ int cafexp(int argc, char *const argv[]) {
         }
         user_data data;
         data.read_datafiles(user_input);
+
+        auto cmd = std::accumulate(argv, argv + argc, std::string(), [](std::string x, std::string y) { return x + y + " "; });
+        LOG(INFO) << "Command line: " << cmd;
 
         if (user_input.exclude_zero_root_families)
         {
