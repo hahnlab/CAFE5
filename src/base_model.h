@@ -56,15 +56,9 @@ public:
 
     }
 
-    std::string get_reconstructed_state(const gene_family& gf, const clade* node) override;
-
     std::map<string, clademap<int>> _reconstructions;
 
-    virtual int get_difference_from_parent(const gene_family* gf, const clade* c) override;
-
-    int get_node_count(const gene_family& gf, const clade* c) override;
-
-    int reconstructed_size(const gene_family& family, const clade* clade) const override;
+    int get_node_count(const gene_family& gf, const clade* c) const override;
 
 };
 

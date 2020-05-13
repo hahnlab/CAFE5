@@ -181,7 +181,7 @@ void reconstruction::print_node_change(std::ostream& ost, const cladevector& ord
 {
     print_family_clade_table(ost, order, gene_families, p_tree, [this, &gene_families](int family_index, const clade* c) {
         ostringstream ost;
-        ost << showpos << get_difference_from_parent(&gene_families[family_index], c);
+        ost << showpos << get_difference_from_parent(gene_families[family_index], c);
         return ost.str();
         });
 }
@@ -213,7 +213,7 @@ void reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const
     for (size_t j = 0; j < gene_families.size(); ++j) {
         for (size_t i = 0; i < order.size(); ++i)
         {
-            int val = get_difference_from_parent(&gene_families[j], order[i]);
+            int val = get_difference_from_parent(gene_families[j], order[i]);
             if (val > 0)
                 increase_decrease_map[order[i]].first++;
             if (val < 0)
@@ -282,9 +282,8 @@ void reconstruction::print_reconstructed_states(std::ostream& ost, const cladeve
     for (size_t i = 0; i < gene_families.size(); ++i)
     {
         auto& gene_family = gene_families[i];
-
         auto g = [gene_family, this](const clade* node) {
-            return get_reconstructed_state(gene_family, node);
+            return std::to_string(get_node_count(gene_family, node));
         };
 
         function<string(const clade*)> text_func;
@@ -295,7 +294,7 @@ void reconstruction::print_reconstructed_states(std::ostream& ost, const cladeve
                 return p._is_valid ? p._value < test_pvalue : false;
             };
 
-            text_func = [g, order, is_significant](const clade* node) {
+            text_func = [g, order, is_significant, &gene_family](const clade* node) {
                 return newick_node(node, order, is_significant(node), g);
             };
         }
@@ -360,6 +359,15 @@ void reconstruction::write_results(std::string model_identifier,
     print_additional_data(order, families, output_prefix);
 }
 
+int reconstruction::get_difference_from_parent(const gene_family& gf, const clade* c)
+{
+    if (c->is_root())
+        return 0;
+
+    return get_node_count(gf, c) - get_node_count(gf, c->get_parent()); 
+}
+
+
 branch_probabilities::branch_probability compute_viterbi_sum(const clade* c, 
     const gene_family& family, 
     const reconstruction* rec, 
@@ -374,8 +382,8 @@ branch_probabilities::branch_probability compute_viterbi_sum(const clade* c,
 
     const matrix* probs = cache.get_matrix(c->get_branch_length(), p_lambda->get_value_for_clade(c));
 
-    int parent_size = rec->reconstructed_size(family, c->get_parent());
-    int child_size = rec->reconstructed_size(family, c);
+    int parent_size = rec->get_node_count(family, c->get_parent());
+    int child_size = rec->get_node_count(family, c);
     if (parent_size == child_size)
     {
         /// don't return a probability if the parent and child sizes are the same

@@ -387,21 +387,6 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_fami
     return result;
 }
 
-std::string gamma_model_reconstruction::get_reconstructed_state(const gene_family& gf, const clade* node)
-{
-    std::ostringstream ost;
-
-    if (node->is_leaf())
-    {
-        ost << gf.get_species_size(node->get_taxon_name());
-    }
-    else
-    {
-        ost << std::round(_reconstructions[gf.id()].reconstruction.at(node));
-    }
-    return ost.str();
-}
-
 void gamma_model_reconstruction::write_nexus_extensions(std::ostream& ost)
 {
     ost << "\nBEGIN LAMBDA_MULTIPLIERS;\n";
@@ -412,19 +397,12 @@ void gamma_model_reconstruction::write_nexus_extensions(std::ostream& ost)
     ost << "END;\n\n";
 }
 
-int gamma_model_reconstruction::get_difference_from_parent(const gene_family* gf, const clade* c)
+int gamma_model_reconstruction::get_node_count(const gene_family& family, const clade* c) const
 {
-    if (c->is_root())
-        return 0;
-    double val = c->is_leaf() ? gf->get_species_size(c->get_taxon_name()) : _reconstructions[gf->id()].reconstruction.at(c);
-    double parent_val = _reconstructions[gf->id()].reconstruction.at(c->get_parent());
+    if (c->is_leaf())
+        return family.get_species_size(c->get_taxon_name());
 
-    return int(val - parent_val);
-}
-
-int gamma_model_reconstruction::get_node_count(const gene_family& gf, const clade* c)
-{
-    return int(std::round(_reconstructions[gf.id()].reconstruction.at(c)));
+    return int(std::round(_reconstructions.at(family.id()).reconstruction.at(c)));
 }
 
 void gamma_model_reconstruction::print_category_likelihoods(std::ostream& ost, const cladevector& order, familyvector& gene_families)
@@ -450,18 +428,3 @@ void gamma_model_reconstruction::print_additional_data(const cladevector& order,
     print_category_likelihoods(cat_likelihoods, order, gene_families);
 
 }
-
-int gamma_model_reconstruction::reconstructed_size(const gene_family& family, const clade* clade) const
-{
-    if (clade->is_leaf())
-        return family.get_species_size(clade->get_taxon_name());
-
-    if (_reconstructions.find(family.id()) == _reconstructions.end())
-        throw std::runtime_error("Family " + family.id() + " was not reconstructed");
-    auto& c = _reconstructions.at(family.id()).reconstruction;
-    if (c.find(clade) == c.end())
-        throw std::runtime_error("Clade '" + clade->get_taxon_name() + "' was not reconstructed for family " + family.id());
-
-    return _reconstructions.at(family.id()).reconstruction.at(clade);
-}
-

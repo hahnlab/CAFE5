@@ -82,18 +82,17 @@ public:
 
     void write_results(std::string model_identifier, std::string output_prefix, const clade* p_tree, familyvector& families, std::vector<double>& pvalues, double test_pvalue, const branch_probabilities& branch_probabilities);
 
-    virtual int reconstructed_size(const gene_family& family, const clade* clade) const = 0;
     virtual ~reconstruction()
     {
     }
 
+    virtual int get_node_count(const gene_family& gf, const clade* c) const = 0;
+
+    int get_difference_from_parent(const gene_family& gf, const clade* c);
 private:
     virtual void print_additional_data(const cladevector& order, familyvector& gene_families, std::string output_prefix) {};
 
-    virtual int get_difference_from_parent(const gene_family* gf, const clade* c) = 0;
-    virtual std::string get_reconstructed_state(const gene_family& gf, const clade* node) = 0;
     virtual void write_nexus_extensions(std::ostream& ost) {};
-    virtual int get_node_count(const gene_family& gf, const clade* c) = 0;
 
 };
 

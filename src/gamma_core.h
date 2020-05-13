@@ -19,16 +19,11 @@ public:
     {
     }
 
-    virtual int get_difference_from_parent(const gene_family* gf, const clade* c) override;
-
     void print_additional_data(const cladevector& order, familyvector& gene_families, std::string output_prefix) override;
-
-    std::string get_reconstructed_state(const gene_family& gf, const clade* node) override;
 
     void print_category_likelihoods(std::ostream& ost, const cladevector& order, familyvector& gene_families);
 
-    int reconstructed_size(const gene_family& family, const clade* clade) const override;
-    int get_node_count(const gene_family& gf, const clade* c) override;
+    int get_node_count(const gene_family& gf, const clade* c) const override;
 
     struct gamma_reconstruction {
         std::vector<clademap<int>> category_reconstruction;

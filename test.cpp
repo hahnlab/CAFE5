@@ -775,9 +775,9 @@ TEST_CASE("Inference: increase_decrease")
     bmr._reconstructions["myid"][ab] = 3;
     bmr._reconstructions["myid"][abcd] = 3;
 
-    CHECK_EQ(1, bmr.get_difference_from_parent(&gf, a));
-    CHECK_EQ(-1, bmr.get_difference_from_parent(&gf, b));
-    CHECK_EQ(0, bmr.get_difference_from_parent(&gf, ab));
+    CHECK_EQ(1, bmr.get_difference_from_parent(gf, a));
+    CHECK_EQ(-1, bmr.get_difference_from_parent(gf, b));
+    CHECK_EQ(0, bmr.get_difference_from_parent(gf, ab));
 }
 
 TEST_CASE( "Inference: precalculate_matrices_calculates_all_lambdas_all_branchlengths")
@@ -1033,8 +1033,8 @@ TEST_CASE_FIXTURE(Reconstruction, "print_node_change")
         });
 
     gmr.print_node_change(ost, order, { fam }, p_tree.get());
-    STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
-    STRCMP_CONTAINS("Family5\t+0\t-8\t+5\t+6\t+17\t+7\t+0", ost.str().c_str());
+    CHECK_MESSAGE(ost.str().find("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>") != string::npos, ost.str());
+    CHECK_MESSAGE(ost.str().find("Family5\t+1\t-8\t+5\t+6\t+17\t+7\t+0") != string::npos, ost.str());
 }
 
 TEST_CASE_FIXTURE(Reconstruction, "clade_index_or_name__returns_node_index_in_angle_brackets_for_non_leaf")

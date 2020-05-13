@@ -165,37 +165,10 @@ void base_model::perturb_lambda()
     simulation_lambda_multiplier = dist(randomizer_engine);
 }
 
-std::string base_model_reconstruction::get_reconstructed_state(const gene_family&gf, const clade* node)
+int base_model_reconstruction::get_node_count(const gene_family& family, const clade *c) const
 {
-    int value = node->is_leaf() ? gf.get_species_size(node->get_taxon_name()) : _reconstructions[gf.id()].at(node);
-    return to_string(value);
-}
+    if (c->is_leaf())
+        return family.get_species_size(c->get_taxon_name());
 
-int base_model_reconstruction::get_difference_from_parent(const gene_family* gf, const clade* c)
-{
-    if (c->is_root())
-        return 0;
-    int val = c->is_leaf() ? gf->get_species_size(c->get_taxon_name()) : _reconstructions[gf->id()].at(c);
-    int parent_val = _reconstructions[gf->id()].at(c->get_parent());
-
-    return val - parent_val;
-}
-
-int base_model_reconstruction::get_node_count(const gene_family& gf, const clade *c)
-{
-    return _reconstructions[gf.id()].at(c);
-}
-
-int base_model_reconstruction::reconstructed_size(const gene_family& family, const clade* clade) const
-{
-    if (clade->is_leaf())
-        return family.get_species_size(clade->get_taxon_name());
-
-    if (_reconstructions.find(family.id()) == _reconstructions.end())
-        throw std::runtime_error("Family " + family.id() + " was not reconstructed");
-    auto& c = _reconstructions.at(family.id());
-    if (c.find(clade) == c.end())
-        throw std::runtime_error("Clade '" + clade->get_taxon_name() + "' was not reconstructed for family " + family.id());
-
-    return _reconstructions.at(family.id()).at(clade);
+    return _reconstructions.at(family.id()).at(c);
 }
