@@ -284,7 +284,7 @@ double gamma_model::infer_family_likelihoods(const root_equilibrium_distribution
     }
     double final_likelihood = -accumulate(all_bundles_likelihood.begin(), all_bundles_likelihood.end(), 0.0);
 
-    _monitor.Event_InferenceAttempt_Complete(final_likelihood);
+    LOG(INFO) << "Score (-lnL): " << std::setw(15) << std::setprecision(14) << final_likelihood;
     return final_likelihood;
 }
 
@@ -341,7 +341,7 @@ clademap<double> get_weighted_averages(const std::vector<clademap<int>>& m, cons
 
 reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *calc, root_equilibrium_distribution*prior)
 {
-    _monitor.Event_Reconstruction_Started("Gamma");
+    LOG(INFO) << "Starting reconstruction processes for Gamma model";
 
     auto values = get_lambda_values(_p_lambda);
     vector<double> all;
@@ -382,7 +382,7 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_fami
         reconstruction->reconstruction = get_weighted_averages(reconstruction->category_reconstruction, _gamma_cat_probs);
     }
 
-    _monitor.Event_Reconstruction_Complete();
+    LOG(INFO) << "Done!\n";
 
     return result;
 }

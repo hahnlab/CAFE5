@@ -2237,7 +2237,7 @@ TEST_CASE("Inference, event_monitor_shows_no_attempts")
     event_monitor evm;
 
     ostringstream ost;
-    evm.summarize(ost);
+    evm.log(ost);
     STRCMP_EQUAL("No attempts made\n", ost.str().c_str());
 }
 
@@ -2248,7 +2248,7 @@ TEST_CASE("Inference, event_monitor_shows_one_attempt")
     evm.Event_InferenceAttempt_Started();
     ostringstream ost;
 
-    evm.summarize(ost);
+    evm.log(ost);
     STRCMP_EQUAL("1 values were attempted (0% rejected)\n", ost.str().c_str());
 }
 
@@ -2261,7 +2261,7 @@ TEST_CASE("Inference, event_monitor_shows_rejected_attempts")
     evm.Event_InferenceAttempt_InvalidValues();
     ostringstream ost;
 
-    evm.summarize(ost);
+    evm.log(ost);
     STRCMP_EQUAL("2 values were attempted (50% rejected)\n", ost.str().c_str());
 }
 
@@ -2274,7 +2274,7 @@ TEST_CASE("Inference, event_monitor_shows_poor_performing_families")
     evm.Event_InferenceAttempt_Saturation("test");
     ostringstream ost;
 
-    evm.summarize(ost);
+    evm.log(ost);
     STRCMP_CONTAINS("2 values were attempted (0% rejected)", ost.str().c_str());
     STRCMP_CONTAINS("The following families had failure rates >20% of the time:", ost.str().c_str());
     STRCMP_CONTAINS("test had 1 failures", ost.str().c_str());
@@ -2292,7 +2292,7 @@ TEST_CASE("Inference, event_monitor_does_not_show_decent_performing_families")
     evm.Event_InferenceAttempt_Saturation("test");
     ostringstream ost;
 
-    evm.summarize(ost);
+    evm.log(ost);
     STRCMP_EQUAL("5 values were attempted (0% rejected)\n", ost.str().c_str());
 }
 

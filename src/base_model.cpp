@@ -4,6 +4,7 @@
 #include <random>
 #include <sstream>
 #include <algorithm>
+#include <iomanip>
 
 #include "base_model.h"
 #include "gene_family_reconstructor.h"
@@ -93,7 +94,7 @@ double base_model::infer_family_likelihoods(const root_equilibrium_distribution 
     }
     double final_likelihood = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families
 
-    _monitor.Event_InferenceAttempt_Complete(final_likelihood);
+    LOG(INFO) << "Score (-lnL): " << std::setw(15) << std::setprecision(14) << final_likelihood;
 
     return final_likelihood;
 }
@@ -131,7 +132,7 @@ inference_optimizer_scorer *base_model::get_lambda_optimizer(const user_data& da
 
 reconstruction* base_model::reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior)
 {
-    _monitor.Event_Reconstruction_Started("Base");
+    LOG(INFO) << "Starting reconstruction processes for Base model";
 
     auto result = new base_model_reconstruction();
 
@@ -143,7 +144,7 @@ reconstruction* base_model::reconstruct_ancestral_states(const vector<gene_famil
             &families[i], p_calc, p_prior, result->_reconstructions[families[i].id()]);
     }
 
-    _monitor.Event_Reconstruction_Complete();
+    LOG(INFO) << "Done!\n";
 
     return result;
 }

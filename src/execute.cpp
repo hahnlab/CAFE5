@@ -93,10 +93,7 @@ void estimator::estimate_missing_variables(std::vector<model *>& models, user_da
         auto result = opt.optimize(_user_input.optimizer_params);
         scorer->finalize(&result.values[0]);
 
-#ifndef SILENT
-        p_model->get_monitor().summarize(cerr);
-#endif
-
+        LOG(INFO) << p_model->get_monitor();
     }
     if (data.p_lambda == nullptr)
         data.p_lambda = models[0]->get_lambda();

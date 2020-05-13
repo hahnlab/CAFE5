@@ -4,7 +4,6 @@
 #include <fstream>
 #include <assert.h>
 #include <numeric>
-#include <iomanip>
 
 #include "easylogging++.h"
 
@@ -108,7 +107,7 @@ void model::write_vital_statistics(std::ostream& ost, double final_likelihood)
 
     ost << "Maximum possible lambda for this topology: " << max_lambda << endl;
 
-    get_monitor().summarize(ost);
+    get_monitor().log(ost);
 
 }
 
@@ -150,22 +149,7 @@ void event_monitor::Event_InferenceAttempt_Started()
     attempts++;
 }
 
-void event_monitor::Event_Reconstruction_Started(std::string model)
-{
-    LOG(INFO) << "Starting reconstruction processes for " << model << " model";
-}
-
-void event_monitor::Event_Reconstruction_Complete()
-{
-    LOG(INFO) << "Done!\n" ;
-}
-
-void event_monitor::Event_InferenceAttempt_Complete(double final_likelihood)
-{
-    LOG(INFO) << "Score (-lnL): " << std::setw(15) << std::setprecision(14) << final_likelihood ;
-}
-
-void event_monitor::summarize(std::ostream& ost) const
+void event_monitor::log(el::base::type::ostream_t& ost) const
 {
     if (attempts == 0)
     {

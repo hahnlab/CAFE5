@@ -3,6 +3,8 @@
 
 #include <set>
 
+#include "easylogging++.h"
+
 #include "clade.h"
 #include "probability.h"
 
@@ -96,21 +98,17 @@ private:
 
 };
 
-class event_monitor
+class event_monitor : public el::Loggable
 {
     std::map<string, int> failure_count;
     int attempts = 0;
     int rejects = 0;
 public:
-    void summarize(std::ostream& ost) const;
+    virtual void log(el::base::type::ostream_t& os) const;
 
     void Event_InferenceAttempt_Started();
     void Event_InferenceAttempt_InvalidValues() { rejects++; }
     void Event_InferenceAttempt_Saturation(std::string family) { failure_count[family]++; }
-    void Event_InferenceAttempt_Complete(double final_likelihood);
-
-    void Event_Reconstruction_Started(std::string model);
-    void Event_Reconstruction_Complete();
 };
 
 /*! @brief Describes the actions that are taken when estimating or simulating data
