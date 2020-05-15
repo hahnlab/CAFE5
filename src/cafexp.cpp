@@ -69,7 +69,7 @@ input_parameters read_arguments(int argc, char *const argv[])
             my_input_parameters.fixed_lambda = atof(optarg);
             break;
         case 'p':
-            my_input_parameters.use_uniform_eq_freq = false; // If the user types '-p', the root eq freq dist will not be a uniform
+            my_input_parameters.use_poisson_dist_for_prior = true; // If the user types '-p', the root eq freq dist will not be a uniform
                                                              // If the user provides an argument to -p, then we do not estimate it
             if (optarg != NULL) { my_input_parameters.poisson_lambda = atof(optarg); }
             break;
@@ -211,7 +211,7 @@ int cafexp(int argc, char *const argv[]) {
 
         }
 
-        data.prior = create_root_distribution(user_input, &data.gene_families, data.rootdist, data.max_root_family_size);
+        data.create_prior(user_input);
 
         // When computing or simulating, only base or gamma model is used. When estimating, base and gamma model are used (to do: compare base and gamma w/ LRT)
         // Build model takes care of -f

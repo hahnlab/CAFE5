@@ -20,6 +20,7 @@ public:
     double lnLPoisson(const double* plambda);
 };
 
+double poisspdf(int x, double lambda);
 std::vector<double> get_prior_rfsize_poisson_lambda(int min_family_size, int max_family_size, double poisson_lambda);
 
 #endif

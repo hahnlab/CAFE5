@@ -16,6 +16,7 @@ class root_equilibrium_distribution
     std::vector<double> _frequency_percentage;
 
     void build_percentages();
+    void create_from_poisson(double poisson_lambda, size_t num_values);
 public:
     /// Create a distribution matching that in the map
     root_equilibrium_distribution(const std::map<int, int>& root_distribution);
@@ -24,10 +25,10 @@ public:
     root_equilibrium_distribution(size_t max_size);
 
     /// Create a Poisson distribution with the given lambda
-    root_equilibrium_distribution(double poisson_lambda, int max_size);
+    root_equilibrium_distribution(double poisson_lambda, size_t num_values);
 
     /// Estimate a Poisson distribution from the given families
-    root_equilibrium_distribution(std::vector<gene_family>* p_gene_families, int num_values);
+    root_equilibrium_distribution(const std::vector<gene_family>& gene_families, size_t num_values);
 
     /// Move constructor
     root_equilibrium_distribution(root_equilibrium_distribution&& other)
@@ -51,7 +52,5 @@ public:
     void resize(size_t new_size);
 
 };
-
-root_equilibrium_distribution create_root_distribution(const input_parameters& my_input_parameters, std::vector<gene_family> *p_gene_families, const std::map<int, int>& root_distribution, int max_root_family_size);
 
 #endif

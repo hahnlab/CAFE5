@@ -2195,27 +2195,6 @@ TEST_CASE("Inference, optimizer_disallows_bad_initializations")
     CHECK_THROWS_WITH_AS(opt.get_initial_guesses(), "Failed to initialize any reasonable values", runtime_error);
 }
 
-TEST_CASE("Inference, poisson_distribution__compute")
-{
-    root_equilibrium_distribution pd(0.75, 100);
-
-    CHECK_EQ(doctest::Approx(0.2436548).scale(1000), pd.compute(1));
-    CHECK_EQ(doctest::Approx(0.071).scale(1000), pd.compute(3));
-    CHECK_EQ(doctest::Approx(0.005).scale(1000), pd.compute(5));
-    CHECK_EQ(0.0, pd.compute(100));
-}
-
-TEST_CASE("Inference, poisson_distribution__select_root_size")
-{
-    root_equilibrium_distribution pd(0.75, 9);
-
-    CHECK_EQ(1, pd.select_root_size(1));
-    CHECK_EQ(1, pd.select_root_size(3));
-    CHECK_EQ(2, pd.select_root_size(5));
-    CHECK_EQ(2, pd.select_root_size(7));
-    CHECK_EQ(0, pd.select_root_size(100));
-}
-
 TEST_CASE("Inference, optimizer_result_stream")
 {
     optimizer::result r;
@@ -2442,19 +2421,6 @@ TEST_CASE("Simulation, specified_distribution__pare")
     CHECK_EQ(rd.select_root_size(5), 0);
 }
 
-TEST_CASE("Simulation, specified_distribution__expand")
-{
-    std::map<int, int> m;
-    m[2] = 5;
-    m[4] = 3;
-    m[8] = 3;
-    root_equilibrium_distribution rd(m);
-    rd.resize(15);
-    CHECK_EQ(rd.select_root_size(14), 8);
-    CHECK_EQ(rd.select_root_size(15), 0);
-}
-
-
 TEST_CASE("Simulation, simulate_processes")
 {
     single_lambda lam(0.05);
@@ -2476,33 +2442,6 @@ TEST_CASE("Simulation, simulate_processes")
     vector<simulated_family> results(1);
     sim.simulate_processes(&m, results);
     CHECK_EQ(100, results.size());
-}
-
-TEST_CASE("Simulation, simulate_processes_uses_rootdist_if_available")
-{
-    single_lambda lam(0.05);
-    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
-    mock_model m;
-    m.set_tree(p_tree.get());
-    m.set_lambda(&lam);
-
-    user_data ud;
-    ud.p_tree = p_tree.get();
-    ud.p_lambda = &lam;
-    ud.rootdist[5] = 50;
-    ud.rootdist[10] = 50;
-    ud.max_family_size = 60;
-    ud.max_root_family_size = 60;
-    ud.prior = root_equilibrium_distribution(ud.rootdist);
-    input_parameters ip;
-    ip.nsims = 100;
-    simulator sim(ud, ip);
-    vector<simulated_family> results;
-    sim.simulate_processes(&m, results);
-    CHECK_EQ(100, results.size());
-
-    CHECK_EQ(5, results[0].values.at(p_tree.get()));
-    CHECK_EQ(10, results[75].values.at(p_tree.get()));
 }
 
 TEST_CASE("Simulation, gamma_model_perturb_lambda_with_clusters")
@@ -2529,76 +2468,133 @@ TEST_CASE("Simulation, gamma_model_perturb_lambda_without_clusters")
     CHECK_EQ(doctest::Approx(0.911359), multipliers[0]);
 }
 
-TEST_CASE("create_root_distribution__creates__uniform_distribution")
+TEST_CASE("root_equilibrium_distribution__resize")
 {
-    input_parameters params;
-    map<int, int> rootdist;
-    auto dist = create_root_distribution(params, nullptr, rootdist, 10);
-    CHECK_EQ(doctest::Approx(.1), dist.compute(1));
-    CHECK_EQ(doctest::Approx(.1), dist.compute(9));
-    CHECK_EQ(0, dist.compute(11));
+    std::map<int, int> m;
+    m[2] = 5;
+    m[4] = 3;
+    m[8] = 3;
+    root_equilibrium_distribution rd(m);
+    rd.resize(15);
+    CHECK_EQ(rd.select_root_size(14), 8);
+    CHECK_EQ(rd.select_root_size(15), 0);
 }
 
-TEST_CASE("Simulation, create_root_distribution__creates__poisson_distribution_if_given")
+TEST_CASE("root_equilibrium_distribution__poisson_compute")
+{
+    root_equilibrium_distribution pd(0.75, 100);
+
+    CHECK_EQ(doctest::Approx(0.47059).scale(1000), pd.compute(1));
+    CHECK_EQ(doctest::Approx(0.13725f).scale(1000), pd.compute(3));
+    CHECK_EQ(doctest::Approx(0.005).scale(1000), pd.compute(5));
+    CHECK_EQ(0.0, pd.compute(100));
+}
+
+TEST_CASE("root_equilibrium_distribution__poisson_select_root_size")
+{
+    root_equilibrium_distribution pd(0.75, 9);
+
+    CHECK_EQ(1, pd.select_root_size(1));
+    CHECK_EQ(1, pd.select_root_size(3));
+    CHECK_EQ(2, pd.select_root_size(5));
+    CHECK_EQ(2, pd.select_root_size(7));
+    CHECK_EQ(0, pd.select_root_size(100));
+}
+
+
+TEST_CASE("create_prior__creates__uniform_distribution")
 {
     input_parameters params;
-    params.use_uniform_eq_freq = false;
+    user_data ud;
+    ud.create_prior(params);
+    CHECK_EQ(doctest::Approx(0.008), ud.prior.compute(1));
+    CHECK_EQ(doctest::Approx(0.008), ud.prior.compute(99));
+    CHECK_EQ(0, ud.prior.compute(126));
+}
+
+TEST_CASE("create_prior__creates__specifed_distribution_if_given")
+{
+    input_parameters params;
+    user_data ud;
+    ud.rootdist[2] = 11;
+    ud.rootdist[3] = 5;
+    ud.rootdist[4] = 7;
+    ud.rootdist[6] = 2;
+    ud.max_root_family_size = 10;
+    ud.create_prior(params);
+    CHECK_EQ(doctest::Approx(0.44), ud.prior.compute(2));
+    CHECK_EQ(doctest::Approx(0.2), ud.prior.compute(3));
+    CHECK_EQ(doctest::Approx(0.28), ud.prior.compute(4));
+    CHECK_EQ(0, ud.prior.compute(5));
+    CHECK_EQ(doctest::Approx(.08), ud.prior.compute(6));
+}
+
+
+TEST_CASE("create_prior__creates__poisson_distribution_if_given")
+{
+    input_parameters params;
+    params.use_poisson_dist_for_prior = true;
     params.poisson_lambda = 0.75;
-    map<int, int> rootdist;
-    auto dist = create_root_distribution(params, nullptr, rootdist, 100);
-    CHECK_EQ(doctest::Approx(0.2436548), dist.compute(1));
-    CHECK_EQ(0, dist.compute(101));
+    user_data ud;
+    ud.max_root_family_size = 100;
+    ud.create_prior(params);
+    CHECK_EQ(doctest::Approx(0.47059), ud.prior.compute(1));
+    CHECK_EQ(doctest::Approx(0.35294), ud.prior.compute(2));
+    vector<int> r(100);
+    int i = 0;
+    generate(r.begin(), r.end(), [&ud, &i]() mutable { i++; return ud.prior.select_root_size(i);  });
+    CHECK_EQ(47, count(r.begin(), r.end(), 1));
+    CHECK_EQ(36, count(r.begin(), r.end(), 2));
+    CHECK_EQ(14, count(r.begin(), r.end(), 3));
+    CHECK_EQ(3, count(r.begin(), r.end(), 4));
+
+    CHECK_EQ(0, ud.prior.compute(11));
 }
 
-TEST_CASE("Simulation, create_root_distribution__creates__specifed_distribution_if_given")
+TEST_CASE("create_prior__creates__poisson_distribution_if_given_distribution_and_poisson")
 {
     input_parameters params;
-    map<int, int> rootdist;
-    rootdist[2] = 11;
-    rootdist[3] = 5;
-    rootdist[4] = 7;
-    rootdist[6] = 2;
-    auto dist = create_root_distribution(params, nullptr, rootdist, 10);
-    CHECK_EQ(doctest::Approx(0.44), dist.compute(2));
-    CHECK_EQ(doctest::Approx(0.2), dist.compute(3));
-    CHECK_EQ(doctest::Approx(0.28), dist.compute(4));
-    CHECK_EQ(0, dist.compute(5));
-    CHECK_EQ(doctest::Approx(.08), dist.compute(6));
-}
-
-
-TEST_CASE("Simulation, create_root_distribution__creates__specifed_distribution_if_given_distribution_and_poisson")
-{
-    input_parameters params;
-    params.use_uniform_eq_freq = false;
+    params.use_poisson_dist_for_prior = true;
     params.poisson_lambda = 0.75;
-    auto dist = create_root_distribution(params, nullptr, map<int, int>(), 10);
-    CHECK_EQ(1, dist.select_root_size(0));
-    CHECK_EQ(1, dist.select_root_size(1));
-    CHECK_EQ(1, dist.select_root_size(2));
-    CHECK_EQ(1, dist.select_root_size(3));
-    CHECK_EQ(1, dist.select_root_size(4));
-    CHECK_EQ(2, dist.select_root_size(5));
-    CHECK_EQ(2, dist.select_root_size(6));
-    CHECK_EQ(2, dist.select_root_size(7));
-    CHECK_EQ(2, dist.select_root_size(8));
+    user_data ud;
+    ud.max_root_family_size = 100;
+    ud.create_prior(params);
+    CHECK_EQ(doctest::Approx(0.47059), ud.prior.compute(1));
+
 }
 
-TEST_CASE("Simulation, create_root_distribution__resizes_distribution_if_nsims_specified")
+TEST_CASE("create_prior__creates__poisson_distribution_from_families")
+{
+    randomizer_engine.seed(10);
+
+    input_parameters params;
+    user_data ud;
+    ud.gene_families.resize(1);
+    ud.create_prior(params);
+    // bogus value that serves the purpose
+    // depends on optimizer and poisson_scorer
+    CHECK_EQ(doctest::Approx(0.7381f), ud.prior.compute(1));
+
+
+}
+
+TEST_CASE("create_prior__resizes_distribution_if_nsims_specified")
 {
     randomizer_engine.seed(10);
 
     input_parameters params;
     params.nsims = 10;
-    auto dist = create_root_distribution(params, nullptr, map<int, int>(), 100);
+    user_data ud;
+    ud.max_root_family_size = 100;
+    ud.create_prior(params);
     /// GCC's implementation of shuffle changed so the numbers that are
     /// returned are in a slightly different order, even with the same seed
 #if __GNUC__ >= 7
-    CHECK_EQ(86, dist.select_root_size(9));
+    CHECK_EQ(86, ud.prior.select_root_size(9));
 #else
-    CHECK_EQ(81, dist.select_root_size(9));
+    CHECK_EQ(81, ud.prior.select_root_size(9));
 #endif
-    CHECK_EQ(0, dist.select_root_size(10));
+    CHECK_EQ(0, ud.prior.select_root_size(10));
 }
 
 TEST_CASE_FIXTURE(Optimizer, "fminsearch_sort_sorts_scores_and_moves_values")

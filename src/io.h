@@ -36,7 +36,7 @@ public:
     bool is_simulating = false;
     int nsims = 0;
     int n_gamma_cats = 1;
-    bool use_uniform_eq_freq = true;
+    bool use_poisson_dist_for_prior = false;
     bool exclude_zero_root_families = true;
     bool lambda_per_family = false;
     bool use_error_model = false;

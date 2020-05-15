@@ -53,6 +53,8 @@ public:
     lambda * read_lambda(const input_parameters &my_input_parameters, clade *p_lambda_tree);
 
     void read_rootdist(std::string rootdist_file_path);
+
+    void create_prior(const input_parameters& params);
 };
 
 #endif

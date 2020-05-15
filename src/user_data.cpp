@@ -158,3 +158,47 @@ void user_data::read_datafiles(const input_parameters& my_input_parameters)
         read_rootdist(my_input_parameters.rootdist);
 }
 
+/// Root distributions are affected by three parameters: -p, -i, -f
+/// If a rootdist file is specified (-f), those values will be used for the root distribution and the other flags
+/// are ignored. Otherwise, if a poisson distribution is specified (-p) with a value, the root
+/// distribution will be based on that poisson distribution. If no poisson value
+/// is specified, a family file must be given (-i) and those families will be used to calculate a
+/// poisson distribution. If a Poisson distribution is used, values above a max family size
+/// will be considered to be 0. The max family size defaults to 100, but is calculated from
+/// family file if one is given.
+
+/// priority: -p specified on command line  (poisson with specified value)
+///           -f specified on command line  (specified root distribution to use)
+///           -i specified on command line  (poisson estimated from file)
+///           Uniform distribution
+void user_data::create_prior(const input_parameters& params)
+{
+    if (params.poisson_lambda > 0)
+    {
+        if (!rootdist.empty())
+        {
+            LOG(WARNING) << "Both root distribution and Poisson distribution specified";
+        }
+
+        LOG(INFO) << "Using Poisson root distribution with lambda " << params.poisson_lambda;
+        prior = root_equilibrium_distribution(params.poisson_lambda, max_root_family_size);
+    }
+    else if (!rootdist.empty())
+    {
+        LOG(INFO) << "Root distribution set by user";
+        prior = root_equilibrium_distribution(rootdist);
+    }
+    else if (!gene_families.empty())
+    {
+        LOG(INFO) << "Estimating root distribution from gene families";
+        prior = root_equilibrium_distribution(gene_families, max_root_family_size);
+    }
+    else
+    {
+        LOG(WARNING) << "No root family size distribution specified, using uniform distribution";
+        prior = root_equilibrium_distribution(max_root_family_size);
+    }
+
+    if (params.nsims > 0)
+        prior.resize(params.nsims);
+}
