@@ -207,7 +207,7 @@ int cafexp(int argc, char *const argv[]) {
 
             int fmsize = data.gene_families.size();
             data.gene_families.erase(rem, data.gene_families.end());
-            LOG(INFO) << "Filtering families not present at the root from: " << fmsize << " to " << data.gene_families.size();
+            LOG(INFO) << "\nFiltering families not present at the root from: " << fmsize << " to " << data.gene_families.size();
 
         }
 

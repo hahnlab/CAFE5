@@ -546,7 +546,7 @@ optimizer::result optimizer::optimize(const optimizer_parameters& params)
         LOG(INFO) << "Optimizer strategy: " << strat->Description();
         LOG(INFO) << "Iterations: " << params.neldermead_iterations;
         LOG(INFO) << "Expansion: " << params.neldermead_expansion;
-        LOG(INFO) << "Reflection: " << params.neldermead_reflection;
+        LOG(INFO) << "Reflection: " << params.neldermead_reflection << "\n";
         LOG(INFO) << "Starting Search for Initial Parameter Values";
     }
 

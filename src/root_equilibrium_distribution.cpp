@@ -47,7 +47,7 @@ root_equilibrium_distribution::root_equilibrium_distribution(const std::vector<g
     optimizer_parameters params;
     auto result = opt.optimize(params);
 
-    LOG(INFO) << "\nEmpirical Prior Estimation Result : (" << result.num_iterations << " iterations)";
+    LOG(INFO) << "Empirical Prior Estimation Result : (" << result.num_iterations << " iterations)";
     LOG(INFO) << "Poisson lambda: " << result.values[0] << " &  Score: " << result.score << "\n";
 
     create_from_poisson(result.values[0], num_values);
