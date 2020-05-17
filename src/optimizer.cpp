@@ -543,7 +543,7 @@ optimizer::result optimizer::optimize(const optimizer_parameters& params)
 
     if (!quiet)
     {
-        LOG(INFO) << "Optimizer strategy: " << strat->Description();
+        LOG(INFO) << "\nOptimizer strategy: " << strat->Description();
         LOG(INFO) << "Iterations: " << params.neldermead_iterations;
         LOG(INFO) << "Expansion: " << params.neldermead_expansion;
         LOG(INFO) << "Reflection: " << params.neldermead_reflection << "\n";
