@@ -229,7 +229,7 @@ void get_gamma(std::vector<double> &v_freq, std::vector<double> &v_rate, double 
     int n_cat = v_freq.size(); // number of rate categories
     double *freq = new double[n_cat], *rate = new double[n_cat];
 
-    discrete_gamma(freq, rate, alpha, alpha, n_cat, 0); // calls ZY's code, with alpha = beta, 0 is flag for median
+    discrete_gamma(freq, rate, alpha, alpha, n_cat, 1); // calls ZY's code, with alpha = beta, 0 is flag for median
 
     for (int i = 0; i < n_cat; ++i) {
 	v_freq[i] = freq[i];
