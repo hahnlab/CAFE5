@@ -49,7 +49,7 @@ void gamma_model::write_vital_statistics(std::ostream& ost, double final_likelih
 
 void gamma_model::write_family_likelihoods(std::ostream& ost)
 {
-    ost << "#FamilyID\tGamma Cat Median\tLikelihood of Category\tLikelihood of Family\tPosterior Probability\tSignificant" << endl;
+    ost << "#FamilyID\tGamma Cat Mean\tLikelihood of Category\tLikelihood of Family\tPosterior Probability\tSignificant" << endl;
 
     std::ostream_iterator<family_info_stash> out_it(ost, "\n");
     std::copy(results.begin(), results.end(), out_it);
@@ -156,10 +156,10 @@ void gamma_model::perturb_lambda()
             }
 
             normal_distribution<double> dist(_lambda_multipliers[i], stddev);
-            new_multipliers[i] = dist(randomizer_engine);
+            new_multipliers[i] = _lambda_multipliers[i];
             for (int i = 0; i < 10 && new_multipliers[i] <= 0; ++i)
             {
-                new_multipliers[i] = dist(randomizer_engine);
+                new_multipliers[i] = _lambda_multipliers[i];
             }
         }
 

@@ -152,7 +152,7 @@ reconstruction* base_model::reconstruct_ancestral_states(const vector<gene_famil
 void base_model::prepare_matrices_for_simulation(matrix_cache& cache)
 {
     unique_ptr<lambda> perturbed_lambda(get_simulation_lambda());
-    cache.precalculate_matrices(get_lambda_values(perturbed_lambda.get()), _p_tree->get_branch_lengths());
+    cache.precalculate_matrices(get_lambda_values(_p_lambda), _p_tree->get_branch_lengths());
 }
 
 lambda* base_model::get_simulation_lambda()
@@ -163,7 +163,7 @@ lambda* base_model::get_simulation_lambda()
 void base_model::perturb_lambda()
 {
     normal_distribution<double> dist(1.0, 0.3);
-    simulation_lambda_multiplier = dist(randomizer_engine);
+    simulation_lambda_multiplier = 1;
 }
 
 int base_model_reconstruction::get_node_count(const gene_family& family, const clade *c) const
