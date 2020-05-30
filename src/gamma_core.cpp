@@ -138,30 +138,30 @@ void gamma_model::perturb_lambda()
         get_gamma(_gamma_cat_probs, _lambda_multipliers, _alpha);
         auto new_multipliers = _lambda_multipliers;
 
-        const double stddev_base = 5.0;
-        for (size_t i = 0; i < _lambda_multipliers.size(); ++i)
-        {
-            double stddev;
-            if (i == 0)
-            {
-                stddev = _lambda_multipliers[0] / stddev_base;
-            }
-            else if (i == _lambda_multipliers.size() - 1)
-            {
-                stddev = (_lambda_multipliers[i] - _lambda_multipliers[i - 1]) / stddev_base;
-            }
-            else
-            {
-                stddev = (_lambda_multipliers[i + 1] - _lambda_multipliers[i - 1]) / (stddev_base*2);
-            }
+        // const double stddev_base = 5.0;
+        // for (size_t i = 0; i < _lambda_multipliers.size(); ++i)
+        // {
+        //     double stddev;
+        //     if (i == 0)
+        //     {
+        //         stddev = _lambda_multipliers[0] / stddev_base;
+        //     }
+        //     else if (i == _lambda_multipliers.size() - 1)
+        //     {
+        //         stddev = (_lambda_multipliers[i] - _lambda_multipliers[i - 1]) / stddev_base;
+        //     }
+        //     else
+        //     {
+        //         stddev = (_lambda_multipliers[i + 1] - _lambda_multipliers[i - 1]) / (stddev_base*2);
+        //     }
 
-            normal_distribution<double> dist(_lambda_multipliers[i], stddev);
-            new_multipliers[i] = _lambda_multipliers[i];
-            for (int i = 0; i < 10 && new_multipliers[i] <= 0; ++i)
-            {
-                new_multipliers[i] = _lambda_multipliers[i];
-            }
-        }
+        //     normal_distribution<double> dist(_lambda_multipliers[i], stddev);
+        //     new_multipliers[i] = _lambda_multipliers[i];
+        //     for (int i = 0; i < 10 && new_multipliers[i] <= 0; ++i)
+        //     {
+        //         new_multipliers[i] = _lambda_multipliers[i];
+        //     }
+        // }
 
         _lambda_multipliers.swap(new_multipliers);
 
