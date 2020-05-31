@@ -36,7 +36,7 @@ AC_SEARCH_LIBS(vdExp, mkl_intel_lp64,
 		[])
 
 AC_DEFINE(NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS, 100, [Number of times optimizer will restart if it fails to find legal values])
-AC_DEFINE(LAMBDA_PERTURBATION_STEP_SIZE, 2, [Number of values simulator will generate before modifying lambda value])
+AC_DEFINE(LAMBDA_PERTURBATION_STEP_SIZE, 1, [Number of values simulator will generate before modifying lambda value])
 AC_DEFINE(OPTIMIZER_STRATEGY_SIMILARITY_CUTOFF, 15, [Optimizer will stop after 15 iterations with no significant change in -ln likelihood]
 )
 AC_DEFINE(PHASED_OPTIMIZER_PHASE1_ATTEMPTS, 4, [Number of attempts optimizer will make to initialize to a good value])
