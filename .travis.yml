@@ -17,4 +17,4 @@ script:
 - make dist
 - test/runtests
 notifications:
-  slack: iu-hpc-users:7OKYnBwu5Cuss5ja7GcwxsLQ
+  slack: hahnlabworkspace:AWJdGIemc7W3GNMRYBNS8Yj0
