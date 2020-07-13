@@ -7,6 +7,7 @@
 #include <iosfwd>
 #include <functional>
 #include <deque>
+#include <stdexcept>
 
 //! \defgroup optimizer Optimization
 //! @brief Classes and functions designed to calculate optimal values for various parameters

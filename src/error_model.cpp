@@ -3,7 +3,7 @@
 #include <cassert>
 #include <algorithm>
 #include <cmath>
-
+#include <stdexcept>
 #include "error_model.h"
 
 using namespace std;

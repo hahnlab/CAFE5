@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <set>
+#include <stdexcept>
 
 #include "gene_family.h"
 #include "clade.h"

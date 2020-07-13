@@ -8,7 +8,7 @@ CFLAGS = -std=c++11 -I. -O3 -include config.h @OPENMP_CXXFLAGS@
 LINKER = $(LD) -std=c++11 -O3 @OPENMP_CXXFLAGS@ -o
 LFLAGS = -I.
 
-AUX =   CHANGELOG.md configure INSTALL LICENSE Makefile.in README.md config.h.in docs/tutorial
+AUX =   CHANGELOG.md configure INSTALL LICENSE Makefile.in README.md config.h.in docs/tutorial examples Test_data
 
 # directories
 SRCDIR = src
