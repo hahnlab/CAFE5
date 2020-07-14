@@ -12,158 +12,187 @@
 #include "gene_family.h"
 #include "user_data.h"
 
-void reconstruct_leaf_node(const clade * c, const lambda * _lambda, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, int _max_family_size, const gene_family* _gene_family, const matrix_cache *_p_calc)
-{
-    auto& C = all_node_Cs[c];
-    auto& L = all_node_Ls[c];
-    C.resize(_max_family_size + 1);
-    L.resize(_max_family_size + 1);
-
-    double branch_length = c->get_branch_length();
-
-    L.resize(_max_family_size + 1);
-
-    int observed_count = _gene_family->get_species_size(c->get_taxon_name());
-    fill(C.begin(), C.end(), observed_count);
-
-    auto matrix = _p_calc->get_matrix(branch_length, _lambda->get_value_for_clade(c));
-    // i will be the parent size
-    for (size_t i = 1; i < L.size(); ++i)
+namespace pupko_reconstructor {
+    pupko_data::pupko_data(size_t num_families, const clade *p_tree, int max_family_size, int max_root_family_size) : v_all_node_Cs(num_families), v_all_node_Ls(num_families)
     {
-        L[i] = matrix->get(i, observed_count);
-    }
-}
-
-void reconstruct_root_node(const clade * c, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, int _max_family_size, int _max_root_family_size, const root_equilibrium_distribution* _p_prior)
-{
-    auto& L = all_node_Ls[c];
-    auto& C = all_node_Cs[c];
-
-    L.resize(min(_max_family_size, _max_root_family_size) + 1);
-    // At the root, we pick a single reconstructed state (step 4 of Pupko)
-    C.resize(1);
-
-    // i is the parent, j is the child
-    for (size_t i = 1; i < L.size(); ++i)
-    {
-        double max_val = -1;
-
-        for (size_t j = 1; j < L.size(); ++j)
+        VLOG(1) << "Initializing Pupko C and L maps";
+        for (size_t i = 0; i < num_families; ++i)
         {
-            double value = 1.0;
-            auto child_multiplier = [&all_node_Ls, j, &value](const clade *child) {
-                value *= all_node_Ls[child][j];
+            std::function <void(const clade*)> pupko_initializer = [&](const clade* c) {
+                pupko_reconstructor::initialize_at_node(c, v_all_node_Cs[i], v_all_node_Ls[i], max_family_size, max_root_family_size);
             };
-            c->apply_to_descendants(child_multiplier);
-            double val = value * _p_prior->compute(j);
-            if (val > max_val)
-            {
-                max_val = val;
-                C[0] = j;
-            }
+            p_tree->apply_reverse_level_order(pupko_initializer);
         }
 
-        L[i] = max_val;
     }
 
-    
-    if (*max_element(L.begin(), L.end()) == 0.0)
+    void reconstruct_leaf_node(const clade* c, const lambda* _lambda, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, const gene_family* _gene_family, const matrix_cache* _p_calc)
     {
-        LOG(WARNING) << "Failed to calculate L value at root" << endl;
-    }
-}
+        auto& C = all_node_Cs[c];
+        auto& L = all_node_Ls[c];
 
-void reconstruct_internal_node(const clade * c, const lambda * _lambda, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, int _max_family_size, const matrix_cache *_p_calc)
-{
-    auto& C = all_node_Cs[c];
-    auto& L = all_node_Ls[c];
-    C.resize(_max_family_size + 1);
-    L.resize(_max_family_size + 1);
+        double branch_length = c->get_branch_length();
 
-    double branch_length = c->get_branch_length();
+        int observed_count = _gene_family->get_species_size(c->get_taxon_name());
+        fill(C.begin(), C.end(), observed_count);
 
-    L.resize(_max_family_size + 1);
-
-    auto matrix = _p_calc->get_matrix(branch_length, _lambda->get_value_for_clade(c));
-
-    if (matrix->is_zero())
-        throw runtime_error("Zero matrix found");
-    // i is the parent, j is the child
-    for (size_t i = 0; i < L.size(); ++i)
-    {
-        size_t max_j = 0;
-        double max_val = -1;
-        for (size_t j = 0; j < L.size(); ++j)
+        auto matrix = _p_calc->get_matrix(branch_length, _lambda->get_value_for_clade(c));
+        // i will be the parent size
+        for (size_t i = 1; i < L.size(); ++i)
         {
-            double value = 1.0;
-            auto child_multiplier = [&all_node_Ls, j, &value](const clade *child) {
-                value *= all_node_Ls[child][j];
-            };
-            c->apply_to_descendants(child_multiplier);
-            double val = value * matrix->get(i,j);
-            if (val > max_val)
-            {
-                max_j = j;
-                max_val = val;
-            }
+            L[i] = matrix->get(i, observed_count);
         }
-
-        L[i] = max_val;
-        C[i] = max_j;
     }
-}
 
-
-void reconstruct_at_node(const clade *c, const lambda *_lambda, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, int max_family_size, int max_root_family_size, const matrix_cache* p_calc, const root_equilibrium_distribution* p_prior, const gene_family *p_family)
-{
-    if (c->is_leaf())
+    void reconstruct_root_node(const clade* c, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, const root_equilibrium_distribution* _p_prior)
     {
-        reconstruct_leaf_node(c, _lambda, all_node_Cs, all_node_Ls, max_family_size, p_family, p_calc);
-    }
-    else if (c->is_root())
-    {
-        reconstruct_root_node(c, all_node_Cs, all_node_Ls, max_family_size, max_root_family_size, p_prior);
-    }
-    else
-    {
-        reconstruct_internal_node(c, _lambda, all_node_Cs, all_node_Ls, max_family_size, p_calc);
-    }
-}
+        auto& C = all_node_Cs[c];
+        auto& L = all_node_Ls[c];
 
-void reconstruct_gene_family(const lambda* lambda, const clade *p_tree,
-    int max_family_size,
-    int max_root_family_size,
-    const gene_family *gf,
-    matrix_cache *p_calc,
-    root_equilibrium_distribution* p_prior, clademap<int>& reconstructed_states)
-{
-    clademap<std::vector<int>> all_node_Cs;
-
-    /// Ls hold a probability for each family size (values are probabilities of any given family size)
-    clademap<std::vector<double>> all_node_Ls;
-
-    std::function <void(const clade *)> pupko_reconstructor;
-    pupko_reconstructor = [&](const clade *c) {
-        reconstruct_at_node(c, lambda, all_node_Cs, all_node_Ls, max_family_size, max_root_family_size, p_calc, p_prior, gf);
-    };
-
-    std::function<void(const clade *child)> backtracker;
-    backtracker = [&reconstructed_states, &all_node_Cs, &backtracker](const clade *child) {
-        if (!child->is_leaf())
+        // i is the parent, j is the child
+        for (size_t i = 1; i < L.size(); ++i)
         {
-            auto& C = all_node_Cs[child];
-            int parent_c = reconstructed_states[child->get_parent()];
-            reconstructed_states[child] = C[parent_c];
-            child->apply_to_descendants(backtracker);
+            double max_val = -1;
+
+            for (size_t j = 1; j < L.size(); ++j)
+            {
+                double value = 1.0;
+                auto child_multiplier = [&all_node_Ls, j, &value](const clade* child) {
+                    value *= all_node_Ls[child][j];
+                };
+                c->apply_to_descendants(child_multiplier);
+                double val = value * _p_prior->compute(j);
+                if (val > max_val)
+                {
+                    max_val = val;
+                    C[0] = j;
+                }
+            }
+
+            L[i] = max_val;
         }
+
+
+        if (*max_element(L.begin(), L.end()) == 0.0)
+        {
+            LOG(WARNING) << "Failed to calculate L value at root" << endl;
+        }
+    }
+
+    void reconstruct_internal_node(const clade* c, const lambda* _lambda, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, const matrix_cache* _p_calc)
+    {
+        auto& C = all_node_Cs[c];
+        auto& L = all_node_Ls[c];
+
+        double branch_length = c->get_branch_length();
+
+        auto matrix = _p_calc->get_matrix(branch_length, _lambda->get_value_for_clade(c));
+
+        if (matrix->is_zero())
+            throw runtime_error("Zero matrix found");
+
+        size_t j = 0;
+        double value = 0.0;
+        auto child_multiplier = [&all_node_Ls, j, &value](const clade* child) {
+            value *= all_node_Ls[child][j];
         };
 
-    // Pupko's joint reconstruction algorithm
-    p_tree->apply_reverse_level_order(pupko_reconstructor);
+        // i is the parent, j is the child
+        for (size_t i = 0; i < L.size(); ++i)
+        {
+            size_t max_j = 0;
+            double max_val = -1;
+            for (j = 0; j < L.size(); ++j)
+            {
+                value = 1.0;
+                c->apply_to_descendants(child_multiplier);
+                double val = value * matrix->get(i, j);
+                if (val > max_val)
+                {
+                    max_j = j;
+                    max_val = val;
+                }
+            }
 
-    reconstructed_states[p_tree] = all_node_Cs[p_tree][0];
-    p_tree->apply_to_descendants(backtracker);
+            L[i] = max_val;
+            C[i] = max_j;
+        }
+    }
 
+
+    void reconstruct_at_node(const clade* c, const lambda* _lambda, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, const matrix_cache* p_calc, const root_equilibrium_distribution* p_prior, const gene_family* p_family)
+    {
+        if (c->is_leaf())
+        {
+            reconstruct_leaf_node(c, _lambda, all_node_Cs, all_node_Ls, p_family, p_calc);
+        }
+        else if (c->is_root())
+        {
+            reconstruct_root_node(c, all_node_Cs, all_node_Ls, p_prior);
+        }
+        else
+        {
+            reconstruct_internal_node(c, _lambda, all_node_Cs, all_node_Ls, p_calc);
+        }
+    }
+
+    void initialize_at_node(const clade* c, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, int max_family_size, int max_root_family_size)
+    {
+        if (c->is_leaf())
+        {
+            auto& C = all_node_Cs[c];
+            auto& L = all_node_Ls[c];
+            C.resize(max_family_size + 1);
+            L.resize(max_family_size + 1);
+
+        }
+        else if (c->is_root())
+        {
+            auto& L = all_node_Ls[c];
+            auto& C = all_node_Cs[c];
+
+            L.resize(min(max_family_size, max_root_family_size) + 1);
+            // At the root, we pick a single reconstructed state (step 4 of Pupko)
+            C.resize(1);
+        }
+        else
+        {
+            auto& C = all_node_Cs[c];
+            auto& L = all_node_Ls[c];
+            C.resize(max_family_size + 1);
+            L.resize(max_family_size + 1);
+        }
+    }
+
+    void reconstruct_gene_family(const lambda* lambda, const clade* p_tree,
+        const gene_family* gf,
+        matrix_cache* p_calc,
+        root_equilibrium_distribution* p_prior,
+        clademap<int>& reconstructed_states,
+        clademap<std::vector<int>>& all_node_Cs,
+        clademap<std::vector<double>> all_node_Ls)
+    {
+        std::function <void(const clade*)> pupko_reconstructor = [&](const clade* c) {
+            reconstruct_at_node(c, lambda, all_node_Cs, all_node_Ls, p_calc, p_prior, gf);
+        };
+
+        std::function<void(const clade * child)> backtracker = [&reconstructed_states, &all_node_Cs, &backtracker](const clade* child) {
+            if (!child->is_leaf())
+            {
+                auto& C = all_node_Cs[child];
+                int parent_c = reconstructed_states[child->get_parent()];
+                reconstructed_states[child] = C[parent_c];
+                child->apply_to_descendants(backtracker);
+            }
+        };
+
+        // Pupko's joint reconstruction algorithm
+        p_tree->apply_reverse_level_order(pupko_reconstructor);
+
+        reconstructed_states[p_tree] = all_node_Cs[p_tree][0];
+        p_tree->apply_to_descendants(backtracker);
+
+    }
 }
 
 string newick_node(const clade *node, const cladevector& order, bool significant, std::function<std::string(const clade *c)> textwriter)

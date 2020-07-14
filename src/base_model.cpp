@@ -138,10 +138,12 @@ reconstruction* base_model::reconstruct_ancestral_states(const vector<gene_famil
 
     p_calc->precalculate_matrices(get_lambda_values(_p_lambda), _p_tree->get_branch_lengths());
 
+    pupko_reconstructor::pupko_data data(families.size(), _p_tree, _max_family_size, _max_root_family_size);
+
+#pragma omp parallel for
     for (size_t i = 0; i< families.size(); ++i)
     {
-        reconstruct_gene_family(_p_lambda, _p_tree, _max_family_size, _max_root_family_size,
-            &families[i], p_calc, p_prior, result->_reconstructions[families[i].id()]);
+        pupko_reconstructor::reconstruct_gene_family(_p_lambda, _p_tree, &families[i], p_calc, p_prior, result->_reconstructions[families[i].id()], data.C(i), data.L(i));
     }
 
     LOG(INFO) << "Done!\n";

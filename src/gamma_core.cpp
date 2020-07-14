@@ -364,15 +364,18 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_fami
         result->_reconstructions[families[i].id()].category_reconstruction.resize(_lambda_multipliers.size());
     }
 
-
     for (size_t k = 0; k < _gamma_cat_probs.size(); ++k)
     {
+        VLOG(1) << "Reconstructing for multiplier " << _lambda_multipliers[k];
         unique_ptr<lambda> ml(_p_lambda->multiply(_lambda_multipliers[k]));
+
+        pupko_reconstructor::pupko_data data(families.size(), _p_tree, _max_family_size, _max_root_family_size);
 
 #pragma omp parallel for
         for (size_t i = 0; i < families.size(); ++i)
         {
-            reconstruct_gene_family(ml.get(), _p_tree, _max_family_size, _max_root_family_size, &families[i], calc, prior, recs[i]->category_reconstruction[k]);
+            pupko_reconstructor::reconstruct_gene_family(ml.get(), _p_tree, &families[i], calc, prior,
+                recs[i]->category_reconstruction[k], data.C(i), data.L(i));
         }
     }
 

@@ -825,7 +825,10 @@ TEST_CASE_FIXTURE(Reconstruction, "reconstruct_leaf_node")
     calc.precalculate_matrices({ .1 }, set<double>({ 7 }));
     clademap<std::vector<int>> all_node_Cs;
     clademap<std::vector<double>> all_node_Ls;
-    reconstruct_leaf_node(&leaf, &lambda, all_node_Cs, all_node_Ls, 7, &fam, &calc);
+    all_node_Cs[&leaf].resize(8);
+    all_node_Ls[&leaf].resize(8);
+
+    pupko_reconstructor::reconstruct_leaf_node(&leaf, &lambda, all_node_Cs, all_node_Ls, &fam, &calc);
 
     // L holds the probability of the leaf moving from size 3 to size n
     auto L = all_node_Ls[&leaf];
@@ -949,12 +952,18 @@ TEST_CASE_FIXTURE(Reconstruction, "reconstruction_process_internal_node")
 
     clademap<std::vector<int>> all_node_Cs;
     clademap<std::vector<double>> all_node_Ls;
+    all_node_Cs[p_tree->find_descendant("A")].resize(25);
+    all_node_Ls[p_tree->find_descendant("A")].resize(25);
+    all_node_Cs[p_tree->find_descendant("B")].resize(25);
+    all_node_Ls[p_tree->find_descendant("B")].resize(25);
+    all_node_Cs[p_tree->find_descendant("AB")].resize(25);
+    all_node_Ls[p_tree->find_descendant("AB")].resize(25);
 
-    reconstruct_leaf_node(p_tree->find_descendant("A"), &s_lambda, all_node_Cs, all_node_Ls, 24, &fam, &calc);
-    reconstruct_leaf_node(p_tree->find_descendant("B"), &s_lambda, all_node_Cs, all_node_Ls, 24, &fam, &calc);
+    pupko_reconstructor::reconstruct_leaf_node(p_tree->find_descendant("A"), &s_lambda, all_node_Cs, all_node_Ls, &fam, &calc);
+    pupko_reconstructor::reconstruct_leaf_node(p_tree->find_descendant("B"), &s_lambda, all_node_Cs, all_node_Ls, &fam, &calc);
 
     auto internal_node = p_tree->find_descendant("AB");
-    reconstruct_internal_node(internal_node, &s_lambda, all_node_Cs, all_node_Ls, 24, &calc);
+    pupko_reconstructor::reconstruct_internal_node(internal_node, &s_lambda, all_node_Cs, all_node_Ls, &calc);
     auto L = all_node_Ls[internal_node];
 
     // L holds the probability of the node moving from size 3 to size n
@@ -984,7 +993,13 @@ TEST_CASE_FIXTURE(Reconstruction, "reconstruct_gene_family")
     root_equilibrium_distribution dist(ud.rootdist);
 
     clademap<int> result;
-    reconstruct_gene_family(&lambda, p_tree.get(), 10, ud.max_root_family_size, &fam, &cache, &dist, result);
+    clademap<std::vector<int>> all_node_Cs;
+    clademap<std::vector<double>> all_node_Ls;
+    std::function <void(const clade*)> pupko_initializer = [this, &all_node_Cs, &all_node_Ls, &ud](const clade* c) {
+        pupko_reconstructor::initialize_at_node(c, all_node_Cs, all_node_Ls, 10, ud.max_root_family_size);
+    };
+    p_tree.get()->apply_reverse_level_order(pupko_initializer);
+    pupko_reconstructor::reconstruct_gene_family(&lambda, p_tree.get(), &fam, &cache, &dist, result, all_node_Cs, all_node_Ls);
     auto AB = p_tree->find_descendant("AB");
     CHECK_EQ(4, result[AB]);
 }
@@ -2574,8 +2589,6 @@ TEST_CASE("create_prior__creates__poisson_distribution_from_families")
     // bogus value that serves the purpose
     // depends on optimizer and poisson_scorer
     CHECK_EQ(doctest::Approx(0.7381f), ud.prior.compute(1));
-
-
 }
 
 TEST_CASE("create_prior__resizes_distribution_if_nsims_specified")
