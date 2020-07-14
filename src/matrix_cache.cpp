@@ -3,6 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include <sstream>
+#include <random>
 
 #include "matrix_cache.h"
 #include "probability.h"
@@ -14,6 +15,8 @@
 #include "mkl.h"
 #endif
 #endif
+
+extern std::mt19937 randomizer_engine;
 
 bool matrix::is_zero() const
 {
@@ -56,6 +59,13 @@ vector<double> matrix::multiply(const vector<double>& v, int s_min_family_size, 
     return result;
 }
 
+int matrix::select_random_y(int x, int max) const
+{
+    assert(x < _size);
+    assert(max < _size);
+    std::discrete_distribution<int> distribution(values.begin() + x*_size, values.begin() + x*_size + max);
+    return distribution(randomizer_engine);
+}
 
 matrix_cache::~matrix_cache()
 {

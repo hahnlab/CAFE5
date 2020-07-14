@@ -36,6 +36,8 @@ public:
     }
     bool is_zero() const;
     std::vector<double> multiply(const std::vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const;
+
+    int select_random_y(int x, int max) const;
 };
 
 

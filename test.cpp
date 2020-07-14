@@ -598,9 +598,30 @@ TEST_CASE("Probability: get_random_probabilities")
     single_lambda lam(0.05);
     matrix_cache cache(15);
     cache.precalculate_matrices(vector<double>{0.05}, set<double>{1});
-    auto probs = get_random_probabilities(p_tree.get(), 10, 3, 12, 8, &lam, cache, NULL);
+    vector<clademap<std::vector<double>>> pruners(10);
+    for (auto& p : pruners)
+    {
+        auto fn = [&](const clade* node) { p[node].resize(node->is_root() ? 8 :13); };
+        p_tree->apply_reverse_level_order(fn);
+    }
+    auto probs = get_random_probabilities(p_tree.get(), 10, 3, 12, 8, &lam, cache, NULL, pruners);
     CHECK_EQ(10, probs.size());
     CHECK_EQ(doctest::Approx(0.001905924).scale(10000), probs[0]);
+}
+
+TEST_CASE("Matrix__get_random_y")
+{
+    matrix m(10);
+    m.set(1, 1, 1);
+    CHECK_EQ(1, m.select_random_y(1, 9));
+
+    m.set(2, 1, .5);
+    m.set(2, 2, .5);
+    CHECK_EQ(2, m.select_random_y(2, 9));
+    CHECK_EQ(1, m.select_random_y(2, 9));
+
+    m.set(5, 5, 1);
+    CHECK_EQ(5, m.select_random_y(5, 9));
 }
 
 TEST_CASE_FIXTURE(Inference, "base_optimizer_guesses_lambda_only")

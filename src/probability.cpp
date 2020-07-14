@@ -272,11 +272,11 @@ std::vector<int> uniform_dist(int n_draws, int min, int max) {
     \returns a sorted vector of probabilities of the requested number of randomly generated trees
 */
 
-std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, int max_root_family_size, const lambda *p_lambda, const matrix_cache& cache, error_model *p_error_model)
+std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, int max_root_family_size, const lambda *p_lambda, const matrix_cache& cache, error_model *p_error_model, vector<clademap<std::vector<double>>>& pruners)
 {
+    VLOG(2) << "Getting random probabilities for " << number_of_simulations << " simulations";
     vector<double> result(number_of_simulations);
     vector<gene_family> families(number_of_simulations);
-    vector<clademap<std::vector<double>>> pruners(number_of_simulations);
 
     // generate families by generating a tree, then storing off the leaf values
     for (size_t i = 0; i < result.size(); ++i)
@@ -290,14 +290,6 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
         families[i].init_from_clademap(sizes);
     }
 
-    // initialize the probability vectors in the pruners
-    // Do this outside of the parallel loop as it allocates needed memory
-    for (auto& p : pruners)
-    {
-        // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
-        auto fn = [&](const clade* node) { p[node].resize(node->is_root() ? max_root_family_size : max_family_size + 1); };
-        p_tree->apply_reverse_level_order(fn);
-    }
 
 #pragma omp parallel for
     for (size_t i = 0; i < result.size(); ++i)
@@ -308,6 +300,8 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
     }
 
     sort(result.begin(), result.end());
+
+    VLOG(2) << "Random probabilities complete";
 
     return result;
 }
@@ -331,12 +325,7 @@ void set_weighted_random_family_size(const clade *node, clademap<int> *sizemap, 
             std::uniform_int_distribution<int> distribution(0, max_family_size - 1);
             c = distribution(randomizer_engine);
         }
-        vector<double> v(max_family_size);
-        for (int i = 0; i < max_family_size; i++) {
-            v[i] = probabilities->get(parent_family_size, i);
-        }
-        std::discrete_distribution<int> distribution(v.begin(), v.end());
-        c = distribution(randomizer_engine);
+        c = probabilities->select_random_y(parent_family_size, max_family_size);
     }
 
     if (node->is_leaf())
@@ -411,11 +400,21 @@ vector<double> compute_pvalues(const clade* p_tree, const std::vector<gene_famil
     const int mx = max_family_size;
     const int mxr = max_root_family_size;
 
+    vector<clademap<std::vector<double>>> pruners(number_of_simulations);
+
+    for (auto& p : pruners)
+    {
+        // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
+        auto fn = [&](const clade* node) { p[node].resize(node->is_root() ? max_root_family_size : max_family_size + 1); };
+        p_tree->apply_reverse_level_order(fn);
+    }
+
     std::vector<std::vector<double> > conditional_distribution(mxr);
     for (int i = 0; i < mxr; ++i)
     {
-        conditional_distribution[i] = get_random_probabilities(p_tree, number_of_simulations, i, mx, mxr, p_lambda, cache, NULL);
+        conditional_distribution[i] = get_random_probabilities(p_tree, number_of_simulations, i, mx, mxr, p_lambda, cache, NULL, pruners);
     }
+    VLOG(1) << "Conditional distributions calculated";
 
     vector<double> result(families.size());
 

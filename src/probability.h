@@ -37,7 +37,7 @@ std::vector<int> uniform_dist(int n_draws, int min, int max);
 /* END: Uniform distribution - */
 
 void set_weighted_random_family_size(const clade *node, clademap<int> *sizemap, const lambda *p_lambda, error_model *p_error_model, int max_family_size, const matrix_cache& cache);
-std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, int max_root_family_size, const lambda *p_lambda, const matrix_cache& cache, error_model *p_error_model);
+std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, int max_root_family_size, const lambda *p_lambda, const matrix_cache& cache, error_model *p_error_model, std::vector<clademap<std::vector<double>>>& pruners);
 size_t adjust_for_error_model(size_t c, const error_model *p_error_model);
 
 double pvalue(double v, const vector<double>& conddist);
