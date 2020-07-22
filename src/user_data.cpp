@@ -169,8 +169,8 @@ void user_data::read_datafiles(const input_parameters& my_input_parameters)
 
 /// priority: -p specified on command line  (poisson with specified value)
 ///           -f specified on command line  (specified root distribution to use)
-///           -i specified on command line  (poisson estimated from file)
-///           Uniform distribution
+///           -i + -p specified on command line  (poisson estimated from file)
+///           -i Uniform distribution
 void user_data::create_prior(const input_parameters& params)
 {
     if (params.poisson_lambda > 0)
