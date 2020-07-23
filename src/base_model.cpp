@@ -146,6 +146,16 @@ reconstruction* base_model::reconstruct_ancestral_states(const vector<gene_famil
         pupko_reconstructor::reconstruct_gene_family(_p_lambda, _p_tree, &families[i], p_calc, p_prior, result->_reconstructions[families[i].id()], data.C(i), data.L(i));
     }
 
+    size_t success = count_if(data.v_all_node_Ls.begin(), data.v_all_node_Ls.end(), [this](const clademap<std::vector<double>>& L) 
+        { 
+            return *max_element( L.at(_p_tree).begin(), L.at(_p_tree).end()) > 0; 
+        });
+
+    if (success != families.size())
+    {
+        LOG(WARNING) << "Failed to reconstruct " << families.size() - success << " families" << endl;
+    }
+
     LOG(INFO) << "Done!\n";
 
     return result;

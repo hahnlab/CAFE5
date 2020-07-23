@@ -33,7 +33,7 @@ void reconstruct_gene_family(const lambda* lambda, const clade *p_tree,
     root_equilibrium_distribution* p_prior, 
     clademap<int>& reconstructed_states,
     clademap<std::vector<int>>& all_node_Cs,
-    clademap<std::vector<double>> all_node_Ls);
+    clademap<std::vector<double>>& all_node_Ls);
 }
 
 

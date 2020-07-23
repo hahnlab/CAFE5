@@ -72,11 +72,6 @@ namespace pupko_reconstructor {
             L[i] = max_val;
         }
 
-
-        if (*max_element(L.begin(), L.end()) == 0.0)
-        {
-            LOG(WARNING) << "Failed to calculate L value at root" << endl;
-        }
     }
 
     void reconstruct_internal_node(const clade* c, const lambda* _lambda, clademap<std::vector<int>>& all_node_Cs, clademap<std::vector<double>>& all_node_Ls, const matrix_cache* _p_calc)
@@ -93,7 +88,7 @@ namespace pupko_reconstructor {
 
         size_t j = 0;
         double value = 0.0;
-        auto child_multiplier = [&all_node_Ls, j, &value](const clade* child) {
+        auto child_multiplier = [&all_node_Ls, &j, &value](const clade* child) {
             value *= all_node_Ls[child][j];
         };
 
@@ -170,7 +165,7 @@ namespace pupko_reconstructor {
         root_equilibrium_distribution* p_prior,
         clademap<int>& reconstructed_states,
         clademap<std::vector<int>>& all_node_Cs,
-        clademap<std::vector<double>> all_node_Ls)
+        clademap<std::vector<double>>& all_node_Ls)
     {
         std::function <void(const clade*)> pupko_reconstructor = [&](const clade* c) {
             reconstruct_at_node(c, lambda, all_node_Cs, all_node_Ls, p_calc, p_prior, gf);
@@ -191,7 +186,6 @@ namespace pupko_reconstructor {
 
         reconstructed_states[p_tree] = all_node_Cs[p_tree][0];
         p_tree->apply_to_descendants(backtracker);
-
     }
 }
 
