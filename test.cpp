@@ -2153,15 +2153,21 @@ TEST_CASE_FIXTURE(Inference, "estimator_compute_pvalues")
     CHECK_EQ(doctest::Approx(0.666667), values[0]);
 }
 
-TEST_CASE_FIXTURE(Inference, "gamma_lambda_optimizer")
+TEST_CASE_FIXTURE(Inference, "gamma_lambda_optimizer updates model alpha and lambda")
 {
     _user_data.max_root_family_size = 10;
     _user_data.prior = root_equilibrium_distribution(_user_data.max_root_family_size);
 
-    gamma_model m(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 10, _user_data.max_root_family_size, 4, 0.25, NULL);
+//    gamma_model m(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 10, _user_data.max_root_family_size, 4, 0.25, NULL);
+    vector<double> gamma_categories{ 0.3, 0.7 };
+    vector<double> multipliers{ 0.5, 1.5 };
+    gamma_model m(_user_data.p_lambda, _user_data.p_tree, &_user_data.gene_families, 10, _user_data.max_root_family_size, gamma_categories, multipliers, NULL);
+
     gamma_lambda_optimizer optimizer(_user_data.p_lambda, &m, &_user_data.prior, 7);
     vector<double> values{ 0.01, 0.25 };
-    CHECK_EQ(doctest::Approx(6.4168), optimizer.calculate_score(&values[0]));
+    optimizer.calculate_score(&values[0]);
+    CHECK_EQ(doctest::Approx(0.25), m.get_alpha());
+    CHECK_EQ(doctest::Approx(0.01), dynamic_cast<single_lambda *>(m.get_lambda())->get_single_lambda());
 }
 
 TEST_CASE("Inference: inference_optimizer_scorer__calculate_score__translates_nan_to_inf")
@@ -2569,12 +2575,30 @@ TEST_CASE("create_prior__creates__poisson_distribution_from_families")
     randomizer_engine.seed(10);
 
     input_parameters params;
+    params.use_poisson_dist_for_prior = true;
     user_data ud;
     ud.gene_families.resize(1);
     ud.create_prior(params);
     // bogus value that serves the purpose
     // depends on optimizer and poisson_scorer
     CHECK_EQ(doctest::Approx(0.7381f), ud.prior.compute(1));
+}
+
+TEST_CASE("create_prior creates uniform distribution if poisson not specified")
+{
+    randomizer_engine.seed(10);
+
+    input_parameters params;
+    params.use_poisson_dist_for_prior = false;
+    user_data ud;
+    ud.gene_families.resize(1);
+    ud.create_prior(params);
+    // bogus value that serves the purpose
+    // depends on optimizer and poisson_scorer
+    CHECK_EQ(doctest::Approx(0.008), ud.prior.compute(1));
+    CHECK_EQ(doctest::Approx(0.008), ud.prior.compute(10));
+    CHECK_EQ(doctest::Approx(0.008), ud.prior.compute(50));
+    CHECK_EQ(doctest::Approx(0.008), ud.prior.compute(100));
 }
 
 TEST_CASE("create_prior__resizes_distribution_if_nsims_specified")

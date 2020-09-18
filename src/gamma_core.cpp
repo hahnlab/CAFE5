@@ -39,6 +39,8 @@ gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_famil
 {
     _gamma_cat_probs = gamma_categories;
     _lambda_multipliers = multipliers;
+    if (p_gene_families)
+        _category_likelihoods.resize(p_gene_families->size());
 }
 
 void gamma_model::write_vital_statistics(std::ostream& ost, double final_likelihood)
