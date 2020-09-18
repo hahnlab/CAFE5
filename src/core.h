@@ -179,10 +179,6 @@ public:
     std::size_t get_gene_family_count() const;
 
     const event_monitor& get_monitor() { return _monitor;  }
-
-    //! Tells the model to modify its lambdas slightly to provide a bit of extra randomness when simulating. 
-   //  Default is to do nothing. 
-    virtual void perturb_lambda() {}
 };
 
 //! @brief Creates a list of families that are identical in all values

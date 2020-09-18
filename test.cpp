@@ -1884,12 +1884,20 @@ TEST_CASE("Simulation: print_process_can_print_without_internal_nodes")
 
 }
 
-TEST_CASE("Simulation: gamma_model_get_simulation_lambda_selects_random_multiplier_based_on_alpha")
+TEST_CASE("Simulation: gamma_model_get_simulation_lambda_uses_multiplier_based_on_category_probability")
 {
+    vector<double> gamma_categories{ 0.3, 0.7 };
+    vector<double> multipliers{ 0.5, 1.5 };
     single_lambda lam(0.05);
-    gamma_model m(&lam, NULL, NULL, 0, 5, 3, 0.7, NULL);
-    unique_ptr<single_lambda> new_lam(dynamic_cast<single_lambda*>(m.get_simulation_lambda()));
-    CHECK_EQ(doctest::Approx(0.00574028), new_lam->get_single_lambda());
+    gamma_model m(&lam, NULL, NULL, 0, 5, gamma_categories, multipliers, NULL);
+    vector<double> results(100);
+    generate(results.begin(), results.end(), [&m]() {
+        unique_ptr<single_lambda> new_lam(dynamic_cast<single_lambda*>(m.get_simulation_lambda()));
+        return new_lam->get_single_lambda();
+        });
+
+    CHECK_EQ(doctest::Approx(0.057), accumulate(results.begin(), results.end(), 0.0) / 100.0);
+
 }
 
 TEST_CASE("Simulation: create_trial")
@@ -2335,25 +2343,6 @@ TEST_CASE("Simulation, base_prepare_matrices_for_simulation_creates_matrix_for_e
     CHECK_EQ(3, m.get_cache_size());
 }
 
-TEST_CASE("Simulation, base_prepare_matrices_for_simulation_uses_perturbed_lambda")
-{
-    single_lambda lam(0.05);
-    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
-    base_model b(&lam, p_tree.get(), NULL, 0, 0, NULL);
-    b.perturb_lambda();
-    matrix_cache m(25);
-    b.prepare_matrices_for_simulation(m);
-    unique_ptr<single_lambda> sim_lambda(dynamic_cast<single_lambda*>(b.get_simulation_lambda()));
-    try
-    {
-        m.get_matrix(7, sim_lambda->get_single_lambda());
-    }
-    catch (std::runtime_error & err)
-    {
-        FAIL("Failed to cache simulation lambda");
-    }
-}
-
 TEST_CASE("Simulation, gamma_prepare_matrices_for_simulation_creates_matrix_for_each_branch_and_category")
 {
     single_lambda lam(0.05);
@@ -2478,30 +2467,6 @@ TEST_CASE("Simulation, simulate_processes")
     vector<simulated_family> results(1);
     sim.simulate_processes(&m, results);
     CHECK_EQ(100, results.size());
-}
-
-TEST_CASE("Simulation, gamma_model_perturb_lambda_with_clusters")
-{
-    randomizer_engine.seed(10);
-
-    gamma_model model(NULL, NULL, NULL, 0, 5, 3, 0.7, NULL);
-    model.perturb_lambda();
-    auto multipliers = model.get_lambda_multipliers();
-    CHECK_EQ(3, multipliers.size());
-    CHECK_EQ(doctest::Approx(0.1136284), multipliers[0]);
-    CHECK_EQ(doctest::Approx(0.8763229), multipliers[1]);
-    CHECK_EQ(doctest::Approx(2.151219), multipliers[2]);
-}
-
-TEST_CASE("Simulation, gamma_model_perturb_lambda_without_clusters")
-{
-    randomizer_engine.seed(10);
-
-    gamma_model model(NULL, NULL, NULL, 0, 5, 1, 5, NULL);
-    model.perturb_lambda();
-    auto multipliers = model.get_lambda_multipliers();
-    CHECK_EQ(1, multipliers.size());
-    CHECK_EQ(doctest::Approx(0.911359), multipliers[0]);
 }
 
 TEST_CASE("root_equilibrium_distribution__resize")

@@ -72,7 +72,6 @@ void simulator::simulate_processes(model *p_model, std::vector<simulated_family>
 
     for (size_t i = 0; i < results.size(); i+= LAMBDA_PERTURBATION_STEP_SIZE)
     {
-        p_model->perturb_lambda();
         unique_ptr<lambda> sim_lambda(p_model->get_simulation_lambda());
         
         matrix_cache cache(data.max_root_family_size+1);

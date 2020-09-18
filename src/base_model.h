@@ -37,12 +37,7 @@ public:
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache);
 
-    //! Return the lambda provided by the user, but with a small randomizer
-    /// provided by simulation_lambda_multiplier. That is modified by calling \ref perturb_lambda.
     virtual lambda* get_simulation_lambda();
-
-    //! Sets simulation_lambda_multiplier by a normal distribution mean=1, stddev = .3
-    void perturb_lambda();
 
 };
 

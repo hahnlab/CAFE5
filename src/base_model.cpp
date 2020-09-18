@@ -140,6 +140,14 @@ reconstruction* base_model::reconstruct_ancestral_states(const vector<gene_famil
 
     pupko_reconstructor::pupko_data data(families.size(), _p_tree, _max_family_size, _max_root_family_size);
 
+    for (size_t i = 0; i < families.size(); ++i)
+    {
+        clademap<int> &rc = result->_reconstructions[families[i].id()];
+        _p_tree->apply_prefix_order([&rc](const clade* c) {
+            rc[c] = 0;
+            });
+    }
+
 #pragma omp parallel for
     for (size_t i = 0; i< families.size(); ++i)
     {
@@ -182,6 +190,9 @@ int base_model_reconstruction::get_node_count(const gene_family& family, const c
 {
     if (c->is_leaf())
         return family.get_species_size(c->get_taxon_name());
+
+    if (_reconstructions.find(family.id()) == _reconstructions.end())
+        throw runtime_error("Family " + family.id() + " not found in reconstruction");
 
     return _reconstructions.at(family.id()).at(c);
 }
