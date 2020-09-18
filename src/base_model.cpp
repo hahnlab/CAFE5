@@ -180,12 +180,6 @@ lambda* base_model::get_simulation_lambda()
     return _p_lambda->multiply(simulation_lambda_multiplier);
 }
 
-void base_model::perturb_lambda()
-{
-    normal_distribution<double> dist(1.0, 0.3);
-    simulation_lambda_multiplier = 1;
-}
-
 int base_model_reconstruction::get_node_count(const gene_family& family, const clade *c) const
 {
     if (c->is_leaf())
