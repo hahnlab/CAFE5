@@ -10,7 +10,7 @@
 #include <memory>
 
 #ifdef _CRAYC
-#include "../config.h"
+#include "../../config.h"
 #endif
 
 #include "optimizer.h"
