@@ -1,5 +1,5 @@
 #ifdef _CRAYC
-#include "../config.h"
+#include "../../config.h"
 #endif
 
 #include <map>
