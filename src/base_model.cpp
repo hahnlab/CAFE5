@@ -16,6 +16,13 @@
 #include "optimizer_scorer.h"
 #include "simulator.h"
 
+#if defined __INTEL_COMPILER
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif __GNUC__
+#include <execution>
+#endif
+
 extern mt19937 randomizer_engine;
 
 base_model::base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
@@ -68,12 +75,16 @@ double base_model::infer_family_likelihoods(const root_equilibrium_distribution 
 
     vector<vector<double>> partial_likelihoods(_p_gene_families->size());
     par_timer.start("inference prune (Base)");
-#pragma omp parallel for
-    for (size_t i = 0; i < _p_gene_families->size(); ++i) {
-        if (references[i] == i)
-            partial_likelihoods[i] = inference_prune(_p_gene_families->at(i), calc, _p_lambda, _p_error_model, _p_tree, 1.0, _max_root_family_size, _max_family_size);
+//#pragma omp parallel for
+    transform(std::execution::par, _p_gene_families->begin(), _p_gene_families->end(), partial_likelihoods.begin(), 
+		[&](const gene_family &f) {
+				return inference_prune(f, calc, _p_lambda, _p_error_model, _p_tree, 1.0, _max_root_family_size, _max_family_size);
+			});
+//    for (size_t i = 0; i < _p_gene_families->size(); ++i) {
+//        if (references[i] == i)
+//            partial_likelihoods[i] = inference_prune(_p_gene_families->at(i), calc, _p_lambda, _p_error_model, _p_tree, 1.0, _max_root_family_size, _max_family_size);
             // probabilities of various family sizes
-    }
+//    }
     par_timer.stop("inference prune (Base)");
 
     // prune all the families with the same lambda
