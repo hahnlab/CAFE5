@@ -19,7 +19,16 @@
 #if defined __INTEL_COMPILER
 #include <pstl/execution>
 #include <pstl/algorithm> 
-#elif __GNUC__
+#elif defined __PGI
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined __llvm__
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined _CRAYC
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined __GNUC__
 #include <execution>
 #endif
 
