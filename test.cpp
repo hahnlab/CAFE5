@@ -2190,6 +2190,15 @@ TEST_CASE_FIXTURE(Inference, "poisson_scorer_optimizes_correct_value")
     // DOUBLES_EQUAL(0.5, result.values[0], 0.0001)
 }
 
+TEST_CASE("poisson_scorer returns invalid for negative lambda")
+{
+    vector<gene_family> _;
+    poisson_scorer scorer(_);
+    double lambda = -1;
+    double actual = scorer.lnLPoisson(&lambda);
+    CHECK(std::isinf(actual));
+}
+
 TEST_CASE_FIXTURE(Inference, "poisson_scorer__lnlPoisson")
 {
     poisson_scorer scorer(_user_data.gene_families);

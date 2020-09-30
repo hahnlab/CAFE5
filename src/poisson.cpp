@@ -2,6 +2,8 @@
 #include <cmath>
 #include <random>
 
+#include "easylogging++.h"
+
 #include "poisson.h"
 #include "clade.h"
 #include "optimizer.h"
@@ -56,11 +58,15 @@ std::vector<double> poisson_scorer::initial_guesses()
 double poisson_scorer::calculate_score(const double * values)
 {
     return lnLPoisson(values);
+
 }
 
 double poisson_scorer::lnLPoisson(const double* plambda)
 {
     double lambda = plambda[0];
+    if (lambda < 0)
+        return -log(0);
+
     double score = accumulate(leaf_family_sizes.begin(), leaf_family_sizes.end(), 0.0, [lambda](double x, int sz) {
         double ll = poisspdf((double)sz, lambda);
         if (std::isnan(ll) || std::isinf(ll) || ll == 0) {
@@ -69,5 +75,6 @@ double poisson_scorer::lnLPoisson(const double* plambda)
         return x + log(ll);
         });
 
+    VLOG(3) << "Lambda: " << lambda << ", score " << -score << endl;
     return -score;
 }
