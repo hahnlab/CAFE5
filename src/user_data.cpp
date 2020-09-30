@@ -191,7 +191,7 @@ void user_data::create_prior(const input_parameters& params)
     else if (!gene_families.empty() && params.use_poisson_dist_for_prior)
     {
         LOG(INFO) << "\nEstimating Poisson root distribution from gene families";
-        prior = root_equilibrium_distribution(gene_families, max_root_family_size);
+        prior = root_equilibrium_distribution(gene_families, max_root_family_size * 0.8);
     }
     else 
     {

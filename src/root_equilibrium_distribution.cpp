@@ -30,14 +30,13 @@ root_equilibrium_distribution::root_equilibrium_distribution(const map<int, int>
 root_equilibrium_distribution::root_equilibrium_distribution(size_t max_size)
 {
     _vectorized_distribution.resize(max_size);
-    iota(_vectorized_distribution.begin(), _vectorized_distribution.end(), 1);
+    iota(_vectorized_distribution.begin(), _vectorized_distribution.end(), 0);
     build_percentages();
 }
 
 root_equilibrium_distribution::root_equilibrium_distribution(double poisson_lambda, size_t num_values)
 {
     create_from_poisson(poisson_lambda, num_values);
-    build_percentages();
 }
 
 root_equilibrium_distribution::root_equilibrium_distribution(const std::vector<gene_family>& gene_families, size_t num_values)
@@ -51,7 +50,6 @@ root_equilibrium_distribution::root_equilibrium_distribution(const std::vector<g
     LOG(INFO) << "Poisson lambda: " << result.values[0] << " &  Score: " << result.score;
 
     create_from_poisson(result.values[0], num_values);
-    build_percentages();
 
 }
 
@@ -62,8 +60,11 @@ void root_equilibrium_distribution::create_from_poisson(double poisson_lambda, s
         double pct = poisspdf(i, poisson_lambda);
         for (size_t j = 0; j < pct * num_values; ++j)
             _vectorized_distribution.push_back(i + 1);
+        _frequency_percentage.push_back(pct);
     }
-
+    // set a few extra percentages beyond the maximum size in the distribution
+    for (int i = 0; i<5; ++i)
+        _frequency_percentage.push_back(poisspdf(_frequency_percentage.size(), poisson_lambda));
 }
 
 void root_equilibrium_distribution::build_percentages()

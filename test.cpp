@@ -467,6 +467,7 @@ TEST_CASE("Inference: root_equilibrium_distribution__with_no_rootdist_is_uniform
 {
     root_equilibrium_distribution ef(10);
     CHECK_EQ(doctest::Approx(.1), ef.compute(5));
+    CHECK_EQ(doctest::Approx(.1), ef.compute(0));
 }
 
 TEST_CASE_FIXTURE(Inference, "root_equilibrium_distribution__with_rootdist_uses_rootdist")
@@ -1818,11 +1819,11 @@ TEST_CASE("Inference: multiple_lambda_returns_correct_values")
 TEST_CASE("Simulation: uniform_distribution__select_root_size__returns_sequential_values")
 {
     root_equilibrium_distribution ud(20);
-    CHECK_EQ(1, ud.select_root_size(0));
-    CHECK_EQ(2, ud.select_root_size(1));
-    CHECK_EQ(3, ud.select_root_size(2));
-    CHECK_EQ(4, ud.select_root_size(3));
-    CHECK_EQ(5, ud.select_root_size(4));
+    CHECK_EQ(1, ud.select_root_size(1));
+    CHECK_EQ(2, ud.select_root_size(2));
+    CHECK_EQ(3, ud.select_root_size(3));
+    CHECK_EQ(4, ud.select_root_size(4));
+    CHECK_EQ(5, ud.select_root_size(5));
     CHECK_EQ(0, ud.select_root_size(20));
 }
 
@@ -2500,9 +2501,9 @@ TEST_CASE("root_equilibrium_distribution__poisson_compute")
 {
     root_equilibrium_distribution pd(0.75, 100);
 
-    CHECK_EQ(doctest::Approx(0.47059).scale(1000), pd.compute(1));
-    CHECK_EQ(doctest::Approx(0.13725f).scale(1000), pd.compute(3));
-    CHECK_EQ(doctest::Approx(0.005).scale(1000), pd.compute(5));
+    CHECK_EQ(doctest::Approx(0.47059).scale(1000), pd.compute(0));
+    CHECK_EQ(doctest::Approx(0.13725f).scale(1000), pd.compute(2));
+    CHECK_EQ(doctest::Approx(0.005).scale(1000), pd.compute(4));
     CHECK_EQ(0.0, pd.compute(100));
 }
 
@@ -2554,8 +2555,8 @@ TEST_CASE("create_prior__creates__poisson_distribution_if_given")
     user_data ud;
     ud.max_root_family_size = 100;
     ud.create_prior(params);
-    CHECK_EQ(doctest::Approx(0.47059), ud.prior.compute(1));
-    CHECK_EQ(doctest::Approx(0.35294), ud.prior.compute(2));
+    CHECK_EQ(doctest::Approx(0.47237f), ud.prior.compute(0));
+    CHECK_EQ(doctest::Approx(0.35427f), ud.prior.compute(1));
     vector<int> r(100);
     int i = 0;
     generate(r.begin(), r.end(), [&ud, &i]() mutable { i++; return ud.prior.select_root_size(i);  });
@@ -2575,7 +2576,7 @@ TEST_CASE("create_prior__creates__poisson_distribution_if_given_distribution_and
     user_data ud;
     ud.max_root_family_size = 100;
     ud.create_prior(params);
-    CHECK_EQ(doctest::Approx(0.47059), ud.prior.compute(1));
+    CHECK_EQ(doctest::Approx(0.35427f), ud.prior.compute(1));
 
 }
 
@@ -2590,7 +2591,7 @@ TEST_CASE("create_prior__creates__poisson_distribution_from_families")
     ud.create_prior(params);
     // bogus value that serves the purpose
     // depends on optimizer and poisson_scorer
-    CHECK_EQ(doctest::Approx(0.7381f), ud.prior.compute(1));
+    CHECK_EQ(doctest::Approx(0.74174f), ud.prior.compute(0));
 }
 
 TEST_CASE("create_prior creates uniform distribution if poisson not specified")
@@ -2622,9 +2623,9 @@ TEST_CASE("create_prior__resizes_distribution_if_nsims_specified")
     /// GCC's implementation of shuffle changed so the numbers that are
     /// returned are in a slightly different order, even with the same seed
 #if __GNUC__ >= 7
-    CHECK_EQ(86, ud.prior.select_root_size(9));
+    CHECK_EQ(85, ud.prior.select_root_size(9));
 #else
-    CHECK_EQ(81, ud.prior.select_root_size(9));
+    CHECK_EQ(80, ud.prior.select_root_size(9));
 #endif
     CHECK_EQ(0, ud.prior.select_root_size(10));
 }
