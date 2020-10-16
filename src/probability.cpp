@@ -17,6 +17,23 @@
 #include "gene_family.h"
 #include "error_model.h"
 #include "core.h"
+
+#if defined __INTEL_COMPILER
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined __PGI
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined __llvm__
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined _CRAYC
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined __GNUC__
+#include <execution>
+#endif
+
 using namespace std;
 
 extern std::mt19937 randomizer_engine;
@@ -304,6 +321,14 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
     }
 
 #ifdef USE_STDLIB_PARALLEL
+    par_timer.start("stdlib: Node Probabilities");
+    transform(std::execution::par, families.begin(), families.end(), pruners.begin(), result.begin(), [&](const gene_family& gf, clademap<std::vector<double>>& pruner)
+        {
+            auto fn = [&](const clade* c) { compute_node_probability(c, gf, NULL, pruner, max_root_family_size, max_family_size, p_lambda, cache); };
+            p_tree->apply_reverse_level_order(fn);
+            return *std::max_element(pruner.at(p_tree).begin(), pruner.at(p_tree).end());
+        });
+    par_timer.stop("stdlib: Node Probabilities");
 #else
     par_timer.start("OMP: Node Probabilities");
 #pragma omp parallel for
