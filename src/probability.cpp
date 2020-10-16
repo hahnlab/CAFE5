@@ -290,14 +290,18 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
         families[i].init_from_clademap(sizes);
     }
 
-
+#ifdef USE_STDLIB_PARALLEL
+#else
+    par_timer.start("OMP: Node Probabilities");
 #pragma omp parallel for
     for (size_t i = 0; i < result.size(); ++i)
     {
-        auto fn = [&](const clade *c) { compute_node_probability(c, families[i], NULL, pruners[i], max_root_family_size, max_family_size, p_lambda, cache); };
+        auto fn = [&](const clade* c) { compute_node_probability(c, families[i], NULL, pruners[i], max_root_family_size, max_family_size, p_lambda, cache); };
         p_tree->apply_reverse_level_order(fn);
         result[i] = *std::max_element(pruners[i].at(p_tree).begin(), pruners[i].at(p_tree).end());
     }
+    par_timer.stop("OMP: Node Probabilities");
+#endif
 
     sort(result.begin(), result.end());
 

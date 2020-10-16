@@ -83,21 +83,29 @@ double base_model::infer_family_likelihoods(const root_equilibrium_distribution 
     calc.precalculate_matrices(get_lambda_values(_p_lambda), _p_tree->get_branch_lengths());
 
     vector<vector<double>> partial_likelihoods(_p_gene_families->size());
-    par_timer.start("inference prune (Base)");
-//#pragma omp parallel for
+#ifdef USE_STDLIB_PARALLEL
+    par_timer.start("stdlib: inference prune (Base)");
     transform(std::execution::par, _p_gene_families->begin(), _p_gene_families->end(), partial_likelihoods.begin(), 
 		[&](const gene_family &f) {
 				return inference_prune(f, calc, _p_lambda, _p_error_model, _p_tree, 1.0, _max_root_family_size, _max_family_size);
 			});
-//    for (size_t i = 0; i < _p_gene_families->size(); ++i) {
-//        if (references[i] == i)
-//            partial_likelihoods[i] = inference_prune(_p_gene_families->at(i), calc, _p_lambda, _p_error_model, _p_tree, 1.0, _max_root_family_size, _max_family_size);
-            // probabilities of various family sizes
-//    }
-    par_timer.stop("inference prune (Base)");
+    par_timer.stop("stdlib: inference prune (Base)");
+#else
+    par_timer.start("OMP: inference prune (Base)");
+#pragma omp parallel for
+        for (size_t i = 0; i < _p_gene_families->size(); ++i) {
+            if (references[i] == i)
+                partial_likelihoods[i] = inference_prune(_p_gene_families->at(i), calc, _p_lambda, _p_error_model, _p_tree, 1.0, _max_root_family_size, _max_family_size);
+                // probabilities of various family sizes
+    }
+    par_timer.stop("OMP: inference prune (Base)");
+#endif
 
     // prune all the families with the same lambda
-    par_timer.start("compute likelihood (Base)");
+#ifdef USE_STDLIB_PARALLEL
+
+#else
+    par_timer.start("OMP: compute likelihood (Base)");
 #pragma omp parallel for
     for (size_t i = 0; i < _p_gene_families->size(); ++i) {
 
@@ -113,10 +121,11 @@ double base_model::infer_family_likelihoods(const root_equilibrium_distribution 
         //        all_families_likelihood[i] = accumulate(full.begin(), full.end(), 0.0); // sum over all sizes (Felsenstein's approach)
         all_families_likelihood[i] = *max_element(full.begin(), full.end()); // get max (CAFE's approach)
                                                                              // cout << i << " contribution " << scientific << all_families_likelihood[i] << endl;
-        
+
         results[i] = family_info_stash(_p_gene_families->at(i).id(), 0.0, 0.0, 0.0, all_families_likelihood[i], false);
     }
-    par_timer.stop("compute likelihood (Base)");
+    par_timer.stop("OMP: compute likelihood (Base)");
+#endif
 
     double final_likelihood = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families
 
