@@ -9,6 +9,22 @@
 #include "probability.h"
 #include "core.h"
 
+#if defined __INTEL_COMPILER
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined __PGI
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined __llvm__
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined _CRAYC
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined __GNUC__
+#include <execution>
+#endif
+
 #ifdef HAVE_BLAS
 #if defined __INTEL_COMPILER
 #include "mkl.h"
@@ -131,29 +147,49 @@ bool matrix_cache::is_saturated(double branch_length, double lambda)
 
 void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, const std::set<double>& branch_lengths)
 {
-	// build a list of required matrices
-	vector<matrix_cache_key> keys;
-	for (double lambda : lambdas)
-	{
-		for (double branch_length : branch_lengths)
-		{
-			matrix_cache_key key(_matrix_size, lambda, branch_length);
-			if (_matrix_cache.find(key) == _matrix_cache.end())
-			{
-				keys.push_back(key);
-			}
-		}
-	}
+    // build a list of required matrices
+    vector<matrix_cache_key> keys;
+    for (double lambda : lambdas)
+    {
+        for (double branch_length : branch_lengths)
+        {
+            matrix_cache_key key(_matrix_size, lambda, branch_length);
+            if (_matrix_cache.find(key) == _matrix_cache.end())
+            {
+                keys.push_back(key);
+            }
+        }
+    }
 
-	// calculate matrices in parallel
-	vector<matrix*> matrices(keys.size());
-	generate(matrices.begin(), matrices.end(), [this] { return new matrix(this->_matrix_size); });
+    // calculate matrices in parallel
+    vector<matrix*> matrices(keys.size());
+    generate(matrices.begin(), matrices.end(), [this] { return new matrix(this->_matrix_size); });
 
-	int s = 0;
-	size_t i = 0;
-	size_t num_keys = keys.size();
+    int s = 0;
+    size_t i = 0;
+    size_t num_keys = keys.size();
 
 #ifdef USE_STDLIB_PARALLEL
+    par_timer.start("stdlib: Precalculate Matrices");
+    for_each(std::execution::par, keys.begin(), keys.end(), [&](const matrix_cache_key& key) {
+        for (s = 1; s < _matrix_size; s++) {
+            double lambda = key.lambda();
+            double branch_length =key.branch_length();
+
+            matrix* m = matrices[i];
+            m->set(0, 0, get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0));
+            if (!is_saturated(branch_length, lambda))
+            {
+                for (int j = 0; j < m->size(); ++j)
+                {
+                    m->set(0, j, get_from_parent_fam_size_to_c(lambda, branch_length, 0, j));
+                }
+                for (int c = 0; c < _matrix_size; c++) {
+                    m->set(s, c, get_from_parent_fam_size_to_c(lambda, branch_length, s, c));
+                }
+            }}
+        });
+    par_timer.stop("stdlib: Precalculate Matrices");
 #else
     par_timer.start("OMP: Precalculate Matrices");
 #pragma omp parallel for private(s) collapse(2)

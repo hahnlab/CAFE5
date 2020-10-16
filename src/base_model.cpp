@@ -103,7 +103,30 @@ double base_model::infer_family_likelihoods(const root_equilibrium_distribution 
 
     // prune all the families with the same lambda
 #ifdef USE_STDLIB_PARALLEL
+    par_timer.start("stdlib: compute likelihood (Base)");
+    std::map<string, int> refmap;
+    for (int i = 0; i < _p_gene_families->size(); ++i)
+    {
+        refmap[_p_gene_families->at(i).id()] = references[i];
+    }
+    transform(std::execution::par, _p_gene_families->begin(), _p_gene_families->end(), results.begin(), [&](const gene_family& gf) {
 
+        auto& partial_likelihood = partial_likelihoods[refmap[gf.id()]];
+        std::vector<double> full(partial_likelihood.size());
+
+        for (size_t j = 0; j < partial_likelihood.size(); ++j) {
+            double eq_freq = prior->compute(j);
+
+            full[j] = std::log(partial_likelihood[j]) + std::log(eq_freq);
+        }
+
+        //        all_families_likelihood[i] = accumulate(full.begin(), full.end(), 0.0); // sum over all sizes (Felsenstein's approach)
+        double mx = *max_element(full.begin(), full.end()); // get max (CAFE's approach)
+                                                                             // cout << i << " contribution " << scientific << all_families_likelihood[i] << endl;
+
+        return family_info_stash(gf.id(), 0.0, 0.0, 0.0, mx, false);
+        });
+    par_timer.stop("stdlib: compute likelihood (Base)");
 #else
     par_timer.start("OMP: compute likelihood (Base)");
 #pragma omp parallel for
