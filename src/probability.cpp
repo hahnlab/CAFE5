@@ -16,7 +16,7 @@
 #include "matrix_cache.h"
 #include "gene_family.h"
 #include "error_model.h"
-
+#include "core.h"
 using namespace std;
 
 extern std::mt19937 randomizer_engine;
@@ -303,6 +303,9 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
         p_tree->apply_reverse_level_order(fn);
     }
 
+#ifdef USE_STDLIB_PARALLEL
+#else
+    par_timer.start("OMP: Node Probabilities");
 #pragma omp parallel for
     for (size_t i = 0; i < result.size(); ++i)
     {
@@ -310,6 +313,8 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
         p_tree->apply_reverse_level_order(fn);
         result[i] = *std::max_element(pruners[i].at(p_tree).begin(), pruners[i].at(p_tree).end());
     }
+    par_timer.stop("OMP: Node Probabilities");
+#endif
 
     sort(result.begin(), result.end());
 

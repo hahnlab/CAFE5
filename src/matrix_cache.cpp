@@ -143,7 +143,9 @@ void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, con
 	size_t i = 0;
 	size_t num_keys = keys.size();
 
-        par_timer.start("Precalculate Matrices");
+#ifdef USE_STDLIB_PARALLEL
+#else
+    par_timer.start("OMP: Precalculate Matrices");
 #pragma omp parallel for private(s) collapse(2)
 	for (i = 0; i < num_keys; ++i)
 	{
@@ -165,7 +167,8 @@ void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, con
 			}
 		}
 	}
-        par_timer.stop("Precalculate Matrices");
+    par_timer.stop("OMP: Precalculate Matrices");
+#endif
 
     // copy matrices to our internal map
     for (size_t i = 0; i < keys.size(); ++i)
