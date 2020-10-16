@@ -19,6 +19,22 @@
 #include "root_distribution.h"
 #include "simulator.h"
 
+#if defined __INTEL_COMPILER
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined __PGI
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined __llvm__
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined _CRAYC
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined __GNUC__
+#include <execution>
+#endif
+
 extern mt19937 randomizer_engine;
 
 gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
@@ -232,8 +248,41 @@ double gamma_model::infer_family_likelihoods(root_equilibrium_distribution *prio
     prepare_matrices_for_simulation(calc);
 
     vector<vector<family_info_stash>> pruning_results(_p_gene_families->size());
+#ifdef USE_STDLIB_PARALLEL
+    par_timer.start("stdlib: inference prune (Gamma)");
+    std::map<string, int> refmap;
+    for (int i = 0; i < _p_gene_families->size(); ++i)
+    {
+        refmap[_p_gene_families->at(i).id()] = i;
+    }
+    transform(std::execution::par, _p_gene_families->begin(), _p_gene_families->end(), failure.begin(), [&](const gene_family& gf) {
+        auto& cat_likelihoods = _category_likelihoods[refmap[gf.id()]];
 
-     par_timer.start("inference prune (Gamma)");
+        if (prune(gf, prior, calc, p_lambda, cat_likelihoods))
+        {
+            double family_likelihood = accumulate(cat_likelihoods.begin(), cat_likelihoods.end(), 0.0);
+
+            vector<double> posterior_probabilities = get_posterior_probabilities(cat_likelihoods);
+
+            pruning_results[refmap[gf.id()]].resize(cat_likelihoods.size());
+            for (size_t k = 0; k < cat_likelihoods.size(); ++k)
+            {
+                pruning_results[refmap[gf.id()]][k] = family_info_stash(gf.id(), _lambda_multipliers[k], cat_likelihoods[k],
+                    family_likelihood, posterior_probabilities[k], posterior_probabilities[k] > 0.95);
+                //            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
+            }
+            all_bundles_likelihood[refmap[gf.id()]] = std::log(family_likelihood);
+        }
+        else
+        {
+            // we got here because one of the gamma categories was saturated - reject this 
+            return true;
+        }
+        return false;
+        });
+    par_timer.stop("stdlib: inference prune (Gamma)");
+#else
+     par_timer.start("OMP: inference prune (Gamma)");
 #pragma omp parallel for
     for (size_t i = 0; i < _p_gene_families->size(); i++) {
         auto& cat_likelihoods = _category_likelihoods[i];
@@ -260,8 +309,8 @@ double gamma_model::infer_family_likelihoods(root_equilibrium_distribution *prio
         }
     }
 
-    par_timer.stop("inference prune (Gamma)");
-
+    par_timer.stop("OMP: inference prune (Gamma)");
+#endif
     if (find(failure.begin(), failure.end(), true) != failure.end())
     {
         for (size_t i = 0; i < _p_gene_families->size(); i++) {
@@ -366,14 +415,28 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_fami
     {
         unique_ptr<lambda> ml(_p_lambda->multiply(_lambda_multipliers[k]));
 
-         par_timer.start("Reconstruct Gene Family (Gamma)");
+#ifdef USE_STDLIB_PARALLEL
+        par_timer.start("stdlib: Reconstruct Gene Family (Gamma)");
+        std::map<string, int> refmap;
+        for (int i = 0; i < _p_gene_families->size(); ++i)
+        {
+            refmap[_p_gene_families->at(i).id()] = i;
+        }
+        for_each(std::execution::par, _p_gene_families->begin(), _p_gene_families->end(), [&](const gene_family& gf) {
+            reconstruct_gene_family(ml.get(), _p_tree, _max_family_size, _max_root_family_size, &gf, calc, prior, recs[refmap[gf.id()]]->category_reconstruction[k]);
+            });
+        par_timer.stop("stlib: Reconstruct Gene Family (Gamma)");
+    }
+#else
+         par_timer.start("OMP: Reconstruct Gene Family (Gamma)");
 #pragma omp parallel for
         for (size_t i = 0; i < families.size(); ++i)
         {
             reconstruct_gene_family(ml.get(), _p_tree, _max_family_size, _max_root_family_size, &families[i], calc, prior, recs[i]->category_reconstruction[k]);
         }
-        par_timer.stop("Reconstruct Gene Family (Gamma)");
+        par_timer.stop("OMP: Reconstruct Gene Family (Gamma)");
     }
+#endif
 
     for (auto reconstruction : recs)
     {
