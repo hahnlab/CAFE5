@@ -4,10 +4,7 @@
 #include <random>
 #include <sstream>
 #include <algorithm>
-<<<<<<< HEAD
 #include <iomanip>
-=======
->>>>>>> c43ba27e9fc1b213a47c894e8261372b6cb87668
 #include <chrono>
 
 #include "base_model.h"
@@ -118,11 +115,7 @@ double base_model::infer_family_likelihoods(const root_equilibrium_distribution 
         std::vector<double> full(partial_likelihood.size());
 
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
-<<<<<<< HEAD
             double eq_freq = prior.compute(j);
-=======
-            double eq_freq = prior->compute(j);
->>>>>>> c43ba27e9fc1b213a47c894e8261372b6cb87668
 
             full[j] = std::log(partial_likelihood[j]) + std::log(eq_freq);
         }

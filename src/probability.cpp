@@ -13,11 +13,28 @@
 #include "mkl.h"
 #endif
 
+#include "core.h"
 #include "clade.h"
 #include "probability.h"
 #include "matrix_cache.h"
 #include "gene_family.h"
 #include "error_model.h"
+
+#if defined __INTEL_COMPILER
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined __PGI
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined __llvm__
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined _CRAYC
+#include <pstl/execution>
+#include <pstl/algorithm> 
+#elif defined __GNUC__
+#include <execution>
+#endif
 
 using namespace std;
 
