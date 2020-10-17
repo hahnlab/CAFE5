@@ -378,7 +378,7 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_fami
         {
             refmap[_p_gene_families->at(i).id()] = i;
         }
-        for_each(families.begin(), familes.end(), [](const gene_family& gf) {
+        for_each(families.begin(), families.end(), [&](const gene_family& gf) {
             int i = refmap[gf.id()];
             pupko_reconstructor::reconstruct_gene_family(ml.get(), _p_tree, &gf, calc, prior,
                 recs[i]->category_reconstruction[k], data.C(i), data.L(i));

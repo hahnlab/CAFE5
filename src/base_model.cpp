@@ -115,7 +115,7 @@ double base_model::infer_family_likelihoods(const root_equilibrium_distribution 
         std::vector<double> full(partial_likelihood.size());
 
         for (size_t j = 0; j < partial_likelihood.size(); ++j) {
-            double eq_freq = prior->compute(j);
+            double eq_freq = prior.compute(j);
 
             full[j] = std::log(partial_likelihood[j]) + std::log(eq_freq);
         }
