@@ -203,10 +203,11 @@ void compute_node_probability(const clade *node, const gene_family&gene_family, 
 	else if (node->is_root()) {
 		// at the root, the size of the vector holding the final likelihoods will be _max_root_family_size (size 0 is not included, so we do not add 1)
         std::vector<std::vector<double> > factors;
-        auto fn = [&](const clade *c) {
-            factors.push_back(_lambda->calculate_child_factor(_calc, c, probabilities[c], 1, _max_root_family_size, 0, _max_parsed_family_size));
-        };
-        node->apply_to_descendants(fn);
+        node->apply_to_descendants([&](const clade* c) {
+            vector<double> result;
+            _lambda->calculate_child_factor(_calc, c, probabilities[c], 1, _max_root_family_size, 0, _max_parsed_family_size, result);
+            factors.push_back(result);
+        });
         vector<double>& node_probs = probabilities[node];
         // factors[0] is left child
         // factors[1] is right child
@@ -223,11 +224,12 @@ void compute_node_probability(const clade *node, const gene_family&gene_family, 
     else {
 		// at any internal node, the size of the vector holding likelihoods will be _max_parsed_family_size+1 because size=0 is included
         std::vector<std::vector<double> > factors;
-        auto fn = [&](const clade *c) {
-            factors.push_back(_lambda->calculate_child_factor(_calc, c, probabilities[c], 0, _max_parsed_family_size, 0, _max_parsed_family_size));
-        };
 
-        node->apply_to_descendants(fn);
+        node->apply_to_descendants([&](const clade* c) {
+            vector<double> result;
+            _lambda->calculate_child_factor(_calc, c, probabilities[c], 0, _max_parsed_family_size, 0, _max_parsed_family_size, result);
+            factors.push_back(result);
+            });
 
         vector<double>& node_probs = probabilities[node];
         // factors[0] is left child
@@ -291,7 +293,7 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
     }
 
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for (size_t i = 0; i < result.size(); ++i)
     {
         auto fn = [&](const clade *c) { compute_node_probability(c, families[i], NULL, pruners[i], max_root_family_size, max_family_size, p_lambda, cache); };

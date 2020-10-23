@@ -28,9 +28,9 @@ bool matrix::is_zero() const
 This function returns a likelihood vector by multiplying an initial likelihood vector and a transition probability matrix.
 A minimum and maximum on the parent's and child's family sizes is provided. Because the root is forced to be >=1, for example, s_min_family_size for the root could be set to 1.
 */
-vector<double> matrix::multiply(const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size) const
+void matrix::multiply(const vector<double>& v, int s_min_family_size, int s_max_family_size, int c_min_family_size, int c_max_family_size, std::vector<double>& result) const
 {
-    vector<double> result(s_max_family_size - s_min_family_size + 1);
+    result.resize(s_max_family_size - s_min_family_size + 1);
 
     assert(c_min_family_size < c_max_family_size);
     assert(v.size() > size_t(c_max_family_size - c_min_family_size));
@@ -56,7 +56,6 @@ vector<double> matrix::multiply(const vector<double>& v, int s_min_family_size, 
         }
     }
 #endif
-    return result;
 }
 
 int matrix::select_random_y(int x, int max) const

@@ -1356,7 +1356,8 @@ TEST_CASE("Probability, matrix_multiply")
     matrix m1(3);
     build_matrix(m1);
     vector<double> m2({ 7, 9, 11 });
-    auto result = m1.multiply(m2, 0, 2, 0, 2);
+    vector<double> result;
+    m1.multiply(m2, 0, 2, 0, 2, result);
     CHECK_EQ(3, result.size());
 
     CHECK_EQ(58, result[0]);
@@ -1374,7 +1375,7 @@ TEST_CASE("Probability, matrix_multiply")
     m3.set(5, 4, 8);
     m3.set(5, 5, 9);
 
-    result = m3.multiply(m2, 3, 5, 3, 5);
+    m3.multiply(m2, 3, 5, 3, 5, result);
     CHECK_EQ(3, result.size());
 
     CHECK_EQ(58, result[0]);
