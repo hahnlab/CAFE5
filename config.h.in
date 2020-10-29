@@ -51,3 +51,7 @@
 
 /* Number of attempts optimizer will make to initialize to a good value */
 #undef PHASED_OPTIMIZER_PHASE1_ATTEMPTS
+
+/* Maximum family size to analyze before dropping to allocating heap memory */
+#undef MAX_STACK_FAMILY_SIZE
+

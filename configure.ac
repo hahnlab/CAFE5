@@ -42,6 +42,7 @@ AC_DEFINE(OPTIMIZER_STRATEGY_SIMILARITY_CUTOFF, 15, [Optimizer will stop after 1
 AC_DEFINE(PHASED_OPTIMIZER_PHASE1_ATTEMPTS, 4, [Number of attempts optimizer will make to initialize to a good value])
 AC_DEFINE(OPTIMIZER_LOW_PRECISION, 1e-3, Precision of values optimizer will use before abandoning a set of values)
 AC_DEFINE(OPTIMIZER_HIGH_PRECISION, 1e-6, Precision of values optimizer will use before abandoning a set of values)
+AC_DEFINE(MAX_STACK_FAMILY_SIZE, 1000, Maximum family size for stack allocations)
 
 dnl Process Makefile.in to create Makefile
 AC_OUTPUT(Makefile)
