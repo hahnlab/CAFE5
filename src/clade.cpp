@@ -20,6 +20,9 @@ clade::clade(const clade& c, clade* parent, std::function<double(const clade& c)
     is_lambda_clade = c.is_lambda_clade;
     _descendants.resize(c._descendants.size());
     transform(c._descendants.begin(), c._descendants.end(), _descendants.begin(), [&](const clade* c) { return new clade(*c, this, branchlength_setter);});
+
+	if (is_root())	// for simplicity, we do not calculate descendantss reverse-level order arrays
+		update_reverse_level_order();
 }
 
 /* Recursive destructor */
@@ -59,6 +62,41 @@ void clade::add_descendant(clade *p_descendant) {
   if (!is_root()) {
     _p_parent->_name_interior_clade();
   }
+
+  update_reverse_level_order();
+}
+
+void clade::update_reverse_level_order()
+{
+	_reverse_level_order.clear();
+	std::stack<const clade*> stack;
+	std::queue<const clade*> q;
+
+	q.push(this);
+	while (!q.empty())
+	{
+		/* Dequeue node and make it current */
+		auto current = q.front();
+		q.pop();
+		stack.push(current);
+
+		for (auto i : current->_descendants)
+		{
+			/* Enqueue child */
+			q.push(i);
+		}
+	}
+
+	while (!stack.empty())
+	{
+		auto current = stack.top();
+		stack.pop();
+		_reverse_level_order.push_back(current);
+	}
+
+	if (!is_root()) {
+		_p_parent->update_reverse_level_order();
+	}
 }
 
 /* Recursively fills vector of names provided as argument */
@@ -223,7 +261,7 @@ void clade::validate_lambda_tree(const clade* p_lambda_tree) const
 	}
 }
 
-void clade::apply_to_descendants(std::function<void(const clade*)> f) const {
+void clade::apply_to_descendants(const cladefunc& f) const {
 
 	// apply f to direct descendants
 	// could replace with apply_prefix_order for functions f that recur through descendants
@@ -234,7 +272,7 @@ void clade::apply_to_descendants(std::function<void(const clade*)> f) const {
 }
 
 //! apply the functor f to this clade and also to all descendants.
-void clade::apply_prefix_order(std::function<void(const clade*)> f) const {
+void clade::apply_prefix_order(const cladefunc& f) const {
 	std::stack<const clade*> stack;
 	stack.push(this);
 	while (!stack.empty())
@@ -249,35 +287,6 @@ void clade::apply_prefix_order(std::function<void(const clade*)> f) const {
 			stack.push(*it);
 		}
 		f(c);
-	}
-}
-
-//! apply the functor f to this clade and also to all descendants, by starting
-// with the leaf nodes and moving up the tree
-void clade::apply_reverse_level_order(std::function<void(const clade*)> f) const {
-	std::stack<const clade*> stack;
-	std::queue<const clade*> q;
-
-	q.push(this);
-	while (!q.empty())
-	{
-		/* Dequeue node and make it current */
-		auto current = q.front();
-		q.pop();
-		stack.push(current);
-
-		for (auto i : current->_descendants)
-		{
-			/* Enqueue child */
-			q.push(i);
-		}
-	}
-
-	while (!stack.empty())
-	{
-		auto current = stack.top();
-		stack.pop();
-		f(current);
 	}
 }
 
@@ -402,6 +411,7 @@ clade* parse_newick(std::string newick_string, bool parse_to_lambdas) {
                 throw std::runtime_error("Invalid branch length set for " + c->get_taxon_name());
         };
     }
-    p_root_clade->apply_reverse_level_order(validator);
+	for_each(p_root_clade->reverse_level_begin(), p_root_clade->reverse_level_end(), validator);
+
     return p_root_clade;
 }

@@ -364,9 +364,9 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
         // generate a tree with root_family_size at the root
         clademap<int> sizes;
         sizes[p_tree] = root_family_size;
-        p_tree->apply_prefix_order([&](const clade* c) { 
-            set_weighted_random_family_size(c, &sizes, p_lambda, p_error_model, max_family_size, cache); 
-        });
+        for (auto it = p_tree->reverse_level_begin(); it != p_tree->reverse_level_end(); ++it)
+            set_weighted_random_family_size(*it, &sizes, p_lambda, p_error_model, max_family_size, cache);
+
         families[i].init_from_clademap(sizes);
     }
 
@@ -374,8 +374,8 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
 #pragma omp parallel for
     for (size_t i = 0; i < result.size(); ++i)
     {
-        auto fn = [&](const clade *c) { compute_node_probability(c, families[i], NULL, pruners[i], max_root_family_size, max_family_size, p_lambda, cache); };
-        p_tree->apply_reverse_level_order(fn);
+        for (auto it = p_tree->reverse_level_begin(); it != p_tree->reverse_level_end(); ++it)
+            compute_node_probability(*it, families[i], NULL, pruners[i], max_root_family_size, max_family_size, p_lambda, cache);
         result[i] = *std::max_element(pruners[i].at(p_tree).begin(), pruners[i].at(p_tree).end());
     }
 
@@ -459,7 +459,7 @@ double compute_tree_pvalue(const clade* p_tree, function<void(const clade*)> com
 	{
 		fill(it.second.begin(), it.second.end(), 0);
 	}
-	p_tree->apply_reverse_level_order(compute_func);
+    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), compute_func);
 
 	double observed_max_likelihood = *std::max_element(clade_storage.at(p_tree).begin(), clade_storage.at(p_tree).end());
 
@@ -486,7 +486,7 @@ vector<double> compute_pvalues(const clade* p_tree, const std::vector<gene_famil
     {
         // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
         auto fn = [&](const clade* node) { p[node].resize(node->is_root() ? max_root_family_size : max_family_size + 1); };
-        p_tree->apply_reverse_level_order(fn);
+        for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), fn);
     }
 
     std::vector<std::vector<double> > conditional_distribution(mxr);
@@ -501,7 +501,7 @@ vector<double> compute_pvalues(const clade* p_tree, const std::vector<gene_famil
 	std::map<const clade*, std::vector<double> > family_likelihoods;
 
 	auto init_func = [&](const clade* node) { family_likelihoods[node].resize(node->is_root() ? mxr : mx + 1); };
-	p_tree->apply_reverse_level_order(init_func);
+    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), init_func);
 
 	transform(families.begin(), families.end(), result.begin(), [&](const gene_family& gf)
         {

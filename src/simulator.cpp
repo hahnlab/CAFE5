@@ -102,7 +102,7 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
 		throw std::runtime_error("No tree specified for simulations");
 
     std::vector<const clade *> order;
-    data.p_tree->apply_reverse_level_order([&order](const clade* c) { order.push_back(c); });
+    for_each(data.p_tree->reverse_level_begin(), data.p_tree->reverse_level_end(), [&order](const clade* c) { order.push_back(c); });
 
     string dir = my_input_parameters.output_prefix;
     if (dir.empty()) dir = "results";
@@ -137,7 +137,7 @@ void simulator::print_simulations(std::ostream& ost, bool include_internal_nodes
 
     std::vector<const clade *> order;
     auto fn = [&order](const clade *c) { order.push_back(c); };
-    data.p_tree->apply_reverse_level_order(fn);
+    for_each(data.p_tree->reverse_level_begin(), data.p_tree->reverse_level_end(), fn);
 
     if (results.empty())
     {

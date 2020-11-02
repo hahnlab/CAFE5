@@ -13,6 +13,9 @@ class gene_family;
 /* Forward declaration of newick_parser class, so class clade can see friend */
 class newick_parser; // actual declaration in utils.h
 
+class clade;
+using cladefunc = std::function<void(const clade*)>;
+
 /*! \brief A Clade represents a node in a tree
 *
 *  In biology, a clade represents a group of organisms believed to have evolved from a common ancestor.
@@ -35,8 +38,12 @@ private:
     /* methods */
     void _name_interior_clade();
 
-
+    std::vector<const clade*> _reverse_level_order;
+    void update_reverse_level_order();
 public:
+    typedef std::vector<const clade*>::const_iterator reverse_level_iterator;
+    typedef std::vector<clade*>::const_iterator descendant_iterator;
+
     /* methods */
     clade() : _p_parent(NULL), _branch_length(0), _lambda_index(0), is_lambda_clade(false) {} // basic constructor
 
@@ -87,14 +94,24 @@ public:
 	void validate_lambda_tree(const clade* p_lambda_tree) const;
 
     //! apply the function f to direct descendants. Does not automatically recurse.
-	void apply_to_descendants(std::function<void(const clade*)> f) const;
+	void apply_to_descendants(const cladefunc& f) const;
 
     //! apply the function f to this clade and also to all descendants.
-	void apply_prefix_order(std::function<void(const clade*)> f) const;
+	void apply_prefix_order(const cladefunc& f) const;
 
-    //! apply the function f to this clade and also to all descendants, by starting
-    // with the leaf nodes and moving up the tree
-	void apply_reverse_level_order(std::function<void(const clade*)> f) const;
+    reverse_level_iterator reverse_level_begin() const {
+        return _reverse_level_order.begin();
+    }
+    reverse_level_iterator reverse_level_end() const {
+        return _reverse_level_order.end();
+    }
+
+    descendant_iterator descendant_begin() const {
+        return _descendants.begin();
+    }
+    descendant_iterator descendant_end() const {
+        return _descendants.end();
+    }
 };
 
 template<typename T>

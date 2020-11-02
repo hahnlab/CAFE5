@@ -603,7 +603,7 @@ TEST_CASE("Probability: get_random_probabilities")
     for (auto& p : pruners)
     {
         auto fn = [&](const clade* node) { p[node].resize(node->is_root() ? 8 :13); };
-        p_tree->apply_reverse_level_order(fn);
+        for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), fn);
     }
     auto probs = get_random_probabilities(p_tree.get(), 10, 3, 12, 8, &lam, cache, NULL, pruners);
     CHECK_EQ(10, probs.size());
@@ -612,14 +612,25 @@ TEST_CASE("Probability: get_random_probabilities")
 
 TEST_CASE("Matrix__get_random_y")
 {
+    randomizer_engine.seed(10);
+
     matrix m(10);
     m.set(1, 1, 1);
     CHECK_EQ(1, m.select_random_y(1, 9));
 
     m.set(2, 1, .5);
     m.set(2, 2, .5);
-    CHECK_EQ(2, m.select_random_y(2, 9));
-    CHECK_EQ(1, m.select_random_y(2, 9));
+    int ones = 0, twos = 0;
+    for (int i = 0; i < 1000; ++i)
+    {
+        int val = m.select_random_y(2, 9);
+        if (val == 1)
+            ones++;
+        if (val == 2)
+            twos++;
+    }
+    CHECK_EQ(515, ones);
+    CHECK_EQ(485, twos);
 
     m.set(5, 5, 1);
     CHECK_EQ(5, m.select_random_y(5, 9));
@@ -874,7 +885,8 @@ TEST_CASE_FIXTURE(Reconstruction, "print_reconstructed_states__prints_star_for_s
     values[p_tree->find_descendant("CD")] = 6;
 
     branch_probabilities branch_probs;
-    p_tree->apply_reverse_level_order([&branch_probs, &gf](const clade* c) {branch_probs.set(gf, c, branch_probabilities::branch_probability(.5)); });
+    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), [&branch_probs, &gf](const clade* c) {branch_probs.set(gf, c, branch_probabilities::branch_probability(.5)); });
+
     branch_probs.set(gf, p_tree->find_descendant("AB"), 0.02);
     branch_probs.set(gf, p_tree.get(), branch_probabilities::invalid());  /// root is never significant regardless of the value
 
@@ -1020,7 +1032,7 @@ TEST_CASE_FIXTURE(Reconstruction, "reconstruct_gene_family")
     std::function <void(const clade*)> pupko_initializer = [this, &all_node_Cs, &all_node_Ls, &ud](const clade* c) {
         pupko_reconstructor::initialize_at_node(c, all_node_Cs, all_node_Ls, 10, ud.max_root_family_size);
     };
-    p_tree.get()->apply_reverse_level_order(pupko_initializer);
+    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), pupko_initializer);
     pupko_reconstructor::reconstruct_gene_family(&lambda, p_tree.get(), &fam, &cache, &dist, result, all_node_Cs, all_node_Ls);
     auto AB = p_tree->find_descendant("AB");
     CHECK_EQ(4, result[AB]);
@@ -1619,7 +1631,7 @@ TEST_CASE("Inference: likelihood_computer_sets_leaf_nodes_correctly")
     std::map<const clade*, std::vector<double> > _probabilities;
 
     auto init_func = [&](const clade* node) { _probabilities[node].resize(node->is_root() ? 20 : 21); };
-    p_tree->apply_reverse_level_order(init_func);
+    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), init_func);
 
     cache.precalculate_matrices({ 0.045 }, { 1.0,3.0,7.0 });
 
@@ -1662,7 +1674,7 @@ TEST_CASE("Inference: likelihood_computer_sets_root_nodes_correctly")
     matrix_cache cache(21);
     std::map<const clade*, std::vector<double> > _probabilities;
     auto init_func = [&](const clade* node) { _probabilities[node].resize(node->is_root() ? 20 : 21); };
-    p_tree->apply_reverse_level_order(init_func);
+    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), init_func);
 
     cache.precalculate_matrices({ 0.03 }, { 1.0,3.0,7.0 });
 
@@ -1709,7 +1721,7 @@ TEST_CASE("Inference: likelihood_computer_sets_leaf_nodes_from_error_model_if_pr
 
     std::map<const clade*, std::vector<double> > _probabilities;
     auto init_func = [&](const clade* node) { _probabilities[node].resize(node->is_root() ? 20 : 21); };
-    p_tree->apply_reverse_level_order(init_func);
+    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), init_func);
 
     auto A = p_tree->find_descendant("A");
     compute_node_probability(A, family, &model, _probabilities, 20, 20, &lambda, cache);

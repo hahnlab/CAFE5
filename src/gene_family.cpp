@@ -80,7 +80,7 @@ bool gene_family::exists_at_root(const clade *p_tree) const
             }
         }
     };
-    p_tree->apply_reverse_level_order(existence);
+    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), existence);
 
     bool exists_at_all_children = true;
     auto does_child_exist = [&](const clade *child) { exists_at_all_children &= registered(child); };

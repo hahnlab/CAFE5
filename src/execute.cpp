@@ -167,7 +167,7 @@ void estimator::execute(std::vector<model *>& models)
                 {
                     if (pvalues[i] < _user_input.pvalue)
                     {
-                        data.p_tree->apply_reverse_level_order([&](const clade* c) {
+                        for_each(data.p_tree->reverse_level_begin(), data.p_tree->reverse_level_end(), [&](const clade* c) {
                             probs.set(data.gene_families[i], c, compute_viterbi_sum(c, data.gene_families[i], rec.get(), data.max_family_size, cache, p_model->get_lambda()));
                             });
                     }

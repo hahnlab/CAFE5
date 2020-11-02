@@ -136,10 +136,10 @@ std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, c
     unique_ptr<lambda> multiplier(p_lambda->multiply(lambda_multiplier));
     clademap<std::vector<double>> probabilities;
     auto init_func = [&](const clade* node) { probabilities[node].resize(node->is_root() ? max_root_family_size : max_family_size + 1); };
-    p_tree->apply_reverse_level_order(init_func);
+    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), init_func);
 
     auto compute_func = [&](const clade *c) { compute_node_probability(c, gf, p_error_model, probabilities, max_root_family_size, max_family_size, multiplier.get(), calc); };
-    p_tree->apply_reverse_level_order(compute_func);
+    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), compute_func);
 
     return probabilities.at(p_tree); // likelihood of the whole tree = multiplication of likelihood of all nodes
 }

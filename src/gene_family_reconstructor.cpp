@@ -21,7 +21,7 @@ namespace pupko_reconstructor {
             std::function <void(const clade*)> pupko_initializer = [&](const clade* c) {
                 pupko_reconstructor::initialize_at_node(c, v_all_node_Cs[i], v_all_node_Ls[i], max_family_size, max_root_family_size);
             };
-            p_tree->apply_reverse_level_order(pupko_initializer);
+            for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), pupko_initializer);
         }
 
     }
@@ -88,10 +88,6 @@ namespace pupko_reconstructor {
 
         size_t j = 0;
         double value = 0.0;
-        auto child_multiplier = [&all_node_Ls, &j, &value](const clade* child) {
-            value *= all_node_Ls[child][j];
-        };
-
         // i is the parent, j is the child
         for (size_t i = 0; i < L.size(); ++i)
         {
@@ -100,7 +96,9 @@ namespace pupko_reconstructor {
             for (j = 0; j < L.size(); ++j)
             {
                 value = 1.0;
-                c->apply_to_descendants(child_multiplier);
+                for (auto it = c->descendant_begin(); it != c->descendant_end(); ++it)
+                    value *= all_node_Ls[*it][j];
+
                 double val = value * matrix->get(i, j);
                 if (val > max_val)
                 {
@@ -182,7 +180,8 @@ namespace pupko_reconstructor {
         };
 
         // Pupko's joint reconstruction algorithm
-        p_tree->apply_reverse_level_order(pupko_reconstructor);
+        for (auto it = p_tree->reverse_level_begin(); it != p_tree->reverse_level_end(); ++it)
+            reconstruct_at_node(*it, lambda, all_node_Cs, all_node_Ls, p_calc, p_prior, gf);
 
         reconstructed_states[p_tree] = all_node_Cs[p_tree][0];
         p_tree->apply_to_descendants(backtracker);
@@ -359,7 +358,7 @@ void reconstruction::write_results(std::string model_identifier,
     const branch_probabilities& branch_probabilities)
 {
     cladevector order;
-    p_tree->apply_reverse_level_order([&order](const clade* c) { order.push_back(c); });
+    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), [&order](const clade* c) { order.push_back(c); });
 
     std::ofstream ofst(filename(model_identifier + "_asr", output_prefix, "tre"));
     print_reconstructed_states(ofst, order, families, p_tree, test_pvalue, branch_probabilities);
