@@ -21,8 +21,8 @@ clade::clade(const clade& c, clade* parent, std::function<double(const clade& c)
     _descendants.resize(c._descendants.size());
     transform(c._descendants.begin(), c._descendants.end(), _descendants.begin(), [&](const clade* c) { return new clade(*c, this, branchlength_setter);});
 
-	if (is_root())	// for simplicity, we do not calculate descendantss reverse-level order arrays
-		update_reverse_level_order();
+    if (is_root())	// for simplicity, we do not calculate descendantss reverse-level order arrays
+        update_reverse_level_order();
 }
 
 /* Recursive destructor */
@@ -56,7 +56,7 @@ int clade::get_lambda_index() const
 
 /* Adds descendant to vector of descendants */
 void clade::add_descendant(clade *p_descendant) {
-	
+    
   _descendants.push_back(p_descendant);
   _name_interior_clade();
   if (!is_root()) {
@@ -68,35 +68,35 @@ void clade::add_descendant(clade *p_descendant) {
 
 void clade::update_reverse_level_order()
 {
-	_reverse_level_order.clear();
-	std::stack<const clade*> stack;
-	std::queue<const clade*> q;
+    _reverse_level_order.clear();
+    std::stack<const clade*> stack;
+    std::queue<const clade*> q;
 
-	q.push(this);
-	while (!q.empty())
-	{
-		/* Dequeue node and make it current */
-		auto current = q.front();
-		q.pop();
-		stack.push(current);
+    q.push(this);
+    while (!q.empty())
+    {
+        /* Dequeue node and make it current */
+        auto current = q.front();
+        q.pop();
+        stack.push(current);
 
-		for (auto i : current->_descendants)
-		{
-			/* Enqueue child */
-			q.push(i);
-		}
-	}
+        for (auto i : current->_descendants)
+        {
+            /* Enqueue child */
+            q.push(i);
+        }
+    }
 
-	while (!stack.empty())
-	{
-		auto current = stack.top();
-		stack.pop();
-		_reverse_level_order.push_back(current);
-	}
+    while (!stack.empty())
+    {
+        auto current = stack.top();
+        stack.pop();
+        _reverse_level_order.push_back(current);
+    }
 
-	if (!is_root()) {
-		_p_parent->update_reverse_level_order();
-	}
+    if (!is_root()) {
+        _p_parent->update_reverse_level_order();
+    }
 }
 
 /* Recursively fills vector of names provided as argument */
@@ -200,7 +200,7 @@ std::map<std::string, int> clade::get_lambda_index_map()
     };
 
     apply_prefix_order(fn);
-	return node_name_to_lambda_index;
+    return node_name_to_lambda_index;
 }
 
 void clade::write_newick(ostream& ost, std::function<std::string(const clade *c)> textwriter) const
@@ -246,164 +246,164 @@ std::set<double> clade::get_branch_lengths() const
 
 void clade::validate_lambda_tree(const clade* p_lambda_tree) const
 {
-	auto g = [](set<string>& s, const clade* c) {
-		s.insert(c->get_taxon_name());
-	};
-	set<string> my_taxa;
-	apply_prefix_order([g, &my_taxa](const clade* c) { g(my_taxa, c);  });
+    auto g = [](set<string>& s, const clade* c) {
+        s.insert(c->get_taxon_name());
+    };
+    set<string> my_taxa;
+    apply_prefix_order([g, &my_taxa](const clade* c) { g(my_taxa, c);  });
 
-	set<string> lambda_taxa;
-	p_lambda_tree->apply_prefix_order([g, &lambda_taxa](const clade* c) { g(lambda_taxa, c);  });
+    set<string> lambda_taxa;
+    p_lambda_tree->apply_prefix_order([g, &lambda_taxa](const clade* c) { g(lambda_taxa, c);  });
 
-	if (my_taxa != lambda_taxa)
-	{
-		throw std::runtime_error("The lambda tree structure does not match that of the tree");
-	}
+    if (my_taxa != lambda_taxa)
+    {
+        throw std::runtime_error("The lambda tree structure does not match that of the tree");
+    }
 }
 
 void clade::apply_to_descendants(const cladefunc& f) const {
 
-	// apply f to direct descendants
-	// could replace with apply_prefix_order for functions f that recur through descendants
-	//for_each(_descendants.begin(), _descendants.end(), f); // for_each from std
-	// for_each apparently passes by value
-	for (auto desc : _descendants)
-		f(desc);
+    // apply f to direct descendants
+    // could replace with apply_prefix_order for functions f that recur through descendants
+    //for_each(_descendants.begin(), _descendants.end(), f); // for_each from std
+    // for_each apparently passes by value
+    for (auto desc : _descendants)
+        f(desc);
 }
 
 //! apply the functor f to this clade and also to all descendants.
 void clade::apply_prefix_order(const cladefunc& f) const {
-	std::stack<const clade*> stack;
-	stack.push(this);
-	while (!stack.empty())
-	{
-		auto c = stack.top();
-		stack.pop();
+    std::stack<const clade*> stack;
+    stack.push(this);
+    while (!stack.empty())
+    {
+        auto c = stack.top();
+        stack.pop();
 
-		// Moving from right to left in the tree because that's what CAFE does
-		auto it = c->_descendants.rbegin();
-		for (; it != c->_descendants.rend(); ++it)
-		{
-			stack.push(*it);
-		}
-		f(c);
-	}
+        // Moving from right to left in the tree because that's what CAFE does
+        auto it = c->_descendants.rbegin();
+        for (; it != c->_descendants.rend(); ++it)
+        {
+            stack.push(*it);
+        }
+        f(c);
+    }
 }
 
 clade* parse_newick(std::string newick_string, bool parse_to_lambdas) {
 
-	std::regex tokenizer("\\(|\\)|[^\\s\\(\\)\\:\\;\\,]+|\\:[+-]?[0-9]*\\.?[0-9]+([eE][+-]?[0-9]+)?|\\,|\\;");
+    std::regex tokenizer("\\(|\\)|[^\\s\\(\\)\\:\\;\\,]+|\\:[+-]?[0-9]*\\.?[0-9]+([eE][+-]?[0-9]+)?|\\,|\\;");
 
-	auto new_clade = [](clade* p_parent) {
-		clade* p_new_clade = new clade();
-		if (p_parent != NULL) {
-			p_new_clade->_p_parent = p_parent;
-		}
+    auto new_clade = [](clade* p_parent) {
+        clade* p_new_clade = new clade();
+        if (p_parent != NULL) {
+            p_new_clade->_p_parent = p_parent;
+        }
 
-		return p_new_clade;
-	};
+        return p_new_clade;
+    };
 
-	int lp_count(0), rp_count(0);
-	sregex_iterator regex_it(newick_string.begin(), newick_string.end(), tokenizer);
-	sregex_iterator regex_it_end;
-	clade* p_root_clade = new_clade(NULL);
-	p_root_clade->is_lambda_clade = parse_to_lambdas; // if user does not provide lambda for root, we need to make the root specifically a lambda clade if we are parsing to lambdas
+    int lp_count(0), rp_count(0);
+    sregex_iterator regex_it(newick_string.begin(), newick_string.end(), tokenizer);
+    sregex_iterator regex_it_end;
+    clade* p_root_clade = new_clade(NULL);
+    p_root_clade->is_lambda_clade = parse_to_lambdas; // if user does not provide lambda for root, we need to make the root specifically a lambda clade if we are parsing to lambdas
 
-	clade* p_current_clade = p_root_clade; // current_clade starts as the root
+    clade* p_current_clade = p_root_clade; // current_clade starts as the root
 
-	// The first element below is empty b/c I initialized it in the class body
-	for (; regex_it != regex_it_end; regex_it++) {
-		/* Checking all regex */
-		// cout << regex_it->str() << endl;
+    // The first element below is empty b/c I initialized it in the class body
+    for (; regex_it != regex_it_end; regex_it++) {
+        /* Checking all regex */
+        // cout << regex_it->str() << endl;
 
-		/* Start new clade */
-		if (regex_it->str() == "(") {
-			/* Checking '(' regex */
-			// cout << "Found (: " << regex_it->str() << endl;
+        /* Start new clade */
+        if (regex_it->str() == "(") {
+            /* Checking '(' regex */
+            // cout << "Found (: " << regex_it->str() << endl;
 
-			p_current_clade = new_clade(p_current_clade); // move down the tree (towards the present)
-			p_current_clade->_p_parent->add_descendant(p_current_clade); // can't forget to add the now current clade to its parent's descendants vector
-			lp_count++;
-		}
+            p_current_clade = new_clade(p_current_clade); // move down the tree (towards the present)
+            p_current_clade->_p_parent->add_descendant(p_current_clade); // can't forget to add the now current clade to its parent's descendants vector
+            lp_count++;
+        }
 
-		else if (regex_it->str() == ",") {
-			/* Checking ',' regex */
-			// cout << "Found ,: " << regex_it->str() << endl;
+        else if (regex_it->str() == ",") {
+            /* Checking ',' regex */
+            // cout << "Found ,: " << regex_it->str() << endl;
 
-			/* The if block below is for when the newick notation omits the external parentheses, which is legal */
-			if (p_current_clade == p_root_clade) {
-				cout << "Found root!" << endl;
-				p_root_clade = new_clade(NULL);
-				p_current_clade->_p_parent = p_root_clade; // note that get_parent() cannot be used here because get_parent() copies the pointer and it would be the copy that would be assigned p_root_clade... and then the copy would just be thrown away
-				p_current_clade->_p_parent->add_descendant(p_current_clade);
-			}
+            /* The if block below is for when the newick notation omits the external parentheses, which is legal */
+            if (p_current_clade == p_root_clade) {
+                cout << "Found root!" << endl;
+                p_root_clade = new_clade(NULL);
+                p_current_clade->_p_parent = p_root_clade; // note that get_parent() cannot be used here because get_parent() copies the pointer and it would be the copy that would be assigned p_root_clade... and then the copy would just be thrown away
+                p_current_clade->_p_parent->add_descendant(p_current_clade);
+            }
 
-			/* Start new clade at same level as the current clade */
-			p_current_clade = new_clade(p_current_clade->_p_parent); // move to the side of the tree
-			p_current_clade->_p_parent->add_descendant(p_current_clade); // adding current clade as descendant of its parent
-		}
+            /* Start new clade at same level as the current clade */
+            p_current_clade = new_clade(p_current_clade->_p_parent); // move to the side of the tree
+            p_current_clade->_p_parent->add_descendant(p_current_clade); // adding current clade as descendant of its parent
+        }
 
-		/* Finished current clade */
-		else if (regex_it->str() == ")") {
-			/* checking ')' regex */
-			// cout << "Found ): " << regex_it->str() << endl;
+        /* Finished current clade */
+        else if (regex_it->str() == ")") {
+            /* checking ')' regex */
+            // cout << "Found ): " << regex_it->str() << endl;
 
-			p_current_clade = p_current_clade->_p_parent; // move up the tree (into the past)
-			rp_count++;
-		}
+            p_current_clade = p_current_clade->_p_parent; // move up the tree (into the past)
+            rp_count++;
+        }
 
-		/* Finished newick string */
-		else if (regex_it->str() == ";") {
-			/* Checking ';' regex */
-			// cout << "Found ;: " << regex_it->str() << endl;
-			break;
-		}
+        /* Finished newick string */
+        else if (regex_it->str() == ";") {
+            /* Checking ';' regex */
+            // cout << "Found ;: " << regex_it->str() << endl;
+            break;
+        }
 
-		/* Reading branch length */
-		else if (regex_it->str()[0] == ':') {
-			/* Checking ':' regex */
-			// cout << "Found :: " << regex_it->str() << endl;
+        /* Reading branch length */
+        else if (regex_it->str()[0] == ':') {
+            /* Checking ':' regex */
+            // cout << "Found :: " << regex_it->str() << endl;
 
-			if (parse_to_lambdas)
-			{
-				int ind = strtol(regex_it->str().substr(1).c_str(), nullptr, 0);
-				p_current_clade->_lambda_index = ind;
-				p_current_clade->is_lambda_clade = true;
-			}
-			else
-			{
-				p_current_clade->_branch_length = atof(regex_it->str().substr(1).c_str()); // atof() converts string into float
-				p_current_clade->is_lambda_clade = false;
-			}
-		}
+            if (parse_to_lambdas)
+            {
+                int ind = strtol(regex_it->str().substr(1).c_str(), nullptr, 0);
+                p_current_clade->_lambda_index = ind;
+                p_current_clade->is_lambda_clade = true;
+            }
+            else
+            {
+                p_current_clade->_branch_length = atof(regex_it->str().substr(1).c_str()); // atof() converts string into float
+                p_current_clade->is_lambda_clade = false;
+            }
+        }
 
-		/* Reading taxon name */
-		else {
-			/* Checking species name string regex */
-			// cout << "Found species name: " << regex_it->str() << endl;
+        /* Reading taxon name */
+        else {
+            /* Checking species name string regex */
+            // cout << "Found species name: " << regex_it->str() << endl;
 
-			p_current_clade->_taxon_name = regex_it->str();
-			clade* p_parent = p_current_clade->_p_parent;
-			/* If this species has a parent, we need to update the parent's name */
-			if (p_parent != NULL) {
-				p_parent->_name_interior_clade(); // update parent's name, _name_interior_clade() is a void method
-			}
-		}
-	}
+            p_current_clade->_taxon_name = regex_it->str();
+            clade* p_parent = p_current_clade->_p_parent;
+            /* If this species has a parent, we need to update the parent's name */
+            if (p_parent != NULL) {
+                p_parent->_name_interior_clade(); // update parent's name, _name_interior_clade() is a void method
+            }
+        }
+    }
 
     std::function<void(const clade*)> validator;
-	if (p_root_clade->is_lambda_clade)
-	{
+    if (p_root_clade->is_lambda_clade)
+    {
         // since user is not required to set a lambda index for the root, go ahead and assign it to the first lambda
         // so the rest of the code doesn't get confused
         if (p_root_clade->get_lambda_index() == 0)
-			p_root_clade->_lambda_index = 1;
+            p_root_clade->_lambda_index = 1;
 
-		validator = [](const clade* c) {
-			if (c->_lambda_index < 1)
-				throw std::runtime_error("Invalid lambda index set for " + c->get_taxon_name());
-		};
-	}
+        validator = [](const clade* c) {
+            if (c->_lambda_index < 1)
+                throw std::runtime_error("Invalid lambda index set for " + c->get_taxon_name());
+        };
+    }
     else
     {
         validator = [](const clade* c) {
@@ -411,7 +411,7 @@ clade* parse_newick(std::string newick_string, bool parse_to_lambdas) {
                 throw std::runtime_error("Invalid branch length set for " + c->get_taxon_name());
         };
     }
-	for_each(p_root_clade->reverse_level_begin(), p_root_clade->reverse_level_end(), validator);
+    for_each(p_root_clade->reverse_level_begin(), p_root_clade->reverse_level_end(), validator);
 
     return p_root_clade;
 }

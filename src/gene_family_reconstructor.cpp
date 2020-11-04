@@ -332,7 +332,7 @@ void reconstruction::print_reconstructed_states(std::ostream& ost, const cladeve
 
         ost << ';' << endl;
     }
-	ost << "\nEND;\n";
+    ost << "\nEND;\n";
     write_nexus_extensions(ost);
     
 }

@@ -42,11 +42,11 @@ double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 /*
 double gammaln(double a)
 {
-	int n;
-	double p = __Qs[0];
-	double a_add_5p5 = a + 5.5;
-	for (n = 1; n <= 6; n++) p += __Qs[n] / (a + n);
-	return (a + 0.5)*log(a_add_5p5) - (a_add_5p5)+log(M_SQRT_2PI*p / a);
+    int n;
+    double p = __Qs[0];
+    double a_add_5p5 = a + 5.5;
+    for (n = 1; n <= 6; n++) p += __Qs[n] / (a + n);
+    return (a + 0.5)*log(a_add_5p5) - (a_add_5p5)+log(M_SQRT_2PI*p / a);
 }
 */
 
@@ -202,8 +202,8 @@ void compute_node_probability_small_families(const clade *node, const gene_famil
         }
     }
 
-	else if (node->is_root()) {
-		// at the root, the size of the vector holding the final likelihoods will be _max_root_family_size (size 0 is not included, so we do not add 1)
+    else if (node->is_root()) {
+        // at the root, the size of the vector holding the final likelihoods will be _max_root_family_size (size 0 is not included, so we do not add 1)
         vector<double>& node_probs = probabilities[node];
         fill(node_probs.begin(), node_probs.end(), 1);
 
@@ -216,7 +216,7 @@ void compute_node_probability_small_families(const clade *node, const gene_famil
         }
     }
     else {
-		// at any internal node, the size of the vector holding likelihoods will be _max_parsed_family_size+1 because size=0 is included
+        // at any internal node, the size of the vector holding likelihoods will be _max_parsed_family_size+1 because size=0 is included
         vector<double>& node_probs = probabilities[node];
         fill(node_probs.begin(), node_probs.end(), 1);
 
@@ -455,21 +455,21 @@ double pvalue(double v, const vector<double>& conddist)
 
 double compute_tree_pvalue(const clade* p_tree, function<void(const clade*)> compute_func, size_t sz, const std::vector<std::vector<double>>& conditional_distribution, clademap<std::vector<double>>& clade_storage)
 {
-	for (auto& it : clade_storage)
-	{
-		fill(it.second.begin(), it.second.end(), 0);
-	}
+    for (auto& it : clade_storage)
+    {
+        fill(it.second.begin(), it.second.end(), 0);
+    }
     for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), compute_func);
 
-	double observed_max_likelihood = *std::max_element(clade_storage.at(p_tree).begin(), clade_storage.at(p_tree).end());
+    double observed_max_likelihood = *std::max_element(clade_storage.at(p_tree).begin(), clade_storage.at(p_tree).end());
 
-	vector<double> pvalues(sz);
-	for (size_t s = 0; s < sz; s++)
-	{
-		pvalues[s] = pvalue(observed_max_likelihood, conditional_distribution[s]);
-	}
+    vector<double> pvalues(sz);
+    for (size_t s = 0; s < sz; s++)
+    {
+        pvalues[s] = pvalue(observed_max_likelihood, conditional_distribution[s]);
+    }
 
-	return *max_element(pvalues.begin(), pvalues.end());
+    return *max_element(pvalues.begin(), pvalues.end());
 }
 
 //! Compute pvalues for each family based on the given lambda
@@ -498,16 +498,16 @@ vector<double> compute_pvalues(const clade* p_tree, const std::vector<gene_famil
 
     vector<double> result(families.size());
 
-	std::map<const clade*, std::vector<double> > family_likelihoods;
+    std::map<const clade*, std::vector<double> > family_likelihoods;
 
-	auto init_func = [&](const clade* node) { family_likelihoods[node].resize(node->is_root() ? mxr : mx + 1); };
+    auto init_func = [&](const clade* node) { family_likelihoods[node].resize(node->is_root() ? mxr : mx + 1); };
     for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), init_func);
 
-	transform(families.begin(), families.end(), result.begin(), [&](const gene_family& gf)
+    transform(families.begin(), families.end(), result.begin(), [&](const gene_family& gf)
         {
-			auto compute_func = [&](const clade* c) { compute_node_probability(c, gf, NULL, family_likelihoods, mxr, mx, p_lambda, cache); };
+            auto compute_func = [&](const clade* c) { compute_node_probability(c, gf, NULL, family_likelihoods, mxr, mx, p_lambda, cache); };
 
-			return compute_tree_pvalue(p_tree, compute_func, mxr, conditional_distribution, family_likelihoods);
+            return compute_tree_pvalue(p_tree, compute_func, mxr, conditional_distribution, family_likelihoods);
         });
 
 

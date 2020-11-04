@@ -89,15 +89,15 @@ public:
     //! Return a unique list of all brnach lengths for this clade and its descendants
     std::set<double> get_branch_lengths() const;
 
-	/// Checks that the list of node names of the lambda tree matches this one
-	/// throw an exception if not
-	void validate_lambda_tree(const clade* p_lambda_tree) const;
+    /// Checks that the list of node names of the lambda tree matches this one
+    /// throw an exception if not
+    void validate_lambda_tree(const clade* p_lambda_tree) const;
 
     //! apply the function f to direct descendants. Does not automatically recurse.
-	void apply_to_descendants(const cladefunc& f) const;
+    void apply_to_descendants(const cladefunc& f) const;
 
     //! apply the function f to this clade and also to all descendants.
-	void apply_prefix_order(const cladefunc& f) const;
+    void apply_prefix_order(const cladefunc& f) const;
 
     reverse_level_iterator reverse_level_begin() const {
         return _reverse_level_order.begin();

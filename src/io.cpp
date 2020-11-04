@@ -298,15 +298,15 @@ void write_error_model_file(std::ostream& ost, error_model& errormodel)
 
 //! Split string into vector of strings given delimiter
 std::vector<std::string> tokenize_str(std::string some_string, char some_delim) {
-	std::istringstream ist(some_string);
-	std::string token;
-	std::vector<std::string> tokens;
+    std::istringstream ist(some_string);
+    std::string token;
+    std::vector<std::string> tokens;
 
-	while (std::getline(ist, token, some_delim)) {
-		tokens.push_back(token);
-	}
+    while (std::getline(ist, token, some_delim)) {
+        tokens.push_back(token);
+    }
 
-	return tokens;
+    return tokens;
 }
 
 /// OS-specific. If mkdir succeeds it returns 0. If it returns -1

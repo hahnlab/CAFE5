@@ -98,8 +98,8 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
 {
     LOG(INFO) << "Simulating with " << models.size() << " model(s)";
 
-	if (data.p_tree == nullptr)
-		throw std::runtime_error("No tree specified for simulations");
+    if (data.p_tree == nullptr)
+        throw std::runtime_error("No tree specified for simulations");
 
     std::vector<const clade *> order;
     for_each(data.p_tree->reverse_level_begin(), data.p_tree->reverse_level_end(), [&order](const clade* c) { order.push_back(c); });
