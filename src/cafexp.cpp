@@ -2,6 +2,7 @@
 #include <random>
 #include <algorithm>
 #include <fstream>
+#include <omp.h>
 
 #include <getopt.h>
 
@@ -30,7 +31,7 @@ input_parameters read_arguments(int argc, char *const argv[])
     int args; // getopt_long returns int or char
     int prev_arg;
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "v:i:e::o:t:y:n:f:E:R:L:P:I:l:m:k:a:s::p::r:zb", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "c:v:i:e::o:t:y:n:f:E:R:L:P:I:l:m:k:a:s::p::r:zb", longopts, NULL)) != -1) {
         // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && optarg && *optarg == '-') {
             LOG(ERROR) << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
@@ -40,56 +41,68 @@ input_parameters read_arguments(int argc, char *const argv[])
         }
 
         switch (args) {
+        case 'a':
+            my_input_parameters.fixed_alpha = atof(optarg);
+            break;
         case 'b':
             my_input_parameters.lambda_per_family = true;
             break;
-        case 'i':
-            my_input_parameters.input_file_path = optarg;
+        case 'c':
+            my_input_parameters.cores = atoi(optarg);
             break;
         case 'e':
             my_input_parameters.use_error_model = true;
             if (optarg)
                 my_input_parameters.error_model_file_path = optarg;
             break;
-        case 'o':
-            my_input_parameters.output_prefix = optarg;
+        case 'f':
+            my_input_parameters.rootdist = optarg;
             break;
-        case 't':
-            my_input_parameters.tree_file_path = optarg;
+        case 'h':
+            my_input_parameters.help = true;
             break;
-        case 'y':
-            my_input_parameters.lambda_tree_file_path = optarg;
+        case 'i':
+            my_input_parameters.input_file_path = optarg;
             break;
-        case 's':
-            // Number of fams simulated defaults to 0 if -f is not provided
-            my_input_parameters.is_simulating = true;
-            if (optarg != NULL) { my_input_parameters.nsims = atoi(optarg); }
+        case 'k':
+            if (optarg != NULL) { my_input_parameters.n_gamma_cats = atoi(optarg); }
             break;
         case 'l':
             my_input_parameters.fixed_lambda = atof(optarg);
+            break;
+        case 'm':
+            my_input_parameters.fixed_multiple_lambdas = optarg;
+            break;
+        case 'o':
+            my_input_parameters.output_prefix = optarg;
             break;
         case 'p':
             my_input_parameters.use_poisson_dist_for_prior = true; // If the user types '-p', the root eq freq dist will not be a uniform
                                                              // If the user provides an argument to -p, then we do not estimate it
             if (optarg != NULL) { my_input_parameters.poisson_lambda = atof(optarg); }
             break;
-        case 'm':
-            my_input_parameters.fixed_multiple_lambdas = optarg;
+        case 'r':
+            my_input_parameters.chisquare_compare = optarg;
             break;
-        case 'k':
-            if (optarg != NULL) { my_input_parameters.n_gamma_cats = atoi(optarg); }
+        case 's':
+            // Number of fams simulated defaults to 0 if -f is not provided
+            my_input_parameters.is_simulating = true;
+            if (optarg != NULL) { my_input_parameters.nsims = atoi(optarg); }
             break;
-        case 'a':
-            my_input_parameters.fixed_alpha = atof(optarg);
+        case 't':
+            my_input_parameters.tree_file_path = optarg;
+            break;
+        case 'v':
+            my_input_parameters.verbose_logging_level = atoi(optarg);
+            break;
+        case 'y':
+            my_input_parameters.lambda_tree_file_path = optarg;
+            break;
+        case 'z':
+            my_input_parameters.exclude_zero_root_families = false;
             break;
         case 'E':
             my_input_parameters.optimizer_params.neldermead_expansion = atof(optarg);
-            break;
-        case 'P':
-            my_input_parameters.pvalue = atof(optarg);
-            break;
-        case 'R':
-            my_input_parameters.optimizer_params.neldermead_reflection = atof(optarg);
             break;
         case 'I':
             my_input_parameters.optimizer_params.neldermead_iterations = atoi(optarg);
@@ -97,20 +110,11 @@ input_parameters read_arguments(int argc, char *const argv[])
         case 'L':
             my_input_parameters.log_config_file = optarg;
             break;
-        case 'f':
-            my_input_parameters.rootdist = optarg;
+        case 'P':
+            my_input_parameters.pvalue = atof(optarg);
             break;
-        case 'r':
-            my_input_parameters.chisquare_compare = optarg;
-            break;
-        case 'h':
-            my_input_parameters.help = true;
-            break;
-        case 'z':
-            my_input_parameters.exclude_zero_root_families = false;
-            break;
-        case 'v':
-            my_input_parameters.verbose_logging_level = atoi(optarg);
+        case 'R':
+            my_input_parameters.optimizer_params.neldermead_reflection = atof(optarg);
             break;
         case ':':   // missing argument
             fprintf(stderr, "%s: option `-%c' requires an argument",
@@ -192,6 +196,10 @@ int cafexp(int argc, char *const argv[]) {
         {
             show_help();
             return 0;
+        }
+        if (user_input.cores > 0)
+        {
+            omp_set_num_threads(user_input.cores);
         }
         user_data data;
         data.read_datafiles(user_input);

@@ -41,7 +41,7 @@ public:
     bool lambda_per_family = false;
     bool use_error_model = false;
     int verbose_logging_level = 0;
-
+    int cores = 0;
     optimizer_parameters optimizer_params;
     bool help = false;
 

@@ -234,6 +234,22 @@ TEST_CASE("Options, optimizer_short")
     CHECK_EQ(5, actual.optimizer_params.neldermead_iterations);
 }
 
+TEST_CASE("Options, cores_long")
+{
+    option_test c({ "cafexp", "--cores=6" });
+
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK_EQ(6, actual.cores);
+}
+
+TEST_CASE("Options, cores_short")
+{
+    option_test c({ "cafexp", "-c", "8" });
+
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK_EQ(8, actual.cores);
+}
+
 TEST_CASE("Options, errormodel_accepts_argument")
 {
     option_test c({ "cafexp", "-eerror.txt" });

@@ -207,26 +207,26 @@ void compute_node_probability_small_families(const clade *node, const gene_famil
         vector<double>& node_probs = probabilities[node];
         fill(node_probs.begin(), node_probs.end(), 1);
 
-        node->apply_to_descendants([&](const clade* c) {
+        for (auto it = node->descendant_begin(); it != node->descendant_end(); ++it) {
             double result[MAX_STACK_FAMILY_SIZE];
-             _lambda->calculate_child_factor(_calc, c, probabilities[c], 1, max_root_family_size, 0, max_family_size, result);
+             _lambda->calculate_child_factor(_calc, *it, probabilities[*it], 1, max_root_family_size, 0, max_family_size, result);
              for (size_t i = 0; i < node_probs.size(); i++) {
                  node_probs[i] *= result[i];
              }
-            });
         }
+    }
     else {
 		// at any internal node, the size of the vector holding likelihoods will be _max_parsed_family_size+1 because size=0 is included
         vector<double>& node_probs = probabilities[node];
         fill(node_probs.begin(), node_probs.end(), 1);
 
-        node->apply_to_descendants([&](const clade* c) {
+        for (auto it = node->descendant_begin(); it != node->descendant_end(); ++it) {
             double result[MAX_STACK_FAMILY_SIZE];
-            _lambda->calculate_child_factor(_calc, c, probabilities[c], 0, max_family_size, 0, max_family_size, result);
+            _lambda->calculate_child_factor(_calc, *it, probabilities[*it], 0, max_family_size, 0, max_family_size, result);
             for (size_t i = 0; i< node_probs.size(); i++) {
                 node_probs[i] *= result[i];
             }
-            });
+        }
     }
 }
 
@@ -264,11 +264,11 @@ void compute_node_probability_large_families(const clade* node, const gene_famil
     else if (node->is_root()) {
         // at the root, the size of the vector holding the final likelihoods will be _max_root_family_size (size 0 is not included, so we do not add 1)
         std::vector<std::vector<double> > factors;
-        node->apply_to_descendants([&](const clade* c) {
+        for (auto it = node->descendant_begin(); it != node->descendant_end(); ++it) {
             vector<double> result(max_root_family_size);
-            _lambda->calculate_child_factor(_calc, c, probabilities[c], 1, max_root_family_size, 0, max_family_size, result.data());
+            _lambda->calculate_child_factor(_calc, *it, probabilities[*it], 1, max_root_family_size, 0, max_family_size, result.data());
             factors.push_back(result);
-            });
+        }
         vector<double>& node_probs = probabilities[node];
         // factors[0] is left child
         // factors[1] is right child
@@ -286,11 +286,11 @@ void compute_node_probability_large_families(const clade* node, const gene_famil
         // at any internal node, the size of the vector holding likelihoods will be _max_parsed_family_size+1 because size=0 is included
         std::vector<std::vector<double> > factors;
 
-        node->apply_to_descendants([&](const clade* c) {
+        for (auto it = node->descendant_begin(); it != node->descendant_end(); ++it) {
             vector<double> result(max_family_size+1);
-            _lambda->calculate_child_factor(_calc, c, probabilities[c], 0, max_family_size, 0, max_family_size, result.data());
+            _lambda->calculate_child_factor(_calc, *it, probabilities[*it], 0, max_family_size, 0, max_family_size, result.data());
             factors.push_back(result);
-            });
+        }
 
         vector<double>& node_probs = probabilities[node];
         // factors[0] is left child
