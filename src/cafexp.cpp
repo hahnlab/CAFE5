@@ -182,7 +182,6 @@ void show_help()
         "   --fixed_alpha, -a\t\tAlpha value of the discrete gamma distribution to use in category calculations. If not\n \t\t\t\t    specified, the alpha parameter will be estimated by maximum likelihood.\n"
         "   --fixed_lambda, -l\t\tValue (between 0 and 1) for a single user provided lambda value, otherwise lambda is estimated.\n"
         "   --fixed_multiple_lambdas, -m\tMultiple lambda values, comma separated.\n"
-        "   --output_prefix, -o\t\tOutput directory - Name of directory automatically created for output.\n"
         "   --poisson, -p\t\tUse a Poisson distribution for the root frequency distribution. Without specifying this, a\n \t\t\t\t    normal distribution will be used. A value can be specified -p10 (no space) or --poisson = 10,\n \t\t\t\t    otherwise the distribution will be estimated from the gene families.\n"
         "   --simulate, -s\t\tSimulate families. Optionally provide the number of simulations to generate (-s100 no space, or --simulate = 100)\n"
         "   --rootdist, -f\t\tPath to root distribution file for simulating datasets.\n\n"
