@@ -163,8 +163,8 @@ If you have downloaded the source code, you will need to run the
 _autoconf_ command to create the configure file provided in the
 released versions.
 
-The CAFE5 executable will be put inside the “bin” folder. Then
-just copy the binary file to somewhere on your path, such as
+The CAFE5 executable will be located in the “bin” folder. One 
+can either copy the binary file to a directory in your PATH, such as
 /usr/local/bin. Alternatively, add /path/to/CAFE5/bin/ to your
 \$PATH variable (in your .bashrc or .bash profile).
 
@@ -228,9 +228,9 @@ Example: mammals_tree.txt
 ```
 ((((cat:68.710507,horse:68.710507):4.566782,cow:73.277289):20.722711,(((((chimp:4.444172,human:4.444172):6.682678,orang:11.126850):2.285855,gibbon:13.412706):7.211527,(macaque:4.567240,baboon:4.567240):16.056992):16.060702,marmoset:36.684935):57.315065):38.738021,(rat:36.302445,mouse:36.302445):96.435575);
 ```
-To get a list of commands just call CAFE with no arguments:
+To get a list of commands just call CAFE with the -h or --help arguments:
 
-    $ cafexp
+    $ cafexp -h
 
 To estimate lambda with no among family rate variation issue the command:
 
@@ -301,12 +301,13 @@ The models are
 Unlike earlier versions, CAFE5 does not require a script. All
 options are given at once on the command line. Here is an example:
 
-    cafexp -t examples/tree.txt -i genefamilies.txt -p
+    cafexp -t examples/mammals\_tree.txt -i examples/mammal\_gene\_families.txt -p -k 3
 
 In this example, the -t parameter specifies a file containing the tree
 that CAFE uses; and the -i parameter specifies a list of gene families.
 The -p, in this instance given without a parameter, indicates that the
-root equilibrium frequency will not be a uniform distribution.
+root equilibrium frequency will not be a uniform distribution. The -k 
+parameter specifies how many gamma rate categories to use.  
 
 Parameters
 ----------
@@ -317,17 +318,41 @@ Parameters
     calculations. If not specified, the alpha parameter will be
     estimated by maximum likelihood.
 
+- 	**--lambda\_per\_family, -b**
+	
+	Estimate lambda by family (for testing purposes only).
+
+- 	**--cores, -c**
+	
+	Number of processing cores to use, requires an integer argument. Default=All available 
+	cores.
+
 -   **--error_model, -e**
 
-    Error model file path
+    Run with no file name to estimate the global error model file. This file can be 
+    provided in subsequent runs by providing the path to the Error model file with no 
+    spaces (e.g. -eBase\_error\_model.txt).
+
+-   **--Expansion, -E**
+
+    Expansion parameter for Nelder-Mead optimizer, Default=2.
 
 -   **--rootdist, -f**
 
-    Root distribution file path
+    Path to root distribution file for simulating datasets.
+
+-   **--help, -h**
+
+    Help menu with a list of all commands.
 
 -   **--infile, -i**
 
-    character or gene family file path
+    Path to tab delimited gene families file to be analyzed - Required for estimation.
+
+-   **--Iterations, -I**
+
+    Maximum number of iterations that will be performed in lambda search. 
+    Default=300 (increase this number if likelihood is still improving when limit is hit).
 
 -	**--n\_gamma\_cats, -k**
 
@@ -337,26 +362,38 @@ Parameters
 
 -   **--fixed\_lambda, -l**
 
-    Single Lambda value
+    Value (between 0 and 1) for a single user provided lambda value, otherwise lambda is estimated.
 
--   **--fixed\_multiple\_lambdas**
+-   **--log\_config, -L**
 
-    Multiple lambda values, comma separated
+    Turn on logging, provide name of the configuration file for logging (see example log.config file).
+
+-   **--fixed\_multiple\_lambdas, -m**
+
+    Multiple lambda values, comma separated, must be used in conjunction with lambda tree (-y).
 
 -   **--output\_prefix, -o**
 
-    Directory to place output files. Defaults to "results"
+    Output directory - Name of directory automatically created for output. Default=results.
 
 -   **--poisson, -p**
 
     Use a Poisson distribution for the root frequency distribution.
-    Without specifying this, a normal distribution will be used. A value
+  	If no -p flag is given, a uniform distribution will be used. A value
     can be specified (-p10, or --poisson=10); otherwise the distribution
-    will be estimated from the gene families.
+    will be estimated from the gene families.  
+
+-   **--pvalue, -P**
+
+    P-value to use for determining significance of family size change, Default=0.05.
 
 -   **--chisquare\_compare, -r**
 
-    Chi square compare
+    Chi square compare (not tested).
+
+-   **--Reflection, -R**
+
+    Reflection parameter for Nelder-Mead optimizer, Default=1.
 
 -   **--simulate, -s**
 
@@ -367,11 +404,16 @@ Parameters
 
 -   **--tree, -t**
 
-    Tree file path - Required for estimation
+    Path to file containing newick formatted tree - Required for estimation.
 
 -   **--lambda\_tree, -y**
 
-    Lambda tree file path
+    Path to lambda tree, for use with multiple lambdas.
+    
+-   **--zero_root, -z**
+
+    Include gene families that don't exist at the root, not recommended.
+
 
 Input files
 -----------
@@ -381,7 +423,8 @@ Input files
 
     A tree file is specified in Newick format.
 
-        (A:1,B:1);
+        ((((cat:68.710507,horse:68.710507):4.566782,cow:73.277289):20.722711,(((((chimp:4.444172,human:4.444172):6.682678,orang:11.126850):2.285855,gibbon:13.412706):7.211527,(macaque:4.567240,baboon:4.567240):16.056992):16.060702,marmoset:36.684935):57.315065):38.738021,(rat:36.302445,mouse:36.302445):96.435575);
+
 
     An example may be found in the examples/test\_tree.txt file.
 
