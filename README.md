@@ -153,6 +153,24 @@ recommended to use a released version instead._
 
 ### Compile
 
+CAFE 5 can utilize powerful compilers and a number of different matrix multiplication libraries.
+By default, you will most likely only have the standard BLAS & LAPACK implementation on your system.
+However, other libraries are available for high performance linear algebra calculations including:
+
+- [ATLAS](http://math-atlas.sourceforge.net) 
+- [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/math-kernel-library.html)
+- [OpenBlas](http://www.openblas.net)
+ 
+If you choose to install a different libraries, ensure they are visible to the compiler by copying 
+or linking them to the compiler library search path and include search path or adding the paths as compiler flags in the makefile.   
+
+To get the library search paths for the GNU c++ compiler (g++) one can type:
+
+	$ g++ -print-search-dirs | sed '/^lib/b 1;d;:1;s,/[^/.][^/]*/\.\./,/,;t 1;s,:[^=]*=,:;,;s,;,;  ,g' | tr \; \\012
+
+To get the Include search paths type:
+
+	$ g++ -E -Wp,-v -xc++ /dev/null
 
 Move into the CAFE5 folder, and type
 
@@ -166,7 +184,7 @@ released versions.
 The CAFE5 executable will be located in the “bin” folder. One 
 can either copy the binary file to a directory in your PATH, such as
 /usr/local/bin. Alternatively, add /path/to/CAFE5/bin/ to your
-\$PATH variable (in your .bashrc or .bash profile).
+\$PATH variable (in your .bashrc or .bash profile). 
 
 
 ### OSX users
@@ -206,7 +224,7 @@ This type of analysis requires a minimum of two input files:
        OrthoMCL, SwiftOrtho, FastOrtho, OrthAgogue, or OrthoFinder and then parsing the output into a table
        like the one below (Note: if a functional description is not desired, include this column anyway with a place holder as below (null)).
 
-Example: mammal_gene_families.txt
+Example: mammal\_gene\_families.txt
 ```
 Desc	Family ID	human	chimp	orang	baboon	gibbon	macaque	marmoset rat	mouse	cat	horse	cow
 ATPase	ORTHOMCL1	 52	 55	 54	 57	 54	  56	  56	 53	 52	57	55	 54
@@ -410,7 +428,7 @@ Parameters
 
     Path to lambda tree, for use with multiple lambdas.
     
--   **--zero_root, -z**
+-   **--zero\_root, -z**
 
     Include gene families that don't exist at the root, not recommended.
 
@@ -426,23 +444,24 @@ Input files
         ((((cat:68.710507,horse:68.710507):4.566782,cow:73.277289):20.722711,(((((chimp:4.444172,human:4.444172):6.682678,orang:11.126850):2.285855,gibbon:13.412706):7.211527,(macaque:4.567240,baboon:4.567240):16.056992):16.060702,marmoset:36.684935):57.315065):38.738021,(rat:36.302445,mouse:36.302445):96.435575);
 
 
-    An example may be found in the examples/test\_tree.txt file.
-
-    When nodes are mentioned in output files and logs, they are named by
-    the leaf nodes descending from them, in alphabetical order. For
-    example, the parent of A and B in this example will be named “AB”. A
-    node containing descendant species of cow, whale, giraffe, and
-    manatee would be named “cowgiraffemanateewhale”.
+    An example may be found in the examples/mammals\_tree.txt file.
 
 -   Family files
 
     Family files can be specified in the CAFE input format:
 
-        Desc    Family ID       A       B
-        (null)  1       1       2
-        (null)  2       2       1
-        (null)  3       3       6
-        (null)  4       6       3
+	```
+	Desc	Family ID	human	chimp	orang	baboon	gibbon	macaque	marmoset rat	mouse	cat	horse	cow
+	ATPase	ORTHOMCL1	 52	 55	 54	 57	 54	  56	  56	 53	 52	57	55	 54
+	(null)	ORTHOMCL2	 76	 51	 41	 39	 45	  36	  37	 67	 79	37	41	 49
+	HMG box	ORTHOMCL3	 50	 49	 48	 48	 46	  49	  48	 55	 52	51	47	 55
+	(null)	ORTHOMCL4	 43	 43	 47	 53	 44	  47	  46	 59	 58	51	50	 55
+	Dynamin	ORTHOMCL5	 43	 40	 43	 44	 31	  46	  33	 79	 70	43	49	 50
+	......
+	....
+	..
+	DnaJ	ORTHOMCL10016	 45	 46	 50	 46	 46 	  47	  46	 48	 49	45	44	 48
+	``` 
 
     The file is tab-separated with a header line giving the order of the
     species. Each line thereafter consists of a description, a family
@@ -451,12 +470,12 @@ Input files
     Alternatively, the family file can be specified with a set of lines
     beginning with hashtags containing the species order:
 
-        #A
-        #B
-        1       2     1
-        2       1     2
-        3       6     3
-        6       3     4
+        #human
+        #chimp
+        1       2     ORTHOMCL1
+        2       1     ORTHOMCL2
+        3       6     ORTHOMCL3
+        6       3     ORTHOMCL4
 
     In this case, the family ID will be in the final column.
 
