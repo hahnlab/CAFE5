@@ -192,7 +192,7 @@ void show_help()
         "   --pvalue, -P\t\t\tP-value to use for determining significance of family size change, Default=0.05.\n"
         "   --zero_root, -z\t\tInclude gene families that don't exist at the root, not recommended.\n"
         "   --Expansion, -E\t\tExpansion parameter for Nelder-Mead optimizer, Default=2.\n"
-		"   --Iterations, -I\t\tMaximum number of iterations that will be performed in lambda search. Default=300 (increase if likelihood is still improving).\n"
+		"   --Iterations, -I\t\tMaximum number of iterations that will be performed in \n \t\t\t\t    lambda search. Default=300 (increase this number if likelihood is still improving when limit is hit).\n"
         "   --Reflection, -R\t\tReflection parameter for Nelder-Mead optimizer, Default=1.\n\n\n";
 
         std::cout << text;
