@@ -160,7 +160,7 @@ action* get_executor(input_parameters& user_input, user_data& data)
 void show_help()
 {
     const char *text = ""
-        "\n\nUsage: cafexp [options]\n\n"
+        "\n\nUsage: cafe5 [options]\n\n"
         "CAFE is a software that provides a statistical foundation for evolutionary inferences about changes in gene family size.\n "
         "The program employs a birth and death process to model gene gain and loss across a user-specified phylogenetic tree,\n "
         "thus accounting for the species phylogenetic history. The distribution of family sizes generated under this model can\n "
@@ -200,7 +200,7 @@ void show_help()
 
 /// The main function. Evaluates arguments, calls processes
 /// \callgraph
-int cafexp(int argc, char *const argv[]) {
+int cafe5(int argc, char *const argv[]) {
     init_lgamma_cache();
 
     try {

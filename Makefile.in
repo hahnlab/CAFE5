@@ -16,7 +16,7 @@ OBJDIR = obj
 BINDIR = bin
 
 # our program
-TARGET = cafexp
+TARGET = cafe5
 
 # Default build
 all: prep release
