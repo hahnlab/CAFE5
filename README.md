@@ -19,7 +19,7 @@ available in prior releases.
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
-[![Build Status](https://travis-ci.org/hahnlab/CAFExp.svg?branch=master)](https://travis-ci.org/hahnlab/CAFExp)
+[![Build Status](https://travis-ci.org/hahnlab/cafe5.svg?branch=master)](https://travis-ci.org/hahnlab/cafe5)
 
 History
 -------
@@ -136,15 +136,15 @@ Installation
 
 ### Download
 
-The Github page for CAFE5 is https://github.com/hahnlab/CAFExp 
+The Github page for CAFE5 is https://github.com/hahnlab/cafe5 
 
 Navigate to a directory that you typically keep source code in and do one of the following:
 
-Download the latest release from the CAFE release directory https://github.com/hahnlab/CAFExp/releases
+Download the latest release from the CAFE release directory https://github.com/hahnlab/cafe5/releases
 
 If you wish to get the latest version from source, you can run
 
-$ git clone https://github.com/hahnlab/CAFExp.git
+$ git clone https://github.com/hahnlab/cafe5.git
 
 Please note that the released versions contain tested and approved code, while the
 latest source code may contain experimental and untested features. _It is highly
@@ -248,15 +248,15 @@ Example: mammals_tree.txt
 ```
 To get a list of commands just call CAFE with the -h or --help arguments:
 
-    $ cafexp -h
+    $ cafe5 -h
 
 To estimate lambda with no among family rate variation issue the command:
 
-    $ cafexp -i mammal_gene_families.txt -t mammal_tree.txt
+    $ cafe5 -i mammal_gene_families.txt -t mammal_tree.txt
 
 To incorporate among family rate variation with both lambda and alpha estimated and three discrete gamma rate categories:
 
-    $ cafexp -i mammal_gene_families.txt -t mammal_tree.txt -k 3
+    $ cafe5 -i mammal_gene_families.txt -t mammal_tree.txt -k 3
 
 
 To estimate separate lambda values for different lineages in the tree, first identify the branches to which each lambda will apply.
@@ -273,7 +273,7 @@ For this tree, lambda #2 will be applied to branches leading to human, chimp, an
 To run this analysis with both lambdas estimated:
 
 
-    $ cafexp -i mammal_gene_families.txt -t mammal_tree.txt -y chimphuman_separate_lambda.txt 
+    $ cafe5 -i mammal_gene_families.txt -t mammal_tree.txt -y chimphuman_separate_lambda.txt 
 
 ***Caveats***
 
@@ -319,7 +319,7 @@ The models are
 Unlike earlier versions, CAFE5 does not require a script. All
 options are given at once on the command line. Here is an example:
 
-    cafexp -t examples/mammals\_tree.txt -i examples/mammal\_gene\_families.txt -p -k 3
+    cafe5 -t examples/mammals\_tree.txt -i examples/mammal\_gene\_families.txt -p -k 3
 
 In this example, the -t parameter specifies a file containing the tree
 that CAFE uses; and the -i parameter specifies a list of gene families.
@@ -623,7 +623,7 @@ Lambda Search
 
 Search for a single lambda value using the mammal phylogeny and gene family set in the Examples directory:
 
-    ../bin/cafexp -t mammals_tree.txt -i mammal_gene_families.txt -p -o singlelambda
+    ../bin/cafe5 -t mammals_tree.txt -i mammal_gene_families.txt -p -o singlelambda
 
 In earlier versions, the following script would have returned the same
 values:
@@ -637,7 +637,7 @@ Lambda Search with Multiple Lambdas
 
 Search for separate lambda values for the chimp/human clade and the rest of the tree separately, using the mammal phylogeny and gene family set in the Examples directory:
 
-    ../bin/cafexp -t mammals_tree.txt -i mammal_gene_families.txt -p -y chimphuman_separate_lambda.txt -o doublelambda
+    ../bin/cafe5 -t mammals_tree.txt -i mammal_gene_families.txt -p -y chimphuman_separate_lambda.txt -o doublelambda
 
 In earlier versions, the following script would have returned the same
 values:
@@ -653,7 +653,7 @@ Search for a single lambda value using the Newick tree of mammals in the
 Samples folder, and the family files from the CAFE tutorial, applying an
 error model:
 
-    cafexp -t data/mammals_integral_tree.txt -i data/filtered_cafe_input.txt -p -l 0.01 -e data/cafe_errormodel_0.0548828125.txt
+    cafe5 -t data/mammals_integral_tree.txt -i data/filtered_cafe_input.txt -p -l 0.01 -e data/cafe_errormodel_0.0548828125.txt
 
 In earlier versions, the following script would have returned the same
 values:
@@ -667,7 +667,7 @@ Error Model Estimation
 
 Estimate an error model:
 
-    cafexp -t mammals_integral_tree.txt -i filtered_cafe_input.txt -p -e errormodel.txt
+    cafe5 -t mammals_integral_tree.txt -i filtered_cafe_input.txt -p -e errormodel.txt
 
 In earlier versions, the following script would have returned the same
 values:
@@ -740,7 +740,7 @@ For more information, see https://github.com/amrayn/easyloggingpp#using-configur
 
 Pass the config file to CAFE with the --log_config flag. For example,
 
-    cafexp -t examples/mammals_tree.txt -i filtered_cafe_input.txt --log_config log.config	   
+    cafe5 -t examples/mammals_tree.txt -i filtered_cafe_input.txt --log_config log.config	   
 
 Technical
 =========

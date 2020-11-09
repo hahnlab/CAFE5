@@ -163,28 +163,28 @@ struct option_test
 #define STRCMP_CONTAINS(x, y) CHECK(strstr(y,x) != nullptr)
 
 TEST_CASE("read_arguments translates short values ") {
-    option_test c({ "cafexp", "-ifile" });
+    option_test c({ "cafe5", "-ifile" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK(actual.input_file_path.compare("file") == 0);
 }
 
 TEST_CASE("read_arguments translates long values ") {
-    option_test c({ "cafexp", "--infile", "file" });
+    option_test c({ "cafe5", "--infile", "file" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK(actual.input_file_path.compare("file") == 0);
 }
 TEST_CASE("Options, input_short_space_separated")
 {
-    option_test c({ "cafexp", "-i", "file" });
+    option_test c({ "cafe5", "-i", "file" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK(actual.input_file_path.compare("file") == 0);
 }
 TEST_CASE("Options, simulate_long")
 {
-    option_test c({ "cafexp", "--simulate=1000", "-l", "0.05" });
+    option_test c({ "cafe5", "--simulate=1000", "-l", "0.05" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK_EQ(1000, actual.nsims);
@@ -192,7 +192,7 @@ TEST_CASE("Options, simulate_long")
 
 TEST_CASE("Options, simulate_short")
 {
-    option_test c({ "cafexp", "-s1000", "-l", "0.05" });
+    option_test c({ "cafe5", "-s1000", "-l", "0.05" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK_EQ(1000, actual.nsims);
@@ -200,7 +200,7 @@ TEST_CASE("Options, simulate_short")
 
 TEST_CASE("Options, pvalue_long")
 {
-    option_test c({ "cafexp", "--pvalue=0.01" });
+    option_test c({ "cafe5", "--pvalue=0.01" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK_EQ(0.01, actual.pvalue);
@@ -208,7 +208,7 @@ TEST_CASE("Options, pvalue_long")
 
 TEST_CASE("Options, pvalue_short")
 {
-    option_test c({ "cafexp", "-P0.01" });
+    option_test c({ "cafe5", "-P0.01" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK_EQ(0.01, actual.pvalue);
@@ -216,7 +216,7 @@ TEST_CASE("Options, pvalue_short")
 
 TEST_CASE("Options, optimizer_long")
 {
-    option_test c({ "cafexp", "--optimizer_expansion=0.05", "--optimizer_reflection=3.2", "--optimizer_iterations=5" });
+    option_test c({ "cafe5", "--optimizer_expansion=0.05", "--optimizer_reflection=3.2", "--optimizer_iterations=5" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK_EQ(0.05, actual.optimizer_params.neldermead_expansion);
@@ -226,7 +226,7 @@ TEST_CASE("Options, optimizer_long")
 
 TEST_CASE("Options, optimizer_short")
 {
-    option_test c({ "cafexp", "-E", "0.05", "-R", "3.2", "-I", "5" });
+    option_test c({ "cafe5", "-E", "0.05", "-R", "3.2", "-I", "5" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK_EQ(0.05, actual.optimizer_params.neldermead_expansion);
@@ -236,7 +236,7 @@ TEST_CASE("Options, optimizer_short")
 
 TEST_CASE("Options, cores_long")
 {
-    option_test c({ "cafexp", "--cores=6" });
+    option_test c({ "cafe5", "--cores=6" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK_EQ(6, actual.cores);
@@ -244,7 +244,7 @@ TEST_CASE("Options, cores_long")
 
 TEST_CASE("Options, cores_short")
 {
-    option_test c({ "cafexp", "-c", "8" });
+    option_test c({ "cafe5", "-c", "8" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK_EQ(8, actual.cores);
@@ -252,7 +252,7 @@ TEST_CASE("Options, cores_short")
 
 TEST_CASE("Options, errormodel_accepts_argument")
 {
-    option_test c({ "cafexp", "-eerror.txt" });
+    option_test c({ "cafe5", "-eerror.txt" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK(actual.use_error_model);
@@ -261,7 +261,7 @@ TEST_CASE("Options, errormodel_accepts_argument")
 
 TEST_CASE("Options, errormodel_accepts_no_argument")
 {
-    option_test c({ "cafexp", "-e" });
+    option_test c({ "cafe5", "-e" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK(actual.use_error_model);
@@ -273,7 +273,7 @@ TEST_CASE("Options, zero_root_familes")
     input_parameters by_default;
     CHECK(by_default.exclude_zero_root_families);
 
-    option_test c({ "cafexp", "-z" });
+    option_test c({ "cafe5", "-z" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK_FALSE(actual.exclude_zero_root_families);
@@ -281,7 +281,7 @@ TEST_CASE("Options, zero_root_familes")
 
 TEST_CASE("Options: cannot_have_space_before_optional_parameter")
 {
-    option_test c({ "cafexp", "-s", "1000" });
+    option_test c({ "cafe5", "-s", "1000" });
 
     CHECK_THROWS_WITH(read_arguments(c.argc, c.values), "Unrecognized parameter: '1000'");
 }
