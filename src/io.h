@@ -23,12 +23,10 @@ struct input_parameters {
 public:	
     std::string input_file_path;
     std::string error_model_file_path;
-//    std::string log_file_path;
     std::string output_prefix;
     std::string tree_file_path;
     std::string lambda_tree_file_path;
     std::string fixed_multiple_lambdas;
-    std::string chisquare_compare;
     std::string rootdist;
     std::string log_config_file;
     double fixed_lambda = 0.0;

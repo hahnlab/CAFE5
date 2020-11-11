@@ -2445,20 +2445,6 @@ TEST_CASE("Simulation, set_random_node_size_with_error_model")
     CHECK_EQ(6, t[b]);
 }
 
-TEST_CASE("Simulation, executor")
-{
-    randomizer_engine.seed(10);
-
-    input_parameters params;
-    user_data ud;
-    unique_ptr<action> act(get_executor(params, ud));
-    CHECK(dynamic_cast<const estimator*>(act.get()));
-
-    params.chisquare_compare = true;
-    unique_ptr<action> act2(get_executor(params, ud));
-    CHECK(dynamic_cast<const chisquare_compare*>(act2.get()));
-}
-
 TEST_CASE("Simulation, specified_distribution__with_rootdist_creates_matching_vector")
 {
     std::map<int, int> m;

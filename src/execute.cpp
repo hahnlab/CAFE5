@@ -203,18 +203,3 @@ void initialization_failure_advice(std::ostream& ost, const std::vector<gene_fam
         ost << t.first << ": " << t.second << "\n";
     ost << "\nYou may want to try removing the top few families with the largest difference\nbetween the max and min counts and then re-run the analysis.\n\n";
 }
-
-void chisquare_compare::execute(std::vector<model *>&)
-{
-    vector<string> chistrings = tokenize_str(_values, ',');
-    vector<double> chis(chistrings.size());
-
-    // transform is like R's apply (vector lambdas takes the outputs, here we are making doubles from strings
-    transform(chistrings.begin(), chistrings.end(), chis.begin(),
-        [](string const& val) { return stod(val); } // this is the equivalent of a Python's lambda function
-    );
-
-    double degrees_of_freedom = chis[2];
-    LOG(INFO) << "PValue = " << 1.0 - chi2cdf(2 * (chis[1] - chis[0]), degrees_of_freedom);
-}
-

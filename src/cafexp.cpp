@@ -31,13 +31,10 @@ input_parameters read_arguments(int argc, char *const argv[])
     int args; // getopt_long returns int or char
     int prev_arg;
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "c:v:i:e::o:t:y:n:f:E:R:L:P:I:l:m:k:a:g:s::p::r:zbh", longopts, NULL)) != -1) {
-        // while ((args = getopt_long(argc, argv, "i:t:y:n:f:l:e::s::", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "c:v:i:e::o:t:y:n:f:E:R:L:P:I:l:m:k:a:g:s::p::zbh", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && optarg && *optarg == '-') {
             LOG(ERROR) << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
             exit(EXIT_FAILURE);
-            // args = ':';
-            // --optind;
         }
 
         switch (args) {
@@ -58,9 +55,6 @@ input_parameters read_arguments(int argc, char *const argv[])
         case 'f':
             my_input_parameters.rootdist = optarg;
             break;
-//         case 'g':
-//             my_input_parameters.logfile = optarg;
-//             break;
         case 'h':
             my_input_parameters.help = true;
             break;
@@ -83,9 +77,6 @@ input_parameters read_arguments(int argc, char *const argv[])
             my_input_parameters.use_poisson_dist_for_prior = true; // If the user types '-p', the root eq freq dist will not be a uniform
                                                              // If the user provides an argument to -p, then we do not estimate it
             if (optarg != NULL) { my_input_parameters.poisson_lambda = atof(optarg); }
-            break;
-        case 'r':
-            my_input_parameters.chisquare_compare = optarg;
             break;
         case 's':
             // Number of fams simulated defaults to 0 if -f is not provided
@@ -143,10 +134,7 @@ void init_lgamma_cache();
 
 action* get_executor(input_parameters& user_input, user_data& data)
 {
-    if (!user_input.chisquare_compare.empty()) {
-        return new chisquare_compare(data, user_input);
-    }
-    else if (user_input.is_simulating) {
+    if (user_input.is_simulating) {
         return new simulator(data, user_input);
     }
     else

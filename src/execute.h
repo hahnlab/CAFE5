@@ -40,17 +40,6 @@ public:
     bool quiet = false;
 };
 
-class chisquare_compare : public action
-{
-    std::string _values;
-public:
-    chisquare_compare(user_data& d, const input_parameters& ui) : action(d, ui)
-    {
-        _values = ui.chisquare_compare;
-    }
-    virtual void execute(std::vector<model *>& models);
-};
-
 /*! @brief Estimator is used to guess at any missing values that the
     user did not provide. It will provide values for lambda, gamma, 
     and epsilon.
