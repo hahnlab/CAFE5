@@ -176,7 +176,7 @@ void show_help()
 
         "  Less Common Options:\n"
         "   --lambda_per_family, -b\tEstimate lambda by family (for testing purposes only).\n"
-        "   --chisquare_compare, -r\tChi square compare.\n"
+//        "   --chisquare_compare, -r\tChi square compare.\n"
         "   --pvalue, -P\t\t\tP-value to use for determining significance of family size change, Default=0.05.\n"
         "   --zero_root, -z\t\tInclude gene families that don't exist at the root, not recommended.\n"
         "   --Expansion, -E\t\tExpansion parameter for Nelder-Mead optimizer, Default=2.\n"

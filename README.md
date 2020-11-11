@@ -19,7 +19,7 @@ available in prior releases.
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
-[![Build Status](https://travis-ci.org/hahnlab/cafe5.svg?branch=master)](https://travis-ci.org/hahnlab/cafe5)
+[![Build Status](https://travis-ci.org/hahnlab/cafe5.svg?branch=master)](https://travis-ci.org/hahnlab/cafexp)
 
 History
 -------
@@ -136,15 +136,15 @@ Installation
 
 ### Download
 
-The Github page for CAFE5 is https://github.com/hahnlab/cafe5 
+The Github page for CAFE5 is https://github.com/hahnlab/cafexp 
 
 Navigate to a directory that you typically keep source code in and do one of the following:
 
-Download the latest release from the CAFE release directory https://github.com/hahnlab/cafe5/releases
+Download the latest release from the CAFE release directory https://github.com/hahnlab/cafexp/releases
 
 If you wish to get the latest version from source, you can run
 
-$ git clone https://github.com/hahnlab/cafe5.git
+$ git clone https://github.com/hahnlab/cafexp.git
 
 Please note that the released versions contain tested and approved code, while the
 latest source code may contain experimental and untested features. _It is highly
