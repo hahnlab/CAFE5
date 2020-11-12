@@ -621,7 +621,7 @@ TEST_CASE("Probability: get_random_probabilities")
         auto fn = [&](const clade* node) { p[node].resize(node->is_root() ? 8 :13); };
         for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), fn);
     }
-    auto probs = get_random_probabilities(p_tree.get(), 10, 3, 12, 8, &lam, cache, NULL, pruners);
+    auto probs = get_random_probabilities(p_tree.get(), 10, 3, 12, 8, &lam, cache, pruners);
     CHECK_EQ(10, probs.size());
     CHECK_EQ(doctest::Approx(0.001905924).scale(10000), probs[0]);
 }
@@ -635,7 +635,7 @@ TEST_CASE("Probability: generate_family")
     single_lambda lam(0.2);
     matrix_cache cache(15);
     cache.precalculate_matrices(vector<double>{0.2}, set<double>{1});
-    auto fam = create_family(p_tree.get(), 6, 10, &lam, cache, NULL);
+    auto fam = create_family(p_tree.get(), 6, 10, &lam, cache);
     CHECK_EQ(5, fam.get_species_size("A"));
     CHECK_EQ(5, fam.get_species_size("B"));
     CHECK_EQ(7, fam.get_species_size("C"));

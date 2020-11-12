@@ -345,13 +345,15 @@ std::vector<int> uniform_dist(int n_draws, int min, int max) {
 /// Create a gene family based on the given tree and root size, by assigning child sizes down the tree 
 /// The child size is selected randomly, based on the lambda and error model
 /// </summary>
-gene_family create_family(const clade* p_tree, int root_family_size, int max_family_size, const lambda* p_lambda, const matrix_cache& cache, error_model* p_error_model)
+gene_family create_family(const clade* p_tree, int root_family_size, int max_family_size, const lambda* p_lambda, const matrix_cache& cache)
 {
     gene_family result;
     // generate a tree with root_family_size at the root
     clademap<int> sizes;
     sizes[p_tree] = root_family_size;
-    p_tree->apply_prefix_order([&](const clade* c) { set_weighted_random_family_size(c, &sizes, p_lambda, p_error_model, max_family_size, cache); });
+
+    // note we do not use an error model for creating family sizes. See architecture decision #6
+    p_tree->apply_prefix_order([&](const clade* c) { set_weighted_random_family_size(c, &sizes, p_lambda, nullptr, max_family_size, cache); });
     result.init_from_clademap(sizes);
     return result;
 }
@@ -367,13 +369,13 @@ gene_family create_family(const clade* p_tree, int root_family_size, int max_fam
     \returns a sorted vector of probabilities of the requested number of randomly generated trees
 */
 
-std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, int max_root_family_size, const lambda *p_lambda, const matrix_cache& cache, error_model *p_error_model, vector<clademap<std::vector<double>>>& pruners)
+std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, int max_root_family_size, const lambda *p_lambda, const matrix_cache& cache, vector<clademap<std::vector<double>>>& pruners)
 {
     VLOG(2) << "Getting random probabilities for " << number_of_simulations << " simulations";
     vector<double> result(number_of_simulations);
     vector<gene_family> families(number_of_simulations);
 
-    generate(families.begin(), families.end(), [&]() { return create_family(p_tree, root_family_size, max_family_size, p_lambda, cache, p_error_model); });
+    generate(families.begin(), families.end(), [&]() { return create_family(p_tree, root_family_size, max_family_size, p_lambda, cache); });
 
 #pragma omp parallel for
     for (size_t i = 0; i < result.size(); ++i)
@@ -496,7 +498,7 @@ vector<double> compute_pvalues(const clade* p_tree, const std::vector<gene_famil
     std::vector<std::vector<double> > conditional_distribution(mxr);
     for (int i = 0; i < mxr; ++i)
     {
-        conditional_distribution[i] = get_random_probabilities(p_tree, number_of_simulations, i, mx, mxr, p_lambda, cache, NULL, pruners);
+        conditional_distribution[i] = get_random_probabilities(p_tree, number_of_simulations, i, mx, mxr, p_lambda, cache, pruners);
     }
     VLOG(1) << "Conditional distributions calculated";
 
