@@ -626,6 +626,22 @@ TEST_CASE("Probability: get_random_probabilities")
     CHECK_EQ(doctest::Approx(0.001905924).scale(10000), probs[0]);
 }
 
+TEST_CASE("Probability: generate_family")
+{
+    randomizer_engine.seed(10);
+
+    unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
+
+    single_lambda lam(0.2);
+    matrix_cache cache(15);
+    cache.precalculate_matrices(vector<double>{0.2}, set<double>{1});
+    auto fam = create_family(p_tree.get(), 6, 10, &lam, cache, NULL);
+    CHECK_EQ(5, fam.get_species_size("A"));
+    CHECK_EQ(5, fam.get_species_size("B"));
+    CHECK_EQ(7, fam.get_species_size("C"));
+    CHECK_EQ(4, fam.get_species_size("D"));
+}
+
 TEST_CASE("Matrix__get_random_y")
 {
     randomizer_engine.seed(10);

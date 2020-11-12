@@ -363,7 +363,7 @@ void gamma_model_reconstruction::print_category_likelihoods(std::ostream& ost, c
     copy(_lambda_multipliers.begin(), _lambda_multipliers.end(), lm);
     ost << endl;
 
-    for (auto gf : gene_families)
+    for (auto& gf : gene_families)
     {
         ost << gf.id() << '\t';
         auto rc = _reconstructions[gf.id()];

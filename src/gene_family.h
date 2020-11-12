@@ -34,6 +34,13 @@ private:
 
 public:
     gene_family() { }
+    gene_family(const gene_family& other) : _id(other._id), _desc(other._desc), _species_size_map(other._species_size_map)
+    {
+    }
+    gene_family(gene_family&& other)
+    {
+        *this = std::move(other);
+    }
 
     void set_desc(std::string desc) { _desc = desc; }
 
@@ -64,6 +71,15 @@ public:
 
     //! Returns largest species size minus smallest species size
     int species_size_differential() const;
+
+    // move assignment operator
+    gene_family& operator=(gene_family&& other)
+    {
+        _species_size_map = std::move(other._species_size_map);
+        _id = std::move(other._id);
+        _desc = std::move(other._desc);
+        return *this;
+    }
 
 };
 #endif

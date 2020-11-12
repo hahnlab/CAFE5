@@ -341,6 +341,21 @@ std::vector<int> uniform_dist(int n_draws, int min, int max) {
     return uniform_vec;
 }
 
+/// <summary>
+/// Create a gene family based on the given tree and root size, by assigning child sizes down the tree 
+/// The child size is selected randomly, based on the lambda and error model
+/// </summary>
+gene_family create_family(const clade* p_tree, int root_family_size, int max_family_size, const lambda* p_lambda, const matrix_cache& cache, error_model* p_error_model)
+{
+    gene_family result;
+    // generate a tree with root_family_size at the root
+    clademap<int> sizes;
+    sizes[p_tree] = root_family_size;
+    p_tree->apply_prefix_order([&](const clade* c) { set_weighted_random_family_size(c, &sizes, p_lambda, p_error_model, max_family_size, cache); });
+    result.init_from_clademap(sizes);
+    return result;
+}
+
 /*! Create a sorted vector of probabilities by generating random trees 
     \param p_tree The structure of the tree to generate
     \param number_of_simulations The number of random probabilities to return
@@ -358,18 +373,7 @@ std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_
     vector<double> result(number_of_simulations);
     vector<gene_family> families(number_of_simulations);
 
-    // generate families by generating a tree, then storing off the leaf values
-    for (size_t i = 0; i < result.size(); ++i)
-    {
-        // generate a tree with root_family_size at the root
-        clademap<int> sizes;
-        sizes[p_tree] = root_family_size;
-        for (auto it = p_tree->reverse_level_begin(); it != p_tree->reverse_level_end(); ++it)
-            set_weighted_random_family_size(*it, &sizes, p_lambda, p_error_model, max_family_size, cache);
-
-        families[i].init_from_clademap(sizes);
-    }
-
+    generate(families.begin(), families.end(), [&]() { return create_family(p_tree, root_family_size, max_family_size, p_lambda, cache, p_error_model); });
 
 #pragma omp parallel for
     for (size_t i = 0; i < result.size(); ++i)
