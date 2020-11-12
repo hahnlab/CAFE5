@@ -42,12 +42,12 @@ with a standard deviation of .3. If the user also specifies an alpha, A, we gene
 gamma distribution described by alpha=A, beta = 1/A
 
 If the user also specifies a number of clusters, K, we do the following:
-•	Discretize the gamma value so we have a multiplier for each cluster.
-•	Randomly select a multiplier and use that as the mean of a normal distribution. 
+*	Discretize the gamma value so we have a multiplier for each cluster.
+*	Randomly select a multiplier and use that as the mean of a normal distribution. 
       The standard deviation is calculated as a percentage of the distance between the clusters.
-•	We choose a final multiplier by selecting randomly from this normal distribution.
+*	We choose a final multiplier by selecting randomly from this normal distribution.
 
-We generate 50 families by taking the user’s lambda and multiplying it by m. We repeat this process 
+We generate 50 families by taking the user's lambda and multiplying it by m. We repeat this process 
 until we have the number of families requested by the user.
 
 
