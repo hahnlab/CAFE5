@@ -136,7 +136,7 @@ Installation
 
 ### Download
 
-The Github page for CAFE5 is https://github.com/hahnlab/cafexp 
+The Github page for CAFE5 is https://github.com/hahnlab/CAFE5 
 
 Navigate to a directory that you typically keep source code in and do one of the following:
 
