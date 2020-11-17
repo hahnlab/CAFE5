@@ -1154,14 +1154,26 @@ TEST_CASE_FIXTURE(Reconstruction, "print_branch_probabilities__skips_families_wi
     CHECK(ost.str().find("Family5") == string::npos);
 }
 
+TEST_CASE_FIXTURE(Reconstruction, "viterbi_sum_probabilities returns 1 for leafs")
+{
+    matrix_cache cache(25);
+    base_model_reconstruction rec;
+    single_lambda lm(0.05);
+    CHECK_EQ(doctest::Approx(1.0), compute_viterbi_sum(p_tree->find_descendant("A"), fam, &rec, 24, cache, &lm)._value);
+    CHECK_EQ(doctest::Approx(1.0), compute_viterbi_sum(p_tree->find_descendant("B"), fam, &rec, 24, cache, &lm)._value);
+    CHECK_EQ(doctest::Approx(1.0), compute_viterbi_sum(p_tree->find_descendant("C"), fam, &rec, 24, cache, &lm)._value);
+    CHECK_EQ(doctest::Approx(1.0), compute_viterbi_sum(p_tree->find_descendant("D"), fam, &rec, 24, cache, &lm)._value);
+}
+
 TEST_CASE_FIXTURE(Reconstruction, "viterbi_sum_probabilities")
 {
     matrix_cache cache(25);
     cache.precalculate_matrices({ 0.05 }, { 1,3,7 });
     base_model_reconstruction rec;
     rec._reconstructions[fam.id()][p_tree->find_descendant("AB")] = 10;
+    rec._reconstructions[fam.id()][p_tree->find_descendant("ABCD")] = 12;
     single_lambda lm(0.05);
-    CHECK_EQ(doctest::Approx(0.2182032), compute_viterbi_sum(p_tree->find_descendant("A"), fam, &rec, 24, cache, &lm)._value);
+    CHECK_EQ(doctest::Approx(0.537681), compute_viterbi_sum(p_tree->find_descendant("AB"), fam, &rec, 24, cache, &lm)._value);
 }
 
 TEST_CASE_FIXTURE(Reconstruction, "viterbi_sum_probabilities_returns_invalid_if_equal_parent_and_child_sizes")
@@ -1170,8 +1182,9 @@ TEST_CASE_FIXTURE(Reconstruction, "viterbi_sum_probabilities_returns_invalid_if_
     cache.precalculate_matrices({ 0.05 }, { 1,3,7 });
     base_model_reconstruction rec;
     rec._reconstructions[fam.id()][p_tree->find_descendant("AB")] = 11;
+    rec._reconstructions[fam.id()][p_tree->find_descendant("ABCD")] = 11;
     single_lambda lm(0.05);
-    CHECK_FALSE(compute_viterbi_sum(p_tree->find_descendant("A"), fam, &rec, 24, cache, &lm)._is_valid);
+    CHECK_FALSE(compute_viterbi_sum(p_tree->find_descendant("AB"), fam, &rec, 24, cache, &lm)._is_valid);
 }
 
 TEST_CASE_FIXTURE(Reconstruction, "viterbi_sum_probabilities_returns_invalid_if_root")

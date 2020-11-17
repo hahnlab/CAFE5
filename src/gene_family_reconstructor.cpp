@@ -401,6 +401,10 @@ branch_probabilities::branch_probability compute_viterbi_sum(const clade* c,
     {
         return branch_probabilities::invalid();
     }
+    if (c->is_leaf())
+    {
+        return 1.0;
+    }
 
     const matrix* probs = cache.get_matrix(c->get_branch_length(), p_lambda->get_value_for_clade(c));
 
