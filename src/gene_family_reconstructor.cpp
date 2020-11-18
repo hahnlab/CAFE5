@@ -38,7 +38,7 @@ namespace pupko_reconstructor {
 
         auto matrix = _p_calc->get_matrix(branch_length, _lambda->get_value_for_clade(c));
         // i will be the parent size
-        for (size_t i = 1; i < L.size(); ++i)
+        for (size_t i = 0; i < L.size(); ++i)
         {
             L[i] = matrix->get(i, observed_count);
         }

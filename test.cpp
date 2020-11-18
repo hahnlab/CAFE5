@@ -1040,6 +1040,39 @@ TEST_CASE_FIXTURE(Reconstruction, "reconstruction_process_internal_node")
     CHECK_EQ(doctest::Approx(0.0033465), L[3]);
 }
 
+TEST_CASE_FIXTURE(Reconstruction, "reconstruction_process_internal_node with 0s at the leafs")
+{
+    single_lambda s_lambda(0.1);
+    fam.set_species_size("A", 0);
+    fam.set_species_size("B", 0);
+
+    matrix_cache calc(25);
+    calc.precalculate_matrices({ 0.1 }, set<double>({ 1, 3, 7, 11, 17, 23 }));
+
+    clademap<std::vector<int>> all_node_Cs;
+    clademap<std::vector<double>> all_node_Ls;
+    all_node_Cs[p_tree->find_descendant("A")].resize(25);
+    all_node_Ls[p_tree->find_descendant("A")].resize(25);
+    all_node_Cs[p_tree->find_descendant("B")].resize(25);
+    all_node_Ls[p_tree->find_descendant("B")].resize(25);
+    all_node_Cs[p_tree->find_descendant("AB")].resize(25);
+    all_node_Ls[p_tree->find_descendant("AB")].resize(25);
+
+    pupko_reconstructor::reconstruct_leaf_node(p_tree->find_descendant("A"), &s_lambda, all_node_Cs, all_node_Ls, &fam, &calc);
+    pupko_reconstructor::reconstruct_leaf_node(p_tree->find_descendant("B"), &s_lambda, all_node_Cs, all_node_Ls, &fam, &calc);
+
+    auto internal_node = p_tree->find_descendant("AB");
+    pupko_reconstructor::reconstruct_internal_node(internal_node, &s_lambda, all_node_Cs, all_node_Ls, &calc);
+    auto L = all_node_Ls[internal_node];
+
+    // L holds the probability of the node moving from size 3 to size n
+    CHECK_EQ(25, L.size());
+    CHECK_EQ(1.0, L[0]);
+    CHECK_EQ(doctest::Approx(0.4117647059), L[1]);
+    CHECK_EQ(doctest::Approx(0.169550173), L[2]);
+    CHECK_EQ(doctest::Approx(0.0698147771), L[3]);
+}
+
 TEST_CASE_FIXTURE(Reconstruction, "reconstruct_gene_family")
 {
     gene_family fam;
