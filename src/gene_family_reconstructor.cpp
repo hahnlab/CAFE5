@@ -401,44 +401,32 @@ branch_probabilities::branch_probability compute_viterbi_sum(const clade* c,
     {
         return branch_probabilities::invalid();
     }
-    if (c->is_leaf())
-    {
-        return 1.0;
-    }
 
     const matrix* probs = cache.get_matrix(c->get_branch_length(), p_lambda->get_value_for_clade(c));
 
     int parent_size = rec->get_node_count(family, c->get_parent());
     int child_size = rec->get_node_count(family, c);
-    if (parent_size == child_size)
+    double result = 0;
+    double calculated_probability = probs->get(parent_size, child_size);
+    for (int m = 0; m < max_family_size; m++)
     {
-        /// don't return a probability if the parent and child sizes are the same
-        return branch_probabilities::invalid();
+        double probability_to_m = probs->get(parent_size, m);
+        if (probability_to_m == calculated_probability)
+        {
+            result += probability_to_m / 2.0;
+        }
+        else if (probability_to_m < calculated_probability)
+        {
+            result += probability_to_m;
+        }
+    }
+    if (result < 0.05)
+    {
+        VLOG(1) << family.id() << ":" << c->get_taxon_name() << " probability " << result << " calculated for parent: " << parent_size << ", child: " << child_size;
     }
     else
     {
-        double result = 0;
-        double calculated_probability = probs->get(parent_size, child_size);
-        for (int m = 0; m < max_family_size; m++)
-        {
-            double probability_to_m = probs->get(parent_size, m);
-            if (probability_to_m == calculated_probability)
-            {
-                result += probability_to_m / 2.0;
-            }
-            else if (probability_to_m < calculated_probability)
-            {
-                result += probability_to_m;
-            }
-        }
-        if (result < 0.05)
-        {
-            VLOG(1) << family.id() << ":" << c->get_taxon_name() << " probability " << result << " calculated for parent: " << parent_size << ", child: " << child_size;
-        }
-        else
-        {
-            VLOG(2) << family.id() << ":" << c->get_taxon_name() << " probability " << result << " calculated for parent: " << parent_size << ", child: " << child_size;
-        }
-        return branch_probabilities::branch_probability(result);
+        VLOG(2) << family.id() << ":" << c->get_taxon_name() << " probability " << result << " calculated for parent: " << parent_size << ", child: " << child_size;
     }
+    return branch_probabilities::branch_probability(result);
 }
