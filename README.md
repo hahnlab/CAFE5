@@ -538,10 +538,8 @@ parameter.
     Gamma\_family\_results.txt, based on which model is in play. It
     consists of a header line giving the name of each node in the tree,
     followed by a line consisting of the family ID, an estimate of
-    whether the change is significant(’y’ or ’n’) followed by a series
-    of ’c’ (constant), ’i’ (increasing), or ’d’ (decreasing) showing
-    whether the node is larger, smaller, or consistent with its parent
-    node. The characters are separated by tabs.
+    whether the change is significant (’y’ or ’n’). The characters are 
+    separated by tabs.
 
         #FamilyID   pvalue  Significant at 0.05
         0           0.436   n
