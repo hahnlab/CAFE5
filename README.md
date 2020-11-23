@@ -596,19 +596,19 @@ parameter.
     rate of change of families (Lambda) that was calculated, and, if an
     error model was specified, the final value of that value (Epsilon).
 
--	[_model_change.txt] - A tab-separated file listing, for each family 
+-	_model_\_change.txt - A tab-separated file listing, for each family 
         and clade, the difference between it and its parent clade in the 
 		reconstruction that was performed.
 		
--	[_model_count.txt] - A tab-separated file listing, for each family 
+-	_model_\_count.txt - A tab-separated file listing, for each family 
         and clade, the reconstructed value in that clade.
 		
--   simulation\_.txt
+-   simulation.txt
 
     In the case of simulation, a family file is
     generated with simulated data based on the given input parameters.
 
--   simulation\_truth\_.txt
+-   simulation\_truth.txt
 
     When simulating, an additional file is generated with simulated data
     for internal nodes included. The format is otherwise identical to
