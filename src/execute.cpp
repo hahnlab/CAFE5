@@ -157,7 +157,8 @@ void estimator::execute(std::vector<model *>& models)
                 matrix_cache cache(max(data.max_family_size, data.max_root_family_size) + 1);
                 cache.precalculate_matrices(get_lambda_values(p_model->get_lambda()), data.p_tree->get_branch_lengths());
 
-                auto pvalues = compute_pvalues(data.p_tree, data.gene_families, p_model->get_lambda(), cache, 1000, data.max_family_size, data.max_root_family_size);
+                pvalue_parameters p = { data.p_tree, p_model->get_lambda(), data.max_family_size, data.max_root_family_size, cache };
+                auto pvalues = compute_pvalues(p, data.gene_families, 1000 );
 
                 std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(data.gene_families, &cache, &data.prior));
 

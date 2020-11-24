@@ -615,7 +615,9 @@ TEST_CASE("Probability: get_random_probabilities")
     single_lambda lam(0.05);
     matrix_cache cache(15);
     cache.precalculate_matrices(vector<double>{0.05}, set<double>{1});
-    auto probs = get_random_probabilities(p_tree.get(), 10, 3, 12, 8, &lam, cache);
+
+    pvalue_parameters p = { p_tree.get(),  &lam, 12, 8, cache };
+    auto probs = get_random_probabilities(p, 10, 3);
     CHECK_EQ(10, probs.size());
     CHECK_EQ(doctest::Approx(0.001905924).scale(10000), probs[0]);
 }
@@ -629,7 +631,8 @@ TEST_CASE("Probability: generate_family")
     single_lambda lam(0.2);
     matrix_cache cache(15);
     cache.precalculate_matrices(vector<double>{0.2}, set<double>{1});
-    auto fam = create_family(p_tree.get(), 6, 10, &lam, cache);
+    pvalue_parameters p = { p_tree.get(),  &lam, 10, 8, cache };
+    auto fam = create_family(p, 6);
     CHECK_EQ(5, fam.get_species_size("A"));
     CHECK_EQ(5, fam.get_species_size("B"));
     CHECK_EQ(7, fam.get_species_size("C"));
@@ -1225,52 +1228,13 @@ TEST_CASE_FIXTURE(Reconstruction, "compute_family_probabilities")
     single_lambda lambda(0.03);
     matrix_cache cache(25);
     cache.precalculate_matrices({ 0.03 }, p_tree->get_branch_lengths());
+    pvalue_parameters p = { p_tree.get(),  &lambda, 20, 15, cache };
 
-    auto result = compute_family_probabilities(p_tree.get(), vector<gene_family>{fam}, 20, 15, &lambda, cache);
+    auto result = compute_family_probabilities(p, vector<gene_family>{fam});
 
     CHECK_EQ(1, result.size());
     CHECK_EQ(doctest::Approx(0.0000000001), result[0]);
 }
-
-#if 0
-TEST_CASE_FIXTURE(Reconstruction, "tree_pvalues")
-{
-    vector<vector<double>> cd(10);
-    for (auto& d : cd)
-    {
-        d.resize(10);
-        double n = 0;
-        std::generate(d.begin(), d.end(), [&n]() mutable { return n += 0.01; });
-    }
-    clademap<vector<double>> results;
-    results[p_tree.get()] = { 0, 0, 0 };
-    auto fn = [this, &results](const clade* c)
-    {
-        if (c == p_tree.get())
-            results[c][1] = 0.05;
-    };
-    CHECK_EQ(0.5, compute_tree_pvalue(p_tree.get(), fn, 10, cd, results));
-}
-
-TEST_CASE_FIXTURE(Reconstruction, "tree_pvalues_clears_results_before_using")
-{
-    vector<vector<double>> cd(10);
-    for (auto& d : cd)
-    {
-        d.resize(10);
-    }
-    clademap<vector<double>> results;
-    results[p_tree.get()] = { 1, 1, 1 };
-    auto fn = [this, &results](const clade* c)
-    {
-        if (c == p_tree.get())
-            results[c][1] = 0.05;
-    };
-    compute_tree_pvalue(p_tree.get(), fn, 10, cd, results);
-
-    CHECK(vector<double>({ 0, 0.05, 0 }) == results[p_tree.get()]);
-}
-#endif
 
 TEST_CASE_FIXTURE(Inference, "gamma_model_prune")
 {
@@ -2235,7 +2199,9 @@ TEST_CASE_FIXTURE(Inference, "estimator_compute_pvalues")
     matrix_cache cache(max(_user_data.max_family_size, _user_data.max_root_family_size) + 1);
     cache.precalculate_matrices(get_lambda_values(_user_data.p_lambda), _user_data.p_tree->get_branch_lengths());
 
-    auto values = compute_pvalues(_user_data.p_tree, _user_data.gene_families, _user_data.p_lambda, cache, 3, _user_data.max_family_size, _user_data.max_root_family_size);
+    pvalue_parameters p = { _user_data.p_tree,  _user_data.p_lambda, _user_data.max_family_size, _user_data.max_root_family_size, cache };
+
+    auto values = compute_pvalues(p, _user_data.gene_families, 3);
     CHECK_EQ(1, values.size());
     CHECK_EQ(doctest::Approx(0.333333), values[0]);
 }
