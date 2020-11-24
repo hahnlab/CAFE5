@@ -9,6 +9,7 @@
 
 #include "easylogging++.h"
 
+
 #ifdef HAVE_VECTOR_EXP
 #include "mkl.h"
 #endif
@@ -358,6 +359,29 @@ gene_family create_family(const clade* p_tree, int root_family_size, int max_fam
     return result;
 }
 
+vector<double> compute_family_probabilities(const clade* p_tree, const vector<gene_family>& families, int max_family_size, int max_root_family_size, const lambda* p_lambda, const matrix_cache& cache)
+{
+    vector<double> result(families.size());
+
+    // Allocate space to calculate all of the families simultaneously
+    vector<clademap<std::vector<double>>> pruners(families.size());
+    for (auto& p : pruners)
+    {
+        // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
+        auto fn = [&](const clade* node) { p[node].resize(node->is_root() ? max_root_family_size : max_family_size + 1); };
+        for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), fn);
+    }
+
+#pragma omp parallel for
+    for (size_t i = 0; i < result.size(); ++i)
+    {
+        for (auto it = p_tree->reverse_level_begin(); it != p_tree->reverse_level_end(); ++it)
+            compute_node_probability(*it, families[i], NULL, pruners[i], max_root_family_size, max_family_size, p_lambda, cache);
+        result[i] = *std::max_element(pruners[i].at(p_tree).begin(), pruners[i].at(p_tree).end());
+    }
+    return result;
+}
+
 /*! Create a sorted vector of probabilities by generating random trees 
     \param p_tree The structure of the tree to generate
     \param number_of_simulations The number of random probabilities to return
@@ -369,21 +393,14 @@ gene_family create_family(const clade* p_tree, int root_family_size, int max_fam
     \returns a sorted vector of probabilities of the requested number of randomly generated trees
 */
 
-std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, int max_root_family_size, const lambda *p_lambda, const matrix_cache& cache, vector<clademap<std::vector<double>>>& pruners)
+std::vector<double> get_random_probabilities(const clade *p_tree, int number_of_simulations, int root_family_size, int max_family_size, int max_root_family_size, const lambda *p_lambda, const matrix_cache& cache)
 {
     VLOG(2) << "Getting random probabilities for " << number_of_simulations << " simulations";
-    vector<double> result(number_of_simulations);
     vector<gene_family> families(number_of_simulations);
 
     generate(families.begin(), families.end(), [&]() { return create_family(p_tree, root_family_size, max_family_size, p_lambda, cache); });
 
-#pragma omp parallel for
-    for (size_t i = 0; i < result.size(); ++i)
-    {
-        for (auto it = p_tree->reverse_level_begin(); it != p_tree->reverse_level_end(); ++it)
-            compute_node_probability(*it, families[i], NULL, pruners[i], max_root_family_size, max_family_size, p_lambda, cache);
-        result[i] = *std::max_element(pruners[i].at(p_tree).begin(), pruners[i].at(p_tree).end());
-    }
+    auto result = compute_family_probabilities(p_tree, families, max_family_size, max_root_family_size, p_lambda, cache);
 
     sort(result.begin(), result.end());
 
@@ -459,25 +476,6 @@ double pvalue(double v, const vector<double>& conddist)
     return  idx / (double)conddist.size();
 }
 
-double compute_tree_pvalue(const clade* p_tree, function<void(const clade*)> compute_func, size_t sz, const std::vector<std::vector<double>>& conditional_distribution, clademap<std::vector<double>>& clade_storage)
-{
-    for (auto& it : clade_storage)
-    {
-        fill(it.second.begin(), it.second.end(), 0);
-    }
-    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), compute_func);
-
-    double observed_max_likelihood = *std::max_element(clade_storage.at(p_tree).begin(), clade_storage.at(p_tree).end());
-
-    vector<double> pvalues(sz);
-    for (size_t s = 0; s < sz; s++)
-    {
-        pvalues[s] = pvalue(observed_max_likelihood, conditional_distribution[s]);
-    }
-
-    return *max_element(pvalues.begin() + 1, pvalues.end());
-}
-
 //! Compute pvalues for each family based on the given lambda
 vector<double> compute_pvalues(const clade* p_tree, const std::vector<gene_family>& families, const lambda* p_lambda, const matrix_cache& cache, int number_of_simulations, int max_family_size, int max_root_family_size)
 {
@@ -486,34 +484,26 @@ vector<double> compute_pvalues(const clade* p_tree, const std::vector<gene_famil
     const int mx = max_family_size;
     const int mxr = max_root_family_size;
 
-    vector<clademap<std::vector<double>>> pruners(number_of_simulations);
-
-    for (auto& p : pruners)
-    {
-        // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
-        auto fn = [&](const clade* node) { p[node].resize(node->is_root() ? max_root_family_size : max_family_size + 1); };
-        for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), fn);
-    }
-
     std::vector<std::vector<double> > conditional_distribution(mxr);
     for (int i = 0; i < mxr; ++i)
     {
-        conditional_distribution[i] = get_random_probabilities(p_tree, number_of_simulations, i, mx, mxr, p_lambda, cache, pruners);
+        conditional_distribution[i] = get_random_probabilities(p_tree, number_of_simulations, i, mx, mxr, p_lambda, cache);
     }
     VLOG(1) << "Conditional distributions calculated";
 
-    vector<double> result(families.size());
+    auto observed_max_likelihoods = compute_family_probabilities(p_tree, families, max_family_size, max_root_family_size, p_lambda, cache);
 
-    std::map<const clade*, std::vector<double> > family_likelihoods;
+    vector<double> result(observed_max_likelihoods.size());
 
-    auto init_func = [&](const clade* node) { family_likelihoods[node].resize(node->is_root() ? mxr : mx + 1); };
-    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), init_func);
-
-    transform(families.begin(), families.end(), result.begin(), [&](const gene_family& gf)
+    transform(observed_max_likelihoods.begin(), observed_max_likelihoods.end(), result.begin(), [&](double observed_max_likelihood)
         {
-            auto compute_func = [&](const clade* c) { compute_node_probability(c, gf, NULL, family_likelihoods, mxr, mx, p_lambda, cache); };
+            vector<double> pvalues(mxr);
+            for (size_t s = 0; s < (size_t)mxr; s++)
+            {
+                pvalues[s] = pvalue(observed_max_likelihood, conditional_distribution[s]);
+            }
 
-            return compute_tree_pvalue(p_tree, compute_func, mxr, conditional_distribution, family_likelihoods);
+            return *max_element(pvalues.begin() + 1, pvalues.end());
         });
 
 
@@ -521,4 +511,3 @@ vector<double> compute_pvalues(const clade* p_tree, const std::vector<gene_famil
 
     return result;
 }
-
