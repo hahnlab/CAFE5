@@ -1218,6 +1218,14 @@ TEST_CASE_FIXTURE(Reconstruction, "pvalues")
     CHECK_EQ(0.9, pvalue(0.099, cd));
 }
 
+TEST_CASE_FIXTURE(Reconstruction, "pvalues 2")
+{
+    double v = .35;
+    std::vector<double> conddist = { .1, .2, .3, .4, .5, .6, .7, .8, .9 };
+    double actual = pvalue(v, conddist);
+    CHECK_EQ(doctest::Approx(3.0 / 9.0), actual);
+}
+
 TEST_CASE_FIXTURE(Reconstruction, "tree_pvalues")
 {
     vector<vector<double>> cd(10);
@@ -2221,7 +2229,7 @@ TEST_CASE_FIXTURE(Inference, "estimator_compute_pvalues")
 
     auto values = compute_pvalues(_user_data.p_tree, _user_data.gene_families, _user_data.p_lambda, cache, 3, _user_data.max_family_size, _user_data.max_root_family_size);
     CHECK_EQ(1, values.size());
-    CHECK_EQ(doctest::Approx(0.666667), values[0]);
+    CHECK_EQ(doctest::Approx(0.333333), values[0]);
 }
 
 TEST_CASE_FIXTURE(Inference, "gamma_lambda_optimizer updates model alpha and lambda")

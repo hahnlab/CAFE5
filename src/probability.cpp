@@ -475,7 +475,7 @@ double compute_tree_pvalue(const clade* p_tree, function<void(const clade*)> com
         pvalues[s] = pvalue(observed_max_likelihood, conditional_distribution[s]);
     }
 
-    return *max_element(pvalues.begin(), pvalues.end());
+    return *max_element(pvalues.begin() + 1, pvalues.end());
 }
 
 //! Compute pvalues for each family based on the given lambda

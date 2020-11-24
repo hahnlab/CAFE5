@@ -53,4 +53,6 @@ std::vector<std::string> tokenize_str(std::string some_string, char some_delim);
 
 void create_directory(std::string& dir);
 
+std::ostream& operator<<(std::ostream& ost, const gene_family& family);
+
 #endif

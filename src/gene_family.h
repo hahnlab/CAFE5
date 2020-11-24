@@ -81,5 +81,6 @@ public:
         return *this;
     }
 
+    friend std::ostream& operator<<(std::ostream& ost, const gene_family& family);
 };
 #endif

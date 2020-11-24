@@ -318,3 +318,15 @@ void create_directory(std::string& dir)
             throw std::runtime_error("Failed to create directory");
     }
 }
+
+std::ostream& operator<<(std::ostream& ost, const gene_family& family)
+{
+    ost << family._id;
+    if (!family._desc.empty())
+        ost << "," << family._desc;
+    ost << ":";
+    for (auto& element : family._species_size_map) {
+        ost << " " << element.first << ":" << element.second;
+    }
+    return ost;
+}

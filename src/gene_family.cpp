@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <set>
 #include <stdexcept>
+#include <sstream>
 
 #include "gene_family.h"
 #include "clade.h"
@@ -105,5 +106,4 @@ void gene_family::init_from_clademap(const clademap<int>& values)
             set_species_size(it.first->get_taxon_name(), it.second);
         }
     }
-
 }
