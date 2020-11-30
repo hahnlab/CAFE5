@@ -2203,7 +2203,7 @@ TEST_CASE_FIXTURE(Inference, "estimator_compute_pvalues")
 
     auto values = compute_pvalues(p, _user_data.gene_families, 3);
     CHECK_EQ(1, values.size());
-    CHECK_EQ(doctest::Approx(0.333333), values[0]);
+    CHECK_EQ(doctest::Approx(0.6666666667), values[0]);
 }
 
 TEST_CASE_FIXTURE(Inference, "gamma_lambda_optimizer updates model alpha and lambda")

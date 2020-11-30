@@ -311,6 +311,7 @@ void compute_node_probability_large_families(const clade* node, const gene_famil
 //! The probability of a leaf node is given from the family size at that node (1 for the family
 //! size, and 0 for all other sizes). Internal nodes are calculated based on the probabilities
 //! of the descendants.
+//! Results are stored in the probabilities vector, 0 - max possible size
 void compute_node_probability(const clade* node, const gene_family& gene_family, const error_model* p_error_model,
     std::map<const clade*, std::vector<double> >& probabilities,
     int max_root_family_size,
@@ -490,20 +491,37 @@ vector<double> compute_pvalues(pvalue_parameters p, const std::vector<gene_famil
     }
     VLOG(1) << "Conditional distributions calculated";
 
-    auto observed_max_likelihoods = compute_family_probabilities(p, families);
+//    auto observed_max_likelihoods = compute_family_probabilities(p, families);
+    vector<double> observed_max_likelihoods(families.size());
 
-    vector<double> result(observed_max_likelihoods.size());
+    // Allocate space to calculate all of the families simultaneously
+    vector<clademap<std::vector<double>>> pruners(families.size());
+    for (auto& pruner : pruners)
+    {
+        // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
+        auto fn = [&](const clade* node) { pruner[node].resize(node->is_root() ? p.max_root_family_size : p.max_family_size + 1); };
+        for_each(p.p_tree->reverse_level_begin(), p.p_tree->reverse_level_end(), fn);
+    }
 
-    transform(observed_max_likelihoods.begin(), observed_max_likelihoods.end(), result.begin(), [&conditional_distribution](double observed_max_likelihood)
+#pragma omp parallel for
+    for (size_t i = 0; i < families.size(); ++i)
+    {
+        for (auto it = p.p_tree->reverse_level_begin(); it != p.p_tree->reverse_level_end(); ++it)
+            compute_node_probability(*it, families[i], NULL, pruners[i], p.max_root_family_size, p.max_family_size, p.p_lambda, p.cache);
+    }
+
+    vector<double> result(families.size());
+    for (size_t i = 0; i < families.size(); ++i)
+    {
+        clademap<vector<double>>& probabilities = pruners[i];   // probability of a given family size at a given node
+        vector<double>& root_probabilities = probabilities.at(p.p_tree);
+        vector<double> pvalues(root_probabilities.size());
+        for (int j = 0; j < p.max_root_family_size; ++j)
         {
-            vector<double> pvalues(conditional_distribution.size());
-            transform(conditional_distribution.begin(), conditional_distribution.end(), pvalues.begin(), [observed_max_likelihood](const std::vector<double>& cd) {
-                return pvalue(observed_max_likelihood, cd);
-                });
-
-            return *max_element(pvalues.begin() + 1, pvalues.end());
-        });
-
+            pvalues[j] = pvalue(root_probabilities[j], conditional_distribution[j]);
+        }
+        result[i] = *std::max_element(pvalues.begin(), pvalues.end());
+    }
 
     LOG(INFO) << "done!\n";
 

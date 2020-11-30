@@ -18,8 +18,10 @@ The procedure is as follows:
 1. For every possible root family size, randomly generate 1000 families based on the lambda
 2. Compute the probability of each family generated, sort the results smallest to largest. The result is the
    conditional distribution.
-3. Compute the probability of each of the user's families and calculate the pvalue from this likelihood and the 
-   conditional distribution
+3. Compute the probability of each of the user's families for every possible root family size 
+4. For every possible root family size, compute a pvalue for each of the user's families, based on the 
+   conditional distribution at that family size
+5. Take the maximum pvalue calculated
 
 ## Consequences
 
