@@ -16,6 +16,22 @@
 #endif
 #endif
 
+#if defined __INTEL_COMPILER
+#include <pstl/execution>
+#include <pstl/algorithm>
+#elif defined __PGI
+#include <pstl/execution>
+#include <pstl/algorithm>
+#elif defined __llvm__
+#include <pstl/execution>
+#include <pstl/algorithm>
+#elif defined _CRAYC
+#include <pstl/execution>
+#include <pstl/algorithm>
+#elif defined __GNUC__
+#include <execution>
+#endif
+
 extern std::mt19937 randomizer_engine;
 
 bool matrix::is_zero() const
@@ -145,9 +161,32 @@ void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, con
     vector<matrix*> matrices(keys.size());
     generate(matrices.begin(), matrices.end(), [this] { return new matrix(this->_matrix_size); });
 
-    int s = 0;
     size_t i = 0;
     size_t num_keys = keys.size();
+    
+#ifdef USE_STDLIB_PARALLEL
+    par_timer.start("stdlib: Precalculate Matrices");
+    transform(std::execution::par, keys.begin(), keys.end(), matrices.begin(), matrices.begin(), [&](const matrix_cache_key& key, matrix *m) {
+        for (s = 1; s < _matrix_size; s++) {
+            double lambda = key.lambda();
+            double branch_length =key.branch_length();
+
+            m->set(0, 0, get_from_parent_fam_size_to_c(lambda, branch_length, 0, 0));
+            if (!is_saturated(branch_length, lambda))
+            {
+                for (int j = 0; j < m->size(); ++j)
+                {
+                    m->set(0, j, get_from_parent_fam_size_to_c(lambda, branch_length, 0, j));
+                }
+                for (int c = 0; c < _matrix_size; c++) {
+                    m->set(s, c, get_from_parent_fam_size_to_c(lambda, branch_length, s, c));
+                }
+            }}
+            return m;
+        });
+    par_timer.stop("stdlib: Precalculate Matrices");
+#else
+    int s;
 #pragma omp parallel for private(s) collapse(2)
     for (i = 0; i < num_keys; ++i)
     {
@@ -169,7 +208,7 @@ void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, con
             }
         }
     }
-
+#endif
     // copy matrices to our internal map
     for (size_t i = 0; i < keys.size(); ++i)
     {

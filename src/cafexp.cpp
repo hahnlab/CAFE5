@@ -15,7 +15,29 @@
 
 #include "easylogging++.h"
 
+#ifdef _CRAYC
+#include "../../config.h"
+#endif
 
+#if defined __INTEL_COMPILER
+#define COMPILER "Intel"
+#define COMPILER_VERSION __INTEL_COMPILER
+#elif defined __PGI
+#define COMPILER "PGI"
+#define COMPILER_VERSION __PGIC__
+#elif defined __llvm__
+#define COMPILER "Cray LLVM"
+#define COMPILER_VERSION "9.0.0"
+#elif defined _CRAYC
+#define COMPILER "Cray Classic"
+#define COMPILER_VERSION _RELEASE
+#elif defined __GNUC__
+#define COMPILER "GCC"
+#define COMPILER_VERSION __GNUC__
+#endif
+
+#define TBB_PREVIEW_GLOBAL_CONTROL 1
+#include "tbb/global_control.h"
 
 using namespace std;
 
@@ -190,6 +212,9 @@ void show_help()
 /// \callgraph
 int cafe5(int argc, char *const argv[]) {
     init_lgamma_cache();
+
+	tbb::global_control c(tbb::global_control::max_allowed_parallelism, atoi(getenv("OMP_NUM_THREADS")));
+    cout << "CAFE version " << PACKAGE_VERSION << " compiled with " << COMPILER << " " << COMPILER_VERSION << endl;
 
     try {
         input_parameters user_input = read_arguments(argc, argv);

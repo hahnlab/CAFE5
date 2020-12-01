@@ -20,6 +20,22 @@
 #include "optimizer_scorer.h"
 #include "simulator.h"
 
+#if defined __INTEL_COMPILER
+#include <pstl/execution>
+#include <pstl/algorithm>
+#elif defined __PGI
+#include <pstl/execution>
+#include <pstl/algorithm>
+#elif defined __llvm__
+#include <pstl/execution>
+#include <pstl/algorithm>
+#elif defined _CRAYC
+#include <pstl/execution>
+#include <pstl/algorithm>
+#elif defined __GNUC__
+#include <execution>
+#endif
+
 extern mt19937 randomizer_engine;
 
 gamma_model::gamma_model(lambda* p_lambda, clade *p_tree, std::vector<gene_family>* p_gene_families, int max_family_size,
@@ -187,6 +203,38 @@ double gamma_model::infer_family_likelihoods(const root_equilibrium_distribution
 
     vector<vector<family_info_stash>> pruning_results(_p_gene_families->size());
 
+#ifdef USE_STDLIB_PARALLEL
+    par_timer.start("stdlib: inference prune (Gamma)");
+    std::map<string, int> refmap;
+    for (int i = 0; i < _p_gene_families->size(); ++i)
+    {
+        refmap[_p_gene_families->at(i).id()] = i;
+    }
+    transform(std::execution::par, _p_gene_families->begin(), _p_gene_families->end(), failure.begin(), [&](const gene_family& gf) {
+        auto& cat_likelihoods = _category_likelihoods[refmap[gf.id()]];
+
+        if (prune(gf, prior, calc, p_lambda, cat_likelihoods))
+        {
+            double family_likelihood = accumulate(cat_likelihoods.begin(), cat_likelihoods.end(), 0.0);
+
+            vector<double> posterior_probabilities = get_posterior_probabilities(cat_likelihoods);
+
+            pruning_results[refmap[gf.id()]].resize(cat_likelihoods.size());
+            for (size_t k = 0; k < cat_likelihoods.size(); ++k)
+            {
+                pruning_results[refmap[gf.id()]][k] = family_info_stash(gf.id(), _lambda_multipliers[k], cat_likelihoods[k],
+                    family_likelihood, posterior_probabilities[k], posterior_probabilities[k] > 0.95);
+                //            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
+            }
+            all_bundles_likelihood[refmap[gf.id()]] = std::log(family_likelihood);
+        else
+        {
+            // we got here because one of the gamma categories was saturated - reject this
+            return true;
+        }
+        return false;
+        });
+#else
 #pragma omp parallel for
     for (size_t i = 0; i < _p_gene_families->size(); i++) {
         auto& cat_likelihoods = _category_likelihoods[i];
@@ -212,6 +260,7 @@ double gamma_model::infer_family_likelihoods(const root_equilibrium_distribution
             failure[i] = true;
         }
     }
+#endif
 
     if (find(failure.begin(), failure.end(), true) != failure.end())
     {
@@ -319,6 +368,21 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_fami
 
         pupko_reconstructor::pupko_data data(families.size(), _p_tree, _max_family_size, _max_root_family_size);
 
+#ifdef USE_STDLIB_PARALLEL
+        par_timer.start("stdlib: Reconstruct Gene Family (Gamma)");
+        std::map<string, int> refmap;
+        for (int i = 0; i < _p_gene_families->size(); ++i)
+        {
+            refmap[_p_gene_families->at(i).id()] = i;
+        }
+        for_each(families.begin(), families.end(), [&](const gene_family& gf) {
+            int i = refmap[gf.id()];
+            pupko_reconstructor::reconstruct_gene_family(ml.get(), _p_tree, &gf, calc, prior,
+                recs[i]->category_reconstruction[k], data.C(i), data.L(i));
+            });
+        par_timer.stop("stlib: Reconstruct Gene Family (Gamma)");
+    }
+#else
 #pragma omp parallel for
         for (size_t i = 0; i < families.size(); ++i)
         {
@@ -326,6 +390,7 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_fami
                 recs[i]->category_reconstruction[k], data.C(i), data.L(i));
         }
     }
+#endif
 
     for (auto reconstruction : recs)
     {

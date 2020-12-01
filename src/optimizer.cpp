@@ -14,6 +14,10 @@
 #include "optimizer.h"
 #include "optimizer_scorer.h"
 
+#ifdef _CRAYC
+#include "../../config.h"
+#endif
+
 #define PHASED_OPTIMIZER_PHASE2_PRECISION 1e-6
 
 using namespace std;

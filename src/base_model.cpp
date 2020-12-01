@@ -15,6 +15,22 @@
 #include "optimizer_scorer.h"
 #include "simulator.h"
 
+#if defined __INTEL_COMPILER
+#include <pstl/execution>
+#include <pstl/algorithm>
+#elif defined __PGI
+#include <pstl/execution>
+#include <pstl/algorithm>
+#elif defined __llvm__
+#include <pstl/execution>
+#include <pstl/algorithm>
+#elif defined _CRAYC
+#include <pstl/execution>
+#include <pstl/algorithm>
+#elif defined __GNUC__
+#include <execution>
+#endif
+
 extern mt19937 randomizer_engine;
 
 base_model::base_model(lambda* p_lambda, const clade *p_tree, const vector<gene_family>* p_gene_families,
@@ -66,14 +82,46 @@ double base_model::infer_family_likelihoods(const root_equilibrium_distribution 
     calc.precalculate_matrices(get_lambda_values(_p_lambda), _p_tree->get_branch_lengths());
 
     vector<vector<double>> partial_likelihoods(_p_gene_families->size());
+#ifdef USE_STDLIB_PARALLEL
+    par_timer.start("stdlib: inference prune (Base)");
+    transform(std::execution::par, _p_gene_families->begin(), _p_gene_families->end(), partial_likelihoods.begin(),
+               [&](const gene_family &f) {
+                               return inference_prune(f, calc, _p_lambda, _p_error_model, _p_tree, 1.0, _max_root_family_size, _max_family_size);
+                       });
+    par_timer.stop("stdlib: inference prune (Base)");
+#else
 #pragma omp parallel for
     for (size_t i = 0; i < _p_gene_families->size(); ++i) {
         if (references[i] == i)
             partial_likelihoods[i] = inference_prune(_p_gene_families->at(i), calc, _p_lambda, _p_error_model, _p_tree, 1.0, _max_root_family_size, _max_family_size);
             // probabilities of various family sizes
     }
+#endif
 
     // prune all the families with the same lambda
+#ifdef USE_STDLIB_PARALLEL
+    par_timer.start("stdlib: compute likelihood (Base)");
+    std::map<string, int> refmap;
+    for (int i = 0; i < _p_gene_families->size(); ++i)
+    {
+        refmap[_p_gene_families->at(i).id()] = references[i];
+    }
+    transform(std::execution::par, _p_gene_families->begin(), _p_gene_families->end(), results.begin(), [&](const gene_family& gf) {
+
+        auto& partial_likelihood = partial_likelihoods[refmap[gf.id()]];
+        std::vector<double> full(partial_likelihood.size());
+
+        for (size_t j = 0; j < partial_likelihood.size(); ++j) {
+            double eq_freq = prior.compute(j);
+
+            full[j] = std::log(partial_likelihood[j]) + std::log(eq_freq);
+        }
+
+        //        all_families_likelihood[i] = accumulate(full.begin(), full.end(), 0.0); // sum over all sizes (Felsenstein's approach)
+        double mx = *max_element(full.begin(), full.end()); // get max (CAFE's approach)
+        return family_info_stash(gf.id(), 0.0, 0.0, 0.0, mx, false);
+	});
+#else
 #pragma omp parallel for
     for (size_t i = 0; i < _p_gene_families->size(); ++i) {
 
@@ -92,6 +140,7 @@ double base_model::infer_family_likelihoods(const root_equilibrium_distribution 
         
         results[i] = family_info_stash(_p_gene_families->at(i).id(), 0.0, 0.0, 0.0, all_families_likelihood[i], false);
     }
+#endif
     double final_likelihood = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families
 
     LOG(INFO) << "Score (-lnL): " << std::setw(15) << std::setprecision(14) << final_likelihood;
