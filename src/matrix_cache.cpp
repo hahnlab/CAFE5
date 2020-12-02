@@ -5,6 +5,8 @@
 #include <sstream>
 #include <random>
 
+#include "easylogging++.h"
+
 #include "matrix_cache.h"
 #include "probability.h"
 
@@ -165,9 +167,9 @@ void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, con
     size_t num_keys = keys.size();
     
 #ifdef USE_STDLIB_PARALLEL
-    par_timer.start("stdlib: Precalculate Matrices");
+    VLOG(5) << "Starting stdlib: Precalculate Matrices";
     transform(std::execution::par, keys.begin(), keys.end(), matrices.begin(), matrices.begin(), [&](const matrix_cache_key& key, matrix *m) {
-        for (s = 1; s < _matrix_size; s++) {
+        for (int s = 1; s < _matrix_size; s++) {
             double lambda = key.lambda();
             double branch_length =key.branch_length();
 
@@ -184,8 +186,9 @@ void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, con
             }}
             return m;
         });
-    par_timer.stop("stdlib: Precalculate Matrices");
+    VLOG(5) << "Finished omp: Precalculate Matrices";
 #else
+    VLOG(5) << "Starting stdlib: Precalculate Matrices";
     int s;
 #pragma omp parallel for private(s) collapse(2)
     for (i = 0; i < num_keys; ++i)
@@ -208,6 +211,7 @@ void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, con
             }
         }
     }
+    VLOG(5) << "Finished omp: Precalculate Matrices";
 #endif
     // copy matrices to our internal map
     for (size_t i = 0; i < keys.size(); ++i)

@@ -3,6 +3,11 @@
 
 #include <set>
 
+#if defined CRAY_CLASSIC
+#include "config.h"
+#endif
+
+
 #include "easylogging++.h"
 
 #include "clade.h"

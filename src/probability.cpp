@@ -36,6 +36,10 @@
 #include <execution>
 #endif
 
+#if defined CRAY_CLASSIC
+#include "config.h"
+#endif
+
 using namespace std;
 
 extern std::mt19937 randomizer_engine;
@@ -181,7 +185,6 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 //  }
   return result;
 }
-
 
 /* END: Birth-death model components ----------------------- */
 
@@ -390,15 +393,16 @@ vector<double> compute_family_probabilities(pvalue_parameters p, const vector<ge
     }
 
 #ifdef USE_STDLIB_PARALLEL
-    par_timer.start("stdlib: Node Probabilities");
+    VLOG(5) << "Starting stdlib: Node Probabilities";
     transform(std::execution::par, families.begin(), families.end(), pruners.begin(), result.begin(), [&](const gene_family& gf, clademap<std::vector<double>>& pruner)
         {
-            auto fn = [&](const clade* c) { compute_node_probability(c, gf, NULL, pruner, max_root_family_size, max_family_size, p_lambda, cache); };
-            p_tree->apply_reverse_level_order(fn);
-            return *std::max_element(pruner.at(p_tree).begin(), pruner.at(p_tree).end());
+            for (auto it = p.p_tree->reverse_level_begin(); it != p.p_tree->reverse_level_end(); ++it)
+                compute_node_probability(*it, gf, NULL, pruner, p.max_root_family_size, p.max_family_size, p.p_lambda, p.cache);
+            return *std::max_element(pruner.at(p.p_tree).begin(), pruner.at(p.p_tree).end());
         });
-    par_timer.stop("stdlib: Node Probabilities");
+    VLOG(5) << "Finished stdlib: Node Probabilities";
 #else
+    VLOG(5) << "Starting omp: Node Probabilities";
 #pragma omp parallel for
     for (size_t i = 0; i < result.size(); ++i)
     {
@@ -406,9 +410,10 @@ vector<double> compute_family_probabilities(pvalue_parameters p, const vector<ge
             compute_node_probability(*it, families[i], NULL, pruners[i], p.max_root_family_size, p.max_family_size, p.p_lambda, p.cache);
         result[i] = *std::max_element(pruners[i].at(p.p_tree).begin(), pruners[i].at(p.p_tree).end());
     }
+    VLOG(5) << "Finished omp: Node Probabilities";
+#endif
     return result;
 }
-#endif
 
 /*! Create a sorted vector of probabilities by generating random trees 
     \param p_tree The structure of the tree to generate

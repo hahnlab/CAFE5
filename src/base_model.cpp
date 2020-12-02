@@ -83,24 +83,26 @@ double base_model::infer_family_likelihoods(const root_equilibrium_distribution 
 
     vector<vector<double>> partial_likelihoods(_p_gene_families->size());
 #ifdef USE_STDLIB_PARALLEL
-    par_timer.start("stdlib: inference prune (Base)");
+    VLOG(5) << "Starting stdlib: inference prune (Base)";
     transform(std::execution::par, _p_gene_families->begin(), _p_gene_families->end(), partial_likelihoods.begin(),
                [&](const gene_family &f) {
                                return inference_prune(f, calc, _p_lambda, _p_error_model, _p_tree, 1.0, _max_root_family_size, _max_family_size);
                        });
-    par_timer.stop("stdlib: inference prune (Base)");
+    VLOG(5) << "Finished stdlib: inference prune (Base)";
 #else
 #pragma omp parallel for
+    VLOG(5) << "Starting omp: inference prune (Base)";
     for (size_t i = 0; i < _p_gene_families->size(); ++i) {
         if (references[i] == i)
             partial_likelihoods[i] = inference_prune(_p_gene_families->at(i), calc, _p_lambda, _p_error_model, _p_tree, 1.0, _max_root_family_size, _max_family_size);
             // probabilities of various family sizes
     }
+    VLOG(5) << "Finished omp: inference prune (Base)";
 #endif
 
     // prune all the families with the same lambda
 #ifdef USE_STDLIB_PARALLEL
-    par_timer.start("stdlib: compute likelihood (Base)");
+    VLOG(5) << "Starting stdlib: compute likelihood (Base)";
     std::map<string, int> refmap;
     for (int i = 0; i < _p_gene_families->size(); ++i)
     {
@@ -121,8 +123,10 @@ double base_model::infer_family_likelihoods(const root_equilibrium_distribution 
         double mx = *max_element(full.begin(), full.end()); // get max (CAFE's approach)
         return family_info_stash(gf.id(), 0.0, 0.0, 0.0, mx, false);
 	});
+    VLOG(5) << "Finished stdlib: compute likelihood (Base)";
 #else
 #pragma omp parallel for
+    VLOG(5) << "Starting omp: compute likelihood (Base)";
     for (size_t i = 0; i < _p_gene_families->size(); ++i) {
 
         auto& partial_likelihood = partial_likelihoods[references[i]];
@@ -140,6 +144,7 @@ double base_model::infer_family_likelihoods(const root_equilibrium_distribution 
         
         results[i] = family_info_stash(_p_gene_families->at(i).id(), 0.0, 0.0, 0.0, all_families_likelihood[i], false);
     }
+    VLOG(5) << "Finished stdlib: compute likelihood (Base)";
 #endif
     double final_likelihood = -std::accumulate(all_families_likelihood.begin(), all_families_likelihood.end(), 0.0); // sum over all families
 

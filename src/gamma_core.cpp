@@ -204,7 +204,7 @@ double gamma_model::infer_family_likelihoods(const root_equilibrium_distribution
     vector<vector<family_info_stash>> pruning_results(_p_gene_families->size());
 
 #ifdef USE_STDLIB_PARALLEL
-    par_timer.start("stdlib: inference prune (Gamma)");
+    VLOG(5) << "Starting stdlib: inference prune (Gamma)";
     std::map<string, int> refmap;
     for (int i = 0; i < _p_gene_families->size(); ++i)
     {
@@ -227,6 +227,7 @@ double gamma_model::infer_family_likelihoods(const root_equilibrium_distribution
                 //            cout << "Bundle " << i << " Process " << k << " family likelihood = " << family_likelihood << endl;
             }
             all_bundles_likelihood[refmap[gf.id()]] = std::log(family_likelihood);
+        }
         else
         {
             // we got here because one of the gamma categories was saturated - reject this
@@ -234,7 +235,9 @@ double gamma_model::infer_family_likelihoods(const root_equilibrium_distribution
         }
         return false;
         });
+    VLOG(5) << "Finished stdlib: inference prune (Gamma)";
 #else
+    VLOG(5) << "Starting omp: inference prune (Gamma)";
 #pragma omp parallel for
     for (size_t i = 0; i < _p_gene_families->size(); i++) {
         auto& cat_likelihoods = _category_likelihoods[i];
@@ -260,6 +263,7 @@ double gamma_model::infer_family_likelihoods(const root_equilibrium_distribution
             failure[i] = true;
         }
     }
+    VLOG(5) << "Finished omp: inference prune (Gamma)";
 #endif
 
     if (find(failure.begin(), failure.end(), true) != failure.end())
@@ -369,7 +373,7 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_fami
         pupko_reconstructor::pupko_data data(families.size(), _p_tree, _max_family_size, _max_root_family_size);
 
 #ifdef USE_STDLIB_PARALLEL
-        par_timer.start("stdlib: Reconstruct Gene Family (Gamma)");
+        VLOG(5) << "Starting stdlib: Reconstruct Gene Family (Gamma)";
         std::map<string, int> refmap;
         for (int i = 0; i < _p_gene_families->size(); ++i)
         {
@@ -380,15 +384,17 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_fami
             pupko_reconstructor::reconstruct_gene_family(ml.get(), _p_tree, &gf, calc, prior,
                 recs[i]->category_reconstruction[k], data.C(i), data.L(i));
             });
-        par_timer.stop("stlib: Reconstruct Gene Family (Gamma)");
+        VLOG(5) << "Finished stdlib: Reconstruct Gene Family (Gamma)";
     }
 #else
+        VLOG(5) << "Starting omp: Reconstruct Gene Family (Gamma)";
 #pragma omp parallel for
         for (size_t i = 0; i < families.size(); ++i)
         {
             pupko_reconstructor::reconstruct_gene_family(ml.get(), _p_tree, &families[i], calc, prior,
                 recs[i]->category_reconstruction[k], data.C(i), data.L(i));
         }
+        VLOG(5) << "Finished omp: Reconstruct Gene Family (Gamma)";
     }
 #endif
 
