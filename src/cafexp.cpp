@@ -213,7 +213,6 @@ void show_help()
 int cafe5(int argc, char *const argv[]) {
     init_lgamma_cache();
 
-	tbb::global_control c(tbb::global_control::max_allowed_parallelism, atoi(getenv("OMP_NUM_THREADS")));
     cout << "CAFE version " << PACKAGE_VERSION << " compiled with " << COMPILER << " " << COMPILER_VERSION << endl;
 
     try {
@@ -227,6 +226,7 @@ int cafe5(int argc, char *const argv[]) {
         if (user_input.cores > 0)
         {
             omp_set_num_threads(user_input.cores);
+        	tbb::global_control c(tbb::global_control::max_allowed_parallelism, user_input.cores);
         }
         user_data data;
         data.read_datafiles(user_input);

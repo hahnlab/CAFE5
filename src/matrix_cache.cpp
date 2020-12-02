@@ -186,9 +186,9 @@ void matrix_cache::precalculate_matrices(const std::vector<double>& lambdas, con
             }}
             return m;
         });
-    VLOG(5) << "Finished omp: Precalculate Matrices";
+    VLOG(5) << "Finished stdlib: Precalculate Matrices";
 #else
-    VLOG(5) << "Starting stdlib: Precalculate Matrices";
+    VLOG(5) << "Starting omp: Precalculate Matrices";
     int s;
 #pragma omp parallel for private(s) collapse(2)
     for (i = 0; i < num_keys; ++i)

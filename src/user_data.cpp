@@ -126,6 +126,7 @@ void user_data::read_datafiles(const input_parameters& my_input_parameters)
     }
     if (my_input_parameters.verbose_logging_level > 0 )
     {
+		el::Loggers::addFlag(el::LoggingFlag::AllowVerboseIfModuleNotSpecified );
         el::Loggers::setVerboseLevel(my_input_parameters.verbose_logging_level);
     }
     /* -t */
