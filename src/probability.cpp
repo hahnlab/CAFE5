@@ -383,6 +383,28 @@ vector<double> compute_family_probabilities(pvalue_parameters p, const vector<ge
     return result;
 }
 
+void characterize(const clade* p_tree, int root_size, const vector<gene_family>& families)
+{
+    vector<string> species;
+    p_tree->apply_prefix_order([&species](const clade* c) {
+        if (c->is_leaf()) species.push_back(c->get_taxon_name());
+        });
+
+    vector<float> all_leaf_sizes;
+    for (auto& fam : families)
+        for (auto sp : species)
+            all_leaf_sizes.push_back(fam.get_species_size(sp));
+
+    float mean = accumulate(all_leaf_sizes.begin(), all_leaf_sizes.end(), 0.0) / float(all_leaf_sizes.size());
+
+    double sq_sum = std::inner_product(all_leaf_sizes.begin(), all_leaf_sizes.end(), all_leaf_sizes.begin(), 0.0,
+        [](double const& x, double const& y) { return x + y; },
+        [mean](double const& x, double const& y) { return (x - mean) * (y - mean); });
+    float stddev = std::sqrt(sq_sum / (all_leaf_sizes.size() - 1));
+
+    LOG(TRACE) << "Generated " << families.size() << " families with root size " << root_size << "; mean leaf size: " << mean << "; stddev: " << stddev;
+}
+
 /*! Create a sorted vector of probabilities by generating random trees 
     \param p_tree The structure of the tree to generate
     \param number_of_simulations The number of random probabilities to return
@@ -393,10 +415,8 @@ vector<double> compute_family_probabilities(pvalue_parameters p, const vector<ge
 
     \returns a sorted vector of probabilities of the requested number of randomly generated trees
 */
-
 std::vector<double> get_random_probabilities(pvalue_parameters p, int number_of_simulations, int root_family_size)
 {
-    VLOG(2) << "Getting random probabilities for " << number_of_simulations << " simulations";
     vector<gene_family> families(number_of_simulations);
 
     generate(families.begin(), families.end(), [p, root_family_size]() { return create_family(p, root_family_size); });
@@ -405,7 +425,7 @@ std::vector<double> get_random_probabilities(pvalue_parameters p, int number_of_
 
     sort(result.begin(), result.end());
 
-    VLOG(2) << "Random probabilities complete";
+    characterize(p.p_tree, root_family_size, families);
 
     return result;
 }
