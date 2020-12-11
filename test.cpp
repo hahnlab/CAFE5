@@ -613,7 +613,7 @@ TEST_CASE("Probability: get_random_probabilities")
     unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
 
     single_lambda lam(0.05);
-    matrix_cache cache(15);
+    matrix_cache cache(100);
     cache.precalculate_matrices(vector<double>{0.05}, set<double>{1});
 
     pvalue_parameters p = { p_tree.get(),  &lam, 12, 8, cache };
@@ -1226,7 +1226,7 @@ TEST_CASE_FIXTURE(Reconstruction, "pvalues 2")
 TEST_CASE_FIXTURE(Reconstruction, "compute_family_probabilities")
 {
     single_lambda lambda(0.03);
-    matrix_cache cache(25);
+    matrix_cache cache(100);
     cache.precalculate_matrices({ 0.03 }, p_tree->get_branch_lengths());
     pvalue_parameters p = { p_tree.get(),  &lambda, 20, 15, cache };
 
@@ -2196,14 +2196,14 @@ TEST_CASE("Inference: lambda_per_family")
 TEST_CASE_FIXTURE(Inference, "estimator_compute_pvalues")
 {
     input_parameters params;
-    matrix_cache cache(max(_user_data.max_family_size, _user_data.max_root_family_size) + 1);
+    matrix_cache cache(100);
     cache.precalculate_matrices(get_lambda_values(_user_data.p_lambda), _user_data.p_tree->get_branch_lengths());
 
     pvalue_parameters p = { _user_data.p_tree,  _user_data.p_lambda, _user_data.max_family_size, _user_data.max_root_family_size, cache };
 
     auto values = compute_pvalues(p, _user_data.gene_families, 3);
     CHECK_EQ(1, values.size());
-    CHECK_EQ(doctest::Approx(0.6666666667), values[0]);
+    CHECK_EQ(doctest::Approx(0.3333333333), values[0]);
 }
 
 TEST_CASE_FIXTURE(Inference, "gamma_lambda_optimizer updates model alpha and lambda")

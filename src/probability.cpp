@@ -364,20 +364,27 @@ vector<double> compute_family_probabilities(pvalue_parameters p, const vector<ge
 {
     vector<double> result(families.size());
 
+    auto max_size = [](const gene_family& gf) {
+        int max_size = gf.get_max_size();
+        return max_size + std::max(50, max_size / 5);
+    };
+
     // Allocate space to calculate all of the families simultaneously
     vector<clademap<std::vector<double>>> pruners(families.size());
-    for (auto& pruner : pruners)
-    {
+    transform(families.begin(), families.end(), pruners.begin(), [&p, max_size](const gene_family& gf) {
+        clademap<std::vector<double>> pruner;
         // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
-        auto fn = [&](const clade* node) { pruner[node].resize(node->is_root() ? p.max_root_family_size : p.max_family_size + 1); };
+        
+        auto fn = [&p, &pruner, gf, max_size](const clade* node) { pruner[node].resize(node->is_root() ? p.max_root_family_size : max_size(gf) + 1); };
         for_each(p.p_tree->reverse_level_begin(), p.p_tree->reverse_level_end(), fn);
-    }
+        return pruner;
+        });
 
 #pragma omp parallel for
     for (size_t i = 0; i < result.size(); ++i)
     {
         for (auto it = p.p_tree->reverse_level_begin(); it != p.p_tree->reverse_level_end(); ++it)
-            compute_node_probability(*it, families[i], NULL, pruners[i], p.max_root_family_size, p.max_family_size, p.p_lambda, p.cache);
+            compute_node_probability(*it, families[i], NULL, pruners[i], p.max_root_family_size, max_size(families[i]), p.p_lambda, p.cache);
         result[i] = *std::max_element(pruners[i].at(p.p_tree).begin(), pruners[i].at(p.p_tree).end());
     }
     return result;
@@ -502,10 +509,8 @@ vector<double> compute_pvalues(pvalue_parameters p, const std::vector<gene_famil
 {
     LOG(INFO) << "Computing pvalues...";
 
-    const int mxr = p.max_root_family_size;
-
-    std::vector<std::vector<double> > conditional_distribution(mxr);
-    for (int i = 0; i < mxr; ++i)
+    std::vector<std::vector<double> > conditional_distribution(p.max_root_family_size);
+    for (int i = 0; i < p.max_root_family_size; ++i)
     {
         conditional_distribution[i] = get_random_probabilities(p, number_of_simulations, i);
     }
@@ -540,8 +545,11 @@ vector<double> compute_pvalues(pvalue_parameters p, const std::vector<gene_famil
         {
             pvalues[j] = pvalue(root_probabilities[j], conditional_distribution[j]);
         }
-        result[i] = *std::max_element(pvalues.begin(), pvalues.end());
+        auto idx = std::max_element(pvalues.begin() + 1, pvalues.end());
+        result[i] = *idx;
+        LOG(TRACE) << "PValue for " << families[i].id() << " : " << result[i] << " found at family size " << idx-pvalues.begin() ;
     }
+
 
     LOG(INFO) << "done!\n";
 
