@@ -349,9 +349,8 @@ std::vector<int> uniform_dist(int n_draws, int min, int max) {
 /// Create a gene family based on the given tree and root size, by assigning child sizes down the tree 
 /// The child size is selected randomly, based on the lambda and error model
 /// </summary>
-gene_family create_family(pvalue_parameters p, int root_family_size)
+clademap<int> create_family(pvalue_parameters p, int root_family_size)
 {
-    gene_family result;
     // generate a tree with root_family_size at the root
     clademap<int> sizes;
     sizes[p.p_tree] = root_family_size;
@@ -368,60 +367,56 @@ gene_family create_family(pvalue_parameters p, int root_family_size)
         VLOG(2) << "Generated tree: " << ost.str() << endl;
     }
 
-    result.init_from_clademap(sizes);
-    return result;
+    return sizes;
 }
 
-vector<double> compute_family_probabilities(pvalue_parameters p, const vector<gene_family>& families)
+vector<double> compute_family_probabilities(pvalue_parameters p, const vector<clademap<int>>& sizes)
 {
-    vector<double> result(families.size());
+    vector<double> result(sizes.size());
 
-    auto max_size = [](const gene_family& gf) {
-        int max_size = gf.get_max_size();
-        return max_size + std::max(50, max_size / 5);
-    };
+    // get the largest clade size from each clademap
+    vector<int> max_sizes(sizes.size());
+    transform(sizes.begin(), sizes.end(), max_sizes.begin(), [](const clademap<int>& sizes) {
+        using pair_type = clademap<int>::value_type;
+        auto pr = std::max_element(sizes.begin(), sizes.end(), [](const pair_type& p1, const pair_type& p2) {
+                return p1.second < p2.second;
+            });
+        return pr->second;
+    });
 
     // Allocate space to calculate all of the families simultaneously
-    vector<clademap<std::vector<double>>> pruners(families.size());
-    transform(families.begin(), families.end(), pruners.begin(), [&p, max_size](const gene_family& gf) {
+    vector<clademap<std::vector<double>>> pruners(sizes.size());
+    transform(max_sizes.begin(), max_sizes.end(), pruners.begin(), [&p](int max_size) {
         clademap<std::vector<double>> pruner;
+        int m = min(p.max_family_size, max_size + std::max(50, max_size / 5));
+
         // vector of lk's at tips must go from 0 -> _max_possible_family_size, so we must add 1
-        
-        auto fn = [&p, &pruner, gf, max_size](const clade* node) { pruner[node].resize(node->is_root() ? p.max_root_family_size : max_size(gf) + 1); };
-        for_each(p.p_tree->reverse_level_begin(), p.p_tree->reverse_level_end(), fn);
+        for_each(p.p_tree->reverse_level_begin(), p.p_tree->reverse_level_end(), [&p, &pruner, m](const clade* node) 
+            { 
+                pruner[node].resize(1 + (node->is_root() ? p.max_root_family_size : m)); 
+            });
         return pruner;
         });
 
+    // get a gene family for each clademap
+    vector<gene_family> families(sizes.size());
+    transform(sizes.begin(), sizes.end(), families.begin(), [](const clademap<int>& s) {
+        gene_family f;
+        f.init_from_clademap(s);
+        return f;
+    });
+
+    // do math
 #pragma omp parallel for
     for (size_t i = 0; i < result.size(); ++i)
     {
+        int m = min(p.max_family_size, max_sizes[i] + std::max(50, max_sizes[i] / 5));
+        
         for (auto it = p.p_tree->reverse_level_begin(); it != p.p_tree->reverse_level_end(); ++it)
-            compute_node_probability(*it, families[i], NULL, pruners[i], p.max_root_family_size, max_size(families[i]), p.p_lambda, p.cache);
+            compute_node_probability(*it, families[i], NULL, pruners[i], p.max_root_family_size, m, p.p_lambda, p.cache);
         result[i] = *std::max_element(pruners[i].at(p.p_tree).begin(), pruners[i].at(p.p_tree).end());
     }
     return result;
-}
-
-void characterize(const clade* p_tree, int root_size, const vector<gene_family>& families)
-{
-    vector<string> species;
-    p_tree->apply_prefix_order([&species](const clade* c) {
-        if (c->is_leaf()) species.push_back(c->get_taxon_name());
-        });
-
-    vector<float> all_leaf_sizes;
-    for (auto& fam : families)
-        for (auto sp : species)
-            all_leaf_sizes.push_back(fam.get_species_size(sp));
-
-    float mean = accumulate(all_leaf_sizes.begin(), all_leaf_sizes.end(), 0.0) / float(all_leaf_sizes.size());
-
-    double sq_sum = std::inner_product(all_leaf_sizes.begin(), all_leaf_sizes.end(), all_leaf_sizes.begin(), 0.0,
-        [](double const& x, double const& y) { return x + y; },
-        [mean](double const& x, double const& y) { return (x - mean) * (y - mean); });
-    float stddev = std::sqrt(sq_sum / (all_leaf_sizes.size() - 1));
-
-    LOG(TRACE) << "Generated " << families.size() << " families with root size " << root_size << "; mean leaf size: " << mean << "; stddev: " << stddev;
 }
 
 /*! Create a sorted vector of probabilities by generating random trees 
@@ -436,15 +431,13 @@ void characterize(const clade* p_tree, int root_size, const vector<gene_family>&
 */
 std::vector<double> get_random_probabilities(pvalue_parameters p, int number_of_simulations, int root_family_size)
 {
-    vector<gene_family> families(number_of_simulations);
+    vector<clademap<int>> families(number_of_simulations);
 
     generate(families.begin(), families.end(), [p, root_family_size]() { return create_family(p, root_family_size); });
 
     auto result = compute_family_probabilities(p, families);
 
     sort(result.begin(), result.end());
-
-    characterize(p.p_tree, root_family_size, families);
 
     return result;
 }

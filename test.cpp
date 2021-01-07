@@ -632,7 +632,8 @@ TEST_CASE("Probability: generate_family")
     matrix_cache cache(15);
     cache.precalculate_matrices(vector<double>{0.2}, set<double>{1});
     pvalue_parameters p = { p_tree.get(),  &lam, 10, 8, cache };
-    auto fam = create_family(p, 6);
+    gene_family fam;
+    fam.init_from_clademap(create_family(p, 6));
     CHECK_EQ(5, fam.get_species_size("A"));
     CHECK_EQ(5, fam.get_species_size("B"));
     CHECK_EQ(7, fam.get_species_size("C"));
@@ -1230,7 +1231,18 @@ TEST_CASE_FIXTURE(Reconstruction, "compute_family_probabilities")
     cache.precalculate_matrices({ 0.03 }, p_tree->get_branch_lengths());
     pvalue_parameters p = { p_tree.get(),  &lambda, 20, 15, cache };
 
-    auto result = compute_family_probabilities(p, vector<gene_family>{fam});
+    clademap<int> cm;
+    cm[p_tree.get()] = 5;
+
+    // note we do not use an error model for creating family sizes. See architecture decision #6
+    p.p_tree->apply_prefix_order([&cm, this](const clade* c)
+        {
+            if (c->is_leaf())
+                cm[c] = fam.get_species_size(c->get_taxon_name());
+            else
+                cm[c] = 5;
+        });
+    auto result = compute_family_probabilities(p, vector<clademap<int>>{cm});
 
     CHECK_EQ(1, result.size());
     CHECK_EQ(doctest::Approx(0.0000000001), result[0]);
