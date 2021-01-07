@@ -174,12 +174,12 @@ double the_probability_of_going_from_parent_fam_size_to_c(double lambda, double 
 /// to run faster and in a thread-compatible manner
 void compute_node_probability_small_families(const clade *node, const gene_family&gene_family, const error_model*p_error_model,
     std::map<const clade *, std::vector<double> >& probabilities, 
-    int max_root_family_size,
+    std::pair<int, int> root_size_range,
     int max_family_size,
     const lambda* _lambda,
     const matrix_cache& _calc) {
 
-    assert(max(max_root_family_size, max_family_size) < MAX_STACK_FAMILY_SIZE);
+    assert(max(root_size_range.second, max_family_size) < MAX_STACK_FAMILY_SIZE);
 
     if (node->is_leaf()) {
         int species_size = gene_family.get_species_size(node->get_taxon_name());
@@ -211,7 +211,7 @@ void compute_node_probability_small_families(const clade *node, const gene_famil
         for (auto it = node->descendant_begin(); it != node->descendant_end(); ++it) {
             double result[MAX_STACK_FAMILY_SIZE];
             fill(result, result + MAX_STACK_FAMILY_SIZE, 0);
-             _lambda->calculate_child_factor(_calc, *it, probabilities[*it], 1, max_root_family_size, 0, max_family_size, result);
+             _lambda->calculate_child_factor(_calc, *it, probabilities[*it], root_size_range.first, root_size_range.second, 0, max_family_size, result);
              for (size_t i = 0; i < node_probs.size(); i++) {
                  node_probs[i] *= result[i];
              }
@@ -238,7 +238,7 @@ void compute_node_probability_small_families(const clade *node, const gene_famil
 /// to handle ay number of families
 void compute_node_probability_large_families(const clade* node, const gene_family& gene_family, const error_model* p_error_model,
     std::map<const clade*, std::vector<double> >& probabilities,
-    int max_root_family_size,
+    std::pair<int, int> root_size_range,
     int max_family_size,
     const lambda* _lambda,
     const matrix_cache& _calc) {
@@ -268,8 +268,8 @@ void compute_node_probability_large_families(const clade* node, const gene_famil
         // at the root, the size of the vector holding the final likelihoods will be _max_root_family_size (size 0 is not included, so we do not add 1)
         std::vector<std::vector<double> > factors;
         for (auto it = node->descendant_begin(); it != node->descendant_end(); ++it) {
-            vector<double> result(max_root_family_size);
-            _lambda->calculate_child_factor(_calc, *it, probabilities[*it], 1, max_root_family_size, 0, max_family_size, result.data());
+            vector<double> result(root_size_range.second);
+            _lambda->calculate_child_factor(_calc, *it, probabilities[*it], root_size_range.first, root_size_range.second, 0, max_family_size, result.data());
             factors.push_back(result);
         }
         vector<double>& node_probs = probabilities[node];
@@ -314,16 +314,19 @@ void compute_node_probability_large_families(const clade* node, const gene_famil
 //! size, and 0 for all other sizes). Internal nodes are calculated based on the probabilities
 //! of the descendants.
 //! Results are stored in the probabilities vector, 0 - max possible size
-void compute_node_probability(const clade* node, const gene_family& gene_family, const error_model* p_error_model,
+void compute_node_probability(const clade* node,
+    const gene_family& gene_family,
+    const error_model* p_error_model,
     std::map<const clade*, std::vector<double> >& probabilities,
-    int max_root_family_size,
+    std::pair<int, int> root_size_range,
     int max_family_size,
-    const lambda* _lambda,
-    const matrix_cache& calc) {
-    if (max(max_root_family_size, max_family_size) < MAX_STACK_FAMILY_SIZE)
-        compute_node_probability_small_families(node, gene_family, p_error_model, probabilities, max_root_family_size, max_family_size, _lambda, calc);
+    const lambda* lambda,
+    const matrix_cache& calc)
+{
+    if (max(root_size_range.second, max_family_size) < MAX_STACK_FAMILY_SIZE)
+        compute_node_probability_small_families(node, gene_family, p_error_model, probabilities, root_size_range, max_family_size, lambda, calc);
     else
-        compute_node_probability_large_families(node, gene_family, p_error_model, probabilities, max_root_family_size, max_family_size, _lambda, calc);
+        compute_node_probability_large_families(node, gene_family, p_error_model, probabilities, root_size_range, max_family_size, lambda, calc);
 }
 
 
@@ -370,7 +373,7 @@ clademap<int> create_family(pvalue_parameters p, int root_family_size)
     return sizes;
 }
 
-vector<double> compute_family_probabilities(pvalue_parameters p, const vector<clademap<int>>& sizes)
+vector<double> compute_family_probabilities(pvalue_parameters p, const vector<clademap<int>>& sizes, int root_family_size)
 {
     vector<double> result(sizes.size());
 
@@ -413,7 +416,7 @@ vector<double> compute_family_probabilities(pvalue_parameters p, const vector<cl
         int m = min(p.max_family_size, max_sizes[i] + std::max(50, max_sizes[i] / 5));
         
         for (auto it = p.p_tree->reverse_level_begin(); it != p.p_tree->reverse_level_end(); ++it)
-            compute_node_probability(*it, families[i], NULL, pruners[i], p.max_root_family_size, m, p.p_lambda, p.cache);
+            compute_node_probability(*it, families[i], NULL, pruners[i], std::pair<int, int>(root_family_size, root_family_size), m, p.p_lambda, p.cache);
         result[i] = *std::max_element(pruners[i].at(p.p_tree).begin(), pruners[i].at(p.p_tree).end());
     }
     return result;
@@ -435,7 +438,7 @@ std::vector<double> get_random_probabilities(pvalue_parameters p, int number_of_
 
     generate(families.begin(), families.end(), [p, root_family_size]() { return create_family(p, root_family_size); });
 
-    auto result = compute_family_probabilities(p, families);
+    auto result = compute_family_probabilities(p, families, root_family_size);
 
     sort(result.begin(), result.end());
 
@@ -537,7 +540,7 @@ vector<double> compute_pvalues(pvalue_parameters p, const std::vector<gene_famil
     for (size_t i = 0; i < families.size(); ++i)
     {
         for (auto it = p.p_tree->reverse_level_begin(); it != p.p_tree->reverse_level_end(); ++it)
-            compute_node_probability(*it, families[i], NULL, pruners[i], p.max_root_family_size, p.max_family_size, p.p_lambda, p.cache);
+            compute_node_probability(*it, families[i], NULL, pruners[i], std::pair<int, int>(1, p.max_root_family_size), p.max_family_size, p.p_lambda, p.cache);
     }
 
     vector<double> result(families.size());

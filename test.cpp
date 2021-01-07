@@ -1242,7 +1242,7 @@ TEST_CASE_FIXTURE(Reconstruction, "compute_family_probabilities")
             else
                 cm[c] = 5;
         });
-    auto result = compute_family_probabilities(p, vector<clademap<int>>{cm});
+    auto result = compute_family_probabilities(p, vector<clademap<int>>{cm}, 5);
 
     CHECK_EQ(1, result.size());
     CHECK_EQ(doctest::Approx(0.0000000001), result[0]);
@@ -1684,7 +1684,7 @@ TEST_CASE("Inference: likelihood_computer_sets_leaf_nodes_correctly")
     cache.precalculate_matrices({ 0.045 }, { 1.0,3.0,7.0 });
 
     auto A = p_tree->find_descendant("A");
-    compute_node_probability(A, family, NULL, _probabilities, 20, 20, &lambda, cache);
+    compute_node_probability(A, family, NULL, _probabilities, pair<int, int>(1, 20), 20, &lambda, cache);
     auto& actual = _probabilities[A];
 
     vector<double> expected{ 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -1696,7 +1696,7 @@ TEST_CASE("Inference: likelihood_computer_sets_leaf_nodes_correctly")
     }
 
     auto B = p_tree->find_descendant("B");
-    compute_node_probability(B, family, NULL, _probabilities, 20, 20, &lambda, cache);
+    compute_node_probability(B, family, NULL, _probabilities, pair<int, int>(1, 20), 20, &lambda, cache);
     actual = _probabilities[B];
 
     expected = { 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -1727,9 +1727,9 @@ TEST_CASE("Inference: likelihood_computer_sets_root_nodes_correctly")
     cache.precalculate_matrices({ 0.03 }, { 1.0,3.0,7.0 });
 
     auto AB = p_tree->find_descendant("AB");
-    compute_node_probability(p_tree->find_descendant("A"), family, NULL, _probabilities, 20, 20, &lambda, cache);
-    compute_node_probability(p_tree->find_descendant("B"), family, NULL, _probabilities, 20, 20, &lambda, cache);
-    compute_node_probability(AB, family, NULL, _probabilities, 20, 20, &lambda, cache);
+    compute_node_probability(p_tree->find_descendant("A"), family, NULL, _probabilities, pair<int, int>(1, 20), 20, &lambda, cache);
+    compute_node_probability(p_tree->find_descendant("B"), family, NULL, _probabilities, pair<int, int>(1, 20), 20, &lambda, cache);
+    compute_node_probability(AB, family, NULL, _probabilities, pair<int, int>(1, 20), 20, &lambda, cache);
 
     auto& actual = _probabilities[AB];
 
@@ -1772,7 +1772,7 @@ TEST_CASE("Inference: likelihood_computer_sets_leaf_nodes_from_error_model_if_pr
     for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), init_func);
 
     auto A = p_tree->find_descendant("A");
-    compute_node_probability(A, family, &model, _probabilities, 20, 20, &lambda, cache);
+    compute_node_probability(A, family, &model, _probabilities, pair<int, int>(1, 20), 20, &lambda, cache);
     auto& actual = _probabilities[A];
 
     vector<double> expected{ 0, 0, 0.2, 0.6, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };

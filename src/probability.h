@@ -35,12 +35,14 @@ double chooseln(double n, double k);
 /// map. For leaf nodes, the probabilities are set based on input data, but for internal nodes the probabilities are calculated 
 /// based on the probabilities of the child nodes. After all calculations, the caller should call the max_likelihood method,
 /// passing the root of the tree, to determine the overall probabilities for the tree.
-void compute_node_probability(const clade *node, const gene_family&_gene_family, const error_model*_p_error_model,
-    std::map<const clade *, std::vector<double> >& _probabilities,
-    int _max_root_family_size,
-    int _max_parsed_family_size,
-    const lambda* _lambda,
-    const matrix_cache& _calc);
+void compute_node_probability(const clade *node, 
+    const gene_family& gene_family, 
+    const error_model* p_error_model,
+    std::map<const clade *, std::vector<double> >& probabilities,
+    std::pair<int, int> root_size_range,
+    int max_family_size,
+    const lambda* lambda,
+    const matrix_cache& calc);
 
 /* START: Uniform distribution */
 std::vector<int> uniform_dist(int n_draws, int min, int max);
@@ -55,6 +57,6 @@ double pvalue(double v, const vector<double>& conddist);
 
 //! computes a pvalue for each family. Returns a vector of pvalues matching the list of families
 std::vector<double> compute_pvalues(pvalue_parameters p, const std::vector<gene_family>& families, int number_of_simulations);
-std::vector<double> compute_family_probabilities(pvalue_parameters p, const vector<clademap<int>>& sizes);
+std::vector<double> compute_family_probabilities(pvalue_parameters p, const vector<clademap<int>>& sizes, int root_family_size);
 
 #endif
