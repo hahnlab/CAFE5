@@ -512,6 +512,20 @@ double pvalue(double v, const vector<double>& conddist)
     return  idx / (double)conddist.size();
 }
 
+double find_best_pvalue(const gene_family& fam, const vector<double>& root_probabilities, const std::vector<std::vector<double> >& conditional_distribution)
+{    
+    vector<double> pvalues(root_probabilities.size());
+    int max_size_to_check = rint(fam.get_max_size() * 1.25);
+    for (int j = 0; j < max_size_to_check; ++j)
+    {
+        pvalues[j] = pvalue(root_probabilities[j], conditional_distribution[j]);
+    }
+    auto idx = std::max_element(pvalues.begin(), pvalues.end());
+    LOG(TRACE) << "PValue for " << fam.id() << " : " << *idx << " found at family size " << idx - pvalues.begin();
+
+    return *idx;
+}
+
 //! Compute pvalues for each family based on the given lambda
 vector<double> compute_pvalues(pvalue_parameters p, const std::vector<gene_family>& families, int number_of_simulations)
 {
@@ -520,7 +534,7 @@ vector<double> compute_pvalues(pvalue_parameters p, const std::vector<gene_famil
     std::vector<std::vector<double> > conditional_distribution(p.max_root_family_size);
     for (int i = 0; i < p.max_root_family_size; ++i)
     {
-        conditional_distribution[i] = get_random_probabilities(p, number_of_simulations, i);
+        conditional_distribution[i] = get_random_probabilities(p, number_of_simulations, i+1);
     }
     VLOG(1) << "Conditional distributions calculated";
 
@@ -546,16 +560,7 @@ vector<double> compute_pvalues(pvalue_parameters p, const std::vector<gene_famil
     vector<double> result(families.size());
     for (size_t i = 0; i < families.size(); ++i)
     {
-        clademap<vector<double>>& probabilities = pruners[i];   // probability of a given family size at a given node
-        vector<double>& root_probabilities = probabilities.at(p.p_tree);
-        vector<double> pvalues(root_probabilities.size());
-        for (int j = 0; j < p.max_root_family_size; ++j)
-        {
-            pvalues[j] = pvalue(root_probabilities[j], conditional_distribution[j]);
-        }
-        auto idx = std::max_element(pvalues.begin() + 1, pvalues.end());
-        result[i] = *idx;
-        LOG(TRACE) << "PValue for " << families[i].id() << " : " << result[i] << " found at family size " << idx-pvalues.begin() ;
+        result[i] = find_best_pvalue(families[i], pruners[i].at(p.p_tree), conditional_distribution);
     }
 
 

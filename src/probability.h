@@ -58,5 +58,6 @@ double pvalue(double v, const vector<double>& conddist);
 //! computes a pvalue for each family. Returns a vector of pvalues matching the list of families
 std::vector<double> compute_pvalues(pvalue_parameters p, const std::vector<gene_family>& families, int number_of_simulations);
 std::vector<double> compute_family_probabilities(pvalue_parameters p, const vector<clademap<int>>& sizes, int root_family_size);
+double find_best_pvalue(const gene_family& fam, const vector<double>& root_probabilities, const std::vector<std::vector<double> >& conditional_distribution);
 
 #endif
