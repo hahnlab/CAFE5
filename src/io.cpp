@@ -139,6 +139,8 @@ void read_gene_families(std::istream& input_file, clade *p_tree, std::vector<gen
     int index = 0;
     
     while (getline(input_file, line)) {
+        if (line.empty()) continue;
+
         std::vector<std::string> tokens = tokenize_str(line, '\t');
         // Check if we are done reading the headers
         if (!leaf_indices.empty() && line[0] != '#') { is_header = false; }

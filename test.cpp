@@ -416,6 +416,15 @@ TEST_CASE("GeneFamilies: read_gene_families_throws_if_no_families_found")
     CHECK_THROWS_WITH_AS(read_gene_families(ist, p_tree.get(), families), "No families found", runtime_error);
 }
 
+TEST_CASE("GeneFamilies: read_gene_families skips blank lines in input")
+{
+    std::string str = "Desc\tFamily ID\tA\tB\tC\tD\n\n\n\n\t (null)1\t5\t10\t2\t6\n\n\n\n";
+    std::istringstream ist(str);
+    std::vector<gene_family> families;
+    read_gene_families(ist, NULL, families);
+    CHECK_EQ(1, families.size());
+}
+
 TEST_CASE("GeneFamilies: model_set_families")
 {
     mock_model m;
