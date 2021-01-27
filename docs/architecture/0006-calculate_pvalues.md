@@ -16,14 +16,18 @@ calculated or provided by the user)
 The procedure is as follows: 
 
 1. For every possible root family size (starting with 1, not 0), randomly generate 1000 families based on the lambda
-2. Compute the probability of each family generated, sort the results smallest to largest. The result is the
+2. Compute the likelihood of each family generated, sort the results smallest to largest. The result is the
    conditional distribution.
-3. Compute the probability of each of the user's families for every root family size 
+3. Compute the likelihood of each of the user's families for every root family size 
 4. For every root family size less than 125% of the largest species size in the family, compute a pvalue for each 
    of the user's families, based on the conditional distribution at that family size
 5. Take the maximum pvalue calculated
 
 ## Consequences
+
+To correctly calculate the likelihood of the generated families, the calculation at the root has to take
+into account that the root size is known. This is reflected in the matrix multiplication, which uses a 
+single row at the root rather than all possible rows.
 
 Note that although the family generation routine can accept an error model, we do not use the model when 
 calculating p-values. It is not clear if using a lambda estimated with the error model will produce the 
