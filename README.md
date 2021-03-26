@@ -52,7 +52,7 @@ in prior releases.
 
 If you use CAFE5 in your work, please cite the application as
 
-> 10.5281/zenodo.3625141
+- Fábio K Mendes, Dan Vanderpool, Ben Fulton, Matthew W Hahn, CAFE 5 models variation in evolutionary rates among gene families, Bioinformatics, 2020;, btaa1022, https://doi.org/10.1093/bioinformatics/btaa1022
 
 Original development of the statistical framework and algorithms implemented in CAFE are 
 published in:
