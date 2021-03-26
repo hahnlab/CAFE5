@@ -514,11 +514,10 @@ Input files
 Output
 ------
 
-All output will be stored to the "results" directory, unless another directory is specified with the "-o"
-parameter.
+All output will be stored to the "results" directory, unless another directory is specified with the "-o" parameter.
 
 
--   _model_\_asr.txt
+-   _model_\_asr.tre
 
     The file will be named Base\_asr.txt or Gamma\_asr.txt, based on
     which model is in play. It contains the reconstructed states of the
@@ -531,7 +530,16 @@ parameter.
     each category are given their own section in this file. In this case,
 	ony the fastest families are printed.
 
-	
+    IMPORTANT! If you want to view only gene families with significant changes 
+    mapped onto the branch on which the change occurred, simple parsing can
+    be employed using grep e.g.:
+
+        echo $'#nexus\nbegin trees;'>Significant_trees.tre
+        grep "*" _model_\_asr.tre >>Significant_trees.tre
+        echo "end;">>Significant_trees.tre
+
+    Open this file in Dendroscope or a similar program and you can view the tree with only families exhibiting a significant change mapped onto the branch on which the change occurred.
+
 -   _model_\_family\_results.txt
 
     The file will be named Base\_family\_results.txt or
@@ -549,6 +557,24 @@ parameter.
     In the Gamma model, an additional set of probabilities are appended,
     representing the likelihood of the family belonging to each gamma
     category.
+
+    IMPORTANT! If you want to know how many and which families underwent a significant expansion/contraction, you can parse this file using simple grep or awk commands. 
+            
+    To count significant families at the p=0.05 threshold:
+
+            grep -c "\ty" Gammma_family_results.txt 
+    To write the just significant families to a file:
+
+            grep "y" Gamma_family_results.txt > Significant_families.txt
+
+    If you used a the default p-value (0.05) in your analysis but have too many significant results, you can filter these to a lower p-value (0.01 in the example) using awk, e.g.:
+
+        awk '$2 < .01 {print $0}' Gamma_family_results.txt > Sig_at_p.01.txt
+        
+    Count the number of significant families in this file using bash: 
+
+        wc -l Sig_at_p.01.txt
+
 
 -   _model_\_clade\_results.txt
 
