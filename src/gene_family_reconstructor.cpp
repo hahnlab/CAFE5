@@ -203,7 +203,7 @@ void reconstruction::print_node_change(std::ostream& ost, const cladevector& ord
 {
     print_family_clade_table(ost, order, gene_families, p_tree, [this, &gene_families](int family_index, const clade* c) {
         ostringstream ost;
-        ost << showpos << get_difference_from_parent(gene_families[family_index], c);
+        ost  << get_difference_from_parent(gene_families[family_index], c);
         return ost.str();
         });
 }
