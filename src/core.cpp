@@ -185,3 +185,21 @@ void branch_probabilities::set(const gene_family& fam, const clade* c, branch_pr
 {
     _probabilities[fam.id()][c] = p;
 }
+
+
+void exclude_zero_root_families(const input_parameters& user_input, user_data& data)
+{
+    if (!data.p_tree)
+        throw std::runtime_error("No tree was specified");
+
+    if (user_input.exclude_zero_root_families)
+    {
+        auto rem = std::remove_if(data.gene_families.begin(), data.gene_families.end(), [&data](const gene_family& fam) {
+            return !fam.exists_at_root(data.p_tree);
+            });
+
+        int fmsize = data.gene_families.size();
+        data.gene_families.erase(rem, data.gene_families.end());
+        LOG(INFO) << "\nFiltering families not present at the root from: " << fmsize << " to " << data.gene_families.size();
+    }
+}

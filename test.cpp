@@ -3076,6 +3076,14 @@ TEST_CASE("LikelihoodRatioTest, compute_for_diff_lambdas")
     CHECK(isinf(pvalues[0]));
 }
 
+TEST_CASE("exclude_zero_root_families throws exception without a tree")
+{
+    input_parameters p;
+    user_data data;
+    data.gene_families.resize(1);
+    CHECK_THROWS_WITH(exclude_zero_root_families(p, data), "No tree was specified");
+}
+
 void init_lgamma_cache();
 
 int main(int argc, char** argv)

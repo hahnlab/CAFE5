@@ -186,6 +186,7 @@ void show_help()
         std::cout << text;
 }
 
+
 /// The main function. Evaluates arguments, calls processes
 /// \callgraph
 int cafe5(int argc, char *const argv[]) {
@@ -209,17 +210,7 @@ int cafe5(int argc, char *const argv[]) {
         auto cmd = std::accumulate(argv, argv + argc, std::string(), [](std::string x, std::string y) { return x + y + " "; });
         LOG(INFO) << "\nCommand line: " << cmd;
 
-        if (user_input.exclude_zero_root_families)
-        {
-            auto rem = std::remove_if(data.gene_families.begin(), data.gene_families.end(), [&data](const gene_family& fam) {
-                return !fam.exists_at_root(data.p_tree);
-            });
-
-            int fmsize = data.gene_families.size();
-            data.gene_families.erase(rem, data.gene_families.end());
-            LOG(INFO) << "\nFiltering families not present at the root from: " << fmsize << " to " << data.gene_families.size();
-
-        }
+        exclude_zero_root_families(user_input, data);
 
         data.create_prior(user_input);
 

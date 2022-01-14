@@ -201,5 +201,7 @@ inline std::string filename(std::string base, std::string suffix)
 
 std::vector<double> inference_prune(const gene_family& gf, matrix_cache& calc, const lambda *_lambda, const error_model *p_error_model, const clade *_p_tree, double _lambda_multiplier, int _max_root_family_size, int _max_family_size);
 
+void exclude_zero_root_families(const input_parameters& user_input, user_data& data);
+
 #endif /* CORE_H */
 
