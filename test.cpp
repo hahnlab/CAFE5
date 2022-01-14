@@ -1155,7 +1155,7 @@ TEST_CASE_FIXTURE(Reconstruction, "print_node_change")
 
     gmr.print_node_change(ost, order, { fam }, p_tree.get());
     CHECK_MESSAGE(ost.str().find("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>") != string::npos, ost.str());
-    CHECK_MESSAGE(ost.str().find("Family5\t+1\t-8\t+5\t+6\t+17\t+7\t+0") != string::npos, ost.str());
+    CHECK_MESSAGE(ost.str().find("Family5\t1\t-8\t5\t6\t17\t7\t0") != string::npos, ost.str());
 }
 
 TEST_CASE_FIXTURE(Reconstruction, "clade_index_or_name__returns_node_index_in_angle_brackets_for_non_leaf")
@@ -2581,6 +2581,29 @@ TEST_CASE("Simulation, simulate_processes")
     vector<simulated_family> results(1);
     sim.simulate_processes(&m, results);
     CHECK_EQ(100, results.size());
+}
+
+TEST_CASE("simulate_processes handles differing max family size and max root size")
+{
+    single_lambda lam(0.05);
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
+    mock_model m;
+    m.set_tree(p_tree.get());
+    m.set_lambda(&lam);
+
+    user_data ud;
+    ud.p_tree = p_tree.get();
+    ud.p_lambda = &lam;
+    ud.prior = root_equilibrium_distribution(100);
+    ud.max_family_size = 170;
+    ud.max_root_family_size = 150;
+
+    input_parameters ip;
+    ip.nsims = 10;
+    simulator sim(ud, ip);
+    vector<simulated_family> results(1);
+    sim.simulate_processes(&m, results);
+    CHECK_EQ(10, results.size());
 }
 
 TEST_CASE("root_equilibrium_distribution__resize")
