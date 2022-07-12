@@ -11,6 +11,7 @@
 #include "root_equilibrium_distribution.h"
 #include "gene_family.h"
 #include "user_data.h"
+#include "newick_ape_loader.h"
 
 namespace pupko_reconstructor {
     pupko_data::pupko_data(size_t num_families, const clade *p_tree, int max_family_size, int max_root_family_size) : v_all_node_Cs(num_families), v_all_node_Ls(num_families)
@@ -357,8 +358,7 @@ void reconstruction::write_results(std::string model_identifier,
     double test_pvalue, 
     const branch_probabilities& branch_probabilities)
 {
-    cladevector order;
-    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), [&order](const clade* c) { order.push_back(c); });
+    auto order = get_ape_order(p_tree);
 
     std::ofstream ofst(filename(model_identifier + "_asr", output_prefix, "tre"));
     print_reconstructed_states(ofst, order, families, p_tree, test_pvalue, branch_probabilities);

@@ -40,6 +40,8 @@ private:
 
     std::vector<const clade*> _reverse_level_order;
     void update_reverse_level_order();
+
+    std::string _source_newick;
 public:
     typedef std::vector<const clade*>::const_iterator reverse_level_iterator;
     typedef std::vector<clade*>::const_iterator descendant_iterator;
@@ -111,6 +113,10 @@ public:
     }
     descendant_iterator descendant_end() const {
         return _descendants.end();
+    }
+
+    std::string get_source_newick() const {
+        return _source_newick;
     }
 };
 

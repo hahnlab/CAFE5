@@ -3107,6 +3107,13 @@ TEST_CASE("exclude_zero_root_families throws exception without a tree")
     CHECK_THROWS_WITH(exclude_zero_root_families(p, data), "No tree was specified");
 }
 
+TEST_CASE("Newick tree is recoverable at the root")
+{
+    string nwk = "(A:1,B:3):7";
+    unique_ptr<clade> p_tree(parse_newick(nwk));
+    CHECK_EQ(nwk, p_tree->get_source_newick());
+}
+
 void init_lgamma_cache();
 
 int main(int argc, char** argv)

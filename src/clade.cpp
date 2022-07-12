@@ -307,6 +307,8 @@ clade* parse_newick(std::string newick_string, bool parse_to_lambdas) {
     sregex_iterator regex_it(newick_string.begin(), newick_string.end(), tokenizer);
     sregex_iterator regex_it_end;
     clade* p_root_clade = new_clade(NULL);
+    p_root_clade->_source_newick = newick_string;
+
     p_root_clade->is_lambda_clade = parse_to_lambdas; // if user does not provide lambda for root, we need to make the root specifically a lambda clade if we are parsing to lambdas
 
     clade* p_current_clade = p_root_clade; // current_clade starts as the root

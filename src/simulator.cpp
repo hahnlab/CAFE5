@@ -10,6 +10,7 @@
 #include "core.h"
 #include "matrix_cache.h"
 #include "root_equilibrium_distribution.h"
+#include "newick_ape_loader.h"
 
 extern std::mt19937 randomizer_engine; // seeding random number engine
 
@@ -100,8 +101,7 @@ void simulator::simulate(std::vector<model *>& models, const input_parameters &m
     if (data.p_tree == nullptr)
         throw std::runtime_error("No tree specified for simulations");
 
-    std::vector<const clade *> order;
-    for_each(data.p_tree->reverse_level_begin(), data.p_tree->reverse_level_end(), [&order](const clade* c) { order.push_back(c); });
+    auto order = get_ape_order(data.p_tree);
 
     string dir = my_input_parameters.output_prefix;
     if (dir.empty()) dir = "results";
