@@ -234,13 +234,16 @@ void reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const
     clademap<pair<int, int>> increase_decrease_map;
 
     for (size_t j = 0; j < gene_families.size(); ++j) {
-        for (size_t i = 0; i < order.size(); ++i)
+        for (auto node : order)
         {
-            int val = get_difference_from_parent(gene_families[j], order[i]);
-            if (val > 0)
-                increase_decrease_map[order[i]].first++;
-            if (val < 0)
-                increase_decrease_map[order[i]].second++;
+            if (node)
+            {
+                int val = get_difference_from_parent(gene_families[j], node);
+                if (val > 0)
+                    increase_decrease_map[node].first++;
+                if (val < 0)
+                    increase_decrease_map[node].second++;
+            }
         }
     }
 
@@ -252,8 +255,27 @@ void reconstruction::print_increases_decreases_by_clade(std::ostream& ost, const
     }
 }
 
+void write_node_ordered(std::ostream& ost, std::string title, const cladevector& order, std::function<string(const clade* c)> f)
+{
+    ost << title;
+    for (auto node : order)
+    {
+        if (node)
+        {
+            ost << "\t" << f(node);
+        }
+    }
+    ost << endl;
+}
+
 void reconstruction::print_family_clade_table(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree, std::function<string(int family_index, const clade *c)> get_family_clade_value)
 {
+    write_node_ordered(ost, "FamilyID", order, [order](const clade* c) { return clade_index_or_name(c, order); });
+    for (size_t i = 0; i < gene_families.size(); ++i)
+    {
+        write_node_ordered(ost, gene_families[i].id(), order, [i, get_family_clade_value](const clade* c) { return get_family_clade_value(i, c); });
+    }
+#if 0
     ost << "FamilyID";
     for (auto c : order)
     {
@@ -270,30 +292,27 @@ void reconstruction::print_family_clade_table(std::ostream& ost, const cladevect
         }
         ost << endl;
     }
+#endif
 }
 
 void print_branch_probabilities(std::ostream& ost, const cladevector& order, const vector<gene_family>& gene_families, const branch_probabilities& branch_probabilities)
 {
-    ost << "#FamilyID\t";
-    for (auto& it : order) {
-        ost << clade_index_or_name(it, order) << "\t";
-    }
-    ost << endl;
+    write_node_ordered(ost, "FamilyID", order, [order](const clade* c) { return clade_index_or_name(c, order); });
 
     for (auto& gf : gene_families) 
     {
         if (branch_probabilities.contains(gf))
         {
-            ost << gf.id();
-            for (auto c : order)
-            {
-                ost << '\t';
+            write_node_ordered(ost, gf.id(), order, [&branch_probabilities, gf](const clade* c) {
                 if (branch_probabilities.at(gf, c)._is_valid)
+                {
+                    ostringstream ost;
                     ost << branch_probabilities.at(gf, c)._value;
+                    return ost.str();
+                }
                 else
-                    ost << "N/A";
-            }
-            ost << endl;
+                    return string("N/A");
+                });
         }
     }
 

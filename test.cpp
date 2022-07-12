@@ -1169,6 +1169,8 @@ TEST_CASE_FIXTURE(Reconstruction, "clade_index_or_name__returns_node_name_plus_i
     STRCMP_EQUAL("A<1>", clade_index_or_name(a, { p_tree.get(), a }).c_str());
 }
 
+#define CHECK_STREAM_CONTAINS(x,y) CHECK_MESSAGE(x.str().find(y) != std::string::npos, x.str())
+
 TEST_CASE_FIXTURE(Reconstruction, "print_branch_probabilities__shows_NA_for_invalids")
 {
     gene_family gf;
@@ -1181,8 +1183,8 @@ TEST_CASE_FIXTURE(Reconstruction, "print_branch_probabilities__shows_NA_for_inva
     probs.set(gf, p_tree.get(), branch_probabilities::invalid());
 
     print_branch_probabilities(ost, order, { fam }, probs);
-    STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
-    STRCMP_CONTAINS("Family5\t0.05\tN/A\t0.05\t0.05\t0.05\t0.05\tN/A\n", ost.str().c_str());
+    CHECK_STREAM_CONTAINS(ost, "FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>");
+    CHECK_STREAM_CONTAINS(ost, "Family5\t0.05\tN/A\t0.05\t0.05\t0.05\t0.05\tN/A\n");
 }
 
 TEST_CASE_FIXTURE(Reconstruction, "print_branch_probabilities__skips_families_without_reconstructions")
