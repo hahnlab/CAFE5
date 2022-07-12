@@ -4,7 +4,7 @@ CXX=@CXX@
 LD=@CXX@
 
 
-CFLAGS = -std=c++11 -I. -O3 -include config.h @OPENMP_CXXFLAGS@
+CFLAGS = -std=c++11 -I. -O3 -include config.h -DDOCTEST_CONFIG_DISABLE @OPENMP_CXXFLAGS@
 LINKER = $(LD) -std=c++11 -O3 @OPENMP_CXXFLAGS@ -o
 LFLAGS = -I.
 
@@ -57,7 +57,7 @@ DBG_CFLAGS = -std=c++11 -Wall -Werror @OPENMP_CXXFLAGS@ -g -I. -include config.h
 DBG_LINKER = $(LD) -std=c++11 @OPENMP_CXXFLAGS@ -o
 
 $(DBG_OBJECTS): $(DBGDIR)/%.o: $(SRCDIR)/%.cpp
-	$(CC) $(DBG_CFLAGS) -c $< -o $@
+	$(CC) $(DBG_CFLAGS) -DDDOCTEST_CONFIG_DISABLE -c $< -o $@
 
 $(DBGDIR)/main.o: main.cpp
 	$(CC) $(DBG_CFLAGS) -c $< -o $@
