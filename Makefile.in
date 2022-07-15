@@ -74,6 +74,8 @@ TEST_OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(TESTDIR)/%.o)
 $(TEST_OBJECTS): $(TESTDIR)/%.o: $(SRCDIR)/%.cpp
 	$(CC) $(DBG_CFLAGS)  $(INCLUDES) -DSILENT -c $< -o $@
 
+$(TESTDIR)/easylogging++.o: DBG_CFLAGS+=-Wno-range-loop-construct
+
 $(TESTDIR)/test.o: test.cpp
 	$(CC) $(DBG_CFLAGS) -c $< -o $@
 
