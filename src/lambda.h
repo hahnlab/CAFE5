@@ -105,6 +105,8 @@ inline std::ostream& operator<<(std::ostream& ost, const lambda& lambda)
     return ost;
 }
 
+std::vector<double> get_lambda_values(const lambda* p_lambda);
+
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
 

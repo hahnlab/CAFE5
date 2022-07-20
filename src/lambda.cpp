@@ -66,5 +66,22 @@ double multiple_lambda::get_value_for_clade(const clade *c) const {
     return _lambdas[index];
 }
 
+vector<double> get_lambda_values(const lambda* p_lambda)
+{
+    vector<double> lambdas;
+    auto sl = dynamic_cast<const single_lambda*>(p_lambda);
+    if (sl)
+    {
+        lambdas.push_back(sl->get_single_lambda());
+    }
+    else
+    {
+        auto ml = dynamic_cast<const multiple_lambda*>(p_lambda);
+        lambdas = ml->get_lambdas();
+    }
+    return lambdas;
+}
+
+
 /* END: Holding lambda values and specifying how likelihood is computed depending on the number of different lambdas */
 
