@@ -275,24 +275,6 @@ void reconstruction::print_family_clade_table(std::ostream& ost, const cladevect
     {
         write_node_ordered(ost, gene_families[i].id(), order, [i, get_family_clade_value](const clade* c) { return get_family_clade_value(i, c); });
     }
-#if 0
-    ost << "FamilyID";
-    for (auto c : order)
-    {
-        ost << "\t" << clade_index_or_name(c, order);
-    }
-    ost << endl;
-    for (size_t i = 0; i < gene_families.size(); ++i)
-    {
-        ost << gene_families[i].id();
-        for (auto node : order)
-        {
-            ost << "\t";
-            ost << get_family_clade_value(i, node);
-        }
-        ost << endl;
-    }
-#endif
 }
 
 void print_branch_probabilities(std::ostream& ost, const cladevector& order, const vector<gene_family>& gene_families, const branch_probabilities& branch_probabilities)
@@ -449,3 +431,4 @@ branch_probabilities::branch_probability compute_viterbi_sum(const clade* c,
     }
     return branch_probabilities::branch_probability(result);
 }
+
