@@ -382,7 +382,7 @@ void reconstruction::write_results(std::string model_identifier,
     print_additional_data(order, families, output_prefix);
 }
 
-int reconstruction::get_difference_from_parent(const gene_family& gf, const clade* c)
+int reconstruction::get_difference_from_parent(const gene_family& gf, const clade* c) const
 {
     if (c->is_root())
         return 0;

@@ -90,7 +90,7 @@ public:
 
     virtual int get_node_count(const gene_family& gf, const clade* c) const = 0;
 
-    int get_difference_from_parent(const gene_family& gf, const clade* c);
+    int get_difference_from_parent(const gene_family& gf, const clade* c) const;
 private:
     virtual void print_additional_data(const cladevector& order, familyvector& gene_families, std::string output_prefix) {};
 
