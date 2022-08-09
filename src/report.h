@@ -17,6 +17,9 @@ struct Report {
     const lambda* p_lambda = nullptr;
     clademap<float> average_expansion;
 
+    struct delta_counts { int expansion; int decrease; int remain; };
+    clademap<delta_counts> delta_count;
+
     void compute_expansion(const std::vector<gene_family>& gene_families, const reconstruction& reconstruct);
 };
 

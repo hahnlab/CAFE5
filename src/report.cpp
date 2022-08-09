@@ -43,11 +43,28 @@ std::ostream& operator<<(ostream& ost, const std::pair<T, U>& pair)
     return ost;
 }
 
+void write_delta(ostream& ost, const Report& report, string header)
+{
+    ost << header << " :";
+    report.p_tree->apply_prefix_order([&ost, &report, header](const clade* c) {
+        if (!c->is_leaf())
+        {
+            vector<float> v;
+            transform(c->descendant_begin(), c->descendant_end(), back_inserter(v), [&report, header](const clade* c) 
+                { 
+                    if (header == "Expansion") return report.delta_count.at(c).expansion;  
+                    if (header == "Remain") return report.delta_count.at(c).remain;
+                    if (header == "Decrease") return report.delta_count.at(c).decrease;
+                    return 0;
+            });
+            ost << "\t(" << join(v.begin(), v.end(), ",") << ")";
+        }
+        });
+    ost << "\n";
+}
+
 std::ostream& operator<<(ostream& ost, const Report& report)
 {
-    //bool has_pvalues = false;
-    //bool has_likelihoods = false;
-
     ost << "Tree:";
     report.p_tree->write_newick(ost, [](const clade* c)
         {
@@ -112,19 +129,19 @@ std::ostream& operator<<(ostream& ost, const Report& report)
             {
                 vector<float> v;
                 transform(c->descendant_begin(), c->descendant_end(), back_inserter(v), [&report](const clade* c) { return report.average_expansion.at(c);  });
-                ost << "(" << join(v.begin(), v.end(), ",") << ") ";
+                ost << "\t(" << join(v.begin(), v.end(), ",") << ")";
             }
             });
         ost << "\n";
     }
-#if 0
 
-    write_viterbi(ost, report);
+    if (!report.delta_count.empty())
+    {
+        write_delta(ost, report, "Expansion");
+        write_delta(ost, report, "Remain");
+        write_delta(ost, report, "Decrease");
+    }
 
-    write_families_header(ost, has_pvalues, has_likelihoods);
-
-    copy(report.family_line_items.begin(), report.family_line_items.end(), ostream_iterator<family_line_item>(ost, "\n"));
-#endif
     return ost;
 }
 
@@ -133,12 +150,17 @@ void Report::compute_expansion(const std::vector<gene_family>& gene_families, co
     p_tree->apply_prefix_order([gene_families, &reconstruct, this](const clade* c) {
         if (!c->is_root())
         {
-            int total = accumulate(gene_families.begin(), gene_families.end(), 0, [&reconstruct, c](int cur, const gene_family& gf) {
-                return cur + reconstruct.get_difference_from_parent(gf, c);
+            vector<int> diffs(gene_families.size());
+            transform(gene_families.begin(), gene_families.end(), diffs.begin(), [&reconstruct, c](const gene_family& gf) {
+                return reconstruct.get_difference_from_parent(gf, c);
                 });
+            int total = accumulate(diffs.begin(), diffs.end(), 0);
             this->average_expansion[c] = float(total) / float(gene_families.size());
+            this->delta_count[c].expansion = count_if(diffs.begin(), diffs.end(), [](int i) { return i > 0; });
+            this->delta_count[c].decrease = count_if(diffs.begin(), diffs.end(), [](int i) { return i < 0; });
+            this->delta_count[c].remain = count_if(diffs.begin(), diffs.end(), [](int i) { return i == 0; });
         }
-        });
+    });
 }
 
 #define CHECK_STREAM_CONTAINS(x,y) CHECK_MESSAGE(x.str().find(y) != std::string::npos, x.str())
@@ -267,6 +289,51 @@ TEST_CASE("Report compute_expansion")
 
     ostringstream ost;
     ost << r;
-    CHECK_STREAM_CONTAINS(ost, "Average Expansion:(2,3) (-1,2.5) (1.25,-2)");
+    CHECK_STREAM_CONTAINS(ost, "Average Expansion:\t(2,3)\t(-1,2.5)\t(1.25,-2)");
+}
+
+TEST_CASE("Report compute_expansion expand count")
+{
+    std::string empty;
+    std::istringstream ist(empty);
+
+    unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
+
+    mock_reconstruction r2;
+    r2.add("f1", "((A:1,B:3):2,(C:2,D:1):2);");
+    r2.add("f2", "((A:1,B:5):2,(C:7,D:1):4);");
+    r2.add("f3", "((A:1,B:5):2,(C:3,D:1):3);");
+    r2.add("f4", "((A:1,B:5):2,(C:5,D:1):3);");
+    Report r;
+    r.p_tree = p_tree.get();
+
+    vector<gene_family> f(4);
+    f[0].set_id("f1");
+    f[1].set_id("f2");
+    f[2].set_id("f3");
+    f[3].set_id("f4");
+
+    r.compute_expansion(f, r2);
+    CHECK_EQ(6, r.delta_count.size());
+    CHECK_EQ(0, r.delta_count[p_tree->find_descendant("A")].expansion);
+    CHECK_EQ(4, r.delta_count[p_tree->find_descendant("B")].expansion);
+    CHECK_EQ(2, r.delta_count[p_tree->find_descendant("C")].expansion);
+    CHECK_EQ(0, r.delta_count[p_tree->find_descendant("D")].expansion);
+
+    CHECK_EQ(4, r.delta_count[p_tree->find_descendant("A")].decrease);
+    CHECK_EQ(0, r.delta_count[p_tree->find_descendant("B")].decrease);
+    CHECK_EQ(0, r.delta_count[p_tree->find_descendant("C")].decrease);
+    CHECK_EQ(4, r.delta_count[p_tree->find_descendant("D")].decrease);
+
+    CHECK_EQ(0, r.delta_count[p_tree->find_descendant("A")].remain);
+    CHECK_EQ(0, r.delta_count[p_tree->find_descendant("B")].remain);
+    CHECK_EQ(2, r.delta_count[p_tree->find_descendant("C")].remain);
+    CHECK_EQ(0, r.delta_count[p_tree->find_descendant("D")].remain);
+
+    ostringstream ost;
+    ost << r;
+    CHECK_STREAM_CONTAINS(ost, "Expansion :\t(4,4)\t(0,4)\t(2,0)");
+    CHECK_STREAM_CONTAINS(ost, "Remain :\t(0,0)\t(0,0)\t(2,0)");
+    CHECK_STREAM_CONTAINS(ost, "Decrease :\t(0,0)\t(4,0)\t(0,4)");
 }
 
