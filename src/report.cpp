@@ -87,10 +87,20 @@ std::ostream& operator<<(ostream& ost, const Report& report)
         report.p_lambda_tree->write_newick(ost, [](const clade* c)
             {
                 ostringstream ost;
-                ost << (c->is_leaf() ? c->get_taxon_name() : "") << ":" << c->get_branch_length();
+                ost << c->get_lambda_index();
                 return ost.str();
             });
         ost << "\n";
+    }
+    else
+    {
+        ost << "Lambda tree:\t";
+        report.p_tree->write_newick(ost, [](const clade* c)
+            {
+                return "1";
+            });
+        ost << "\n";
+
     }
 
     auto t = get_ape_order(report.p_tree);
@@ -142,6 +152,8 @@ std::ostream& operator<<(ostream& ost, const Report& report)
         write_delta(ost, report, "Decrease");
     }
 
+    ost << "'ID'\t'Newick'";
+
     return ost;
 }
 
@@ -186,7 +198,7 @@ TEST_CASE("Report writes lambda tree")
     std::istringstream ist(empty);
 
     unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
-    unique_ptr<clade> p_tree2(parse_newick("((A:2,B:2):2,(C:3,D:3):1);"));
+    unique_ptr<clade> p_tree2(parse_newick("((A:2,B:2):2,(C:3,D:3):1);", true));
 
     Report r;
     r.p_tree = p_tree.get();
@@ -194,7 +206,22 @@ TEST_CASE("Report writes lambda tree")
     ostringstream ost;
     ost << r;
 
-    CHECK_STREAM_CONTAINS(ost, "Lambda tree:\t((A:2,B:2):2,(C:3,D:3):1):0");
+    CHECK_STREAM_CONTAINS(ost, "Lambda tree:\t((2,2)2,(3,3)1)1");
+}
+
+TEST_CASE("Report writes dummy lambda tree if none specified")
+{
+    std::string empty;
+    std::istringstream ist(empty);
+
+    unique_ptr<clade> p_tree(parse_newick("((A:2,B:2):2,(C:3,D:3):1);"));
+
+    Report r;
+    r.p_tree = p_tree.get();
+    ostringstream ost;
+    ost << r;
+
+    CHECK_STREAM_CONTAINS(ost, "Lambda tree:\t((1,1)1,(1,1)1)1");
 }
 
 TEST_CASE("Report writes lambdas")
