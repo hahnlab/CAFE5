@@ -14,14 +14,14 @@ class gamma_model_reconstruction : public reconstruction
     virtual void write_nexus_extensions(std::ostream& ost) override;
 
 public:
-    gamma_model_reconstruction(const std::vector<double>& lambda_multipliers) :
-        _lambda_multipliers(lambda_multipliers)
+    gamma_model_reconstruction(const user_data& d, const input_parameters& ui, const std::vector<double>& lambda_multipliers) :
+        reconstruction(d, ui), _lambda_multipliers(lambda_multipliers)
     {
     }
 
-    void print_additional_data(const cladevector& order, familyvector& gene_families, std::string output_prefix) override;
+    void print_additional_data(const cladevector& order) override;
 
-    void print_category_likelihoods(std::ostream& ost, const cladevector& order, familyvector& gene_families);
+    void print_category_likelihoods(std::ostream& ost, const cladevector& order);
 
     int get_node_count(const gene_family& gf, const clade* c) const override;
 
@@ -77,7 +77,7 @@ public:
     virtual void write_family_likelihoods(std::ostream& ost) override;
     virtual void write_vital_statistics(std::ostream& ost, double final_likelihood) override;
 
-    virtual reconstruction* reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *, root_equilibrium_distribution* p_prior) override;
+    virtual reconstruction* reconstruct_ancestral_states(const user_data& data, const input_parameters& _user_input, matrix_cache* p_calc) override;
 
     std::size_t get_gamma_cat_probs_count() const {
         return _gamma_cat_probs.size();

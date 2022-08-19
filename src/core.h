@@ -66,23 +66,30 @@ private:
 //! The result of a model reconstruction. Should be able to (a) print reconstructed states with all available information;
 /// (b) print increases and decreases by family; and (c) print increases and decreases by clade.
 class reconstruction {
+protected:
+    const user_data& _data;
+    const input_parameters& _user_input;
+
 public:
-    typedef const std::vector<gene_family> familyvector;
+    reconstruction(const user_data& d, const input_parameters& ui) : _data(d), _user_input(ui)
+    {
 
-    void print_node_change(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree);
+    }
 
-    void print_node_counts(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree);
+    void print_node_change(std::ostream& ost, const cladevector& order);
 
-    void print_reconstructed_states(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree, double test_pvalue, const branch_probabilities& branch_probabilities);
+    void print_node_counts(std::ostream& ost, const cladevector& order);
 
-    void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order, familyvector& gene_families);
+    void print_reconstructed_states(std::ostream& ost, const cladevector& order, const branch_probabilities& branch_probabilities);
 
-    void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, familyvector& gene_families, const std::vector<double>& pvalues, double test_pvalue);
+    void print_increases_decreases_by_clade(std::ostream& ost, const cladevector& order);
+
+    void print_increases_decreases_by_family(std::ostream& ost, const cladevector& order, const std::vector<double>& pvalues);
         
-    void print_family_clade_table(std::ostream& ost, const cladevector& order, familyvector& gene_families, const clade* p_tree,
+    void print_family_clade_table(std::ostream& ost, const cladevector& order,
         std::function<string(int family_index, const clade* c)> get_family_clade_value);
 
-    void write_results(std::string model_identifier, std::string output_prefix, const clade* p_tree, familyvector& families, std::vector<double>& pvalues, double test_pvalue, const branch_probabilities& branch_probabilities);
+    void write_results(std::string model_identifier, std::vector<double>& pvalues, const branch_probabilities& branch_probabilities);
 
     virtual ~reconstruction()
     {
@@ -92,7 +99,7 @@ public:
 
     int get_difference_from_parent(const gene_family& gf, const clade* c);
 private:
-    virtual void print_additional_data(const cladevector& order, familyvector& gene_families, std::string output_prefix) {};
+    virtual void print_additional_data(const cladevector& order) {};
 
     virtual void write_nexus_extensions(std::ostream& ost) {};
 
@@ -172,7 +179,7 @@ public:
     void write_error_model(std::ostream& ost) const;
 
     //! Based on the model parameters, attempts to reconstruct the most likely counts of each family at each node
-    virtual reconstruction* reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior) = 0;
+    virtual reconstruction* reconstruct_ancestral_states(const user_data& data, const input_parameters& _user_input, matrix_cache *p_calc) = 0;
 
     virtual inference_optimizer_scorer *get_lambda_optimizer(const user_data& data) = 0;
 

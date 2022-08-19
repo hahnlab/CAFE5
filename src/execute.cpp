@@ -160,7 +160,7 @@ void estimator::execute(std::vector<model *>& models)
                 pvalue_parameters p = { data.p_tree, p_model->get_lambda(), data.max_family_size, data.max_root_family_size, cache };
                 auto pvalues = compute_pvalues(p, data.gene_families, 1000 );
 
-                std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(data.gene_families, &cache, &data.prior));
+                std::unique_ptr<reconstruction> rec(p_model->reconstruct_ancestral_states(data, _user_input, &cache));
 
                 branch_probabilities probs;
 
@@ -177,7 +177,7 @@ void estimator::execute(std::vector<model *>& models)
 #ifdef RUN_LHRTEST
                 LikelihoodRatioTest::lhr_for_diff_lambdas(data, p_model);
 #endif
-                rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, data.gene_families, pvalues, _user_input.pvalue, probs);
+                rec->write_results(p_model->name(), pvalues, probs);
             }
         }
         catch (const OptimizerInitializationFailure& e )

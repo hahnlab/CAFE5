@@ -30,7 +30,7 @@ struct pupko_data {
 void reconstruct_gene_family(const lambda* lambda, const clade *p_tree,
     const gene_family *gf,
     matrix_cache *p_calc,
-    root_equilibrium_distribution* p_prior, 
+    const root_equilibrium_distribution* p_prior, 
     clademap<int>& reconstructed_states,
     clademap<std::vector<int>>& all_node_Cs,
     clademap<std::vector<double>>& all_node_Ls);

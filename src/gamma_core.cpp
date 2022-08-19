@@ -287,7 +287,7 @@ clademap<double> get_weighted_averages(const std::vector<clademap<int>>& m, cons
     return result;
 }
 
-reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *calc, root_equilibrium_distribution*prior)
+reconstruction* gamma_model::reconstruct_ancestral_states(const user_data& ud, const input_parameters& user_input, matrix_cache* p_calc)
 {
     LOG(INFO) << "Starting reconstruction processes for Gamma model";
 
@@ -301,15 +301,15 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_fami
         }
     }
 
-    calc->precalculate_matrices(all, _p_tree->get_branch_lengths());
+    p_calc->precalculate_matrices(all, _p_tree->get_branch_lengths());
 
-    gamma_model_reconstruction* result = new gamma_model_reconstruction(_lambda_multipliers);
-    vector<gamma_model_reconstruction::gamma_reconstruction *> recs(families.size());
-    for (size_t i = 0; i < families.size(); ++i)
+    gamma_model_reconstruction* result = new gamma_model_reconstruction(ud, user_input, _lambda_multipliers);
+    vector<gamma_model_reconstruction::gamma_reconstruction *> recs(ud.gene_families.size());
+    for (size_t i = 0; i < ud.gene_families.size(); ++i)
     {
-        recs[i] = &result->_reconstructions[families[i].id()];
-        result->_reconstructions[families[i].id()]._category_likelihoods = _category_likelihoods[i];
-        result->_reconstructions[families[i].id()].category_reconstruction.resize(_lambda_multipliers.size());
+        recs[i] = &result->_reconstructions[ud.gene_families[i].id()];
+        result->_reconstructions[ud.gene_families[i].id()]._category_likelihoods = _category_likelihoods[i];
+        result->_reconstructions[ud.gene_families[i].id()].category_reconstruction.resize(_lambda_multipliers.size());
     }
 
     for (size_t k = 0; k < _gamma_cat_probs.size(); ++k)
@@ -317,12 +317,12 @@ reconstruction* gamma_model::reconstruct_ancestral_states(const vector<gene_fami
         VLOG(1) << "Reconstructing for multiplier " << _lambda_multipliers[k];
         unique_ptr<lambda> ml(_p_lambda->multiply(_lambda_multipliers[k]));
 
-        pupko_reconstructor::pupko_data data(families.size(), _p_tree, _max_family_size, _max_root_family_size);
+        pupko_reconstructor::pupko_data data(ud.gene_families.size(), _p_tree, _max_family_size, _max_root_family_size);
 
 #pragma omp parallel for
-        for (size_t i = 0; i < families.size(); ++i)
+        for (size_t i = 0; i < ud.gene_families.size(); ++i)
         {
-            pupko_reconstructor::reconstruct_gene_family(ml.get(), _p_tree, &families[i], calc, prior,
+            pupko_reconstructor::reconstruct_gene_family(ml.get(), _p_tree, &ud.gene_families[i], p_calc, &ud.prior,
                 recs[i]->category_reconstruction[k], data.C(i), data.L(i));
         }
     }
@@ -356,14 +356,14 @@ int gamma_model_reconstruction::get_node_count(const gene_family& family, const 
     return int(std::round(_reconstructions.at(family.id()).reconstruction.at(c)));
 }
 
-void gamma_model_reconstruction::print_category_likelihoods(std::ostream& ost, const cladevector& order, familyvector& gene_families)
+void gamma_model_reconstruction::print_category_likelihoods(std::ostream& ost, const cladevector& order)
 {
     ost << "Family ID\t";
     ostream_iterator<double> lm(ost, "\t");
     copy(_lambda_multipliers.begin(), _lambda_multipliers.end(), lm);
     ost << endl;
 
-    for (auto& gf : gene_families)
+    for (auto& gf : _data.gene_families)
     {
         ost << gf.id() << '\t';
         auto rc = _reconstructions[gf.id()];
@@ -373,9 +373,9 @@ void gamma_model_reconstruction::print_category_likelihoods(std::ostream& ost, c
     }
 }
 
-void gamma_model_reconstruction::print_additional_data(const cladevector& order, familyvector& gene_families, std::string output_prefix)
+void gamma_model_reconstruction::print_additional_data(const cladevector& order)
 {
-    std::ofstream cat_likelihoods(filename("Gamma_category_likelihoods", output_prefix));
-    print_category_likelihoods(cat_likelihoods, order, gene_families);
+    std::ofstream cat_likelihoods(filename("Gamma_category_likelihoods", _user_input.output_prefix));
+    print_category_likelihoods(cat_likelihoods, order);
 
 }

@@ -33,7 +33,7 @@ public:
 
     virtual inference_optimizer_scorer *get_lambda_optimizer(const user_data& data);
 
-    virtual reconstruction* reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior);
+    virtual reconstruction* reconstruct_ancestral_states(const user_data& data, const input_parameters& _user_input, matrix_cache* p_calc) override;
 
     virtual void prepare_matrices_for_simulation(matrix_cache& cache);
 
@@ -46,7 +46,7 @@ class base_model_reconstruction : public reconstruction
 {
 public:
 
-    base_model_reconstruction()
+    base_model_reconstruction(const user_data& d, const input_parameters& ui) : reconstruction(d, ui)
     {
 
     }

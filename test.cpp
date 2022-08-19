@@ -45,7 +45,7 @@ class mock_model : public model {
     virtual void write_family_likelihoods(std::ostream& ost) override
     {
     }
-    virtual reconstruction* reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache* p_calc, root_equilibrium_distribution* p_prior) override
+    virtual reconstruction* reconstruct_ancestral_states(const user_data& data, const input_parameters& _user_input, matrix_cache* p_calc) override
     {
         return nullptr;
     }
@@ -805,17 +805,17 @@ TEST_CASE_FIXTURE(Inference, "base_model_reconstruction")
     unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1"));
     single_lambda sl(0.05);
 
-    std::vector<gene_family> families(1);
-    families[0].set_species_size("A", 3);
-    families[0].set_species_size("B", 4);
+    _user_data.gene_families.resize(1);
+    _user_data.gene_families[0].set_species_size("A", 3);
+    _user_data.gene_families[0].set_species_size("B", 4);
 
-    base_model model(&sl, p_tree.get(), &families, 5, 5, NULL);
+    base_model model(&sl, p_tree.get(), &_user_data.gene_families, 5, 5, NULL);
 
     matrix_cache calc(6);
     calc.precalculate_matrices(get_lambda_values(&sl), set<double>({ 1 }));
-    root_equilibrium_distribution dist(_user_data.max_root_family_size);
-
-    std::unique_ptr<base_model_reconstruction> rec(dynamic_cast<base_model_reconstruction*>(model.reconstruct_ancestral_states(families, &calc, &dist)));
+   
+    _user_data.prior = root_equilibrium_distribution(_user_data.max_root_family_size);
+    std::unique_ptr<base_model_reconstruction> rec(dynamic_cast<base_model_reconstruction*>(model.reconstruct_ancestral_states(_user_data, input_parameters(), & calc)));
 
     CHECK_EQ(1, rec->_reconstructions.size());
 
@@ -831,7 +831,9 @@ TEST_CASE("Inference: branch_length_finder")
 
 TEST_CASE("Inference: increase_decrease")
 {
-    base_model_reconstruction bmr;
+    user_data ud;
+    input_parameters ip;
+    base_model_reconstruction bmr(ud, ip);
     gene_family gf;
 
     unique_ptr<clade> p_tree(parse_newick("((A:1,B:3):7,(C:11,D:17):23);"));
@@ -864,32 +866,37 @@ TEST_CASE( "Inference: precalculate_matrices_calculates_all_lambdas_all_branchle
 class Reconstruction
 {
 public:
-    gene_family fam;
     unique_ptr<clade> p_tree;
     cladevector order;
+    user_data ud;
+    input_parameters ip;
 
     Reconstruction()
     {
         p_tree.reset(parse_newick("((A:1,B:3):7,(C:11,D:17):23);"));
 
-        fam.set_id("Family5");
-        fam.set_species_size("A", 11);
-        fam.set_species_size("B", 2);
-        fam.set_species_size("C", 5);
-        fam.set_species_size("D", 6);
+        ud.gene_families.resize(1);
+        ud.gene_families[0].set_id("Family5");
+        ud.gene_families[0].set_species_size("A", 11);
+        ud.gene_families[0].set_species_size("B", 2);
+        ud.gene_families[0].set_species_size("C", 5);
+        ud.gene_families[0].set_species_size("D", 6);
 
         vector<string> nodes{ "A", "B", "C", "D", "AB", "CD", "ABCD" };
         order.resize(nodes.size());
         const clade* t = p_tree.get();
         transform(nodes.begin(), nodes.end(), order.begin(), [t](string s) { return t->find_descendant(s); });
 
+        ud.p_tree = p_tree.get();
+
+        ip.pvalue = 0.05;
     }
 };
 
 TEST_CASE_FIXTURE(Reconstruction, "reconstruct_leaf_node")
 {
     single_lambda lambda(0.1);
-    fam.set_species_size("Mouse", 3);
+    ud.gene_families[0].set_species_size("Mouse", 3);
 
     clade leaf("Mouse", 7);
 
@@ -900,7 +907,7 @@ TEST_CASE_FIXTURE(Reconstruction, "reconstruct_leaf_node")
     all_node_Cs[&leaf].resize(8);
     all_node_Ls[&leaf].resize(8);
 
-    pupko_reconstructor::reconstruct_leaf_node(&leaf, &lambda, all_node_Cs, all_node_Ls, &fam, &calc);
+    pupko_reconstructor::reconstruct_leaf_node(&leaf, &lambda, all_node_Cs, all_node_Ls, &ud.gene_families[0], &calc);
 
     // L holds the probability of the leaf moving from size 3 to size n
     auto L = all_node_Ls[&leaf];
@@ -916,7 +923,7 @@ TEST_CASE_FIXTURE(Reconstruction, "print_reconstructed_states__prints_star_for_s
 {
     gene_family gf;
     gf.set_id("Family5");
-    base_model_reconstruction bmr;
+    base_model_reconstruction bmr(ud, ip);
     auto& values = bmr._reconstructions[gf.id()];
 
     values[p_tree.get()] = 7;
@@ -930,17 +937,18 @@ TEST_CASE_FIXTURE(Reconstruction, "print_reconstructed_states__prints_star_for_s
     branch_probs.set(gf, p_tree.get(), branch_probabilities::invalid());  /// root is never significant regardless of the value
 
     ostringstream sig;
-    bmr.print_reconstructed_states(sig, order, { fam }, p_tree.get(), 0.05, branch_probs);
+    bmr.print_reconstructed_states(sig, order, branch_probs);
     STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>*_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", sig.str().c_str());
 
     ostringstream insig;
-    bmr.print_reconstructed_states(insig, order, { fam }, p_tree.get(), 0.01, branch_probs);
+    ip.pvalue = 0.01;
+    bmr.print_reconstructed_states(insig, order, branch_probs);
     STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", insig.str().c_str());
 }
 
 TEST_CASE_FIXTURE(Reconstruction, "gamma_model_reconstruction__print_reconstructed_states__prints_value_for_each_category_and_a_summation")
 {
-    gamma_model_reconstruction gmr(vector<double>({ 1.0 }));
+    gamma_model_reconstruction gmr(ud, ip, vector<double>({ 1.0 }));
 
     auto& rec = gmr._reconstructions["Family5"];
     rec.category_reconstruction.resize(1);
@@ -954,16 +962,16 @@ TEST_CASE_FIXTURE(Reconstruction, "gamma_model_reconstruction__print_reconstruct
 
     ostringstream ost;
     branch_probabilities branch_probs;
-    gmr.print_reconstructed_states(ost, order, { fam }, p_tree.get(), 0.05, branch_probs);
+    gmr.print_reconstructed_states(ost, order, branch_probs);
     STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", ost.str().c_str());
 }
 
 TEST_CASE_FIXTURE(Reconstruction, "gamma_model_reconstruction__print_additional_data__prints_likelihoods")
 {
-    gamma_model_reconstruction gmr(vector<double>({ 0.3, 0.9, 1.4, 2.0 }));
+    gamma_model_reconstruction gmr(ud, ip, vector<double>({ 0.3, 0.9, 1.4, 2.0 }));
     gmr._reconstructions["Family5"]._category_likelihoods = { 0.01, 0.03, 0.09, 0.07 };
     ostringstream ost;
-    gmr.print_category_likelihoods(ost, order, { fam });
+    gmr.print_category_likelihoods(ost, order);
     STRCMP_CONTAINS("Family ID\t0.3\t0.9\t1.4\t2\t\n", ost.str().c_str());
     STRCMP_CONTAINS("Family5\t0.01\t0.03\0.09\t0.07", ost.str().c_str());
 }
@@ -971,7 +979,7 @@ TEST_CASE_FIXTURE(Reconstruction, "gamma_model_reconstruction__print_additional_
 TEST_CASE_FIXTURE(Reconstruction, "gamma_model_reconstruction__prints_lambda_multipiers")
 {
     vector<double> multipliers{ 0.13, 1.4 };
-    gamma_model_reconstruction gmr(multipliers);
+    gamma_model_reconstruction gmr(ud, ip, multipliers);
 
     auto& rec = gmr._reconstructions["Family5"];
     rec.category_reconstruction.resize(1);
@@ -986,7 +994,7 @@ TEST_CASE_FIXTURE(Reconstruction, "gamma_model_reconstruction__prints_lambda_mul
     branch_probabilities branch_probs;
 
     std::ostringstream ost;
-    gmr.print_reconstructed_states(ost, order, { fam }, p_tree.get(), 0.05, branch_probs);
+    gmr.print_reconstructed_states(ost, order, branch_probs);
 
     STRCMP_CONTAINS("BEGIN LAMBDA_MULTIPLIERS;", ost.str().c_str());
     STRCMP_CONTAINS("  0.13;", ost.str().c_str());
@@ -996,7 +1004,7 @@ TEST_CASE_FIXTURE(Reconstruction, "gamma_model_reconstruction__prints_lambda_mul
 
 TEST_CASE_FIXTURE(Reconstruction, "base_model_reconstruction__print_reconstructed_states")
 {
-    base_model_reconstruction bmr;
+    base_model_reconstruction bmr(ud,ip);
     auto& values = bmr._reconstructions["Family5"];
 
     values[p_tree.get()] = 7;
@@ -1007,7 +1015,7 @@ TEST_CASE_FIXTURE(Reconstruction, "base_model_reconstruction__print_reconstructe
 
     ostringstream ost;
 
-    bmr.print_reconstructed_states(ost, order, { fam }, p_tree.get(), 0.05, branch_probs);
+    bmr.print_reconstructed_states(ost, order, branch_probs);
     STRCMP_CONTAINS("#nexus", ost.str().c_str());
     STRCMP_CONTAINS("BEGIN TREES;", ost.str().c_str());
     STRCMP_CONTAINS("  TREE Family5 = ((A<0>_11:1,B<1>_2:3)<4>_8:7,(C<2>_5:11,D<3>_6:17)<5>_6:23)<6>_7;", ost.str().c_str());
@@ -1017,8 +1025,8 @@ TEST_CASE_FIXTURE(Reconstruction, "base_model_reconstruction__print_reconstructe
 TEST_CASE_FIXTURE(Reconstruction, "reconstruction_process_internal_node")
 {
     single_lambda s_lambda(0.1);
-    fam.set_species_size("A", 3);
-    fam.set_species_size("B", 6);
+    ud.gene_families[0].set_species_size("A", 3);
+    ud.gene_families[0].set_species_size("B", 6);
 
     matrix_cache calc(25);
     calc.precalculate_matrices({ 0.1 }, set<double>({ 1, 3, 7, 11, 17, 23 }));
@@ -1032,8 +1040,8 @@ TEST_CASE_FIXTURE(Reconstruction, "reconstruction_process_internal_node")
     all_node_Cs[p_tree->find_descendant("AB")].resize(25);
     all_node_Ls[p_tree->find_descendant("AB")].resize(25);
 
-    pupko_reconstructor::reconstruct_leaf_node(p_tree->find_descendant("A"), &s_lambda, all_node_Cs, all_node_Ls, &fam, &calc);
-    pupko_reconstructor::reconstruct_leaf_node(p_tree->find_descendant("B"), &s_lambda, all_node_Cs, all_node_Ls, &fam, &calc);
+    pupko_reconstructor::reconstruct_leaf_node(p_tree->find_descendant("A"), &s_lambda, all_node_Cs, all_node_Ls, &ud.gene_families[0], &calc);
+    pupko_reconstructor::reconstruct_leaf_node(p_tree->find_descendant("B"), &s_lambda, all_node_Cs, all_node_Ls, &ud.gene_families[0], &calc);
 
     auto internal_node = p_tree->find_descendant("AB");
     pupko_reconstructor::reconstruct_internal_node(internal_node, &s_lambda, all_node_Cs, all_node_Ls, &calc);
@@ -1050,8 +1058,8 @@ TEST_CASE_FIXTURE(Reconstruction, "reconstruction_process_internal_node")
 TEST_CASE_FIXTURE(Reconstruction, "reconstruction_process_internal_node with 0s at the leafs")
 {
     single_lambda s_lambda(0.1);
-    fam.set_species_size("A", 0);
-    fam.set_species_size("B", 0);
+    ud.gene_families[0].set_species_size("A", 0);
+    ud.gene_families[0].set_species_size("B", 0);
 
     matrix_cache calc(25);
     calc.precalculate_matrices({ 0.1 }, set<double>({ 1, 3, 7, 11, 17, 23 }));
@@ -1065,8 +1073,8 @@ TEST_CASE_FIXTURE(Reconstruction, "reconstruction_process_internal_node with 0s 
     all_node_Cs[p_tree->find_descendant("AB")].resize(25);
     all_node_Ls[p_tree->find_descendant("AB")].resize(25);
 
-    pupko_reconstructor::reconstruct_leaf_node(p_tree->find_descendant("A"), &s_lambda, all_node_Cs, all_node_Ls, &fam, &calc);
-    pupko_reconstructor::reconstruct_leaf_node(p_tree->find_descendant("B"), &s_lambda, all_node_Cs, all_node_Ls, &fam, &calc);
+    pupko_reconstructor::reconstruct_leaf_node(p_tree->find_descendant("A"), &s_lambda, all_node_Cs, all_node_Ls, &ud.gene_families[0], &calc);
+    pupko_reconstructor::reconstruct_leaf_node(p_tree->find_descendant("B"), &s_lambda, all_node_Cs, all_node_Ls, &ud.gene_families[0], &calc);
 
     auto internal_node = p_tree->find_descendant("AB");
     pupko_reconstructor::reconstruct_internal_node(internal_node, &s_lambda, all_node_Cs, all_node_Ls, &calc);
@@ -1130,20 +1138,20 @@ TEST_CASE_FIXTURE(Reconstruction, "get_weighted_averages")
 
 TEST_CASE_FIXTURE(Reconstruction, "print_node_counts")
 {
-    gamma_model_reconstruction gmr({ .5 });
+    gamma_model_reconstruction gmr(ud, ip, { .5 });
     ostringstream ost;
 
     auto initializer = [&gmr](const clade* c) { gmr._reconstructions["Family5"].reconstruction[c] = 5;  };
     p_tree->apply_prefix_order(initializer);
 
-    gmr.print_node_counts(ost, order, { fam }, p_tree.get());
+    gmr.print_node_counts(ost, order);
     STRCMP_CONTAINS("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>", ost.str().c_str());
     STRCMP_CONTAINS("Family5\t11\t2\t5\t6\t5\t5\t5", ost.str().c_str());
 }
 
 TEST_CASE_FIXTURE(Reconstruction, "print_node_change")
 {
-    gamma_model_reconstruction gmr({ .5 });
+    gamma_model_reconstruction gmr(ud, ip, { .5 });
     ostringstream ost;
 
     std::normal_distribution<float> dist(0, 10);
@@ -1153,7 +1161,7 @@ TEST_CASE_FIXTURE(Reconstruction, "print_node_change")
             gmr._reconstructions["Family5"].reconstruction[c] = dist(randomizer_engine);
         });
 
-    gmr.print_node_change(ost, order, { fam }, p_tree.get());
+    gmr.print_node_change(ost, order);
     CHECK_MESSAGE(ost.str().find("FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>") != string::npos, ost.str());
     CHECK_MESSAGE(ost.str().find("Family5\t1\t-8\t5\t6\t17\t7\t0") != string::npos, ost.str());
 }
@@ -1182,7 +1190,7 @@ TEST_CASE_FIXTURE(Reconstruction, "print_branch_probabilities__shows_NA_for_inva
     probs.set(gf, p_tree->find_descendant("B"), branch_probabilities::invalid());
     probs.set(gf, p_tree.get(), branch_probabilities::invalid());
 
-    print_branch_probabilities(ost, order, { fam }, probs);
+    print_branch_probabilities(ost, order, ud.gene_families, probs);
     CHECK_STREAM_CONTAINS(ost, "FamilyID\tA<0>\tB<1>\tC<2>\tD<3>\t<4>\t<5>\t<6>");
     CHECK_STREAM_CONTAINS(ost, "Family5\t0.05\tN/A\t0.05\t0.05\t0.05\t0.05\tN/A\n");
 }
@@ -1192,7 +1200,7 @@ TEST_CASE_FIXTURE(Reconstruction, "print_branch_probabilities__skips_families_wi
     std::ostringstream ost;
     branch_probabilities probs;
 
-    print_branch_probabilities(ost, order, { fam }, probs);
+    print_branch_probabilities(ost, order, ud.gene_families, probs);
     CHECK(ost.str().find("Family5") == string::npos);
 }
 
@@ -1200,21 +1208,21 @@ TEST_CASE_FIXTURE(Reconstruction, "viterbi_sum_probabilities")
 {
     matrix_cache cache(25);
     cache.precalculate_matrices({ 0.05 }, { 1,3,7 });
-    base_model_reconstruction rec;
-    rec._reconstructions[fam.id()][p_tree->find_descendant("AB")] = 10;
-    rec._reconstructions[fam.id()][p_tree->find_descendant("ABCD")] = 12;
+    base_model_reconstruction rec(ud, ip);
+    rec._reconstructions[ud.gene_families[0].id()][p_tree->find_descendant("AB")] = 10;
+    rec._reconstructions[ud.gene_families[0].id()][p_tree->find_descendant("ABCD")] = 12;
     single_lambda lm(0.05);
-    CHECK_EQ(doctest::Approx(0.537681), compute_viterbi_sum(p_tree->find_descendant("AB"), fam, &rec, 24, cache, &lm)._value);
+    CHECK_EQ(doctest::Approx(0.537681), compute_viterbi_sum(p_tree->find_descendant("AB"), ud.gene_families[0], &rec, 24, cache, &lm)._value);
 }
 
 TEST_CASE_FIXTURE(Reconstruction, "viterbi_sum_probabilities_returns_invalid_if_root")
 {
     matrix_cache cache(25);
     cache.precalculate_matrices({ 0.05 }, { 1,3,7 });
-    base_model_reconstruction rec;
-    rec._reconstructions[fam.id()][p_tree.get()] = 11;
+    base_model_reconstruction rec(ud, ip);
+    rec._reconstructions[ud.gene_families[0].id()][p_tree.get()] = 11;
     single_lambda lm(0.05);
-    CHECK_FALSE(compute_viterbi_sum(p_tree.get(), fam, &rec, 24, cache, &lm)._is_valid);
+    CHECK_FALSE(compute_viterbi_sum(p_tree.get(), ud.gene_families[0], &rec, 24, cache, &lm)._is_valid);
 }
 
 TEST_CASE_FIXTURE(Reconstruction, "pvalues")
@@ -1249,7 +1257,7 @@ TEST_CASE_FIXTURE(Reconstruction, "compute_family_probabilities")
     p.p_tree->apply_prefix_order([&cm, this](const clade* c)
         {
             if (c->is_leaf())
-                cm[c] = fam.get_species_size(c->get_taxon_name());
+                cm[c] = ud.gene_families[0].get_species_size(c->get_taxon_name());
             else
                 cm[c] = 5;
         });
@@ -2020,31 +2028,32 @@ TEST_CASE("Inference: model_vitals")
 TEST_CASE_FIXTURE(Reconstruction, "gene_family_reconstrctor__print_increases_decreases_by_family__adds_flag_for_significance")
 {
     ostringstream insignificant;
-    base_model_reconstruction bmr;
+    base_model_reconstruction bmr(ud, ip);
     bmr._reconstructions["myid"][p_tree->find_descendant("AB")] = 5;
-    gene_family gf;
-    gf.set_id("myid");
-    gf.set_species_size("A", 7);
+    ud.gene_families[0].set_id("myid");
+    ud.gene_families[0].set_species_size("A", 7);
     order.clear();
-    bmr.print_increases_decreases_by_family(insignificant, order, { gf }, { 0.03 }, 0.01);
+    ip.pvalue = 0.01;
+    bmr.print_increases_decreases_by_family(insignificant, order, { 0.03 });
     STRCMP_CONTAINS("myid\t0.03\tn", insignificant.str().c_str());
 
+    ip.pvalue = 0.05;
     ostringstream significant;
-    bmr.print_increases_decreases_by_family(insignificant, order, { gf }, { 0.03 }, 0.05);
+    bmr.print_increases_decreases_by_family(insignificant, order, { 0.03 });
     STRCMP_CONTAINS("myid\t0.03\ty", insignificant.str().c_str());
 }
 
 TEST_CASE_FIXTURE(Reconstruction, "print_increases_decreases_by_family__prints_significance_level_in_header")
 {
     ostringstream ost;
-    base_model_reconstruction bmr;
-    gene_family gf;
+    base_model_reconstruction bmr(ud, ip);
 
-    bmr.print_increases_decreases_by_family(ost, order, { gf }, { 0.07 }, 0.00001);
+    ip.pvalue = 0.00001;
+    bmr.print_increases_decreases_by_family(ost, order, { 0.07 });
     STRCMP_CONTAINS("#FamilyID\tpvalue\tSignificant at 1e-05\n", ost.str().c_str());
 }
 
-TEST_CASE("Reconstruction: base_model_print_increases_decreases_by_family")
+TEST_CASE_FIXTURE(Reconstruction, "base_model print_increases_decreases_by_family empty")
 {
     unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
 
@@ -2053,27 +2062,35 @@ TEST_CASE("Reconstruction: base_model_print_increases_decreases_by_family")
         p_tree->find_descendant("B"),
         p_tree->find_descendant("AB") };
 
-    base_model_reconstruction bmr;
-    bmr.print_increases_decreases_by_family(empty, order, {}, {}, 0.05);
+    ud.gene_families.clear();
+    base_model_reconstruction bmr(ud, ip);
+    bmr.print_increases_decreases_by_family(empty, order, {});
     STRCMP_CONTAINS("No increases or decreases recorded", empty.str().c_str());
+}
 
+TEST_CASE_FIXTURE(Reconstruction, "base_model print_increases_decreases_by_family")
+{
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
+
+    cladevector order{ p_tree->find_descendant("A"),
+        p_tree->find_descendant("B"),
+        p_tree->find_descendant("AB") };
+
+    base_model_reconstruction bmr(ud, ip);
     bmr._reconstructions["myid"][p_tree->find_descendant("AB")] = 5;
 
-    gene_family gf;
-    gf.set_id("myid");
-    gf.set_species_size("A", 7);
-    gf.set_species_size("B", 2);
+    ud.gene_families[0].set_id("myid");
+    ud.gene_families[0].set_species_size("A", 7);
+    ud.gene_families[0].set_species_size("B", 2);
 
     ostringstream ost;
-    bmr.print_increases_decreases_by_family(ost, order, { gf }, { 0.07 }, 0.05);
+    bmr.print_increases_decreases_by_family(ost, order, { 0.07 });
     STRCMP_CONTAINS("#FamilyID\tpvalue\tSignificant at 0.05\n", ost.str().c_str());
     STRCMP_CONTAINS("myid\t0.07\tn\n", ost.str().c_str());
 }
 
-TEST_CASE("Reconstruction: gamma_model_print_increases_decreases_by_family")
+TEST_CASE_FIXTURE(Reconstruction, "gamma_model_print_increases_decreases_by_family empty")
 {
-    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
-
     ostringstream empty;
     cladevector order{ p_tree->find_descendant("A"),
         p_tree->find_descendant("B"),
@@ -2082,26 +2099,33 @@ TEST_CASE("Reconstruction: gamma_model_print_increases_decreases_by_family")
     vector<double> multipliers({ .2, .75 });
     vector<gamma_bundle*> bundles; //  ({ &bundle });
     vector<double> em;
-    gamma_model_reconstruction gmr(em);
-    gmr.print_increases_decreases_by_family(empty, order, {}, {}, 0.05);
+    ud.gene_families.clear();
+    gamma_model_reconstruction gmr(ud, ip, em);
+    gmr.print_increases_decreases_by_family(empty, order, {});
     STRCMP_CONTAINS("No increases or decreases recorded", empty.str().c_str());
+}
+
+TEST_CASE_FIXTURE(Reconstruction, "gamma_model_print_increases_decreases_by_family")
+{
+    vector<double> em;
+    gamma_model_reconstruction gmr(ud, ip, em);
 
     gmr._reconstructions["myid"].reconstruction[p_tree->find_descendant("AB")] = 5;
 
-    gene_family gf;
-    gf.set_id("myid");
-    gf.set_species_size("A", 7);
-    gf.set_species_size("B", 2);
+    ud.gene_families[0].set_id("myid");
+    ud.gene_families[0].set_species_size("A", 7);
+    ud.gene_families[0].set_species_size("B", 2);
 
     ostringstream ost;
-    gmr.print_increases_decreases_by_family(ost, order, { gf }, { 0.07 }, 0.05);
+    gmr.print_increases_decreases_by_family(ost, order, { 0.07 });
     STRCMP_CONTAINS("#FamilyID\tpvalue\tSignificant at 0.05", ost.str().c_str());
     STRCMP_CONTAINS("myid\t0.07\tn", ost.str().c_str());
 }
 
-TEST_CASE("Reconstruction: gamma_model_print_increases_decreases_by_clade")
+TEST_CASE_FIXTURE(Reconstruction, "gamma_model print_increases_decreases_by_clade empty")
 {
     unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
+    ud.p_tree = p_tree.get();
 
     cladevector order{ p_tree->find_descendant("A"),
         p_tree->find_descendant("B"),
@@ -2112,29 +2136,42 @@ TEST_CASE("Reconstruction: gamma_model_print_increases_decreases_by_clade")
     vector<double> multipliers({ .2, .75 });
     vector<gamma_bundle*> bundles; //  ({ &bundle });
     vector<double> em;
-    gamma_model_reconstruction gmr(em);
 
-    gmr.print_increases_decreases_by_clade(empty, order, {});
+    ud.gene_families.clear();
+    gamma_model_reconstruction gmr(ud, ip, em);
+
+    gmr.print_increases_decreases_by_clade(empty, order);
     STRCMP_EQUAL("#Taxon_ID\tIncrease\tDecrease\n", empty.str().c_str());
+}
 
+TEST_CASE_FIXTURE(Reconstruction, "gamma_model print_increases_decreases_by_clade")
+{
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
+    ud.p_tree = p_tree.get();
+
+    cladevector order{ p_tree->find_descendant("A"),
+        p_tree->find_descendant("B"),
+        p_tree->find_descendant("AB") };
+
+    vector<double> multipliers({ .2, .75 });
+    vector<gamma_bundle*> bundles; //  ({ &bundle });
+    vector<double> em;
+    gamma_model_reconstruction gmr(ud, ip, em);
     gmr._reconstructions["myid"].reconstruction[p_tree->find_descendant("AB")] = 5;
 
-    gene_family gf;
-    gf.set_id("myid");
-    gf.set_species_size("A", 7);
-    gf.set_species_size("B", 2);
+    ud.gene_families[0].set_id("myid");
+    ud.gene_families[0].set_species_size("A", 7);
+    ud.gene_families[0].set_species_size("B", 2);
 
     ostringstream ost;
-    gmr.print_increases_decreases_by_clade(ost, order, { gf });
+    gmr.print_increases_decreases_by_clade(ost, order);
     STRCMP_CONTAINS("#Taxon_ID\tIncrease\tDecrease", ost.str().c_str());
     STRCMP_CONTAINS("A<0>\t1\t0", ost.str().c_str());
     STRCMP_CONTAINS("B<1>\t0\t1", ost.str().c_str());
 }
 
-TEST_CASE("Reconstruction: base_model_print_increases_decreases_by_clade")
+TEST_CASE_FIXTURE(Reconstruction, "base_model_print_increases_decreases_by_clade empty")
 {
-    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
-
     clade invalid;
     cladevector order{ p_tree->find_descendant("A"),
         p_tree->find_descendant("B"),
@@ -2142,22 +2179,32 @@ TEST_CASE("Reconstruction: base_model_print_increases_decreases_by_clade")
 
     ostringstream empty;
 
-    base_model_reconstruction bmr;
+    ud.gene_families.clear();
+    base_model_reconstruction bmr(ud, ip);
 
-    bmr.print_increases_decreases_by_clade(empty, order, {});
+    bmr.print_increases_decreases_by_clade(empty, order);
     STRCMP_EQUAL("#Taxon_ID\tIncrease\tDecrease\n", empty.str().c_str());
+}
 
-    //    bmr._reconstructions["myid"][p_tree->find_descendant("A")] = 4;
-    //    bmr._reconstructions["myid"][p_tree->find_descendant("B")] = -3;
+TEST_CASE_FIXTURE(Reconstruction, "base_model_print_increases_decreases_by_clade")
+{
+    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
+    ud.p_tree = p_tree.get();
+
+    cladevector order{ p_tree->find_descendant("A"),
+        p_tree->find_descendant("B"),
+        p_tree->find_descendant("AB") };
+
+    base_model_reconstruction bmr(ud, ip);
+
     bmr._reconstructions["myid"][p_tree->find_descendant("AB")] = 5;
 
-    gene_family gf;
-    gf.set_id("myid");
-    gf.set_species_size("A", 7);
-    gf.set_species_size("B", 2);
+    ud.gene_families[0].set_id("myid");
+    ud.gene_families[0].set_species_size("A", 7);
+    ud.gene_families[0].set_species_size("B", 2);
 
     ostringstream ost;
-    bmr.print_increases_decreases_by_clade(ost, order, { gf });
+    bmr.print_increases_decreases_by_clade(ost, order);
     STRCMP_CONTAINS("#Taxon_ID\tIncrease\tDecrease", ost.str().c_str());
     STRCMP_CONTAINS("A<0>\t1\t0", ost.str().c_str());
     STRCMP_CONTAINS("B<1>\t0\t1", ost.str().c_str());

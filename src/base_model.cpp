@@ -130,28 +130,28 @@ inference_optimizer_scorer *base_model::get_lambda_optimizer(const user_data& da
 
 #define EPSILON_RANGES
 
-reconstruction* base_model::reconstruct_ancestral_states(const vector<gene_family>& families, matrix_cache *p_calc, root_equilibrium_distribution* p_prior)
+reconstruction* base_model::reconstruct_ancestral_states(const user_data& ud, const input_parameters& ui, matrix_cache* p_calc)
 {
     LOG(INFO) << "Starting reconstruction processes for Base model";
 
-    auto result = new base_model_reconstruction();
+    auto result = new base_model_reconstruction(ud, ui);
 
     p_calc->precalculate_matrices(get_lambda_values(_p_lambda), _p_tree->get_branch_lengths());
 
-    pupko_reconstructor::pupko_data data(families.size(), _p_tree, _max_family_size, _max_root_family_size);
+    pupko_reconstructor::pupko_data data(ud.gene_families.size(), _p_tree, _max_family_size, _max_root_family_size);
 
-    for (size_t i = 0; i < families.size(); ++i)
+    for (size_t i = 0; i < ud.gene_families.size(); ++i)
     {
-        clademap<int> &rc = result->_reconstructions[families[i].id()];
+        clademap<int> &rc = result->_reconstructions[ud.gene_families[i].id()];
         _p_tree->apply_prefix_order([&rc](const clade* c) {
             rc[c] = 0;
             });
     }
 
 #pragma omp parallel for
-    for (size_t i = 0; i< families.size(); ++i)
+    for (size_t i = 0; i< ud.gene_families.size(); ++i)
     {
-        pupko_reconstructor::reconstruct_gene_family(_p_lambda, _p_tree, &families[i], p_calc, p_prior, result->_reconstructions[families[i].id()], data.C(i), data.L(i));
+        pupko_reconstructor::reconstruct_gene_family(_p_lambda, _p_tree, &ud.gene_families[i], p_calc, &ud.prior, result->_reconstructions[ud.gene_families[i].id()], data.C(i), data.L(i));
     }
 
     size_t success = count_if(data.v_all_node_Ls.begin(), data.v_all_node_Ls.end(), [this](const clademap<std::vector<double>>& L) 
@@ -159,9 +159,9 @@ reconstruction* base_model::reconstruct_ancestral_states(const vector<gene_famil
             return *max_element( L.at(_p_tree).begin(), L.at(_p_tree).end()) > 0; 
         });
 
-    if (success != families.size())
+    if (success != ud.gene_families.size())
     {
-        LOG(WARNING) << "Failed to reconstruct " << families.size() - success << " families" << endl;
+        LOG(WARNING) << "Failed to reconstruct " << ud.gene_families.size() - success << " families" << endl;
     }
 
     LOG(INFO) << "Done!\n";
