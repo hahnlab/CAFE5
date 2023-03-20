@@ -154,6 +154,36 @@ std::ostream& operator<<(ostream& ost, const Report& report)
 
     ost << "'ID'\t'Newick'";
 
+    for (auto item : report.families)
+    {
+        ost << item.node_id << "\t";
+        ost << item.tree << "\t";
+        ost << item.pvalue << "\t";
+        report.p_tree->write_newick(ost, [&order](const clade* c)
+            {
+                ostringstream ost;
+                ost << (c->is_leaf() ? c->get_taxon_name() : "") << "<" << order[c] << ">";
+                return ost.str();
+            });
+
+#if 0
+        for (size_t b = 0; b < item.pvalues.size(); b++)
+        {
+            std::pair<double, double> p = item.pvalues[b];
+            if (p.first < 0)
+            {
+                ost << "(-,-)";
+            }
+            else
+            {
+                ost << "(" << p.first << "," << p.second << ")";
+            }
+            if (b < item.pvalues.size() - 1)
+                ost << ",";
+        }
+        ost << ")\t";
+#endif
+    }
     return ost;
 }
 
@@ -174,6 +204,42 @@ void Report::compute_expansion(const std::vector<gene_family>& gene_families, co
         }
     });
 }
+
+family_line_item gene_family2report(const gene_family& gf, const clade* p_tree, reconstruction* r, double pvalue, const branch_probabilities& branch_probs)
+{
+    family_line_item fli;
+    fli.node_id = gf.id();
+    ostringstream ost;
+    auto g = [gf, r](const clade* node) {
+        ostringstream ost;
+        if (node->is_leaf())
+            ost << node->get_taxon_name();
+        ost << "_" << r->get_node_count(gf, node);
+        ost << ":" << node->get_branch_length();
+        return ost.str();
+    };
+
+    p_tree->write_newick(ost, g);
+    fli.tree = ost.str();
+
+    fli.pvalue = pvalue;
+
+    ostringstream ost2;
+    p_tree->apply_prefix_order([&ost2, branch_probs, gf](const clade* c) {
+        if (!c->is_leaf())
+        {
+            vector<double> v;
+            transform(c->descendant_begin(), c->descendant_end(), back_inserter(v), [branch_probs, gf](const clade* c) {
+                return branch_probs.at(gf, c)._value;  });
+
+            ost2 << "(" << join(v.begin(), v.end(), ",") << ") ";
+        }
+        });
+    fli.branch_pvalue_str = ost2.str();
+
+    return fli;
+}
+
 
 #define CHECK_STREAM_CONTAINS(x,y) CHECK_MESSAGE(x.str().find(y) != std::string::npos, x.str())
 
@@ -317,6 +383,31 @@ TEST_CASE("Report compute_expansion")
     ostringstream ost;
     ost << r;
     CHECK_STREAM_CONTAINS(ost, "Average Expansion:\t(2,3)\t(-1,2.5)\t(1.25,-2)");
+}
+
+TEST_CASE("SDFSDF")
+{
+    vector<gene_family> f(4);
+    f[0].set_id("f1");
+    f[1].set_id("f2");
+    f[2].set_id("f3");
+    f[3].set_id("f4");
+
+    unique_ptr<clade> p_tree(parse_newick("((A:1,B:1):1,(C:1,D:1):1);"));
+
+    branch_probabilities bp;
+    p_tree->apply_prefix_order([&bp, &f](const clade* c) { bp.set(f[0], c, 0.05); });
+
+    mock_reconstruction r;
+    r.add("f1", "((A:1,B:3):2,(C:2,D:1):2);");
+    r.add("f2", "((A:1,B:5):2,(C:7,D:1):4);");
+    r.add("f3", "((A:1,B:5):2,(C:3,D:1):3);");
+    r.add("f4", "((A:1,B:5):2,(C:5,D:1):3);");
+    // name_famsize:branchlength
+    auto fli = gene_family2report(f[0], p_tree.get(), &r, 0.003, bp);
+    CHECK_EQ("f1", fli.node_id);
+    CHECK_EQ(0.003, fli.pvalue);
+    CHECK_EQ("((A_1:1,B_3:1)_2:1,(C_2:1,D_1:1)_2:1)_0:0", fli.tree);
 }
 
 TEST_CASE("Report compute_expansion expand count")

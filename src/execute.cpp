@@ -188,6 +188,9 @@ void estimator::execute(std::vector<model *>& models)
                 r.p_lambda = p_model->get_lambda();
                 r.p_lambda_tree = data.p_lambda_tree;
                 r.compute_expansion(data.gene_families, *rec.get());
+                transform(data.gene_families.begin(), data.gene_families.end(), pvalues.begin(), back_inserter(r.families), [this, &rec, &probs](const gene_family& gf, double pvalue) {
+                    return gene_family2report(gf, data.p_tree, rec.get(), pvalue, probs);
+                    });
                 report_file << r;
 
                 rec->write_results(p_model->name(), _user_input.output_prefix, data.p_tree, data.gene_families, pvalues, _user_input.pvalue, probs);
