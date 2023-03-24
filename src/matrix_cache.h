@@ -62,8 +62,6 @@ public:
     }
 };
 
-std::vector<double> get_lambda_values(const lambda *p_lambda);
-
 //! Computation of the probabilities of moving from a family size (parent) to another (child)
 /*!
 Contains a map (_cache) that serves as a hash table to store precalculated values.

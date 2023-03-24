@@ -103,22 +103,6 @@ const matrix* matrix_cache::get_matrix(double branch_length, double lambda) cons
     return result;
 }
 
-vector<double> get_lambda_values(const lambda *p_lambda)
-{
-    vector<double> lambdas;
-    auto sl = dynamic_cast<const single_lambda *>(p_lambda);
-    if (sl)
-    {
-        lambdas.push_back(sl->get_single_lambda());
-    }
-    else
-    {
-        auto ml = dynamic_cast<const multiple_lambda *>(p_lambda);
-        lambdas = ml->get_lambdas();
-    }
-    return lambdas;
-}
-
 bool matrix_cache::is_saturated(double branch_length, double lambda)
 {
     double alpha = lambda*branch_length / (1 + lambda*branch_length);

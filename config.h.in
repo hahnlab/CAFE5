@@ -55,3 +55,5 @@
 /* Maximum family size to analyze before dropping to allocating heap memory */
 #undef MAX_STACK_FAMILY_SIZE
 
+#define ELPP_NO_CHECK_MACROS
+

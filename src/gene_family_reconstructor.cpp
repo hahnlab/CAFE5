@@ -378,7 +378,7 @@ void reconstruction::write_results(std::string model_identifier,
     print_additional_data(order);
 }
 
-int reconstruction::get_difference_from_parent(const gene_family& gf, const clade* c)
+int reconstruction::get_difference_from_parent(const gene_family& gf, const clade* c) const
 {
     if (c->is_root())
         return 0;
@@ -427,3 +427,4 @@ branch_probabilities::branch_probability compute_viterbi_sum(const clade* c,
     }
     return branch_probabilities::branch_probability(result);
 }
+

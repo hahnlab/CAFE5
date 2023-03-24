@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iterator>
 
+#include "doctest.h"
 #include "easylogging++.h"
 
 #include "execute.h"
@@ -18,6 +19,7 @@
 #include "likelihood_ratio.h"
 #include "io.h"
 #include "root_equilibrium_distribution.h"
+#include "report.h"
 
 double __Qs[] = { 1.000000000190015, 76.18009172947146, -86.50532032941677,
 24.01409824083091, -1.231739572450155, 1.208650973866179e-3,
@@ -126,6 +128,9 @@ void estimator::estimate_lambda_per_family(model *p_model, ostream& ost)
 
 }
 
+
+
+
 /*! Calls estimate_lambda_per_family if the user has set that parameter, otherwise
     calls \ref estimate_missing_variables; \ref compute; \ref compute_pvalues, and \ref model::reconstruct_ancestral_states */
 void estimator::execute(std::vector<model *>& models)
@@ -177,6 +182,15 @@ void estimator::execute(std::vector<model *>& models)
 #ifdef RUN_LHRTEST
                 LikelihoodRatioTest::lhr_for_diff_lambdas(data, p_model);
 #endif
+                std::ofstream report_file(filename(p_model->name() + "_report", _user_input.output_prefix, "cafe"));
+                Report r(data.p_tree, data.p_lambda_tree, p_model->get_lambda());
+                r.compute_expansion(data.gene_families, *rec.get());
+                for (size_t i = 0; i < data.gene_families.size(); ++i)
+                {
+                    r.add_line_item(data.gene_families[i], rec.get(), pvalues[i], probs);
+                }
+                report_file << r;
+
                 rec->write_results(p_model->name(), pvalues, probs);
             }
         }
@@ -204,3 +218,4 @@ void initialization_failure_advice(std::ostream& ost, const std::vector<gene_fam
         ost << t.first << ": " << t.second << "\n";
     ost << "\nYou may want to try removing the top few families with the largest difference\nbetween the max and min counts and then re-run the analysis.\n\n";
 }
+
