@@ -12,6 +12,9 @@
 /* OpenBLAS for matrix multiplication */
 #undef HAVE_OPENBLAS
 
+/* Intel MKL for matrix multiplication */
+#undef HAVE_MKL_H
+
 /* Have a vector exponential function */
 #undef HAVE_VECTOR_EXP
 

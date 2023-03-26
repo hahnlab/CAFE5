@@ -11,7 +11,9 @@
 #ifdef HAVE_OPENBLAS
 #include "cblas.h"
 #else
+#ifdef HAVE_MKL_H
 #include "mkl.h"
+#endif
 #endif
 #endif
 

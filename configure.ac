@@ -1,12 +1,13 @@
-AC_INIT(cafe5, 1.0)
+AC_INIT([cafe5],[1.1])
  
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 AC_LANG(C++)
 AC_PROG_CXX([icc g++])
 AC_OPENMP
 
 AC_CHECK_LIB([m], [floor])
+AC_CHECK_HEADERS(mkl.h)
 
 ax_blas_ok=no
 
@@ -45,5 +46,6 @@ AC_DEFINE(OPTIMIZER_HIGH_PRECISION, 1e-6, Precision of values optimizer will use
 AC_DEFINE(MAX_STACK_FAMILY_SIZE, 1000, Maximum family size for stack allocations)
 
 dnl Process Makefile.in to create Makefile
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
 
