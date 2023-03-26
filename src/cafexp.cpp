@@ -2,7 +2,10 @@
 #include <random>
 #include <algorithm>
 #include <fstream>
+
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 #include <getopt.h>
 
@@ -200,10 +203,12 @@ int cafe5(int argc, char *const argv[]) {
             show_help();
             return 0;
         }
+#ifdef _OPENMP
         if (user_input.cores > 0)
         {
             omp_set_num_threads(user_input.cores);
         }
+#endif
         user_data data;
         data.read_datafiles(user_input);
 

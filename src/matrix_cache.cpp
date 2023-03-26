@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <omp.h>
 #include <iostream>
 #include <algorithm>
 #include <sstream>
