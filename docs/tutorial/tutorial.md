@@ -273,21 +273,20 @@ have not undergone significant shifts in λ, but branch 8 (leading to humans) ha
 
 ### Summarizing the output ###
 If you open file results/base_clade_results.txt, you will see, for each branch,
-how many families underwent expansions, contractions, and how many are rapidly evolving. In fact, we provide yet another script that allows you to plot these numbers on a
-phylogenetic tree. Just run the following command:
+how many families underwent expansions and contractions. We provide a simple script 
+that allows you to plot these numbers on a phylogenetic tree. Just run the following command:
 
-`python python_scripts/cafetutorial_draw_tree.py -i reports/summary_run1_node.txt -t '((((cat:68.7105,horse:68.7105):4.56678,cow:73.2773):20.7227,(((((chimp:4.44417,human:4.44417):6.68268,orang:11.1268):2.28586,gibbon:13.4127):7.21153,(macaque:4.56724,baboon:4.56724):16.057):16.0607,marmoset:36.6849):57.3151):38.738,(rat:36.3024,mouse:36.3024):96.4356)' -d '((((cat<0>,horse<2>)<1>,cow<4>)<3>,(((((chimp<6>,human<8>)<7>,orang<10>)<9>,gibbon<12>)<11>,(macaque<14>,baboon<16>)<15>)<13>,marmoset<18>)<17>)<5>,(rat<20>,mouse<22>)<21>)<19>' -o reports/summary_run1_tree_rapid.png -y Rapid`
+`python cafe5_draw_tree.py -i results/base_clade_results.txt -d results\Base_report.cafe -o clade_results.png`
 
-You can then find the tree in the reports/summary run1 tree rapid.png file that
-should have been created.
+You can then find the tree in the clade_results.png file that should have been created.
 
 We can see that the internal branch with the largest numbers of rapidly evolving gene
 families corresponds to the most recent common ancestor of humans and chimpanzees.
 The terminal branch with the most rapidly evolving gene families is the one leading to
-humans. Then if you wish to look at the number of gene families expanding or contracting (but not necessarily with statistical significance), replace ‘Rapid’ with ‘Expansions’
-or ‘Contractions’, and rename the output file names accordingly.
-Finally, you might also be interested in having a look at reports/summary_run1_fams.txt, which will show how many rapidly evolving families (and which families)
-were found for each species and internal branch.
+humans. Then if you wish to look at the number of gene families expanding or contracting (but not necessarily with statistical significance), replace ‘Rapid’ with ‘Expansions’ or ‘Contractions’, and rename the output file names accordingly.
+
+Users have also created their own visualization tools that work with CAFE files. For examples, see 
+"CAFE_fig" (https://github.com/LKremer/CAFE_fig ) or CAFEPlotter (https://github.com/moshi4/CafePlotter ).
 
 ### 3.1.2 Setting λ to a previously estimated value to deal with families with large numbers of gene copies ###
 As described in section 2.2.4, families with high variance in gene copy number can lead
