@@ -56,8 +56,10 @@ DBG_OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(DBGDIR)/%.o)
 DBG_CFLAGS = -std=c++11 -Wall -Werror @OPENMP_CXXFLAGS@ -g -I. -include config.h $(INCLUDES) -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 DBG_LINKER = $(LD) -std=c++11 @OPENMP_CXXFLAGS@ -o
 
+$(DBGDIR)/easylogging++.o: DBG_CFLAGS+=-Wno-range-loop-construct
+
 $(DBG_OBJECTS): $(DBGDIR)/%.o: $(SRCDIR)/%.cpp
-	$(CC) $(DBG_CFLAGS) -DDDOCTEST_CONFIG_DISABLE -c $< -o $@
+	$(CC) $(DBG_CFLAGS) -DDOCTEST_CONFIG_DISABLE -c $< -o $@
 
 $(DBGDIR)/main.o: main.cpp
 	$(CC) $(DBG_CFLAGS) -c $< -o $@

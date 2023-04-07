@@ -60,6 +60,11 @@ void estimator::compute(std::vector<model *>& models, const input_parameters &my
         write_error_model_if_specified(my_input_parameters, models[i]);
 
         model_likelihoods[i] = result;
+
+        if (std::isinf(model_likelihoods[i]))
+        {
+            throw OptimizerInitializationFailure();
+        }
     }
 
     auto lengths = data.p_tree->get_branch_lengths();

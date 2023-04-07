@@ -18,6 +18,8 @@ tree, as in the R package Ape.
 - The model_change.tab file no longer includes a "+" sign before positive change counts.
 - The simulator handles different max family and max root sizes correctly.
 - The DocTest unit tester has been updated to v2.4.9.
+- The application will no longer attempt to compute P-Values or a reconstruction, if the user
+specifies a lambda and the calculated -lnL is infinite. 
 - The configure script now checks for the existence of mkl.h before attempting to use it.
 - Building the application should no longer fail if OpenMP is missing. (It will probably run
 much slower, however)
