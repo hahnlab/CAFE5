@@ -8,7 +8,6 @@
 
 #include <string.h>
 
-#define ELPP_NO_CHECK_MACROS
 #include "src/easylogging++.h"
 
 INITIALIZE_EASYLOGGINGPP
@@ -3101,51 +3100,6 @@ TEST_CASE_FIXTURE(Optimizer, "NelderMeadSimilarityCutoff__threshold__returns_tru
 
     fm.candidates[0]->score = 100.0001;
     CHECK(strat.threshold_achieved_checking_similarity(&fm));
-}
-
-TEST_CASE("LikelihoodRatioTest, update_branchlength")
-{
-    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
-
-    unique_ptr<clade> actual(LikelihoodRatioTest::update_branchlength(p_tree.get(), .5, 3));
-
-    CHECK_EQ(15.5, actual->find_descendant("AB")->get_branch_length());
-    CHECK_EQ(3.5, actual->find_descendant("A")->get_branch_length());
-    CHECK_EQ(7.5, actual->find_descendant("B")->get_branch_length());
-}
-
-TEST_CASE("LikelihoodRatioTest, get_likelihood_for_diff_lambdas")
-{
-    mock_scorer s;
-    optimizer opt(&s);
-    gene_family gf;
-    gf.set_species_size("A", 5);
-    gf.set_species_size("B", 9);
-    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
-    std::vector<lambda*> cache(100);
-    CHECK_EQ(0.0, LikelihoodRatioTest::get_likelihood_for_diff_lambdas(gf, p_tree.get(), 0, 0, cache, &opt, 12, 12));
-}
-
-TEST_CASE("LikelihoodRatioTest, compute_for_diff_lambdas")
-{
-    single_lambda lam(0.05);
-    unique_ptr<clade> p_tree(parse_newick("(A:1,B:3):7"));
-    user_data data;
-    data.p_lambda = &lam;
-    data.p_tree = p_tree.get();
-    data.gene_families.resize(1);
-    data.gene_families[0].set_species_size("A", 5);
-    data.gene_families[0].set_species_size("B", 9);
-    data.max_root_family_size = 12;
-    data.max_family_size = 12;
-    vector<int> lambda_index(data.gene_families.size(), -1);
-    vector<double> pvalues(data.gene_families.size());
-    vector<lambda*> lambdas(100);
-    mock_scorer scorer;
-    optimizer opt(&scorer);
-    LikelihoodRatioTest::compute_for_diff_lambdas_i(data, lambda_index, pvalues, lambdas, &opt);
-    CHECK_EQ(0, lambda_index[0]);
-    CHECK(isinf(pvalues[0]));
 }
 
 TEST_CASE("exclude_zero_root_families throws exception without a tree")

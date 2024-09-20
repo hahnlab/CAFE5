@@ -2,7 +2,6 @@
 #include <iterator>
 #include <numeric>
 
-#define ELPP_NO_CHECK_MACROS
 #include "easylogging++.h"
 #include "doctest.h"
 

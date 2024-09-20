@@ -1,62 +1,36 @@
-/* config.h.in.  Generated from configure.ac by autoheader.  */
-
-/* Atlas for matrix multiplication */
-#undef HAVE_ATLAS
-
-/* If a matrix multiplication library exists */
-#undef HAVE_BLAS
-
-/* Define to 1 if you have the `m' library (-lm). */
-#undef HAVE_LIBM
-
-/* OpenBLAS for matrix multiplication */
-#undef HAVE_OPENBLAS
-
-/* Intel MKL for matrix multiplication */
-#undef HAVE_MKL_H
-
-/* Have a vector exponential function */
-#undef HAVE_VECTOR_EXP
-
-/* Number of values simulator will generate before modifying lambda value */
-#undef LAMBDA_PERTURBATION_STEP_SIZE
-
-/* Number of times optimizer will restart if it fails to find legal values */
-#undef NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS
-
-/* Precision of values optimizer will use before abandoning a set of values */
-#undef OPTIMIZER_HIGH_PRECISION
-
-/* Precision of values optimizer will use before abandoning a set of values */
-#undef OPTIMIZER_LOW_PRECISION
-
-/* Optimizer will stop after 12 iterations with no significant change in -ln
-   likelihood */
-#undef OPTIMIZER_STRATEGY_SIMILARITY_CUTOFF
-
-/* Define to the address where bug reports for this package should be sent. */
-#undef PACKAGE_BUGREPORT
-
-/* Define to the full name of this package. */
-#undef PACKAGE_NAME
-
-/* Define to the full name and version of this package. */
-#undef PACKAGE_STRING
-
-/* Define to the one symbol short name of this package. */
-#undef PACKAGE_TARNAME
-
-/* Define to the home page for this package. */
-#undef PACKAGE_URL
-
-/* Define to the version of this package. */
-#undef PACKAGE_VERSION
+#define PROJECT_NAME "@PROJECT_NAME@"
+#define PROJECT_VER  "@PROJECT_VERSION@"
+#define PROJECT_VER_MAJOR "@PROJECT_VERSION_MAJOR@"
+#define PROJECT_VER_MINOR "@PROJECT_VERSION_MINOR@"
+#define PROJECT_VER_PATCH "@PROJECT_VERSION_PATCH@"
 
 /* Number of attempts optimizer will make to initialize to a good value */
 #undef PHASED_OPTIMIZER_PHASE1_ATTEMPTS
 
-/* Maximum family size to analyze before dropping to allocating heap memory */
-#undef MAX_STACK_FAMILY_SIZE
+#define BOUNDING_STEP_SIZE 20
+#define MATRIX_SIZE_MULTIPLIER 3.0
+#define MATRIX_EPSILON 5e-6
 
-#define ELPP_NO_CHECK_MACROS
+#cmakedefine NOMINMAX @NOMINMAX@
+
+#cmakedefine OPTIMIZER_HIGH_PRECISION @OPTIMIZER_HIGH_PRECISION@
+#cmakedefine OPTIMIZER_LOW_PRECISION  @OPTIMIZER_LOW_PRECISION@ 
+#cmakedefine PHASED_OPTIMIZER_PHASE1_ATTEMPTS  @PHASED_OPTIMIZER_PHASE1_ATTEMPTS@
+#cmakedefine NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS  @NUM_OPTIMIZER_INITIALIZATION_ATTEMPTS@
+#cmakedefine LAMBDA_PERTURBATION_STEP_SIZE  @LAMBDA_PERTURBATION_STEP_SIZE@
+#cmakedefine MAX_STACK_FAMILY_SIZE  @MAX_STACK_FAMILY_SIZE@
+#cmakedefine HAVE_GETOPT_H @HAVE_GETOPT_H@
+#cmakedefine Boost_FOUND @Boost_FOUND@
+#cmakedefine MKL_FOUND @MKL_FOUND@
+#cmakedefine OpenBLAS_FOUND @OpenBLAS_FOUND@
+#cmakedefine GSL_FOUND @GSL_FOUND@
+
+#cmakedefine LOG_OFFSET @LOG_OFFSET@
+
+/* Verbose log keys for various aspects of the application */
+#define TRANSCRIPT_RECONSTRUCTION 2
+#define SIMULATOR 3
+#define MATRIX 6
+#define INFERENCE 8
+
 
