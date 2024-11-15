@@ -34,7 +34,7 @@ part of the tutorial:
 
 In many cases, the steps provided can take minutes or even hours to run. We have provided
 a set of intermediate files available for download if you wish to bypass the steps. These 
-files are available from https://iu.box.com/v/cafetutorial-files . The files provided 
+files are available from https://datacore.iu.edu/concern/data_sets/6m311q02z?locale=en . The files provided 
 will be noted in the text when necessary.
 
 If you have any comments or suggestions, please email hahnlabcafe@googlegroups.com.

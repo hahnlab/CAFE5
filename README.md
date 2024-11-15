@@ -284,7 +284,7 @@ To run this analysis with both lambdas estimated:
 
 ### Tutorial
 
-A tutorial is provided in the _tutorial_ directory. It provides 
+A tutorial is provided in the _docs/tutorial_ directory. It provides 
 instructions on how to generate a reasonable gene family groups
 in the correct format, dated ultrametric trees, and basic CAFE
 analyses. The tutorial contains tutorial.md and some helper
