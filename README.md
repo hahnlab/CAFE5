@@ -140,9 +140,9 @@ on how you'd like to install.
 
 ### Install from bioconda
 
-First one of the package managers [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) 
+First, one of the package managers [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) 
 or [mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html) must be installed.
-Then, in an environment run the command:
+Then, in a [conda environment](https://mamba.readthedocs.io/en/latest/user_guide/mamba.html) run the command:
 
     $ mamba install cafe5
 
