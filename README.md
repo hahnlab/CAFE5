@@ -134,6 +134,26 @@ parameter) for a given data set. Briefly, CAFE5 can:
 Installation
 ============
 
+CAFE 5 is available as a package on [bioconda](https://bioconda.github.io/recipes/cafe/README.html) and is
+available to download and compile directly from this github repo. Follow the instructions below depending
+on how you'd like to install.
+
+### Install from bioconda
+
+First one of the package managers [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) 
+or [mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html) must be installed.
+Then, in an environment run the command:
+
+    $ mamba install cafe5
+
+_Note: if you use `conda` instead of `mamba`, simply replace that in the command above._
+
+If you have any issues, be sure your [channels are setup to use bioconda](https://bioconda.github.io/).
+If you still have problems, try specifying the channel explicitly with `mamba install -c bioconda cafe5`.
+
+If you'd like to compile the program yourself, follow the subsequent instructions.
+
+
 ### Download
 
 The Github page for CAFE5 is https://github.com/hahnlab/CAFE5 
