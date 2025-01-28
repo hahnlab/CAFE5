@@ -156,6 +156,8 @@ void user_data::read_datafiles(const input_parameters& my_input_parameters)
 
     if (!my_input_parameters.rootdist.empty())
         read_rootdist(my_input_parameters.rootdist);
+
+
 }
 
 /// Root distributions are affected by three parameters: -p, -i, -f
@@ -177,25 +179,25 @@ void user_data::create_prior(const input_parameters& params)
     {
         if (!rootdist.empty())
         {
-            LOG(WARNING) << "\nBoth root distribution and Poisson distribution specified";
+            LOG(WARNING) << "Both root distribution and Poisson distribution specified";
         }
 
-        LOG(INFO) << "\nUsing Poisson root distribution with user provided lambda " << params.poisson_lambda;
+        LOG(INFO) << "Using Poisson root distribution with user provided lambda " << params.poisson_lambda;
         prior = root_equilibrium_distribution(params.poisson_lambda, max_root_family_size);
     }
     else if (!rootdist.empty())
     {
-        LOG(INFO) << "\nRoot distribution set by user provided file";
+        LOG(INFO) << "Root distribution set by user provided file";
         prior = root_equilibrium_distribution(rootdist);
     }
     else if (!gene_families.empty() && params.use_poisson_dist_for_prior)
     {
-        LOG(INFO) << "\nEstimating Poisson root distribution from gene families";
+        LOG(INFO) << "Estimating Poisson root distribution from gene families";
         prior = root_equilibrium_distribution(gene_families, max_root_family_size * 0.8);
     }
     else 
     {
-        LOG(WARNING) << "\nNo root family size distribution specified, using uniform distribution";
+        LOG(WARNING) << "No root family size distribution specified, using uniform distribution";
         prior = root_equilibrium_distribution(max_root_family_size);
     }
 
