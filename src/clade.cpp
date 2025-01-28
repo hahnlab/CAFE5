@@ -417,3 +417,39 @@ clade* parse_newick(std::string newick_string, bool parse_to_lambdas) {
 
     return p_root_clade;
 }
+
+double distance_to_root(const clade *c)
+{
+    double distance = 0;
+    while (!c->is_root())
+    {
+        distance += c->get_branch_length();
+        c = c->get_parent();
+    }
+    return distance;
+}
+
+bool is_ultrametric(const clade* p_tree)
+{
+    vector<double> distances;
+    for_each(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), [&distances](const clade* c) {
+        if (!c->is_leaf())
+            return;
+
+        distances.push_back(distance_to_root(c));
+    });
+
+    auto minmax = minmax_element(distances.begin(), distances.end());
+    auto min_tip = *minmax.first;
+    auto max_tip = *minmax.second;
+
+    return (max_tip - min_tip) / max_tip < 1e-6;
+}
+
+bool is_binary(const clade* p_tree)
+{
+    return all_of(p_tree->reverse_level_begin(), p_tree->reverse_level_end(), [](const clade* c) {
+        int descendants = distance(c->descendant_begin(), c->descendant_end());
+        return descendants == 2 || descendants == 0;
+    });
+}

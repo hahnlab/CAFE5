@@ -258,9 +258,9 @@ Dynamin	ORTHOMCL5	 43	 40	 43	 44	 31	  46	  33	 79	 70	43	49	 50
 DnaJ	ORTHOMCL10016	 45	 46	 50	 46	 46 	  47	  46	 48	 49	45	44	 48
 ``` 
 2) The **tree file** should contain a binary, rooted, ultrametric, tree in Newick format.  Typically
-one obtains this tree using one of several molecular dating methods. If you are unsure if your tree is binary,
-rooted, or ultrametric CAFE will report this when you try to use it for an analysis. Alternatively, you can use the R package,
-Ape with its included functions: is.ultrametric, is.rooted, and is.binary.  
+one obtains this tree using one of several molecular dating methods. If you are unsure if your tree 
+is binary or ultrametric CAFE will report this when you try to use it for an analysis. Alternatively, 
+you can use the R package ```Ape``` with its included functions: is.ultrametric, is.rooted, and is.binary.  
 
 Example: mammals_tree.txt
 ```

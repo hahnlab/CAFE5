@@ -189,6 +189,10 @@ void show_help()
         std::cout << text;
 }
 
+extern "C"  __attribute__((visibility("default"))) int multiply(int a, int b)
+{
+    return a * b;
+}   
 
 /// The main function. Evaluates arguments, calls processes
 /// \callgraph
@@ -209,11 +213,21 @@ int cafe5(int argc, char *const argv[]) {
             omp_set_num_threads(user_input.cores);
         }
 #endif
+        auto cmd = std::accumulate(argv, argv + argc, std::string(), [](std::string x, std::string y) { return x + y + " "; });
+        LOG(INFO) << "\nCommand line: " << cmd;
+
         user_data data;
         data.read_datafiles(user_input);
 
-        auto cmd = std::accumulate(argv, argv + argc, std::string(), [](std::string x, std::string y) { return x + y + " "; });
-        LOG(INFO) << "\nCommand line: " << cmd;
+        if (!is_ultrametric(data.p_tree))
+        {
+            LOG(WARNING) << "Tree is not ultrametric";
+        }
+
+        if (!is_binary(data.p_tree))
+        {
+            LOG(WARNING) << "Tree is not binary";
+        }
 
         exclude_zero_root_families(user_input, data);
 

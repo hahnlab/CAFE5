@@ -3117,6 +3117,34 @@ TEST_CASE("Newick tree is recoverable at the root")
     CHECK_EQ(nwk, p_tree->get_source_newick());
 }
 
+TEST_CASE("is_ultrametric returns false on non-ultrametric tree")
+{
+    string nwk = "((((cat:68.710507,horse:108.710507):44.566782,cow:73.277289):27.722711,(((((chimp:30.444172,human:4.444172):6.682678,orang:11.126850):20.285855,gibbon:13.412706):7.211527,(macaque:4.567240,baboon:4.567240):16.056992):20.060702,marmoset:36.684935):57.315065):38.738021,(rat:46.302445,mouse:36.302445):96.435575);";
+    unique_ptr<clade> p_tree(parse_newick(nwk));
+    CHECK_FALSE(is_ultrametric(p_tree.get()));
+}
+
+TEST_CASE("is_ultrametric returns true on ultrametric tree")
+{
+    string nwk = "((((cat:68.710507,horse:68.710507):4.566782,cow:73.277289):20.722711,(((((chimp:4.444172,human:4.444172):6.682678,orang:11.126850):2.285855,gibbon:13.412706):7.211527,(macaque:4.567240,baboon:4.567240):16.056992):16.060702,marmoset:36.684935):57.315065):38.738021,(rat:36.302445,mouse:36.302445):96.435575);";
+    unique_ptr<clade> p_tree(parse_newick(nwk));
+    CHECK(is_ultrametric(p_tree.get()));
+}
+
+TEST_CASE("is_binary returns true on binary tree")
+{
+    string nwk = "((((cat:68.710507,horse:68.710507):4.566782,cow:73.277289):20.722711,(((((chimp:4.444172,human:4.444172):6.682678,orang:11.126850):2.285855,gibbon:13.412706):7.211527,(macaque:4.567240,baboon:4.567240):16.056992):16.060702,marmoset:36.684935):57.315065):38.738021,(rat:36.302445,mouse:36.302445):96.435575);";
+    unique_ptr<clade> p_tree(parse_newick(nwk));
+    CHECK(is_binary(p_tree.get()));
+}
+
+TEST_CASE("is_binary returns false on non-binary tree")
+{
+    string nwk = "(((cat:68.710507,horse:68.710507,cow:73.277289):20.722711,(((((chimp:4.444172,human:4.444172):6.682678,orang:11.126850):2.285855,gibbon:13.412706):7.211527,(macaque:4.567240,baboon:4.567240):16.056992):16.060702,marmoset:36.684935):57.315065):38.738021,(rat:36.302445,mouse:36.302445):96.435575);";
+    unique_ptr<clade> p_tree(parse_newick(nwk));
+    CHECK_FALSE(is_binary(p_tree.get()));
+}
+
 void init_lgamma_cache();
 
 int main(int argc, char** argv)

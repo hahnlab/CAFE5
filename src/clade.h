@@ -129,5 +129,7 @@ std::string clade_index_or_name(const clade* node, const cladevector& order);
 
 clade* parse_newick(std::string newick_string, bool parse_lambdas);
 inline clade* parse_newick(std::string newick_string) { return parse_newick(newick_string, false); }
+bool is_ultrametric(const clade* p_tree);
+bool is_binary(const clade* p_tree);
 
 #endif
