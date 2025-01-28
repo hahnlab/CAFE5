@@ -15,6 +15,7 @@ int main(int argc, char *const argv[]) {
     defaultConf.setToDefault();
     defaultConf.set(el::Level::Global, el::ConfigurationType::Format, "%msg");
     defaultConf.set(el::Level::Trace, el::ConfigurationType::Enabled, "false");
+    defaultConf.set(el::Level::Warning, el::ConfigurationType::Format, "WARNING: %msg");
     el::Loggers::reconfigureLogger("default", defaultConf);
 
     cafe5(argc, argv);
