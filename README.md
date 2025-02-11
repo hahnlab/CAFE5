@@ -144,12 +144,12 @@ First, one of the package managers [conda](https://docs.conda.io/projects/conda/
 or [mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html) must be installed.
 Then, in a [conda environment](https://mamba.readthedocs.io/en/latest/user_guide/mamba.html) run the command:
 
-    $ mamba install cafe5
+    $ mamba install cafe
 
 _Note: if you use `conda` instead of `mamba`, simply replace that in the command above._
 
 If you have any issues, be sure your [channels are setup to use bioconda](https://bioconda.github.io/).
-If you still have problems, try specifying the channel explicitly with `mamba install -c bioconda cafe5`.
+If you still have problems, try specifying the channel explicitly with `mamba install -c bioconda cafe`.
 
 If you'd like to compile the program yourself, follow the subsequent instructions.
 
