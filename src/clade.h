@@ -25,6 +25,7 @@ using cladefunc = std::function<void(const clade*)>;
 class clade {
 
     friend clade* parse_newick(std::string newick_string, bool parse_lambdas); // allows newick_parser to set parameter values
+    friend class fitch_margoliash; // allows fitch_margoliash to access private members
 
 private:
     clade *_p_parent; // needs to be pointer; instance creates infinite loop
