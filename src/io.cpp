@@ -41,6 +41,7 @@ struct option longopts[] = {
   { "optimizer_expansion", optional_argument, NULL, 'E' },
   { "optimizer_reflection", optional_argument, NULL, 'R' },
   { "optimizer_iterations", optional_argument, NULL, 'I' },
+  { "global_free_rate", no_argument, NULL, 'G' },
   { "help", no_argument, NULL, 'h'},
   { 0, 0, 0, 0 }
 };

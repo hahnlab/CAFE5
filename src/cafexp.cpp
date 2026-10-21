@@ -34,7 +34,7 @@ input_parameters read_arguments(int argc, char *const argv[])
     int args; // getopt_long returns int or char
     int prev_arg;
 
-    while (prev_arg = optind, (args = getopt_long(argc, argv, "c:v:i:e::o:t:y:n:f:E:R:L:P:I:l:m:k:a:g:s::p::zbh", longopts, NULL)) != -1) {
+    while (prev_arg = optind, (args = getopt_long(argc, argv, "c:v:i:e::o:t:y:n:f:E:R:G:L:P:I:l:m:k:a:g:s::p::zbh", longopts, NULL)) != -1) {
         if (optind == prev_arg + 2 && optarg && *optarg == '-') {
             LOG(ERROR) << "You specified option " << argv[prev_arg] << " but it requires an argument. Exiting..." << endl;
             exit(EXIT_FAILURE);
@@ -113,6 +113,9 @@ input_parameters read_arguments(int argc, char *const argv[])
         case 'R':
             my_input_parameters.optimizer_params.neldermead_reflection = atof(optarg);
             break;
+        case 'G':
+            my_input_parameters.use_global_free_rate = true;
+            break;
         case ':':   // missing argument
             fprintf(stderr, "%s: option `-%c' requires an argument",
                 argv[0], optopt);
@@ -176,7 +179,7 @@ void show_help()
         "   --poisson, -p\t\tUse a Poisson distribution for the root frequency distribution. Without specifying this, a\n \t\t\t\t    uniform distribution will be used. A value can be specified -p10 (no space) or --poisson = 10,\n \t\t\t\t    otherwise the distribution will be estimated from the gene families.\n"
         "   --simulate, -s\t\tSimulate families. Optionally provide the number of simulations to generate (-s100 no space, or --simulate = 100)\n"
         "   --rootdist, -f\t\tPath to root distribution file for simulating datasets.\n"
-        "   --free_rate=global\t\t\tIndicates that a separate lambda value should be calculated for each branch.\n\n"
+        "   --global_free_rate, -G\t\t\tIndicates that a separate lambda value should be calculated for each branch.\n\n"
 
         "  Less Common Options:\n"
         "   --lambda_per_family, -b\tEstimate lambda by family (for testing purposes only).\n"

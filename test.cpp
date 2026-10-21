@@ -161,20 +161,37 @@ struct option_test
 #define STRCMP_EQUAL(x, y) CHECK(strcmp(x,y) == 0)
 #define STRCMP_CONTAINS(x, y) CHECK(strstr(y,x) != nullptr)
 
-TEST_CASE("read_arguments translates short values ") {
+TEST_CASE("read_arguments translates short values ") 
+{
     option_test c({ "cafe5", "-ifile" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK(actual.input_file_path.compare("file") == 0);
 }
 
-TEST_CASE("read_arguments translates long values ") {
+TEST_CASE("read_arguments translates long values ") 
+{
     option_test c({ "cafe5", "--infile", "file" });
 
     auto actual = read_arguments(c.argc, c.values);
     CHECK(actual.input_file_path.compare("file") == 0);
 }
-TEST_CASE("Options, input_short_space_separated")
+
+TEST_CASE("Options, global free rate is off by default")
+{
+    input_parameters by_default;
+    CHECK_FALSE(by_default.use_global_free_rate);
+}
+
+TEST_CASE("Options, --free_rate enables global free rate")
+{
+    option_test c({ "cafe5", "--global_free_rate" });
+
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK(actual.use_global_free_rate);
+}
+
+TEST_CASE("Options, input_short_space_separated") 
 {
     option_test c({ "cafe5", "-i", "file" });
 
