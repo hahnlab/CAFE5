@@ -3,9 +3,11 @@ target_sources(cafe5 PRIVATE easylogging++.cpp execute.cpp gamma.cpp gene_family
 target_sources(cafe5 PRIVATE base_model.cpp error_model.cpp gene_family.cpp matrix_cache.cpp poisson.cpp)
 target_sources(cafe5 PRIVATE report.cpp root_equilibrium_distribution.cpp probability.cpp)
 target_sources(cafe5 PRIVATE clade.cpp io.cpp optimizer.cpp simulator.cpp newick_ape_loader.cpp)
+#target_sources(cafe5 PRIVATE freerate_global_model.cpp spearman.cpp fitch_margoliash.cpp)
 
 target_sources(tests PRIVATE cafexp.cpp core.cpp gamma_core.cpp lambda.cpp optimizer_scorer.cpp user_data.cpp)
 target_sources(tests PRIVATE easylogging++.cpp execute.cpp gamma.cpp gene_family_reconstructor.cpp)
 target_sources(tests PRIVATE base_model.cpp error_model.cpp gene_family.cpp matrix_cache.cpp poisson.cpp)
 target_sources(tests PRIVATE report.cpp root_equilibrium_distribution.cpp probability.cpp)
 target_sources(tests PRIVATE clade.cpp io.cpp optimizer.cpp simulator.cpp newick_ape_loader.cpp)
+#target_sources(tests PRIVATE freerate_global_model.cpp spearman.cpp fitch_margoliash.cpp)

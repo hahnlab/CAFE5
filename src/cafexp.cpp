@@ -175,7 +175,8 @@ void show_help()
         "   --fixed_multiple_lambdas, -m\tMultiple lambda values, comma separated.\n"
         "   --poisson, -p\t\tUse a Poisson distribution for the root frequency distribution. Without specifying this, a\n \t\t\t\t    uniform distribution will be used. A value can be specified -p10 (no space) or --poisson = 10,\n \t\t\t\t    otherwise the distribution will be estimated from the gene families.\n"
         "   --simulate, -s\t\tSimulate families. Optionally provide the number of simulations to generate (-s100 no space, or --simulate = 100)\n"
-        "   --rootdist, -f\t\tPath to root distribution file for simulating datasets.\n\n"
+        "   --rootdist, -f\t\tPath to root distribution file for simulating datasets.\n"
+        "   --free_rate=global\t\t\tIndicates that a separate lambda value should be calculated for each branch.\n\n"
 
         "  Less Common Options:\n"
         "   --lambda_per_family, -b\tEstimate lambda by family (for testing purposes only).\n"
