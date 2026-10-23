@@ -102,7 +102,7 @@ input_parameters read_arguments(int argc, char *const argv[])
             my_input_parameters.optimizer_params.neldermead_expansion = atof(optarg);
             break;
         case 'I':
-            my_input_parameters.optimizer_params.neldermead_iterations = atoi(optarg);
+            my_input_parameters.optimizer_params.max_iterations = atoi(optarg);
             break;
         case 'L':
             my_input_parameters.log_config_file = optarg;

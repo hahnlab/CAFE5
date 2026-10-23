@@ -32,6 +32,7 @@ INITIALIZE_EASYLOGGINGPP
 #include "src/optimizer.h"
 #include "src/error_model.h"
 #include "src/likelihood_ratio.h"
+#include "src/clade.h"
 
 std::mt19937 randomizer_engine(10); // seeding random number engine
 
@@ -177,20 +178,6 @@ TEST_CASE("read_arguments translates long values ")
     CHECK(actual.input_file_path.compare("file") == 0);
 }
 
-TEST_CASE("Options, global free rate is off by default")
-{
-    input_parameters by_default;
-    CHECK_FALSE(by_default.use_global_free_rate);
-}
-
-TEST_CASE("Options, --free_rate enables global free rate")
-{
-    option_test c({ "cafe5", "--global_free_rate" });
-
-    auto actual = read_arguments(c.argc, c.values);
-    CHECK(actual.use_global_free_rate);
-}
-
 TEST_CASE("Options, input_short_space_separated") 
 {
     option_test c({ "cafe5", "-i", "file" });
@@ -237,7 +224,7 @@ TEST_CASE("Options, optimizer_long")
     auto actual = read_arguments(c.argc, c.values);
     CHECK_EQ(0.05, actual.optimizer_params.neldermead_expansion);
     CHECK_EQ(3.2, actual.optimizer_params.neldermead_reflection);
-    CHECK_EQ(5, actual.optimizer_params.neldermead_iterations);
+    CHECK_EQ(5, actual.optimizer_params.max_iterations);
 }
 
 TEST_CASE("Options, optimizer_short")
@@ -247,7 +234,7 @@ TEST_CASE("Options, optimizer_short")
     auto actual = read_arguments(c.argc, c.values);
     CHECK_EQ(0.05, actual.optimizer_params.neldermead_expansion);
     CHECK_EQ(3.2, actual.optimizer_params.neldermead_reflection);
-    CHECK_EQ(5, actual.optimizer_params.neldermead_iterations);
+    CHECK_EQ(5, actual.optimizer_params.max_iterations);
 }
 
 TEST_CASE("Options, cores_long")
@@ -3182,4 +3169,49 @@ int main(int argc, char** argv)
         return res;          // propagate the result of the tests
 
     return res;
+}
+
+
+///ADDED FREERATE TESTS BELOW
+TEST_CASE("Options, global free rate is off by default")
+{
+    input_parameters by_default;
+    CHECK_FALSE(by_default.use_global_free_rate);
+}
+
+TEST_CASE("Options, --free_rate enables global free rate")
+{
+    option_test c({ "cafe5", "--global_free_rate" });
+
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK(actual.use_global_free_rate);
+}
+
+TEST_CASE("Options: If Freerate is set, max_iterations defaults to 2")
+{
+    input_parameters by_default;
+    CHECK_EQ(300, by_default.optimizer_params.max_iterations);
+
+    option_test c({ "cafe5", "--global_free_rate"});
+
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK_EQ(2, actual.optimizer_params.max_iterations);
+}
+
+TEST_CASE("Options: If Freerate is set, user can still set max iterations")
+{
+    input_parameters by_default;
+    CHECK_EQ(300, by_default.optimizer_params.max_iterations);
+
+    option_test c({ "cafe5", "--global_free_rate", "--optimizer_iterations", "10"});
+
+    auto actual = read_arguments(c.argc, c.values);
+    CHECK_EQ(10, actual.optimizer_params.max_iterations);
+}
+
+TEST_CASE("common_ancestor")
+{
+    string nwk = "((E:0.36,D:0.30)H:1.00,(C:0.85,(A:0.59,B:0.35)F:0.42)G:0.45)I;";
+    unique_ptr<clade> p_tree(parse_newick(nwk));
+    CHECK_EQ("G", common_ancestor(p_tree->find_descendant("A"), p_tree->find_descendant("C"))->get_taxon_name());
 }

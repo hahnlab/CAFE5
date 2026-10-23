@@ -119,6 +119,9 @@ public:
     std::string get_source_newick() const {
         return _source_newick;
     }
+
+    // Divide all nodes by the mean branch length    
+    void normalize();
 };
 
 template<typename T>

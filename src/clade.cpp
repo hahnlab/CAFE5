@@ -136,7 +136,7 @@ vector<const clade*> clade::find_internal_nodes() const {
   /* Recursively find pointer to clade with provided taxon name */
 const clade *clade::find_descendant(string some_taxon_name) const {
 
-    const clade *p_descendant;
+    const clade *p_descendant = nullptr;
     auto descendant_finder = [some_taxon_name, &p_descendant](const clade *clade) {
         if (clade->get_taxon_name() == some_taxon_name)
             p_descendant = clade;
@@ -288,6 +288,64 @@ void clade::apply_prefix_order(const cladefunc& f) const {
         }
         f(c);
     }
+}
+
+/// ADDED THE BELOW for fitch margoliash work
+void clade::normalize()
+{
+    double sum = 0.0;
+    int count = 0;
+    for_each(reverse_level_begin(), reverse_level_end(), [&](const clade* node) {
+        sum += node->get_branch_length();
+        ++count;
+    });
+    double mean_weight = (count > 0) ? sum / count : 0.0;
+
+    auto recursive_normalize = [&](const clade* c, double mean_weight, auto&& recursive_ref) -> void {
+        if (c->is_leaf())
+            return;
+        for (auto d : c->_descendants) {
+            d->_branch_length = d->_branch_length / mean_weight;
+            recursive_ref(d, mean_weight, recursive_ref);
+        }
+    };
+    recursive_normalize(this, mean_weight, recursive_normalize);
+    LOG(DEBUG) << "Mean branch length in weight tree: " << mean_weight;
+}
+
+const clade* common_ancestor(const clade* c1, const clade *c2)
+{
+    cladevector path;
+    while (c1)
+    {
+        path.push_back(c1);
+        c1 = c1->get_parent();
+    }
+    while (c2)
+    {
+        if (find(path.begin(), path.end(), c2) != path.end())
+            return c2;
+        c2 = c2->get_parent();
+    }
+
+    return nullptr;
+}
+
+double distance(const clade* c1, const clade* c2)
+{
+    double dist = 0;
+    auto p = common_ancestor(c1, c2);
+    while (c1 != p)
+    {
+        dist += c1->get_branch_length();
+        c1 = c1->get_parent();
+    }
+    while (c2 != p)
+    {
+        dist += c2->get_branch_length();
+        c2 = c2->get_parent();
+    }
+    return dist;
 }
 
 clade* parse_newick(std::string newick_string, bool parse_to_lambdas) {

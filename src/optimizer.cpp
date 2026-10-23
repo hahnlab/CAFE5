@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <chrono>
 #include <memory>
+#include "config.h"
 
 #include "easylogging++.h"
 
@@ -544,7 +545,7 @@ optimizer::result optimizer::optimize(const optimizer_parameters& params)
     if (!quiet)
     {
         LOG(INFO) << "\nOptimizer strategy: " << strat->Description();
-        LOG(INFO) << "Iterations: " << params.neldermead_iterations;
+        LOG(INFO) << "Iterations: " << params.max_iterations;
         LOG(INFO) << "Expansion: " << params.neldermead_expansion;
         LOG(INFO) << "Reflection: " << params.neldermead_reflection << "\n";
         LOG(INFO) << "Starting Search for Initial Parameter Values";
@@ -599,7 +600,7 @@ OptimizerStrategy *optimizer::get_strategy(const optimizer_parameters& params)
 {
     pfm->chi = params.neldermead_expansion;
     pfm->rho = params.neldermead_reflection;
-    pfm->maxiters = params.neldermead_iterations;
+    pfm->maxiters = params.max_iterations;
 
     switch (params.strategy)
     {

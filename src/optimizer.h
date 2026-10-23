@@ -26,7 +26,7 @@ enum strategies { RangeWidely, InitialVar, Perturb, Standard, SimilarityCutoff, 
 struct optimizer_parameters {
     double neldermead_expansion;
     double neldermead_reflection;
-    int neldermead_iterations = 300;
+    int max_iterations = 300;
     strategies strategy;
     optimizer_parameters();
 };
